@@ -1,4 +1,4 @@
-/* $Id: model_in_ply.c,v 1.3 2002/08/16 06:53:34 aspert Exp $ */
+/* $Id: model_in_ply.c,v 1.4 2002/08/22 17:26:34 aspert Exp $ */
 
 /*
  *
@@ -147,6 +147,8 @@ int read_ply_tmesh(struct model **tmesh_ref, struct file_data *data)
   vertex_t bbmin, bbmax;
   struct model* tmesh;
   int rcode = 1;
+  int is_bin = 0;
+  int endianness = 0;
   int c;
   
   tmesh = (struct model*)calloc(1, sizeof(struct model));
@@ -158,79 +160,81 @@ int read_ply_tmesh(struct model **tmesh_ref, struct file_data *data)
     skip_ws_comm(data);
     if (string_scanf(data, stmp) == 1) { 
       /* check whether we have ASCII or binary stuff */
-      if (strcmp(stmp, "binary_little_endian") == 0 || 
-          strcmp(stmp, "binary_big_endian") == 0) {
-        fprintf(stderr, "PLY binary format not supported. Sorry.\n");
-        return  MESH_BAD_FF;
-      } else if (strcmp(stmp, "ascii") == 0) {
+      if (strcmp(stmp, "binary_little_endian") == 0) {
+        is_bin = 1;
+      } else if (strcmp(stmp, "binary_big_endian") == 0) {
+        is_bin = 1;
+        endianness = 1;
+      } else if (strcmp(stmp, "ascii") != 0) {
+        rcode = MESH_CORRUPTED;
+      } else {
         skip_ws_comm(data);
         if (string_scanf(data, stmp) != 1 || strcmp(stmp, "1.0") != 0) 
-          return MESH_CORRUPTED;
-      } else {
-        return MESH_CORRUPTED;
+          rcode = MESH_CORRUPTED;
       }
     } else {
-      return MESH_CORRUPTED;
+      rcode = MESH_CORRUPTED;
     }
   } else
-    return MESH_CORRUPTED;
+    rcode = MESH_CORRUPTED;
 
-
-  do {
-    if ((c = find_string(data, "element")) != EOF) {
-      skip_ws_comm(data);
-      if (string_scanf(data, stmp) == 1) {
-        if (strcmp(stmp, "vertex") == 0) {
-          if ((c = int_scanf(data, &(tmesh->num_vert))) != 1)
-            rcode = MESH_CORRUPTED;
+  if (rcode >= 0) {
+    do {
+      if ((c = find_string(data, "element")) != EOF) {
+        skip_ws_comm(data);
+        if (string_scanf(data, stmp) == 1) {
+          if (strcmp(stmp, "vertex") == 0) {
+            if ((c = int_scanf(data, &(tmesh->num_vert))) != 1)
+              rcode = MESH_CORRUPTED;
 #ifdef DEBUG
-          fprintf(stderr, "[read_ply_tmesh] num_vert = %d\n", 
-                  tmesh->num_vert);
+            fprintf(stderr, "[read_ply_tmesh] num_vert = %d\n", 
+                    tmesh->num_vert);
 #endif
-        } else if (strcmp(stmp, "face") == 0) {
-          if ((c = int_scanf(data, &(tmesh->num_faces))) != 1)
-            rcode = MESH_CORRUPTED;
+          } else if (strcmp(stmp, "face") == 0) {
+            if ((c = int_scanf(data, &(tmesh->num_faces))) != 1)
+              rcode = MESH_CORRUPTED;
 #ifdef DEBUG
-          fprintf(stderr, "[read_ply_tmesh] num_faces = %d\n", 
-                  tmesh->num_faces);
+            fprintf(stderr, "[read_ply_tmesh] num_faces = %d\n", 
+                    tmesh->num_faces);
 #endif
-        } else if (strcmp(stmp, "edge") == 0) {
-          fprintf(stderr, "[Warning] 'edge' field not supported !\n");
-        } else if (strcmp(stmp, "material") == 0)
-          fprintf(stderr, "[Warning] 'material' field not supported !\n");
+          } else if (strcmp(stmp, "edge") == 0) {
+            fprintf(stderr, "[Warning] 'edge' field not supported !\n");
+          } else if (strcmp(stmp, "material") == 0)
+            fprintf(stderr, "[Warning] 'material' field not supported !\n");
         } else {
           fprintf(stderr, "[Warning] Unrecognized 'element' field found."
                   " Skipping...\n");
         }
-    } else
-      rcode = MESH_CORRUPTED;
-  } while (rcode >= 0 && (tmesh->num_faces == 0 || tmesh->num_vert == 0));
-
+      } else
+        rcode = MESH_CORRUPTED;
+    } while (rcode >= 0 && (tmesh->num_faces == 0 || tmesh->num_vert == 0));
+    
   /* Ignore everything else from the header */
-  if ((c = find_string(data, "end_header")) == EOF)
-    return MESH_CORRUPTED;
-  /* end_header read */
-  
-  tmesh->vertices = (vertex_t*)malloc(tmesh->num_vert*sizeof(vertex_t));
-  tmesh->faces = (face_t*)malloc(tmesh->num_faces*sizeof(face_t));
-  
-  if (tmesh->vertices == NULL || tmesh->faces == NULL)
-    rcode = MESH_NO_MEM;
-  else {
-    /* Read vertices */
-    c = read_ply_vertices(tmesh->vertices, data, tmesh->num_vert, 
-                          &bbmin, &bbmax);
-    if (c != 0)
-      rcode = c;
-    
-    /* Read face list */
-    c = read_ply_faces(tmesh->faces, data, tmesh->num_faces, tmesh->num_vert);
-    if (c != 0)
-      rcode = c;
-    
+    if ((c = find_string(data, "end_header")) == EOF)
+      rcode = MESH_CORRUPTED;
+    /* end_header read */
+    else {
+      tmesh->vertices = (vertex_t*)malloc(tmesh->num_vert*sizeof(vertex_t));
+      tmesh->faces = (face_t*)malloc(tmesh->num_faces*sizeof(face_t));
+      
+      if (tmesh->vertices == NULL || tmesh->faces == NULL)
+        rcode = MESH_NO_MEM;
+      else {
+        if (!is_bin) { /* ascii format */
+          /* Read vertices */
+          rcode = read_ply_vertices(tmesh->vertices, data, tmesh->num_vert, 
+                                    &bbmin, &bbmax);
+          
+          /* Read face list */
+          rcode = read_ply_faces(tmesh->faces, data, 
+                                 tmesh->num_faces, tmesh->num_vert);
+        } else { /* binary format */
+          rcode = MESH_BAD_FF;
+        }
+      }
+    }
   }
-  
-  if (rcode != 1) { /* something went wrong */
+  if (rcode < 0) { /* something went wrong */
     if (tmesh->vertices != NULL)
       free(tmesh->vertices);
     if (tmesh->faces != NULL)
@@ -240,6 +244,7 @@ int read_ply_tmesh(struct model **tmesh_ref, struct file_data *data)
     tmesh->bBox[0] = bbmin;
     tmesh->bBox[1] = bbmax;
     *tmesh_ref = tmesh;
+    rcode = 0;
   }
 
   return rcode;
