@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.15 2001/08/17 09:50:55 dsanta Exp $
+# $Id: Makefile,v 1.16 2001/08/21 16:29:30 dsanta Exp $
 
 #
 # If the make variable PROFILE is defined to a non-empty value, profiling
@@ -60,6 +60,7 @@ CXX_IS_GCC := $(findstring gcc,$(shell $(CXX) -v 2>&1))
 # Extra compiler flags (optimization, profiling, debug, etc.)
 XTRA_CFLAGS = -O2 -ansi
 XTRA_CXXFLAGS = -O2 -ansi
+XTRA_CPPFLAGS = -DNDEBUG
 XTRA_LDFLAGS =
 
 # Derive compiler specific flags
