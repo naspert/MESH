@@ -1,4 +1,4 @@
-/* $Id: model_analysis.c,v 1.1 2001/08/16 13:05:54 dsanta Exp $ */
+/* $Id: model_analysis.c,v 1.2 2001/08/16 15:04:42 dsanta Exp $ */
 
 #include <model_analysis.h>
 
@@ -199,7 +199,7 @@ void analyze_model(const model *m, const struct face_list *flist,
       info->closed = 0;
     }
   }
-  free(vfaces);
+  xfree(vfaces);
   vfaces = NULL;
 
   /* Search number of disjoint elements */
@@ -215,7 +215,7 @@ void analyze_model(const model *m, const struct face_list *flist,
     walk_vertices(m->faces,flist,start_idx,visited_vertex,
                   &n_visited_vertices,info);
   } while (n_visited_vertices != m->num_vert);
-  free(visited_vertex);
+  xfree(visited_vertex);
   visited_vertex = NULL;
 
   if (local_flist) {
@@ -252,8 +252,8 @@ void free_face_lists(struct face_list *fl, int n)
   int i;
   if (fl == NULL) return;
   for (i=0; i<n; i++) {
-    free(fl[i].face);
+    xfree(fl[i].face);
   }
-  free(fl);
+  xfree(fl);
 }
 
