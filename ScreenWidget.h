@@ -1,4 +1,4 @@
-/* $Id: ScreenWidget.h,v 1.24 2002/03/15 16:32:08 aspert Exp $ */
+/* $Id: ScreenWidget.h,v 1.25 2002/04/24 12:49:23 aspert Exp $ */
 
 
 /*
@@ -56,7 +56,8 @@ class ScreenWidget : public QWidget {
   Q_OBJECT
 public:
   ScreenWidget(struct model_error *model1, struct model_error *model2,
-               int do_texture=0, QWidget *parent=0, const char *name=0);
+               const struct args *pargs, QWidget *parent=0, 
+               const char *name=0);
 
 signals:
   void dsValChange(int n);

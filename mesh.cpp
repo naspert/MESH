@@ -1,4 +1,4 @@
-/* $Id: mesh.cpp,v 1.46 2002/04/22 12:17:46 aspert Exp $ */
+/* $Id: mesh.cpp,v 1.47 2002/04/24 12:49:23 aspert Exp $ */
 
 
 /*
@@ -352,6 +352,7 @@ int main( int argc, char **argv )
       pr.prog = QT_prog;
       pr.cb_out = qProg;
     }
+
     mesh_run(&pargs, &model1, &model2, log, &pr);
   } else {
     b = new InitWidget(pargs, &model1, &model2);
@@ -360,7 +361,7 @@ int main( int argc, char **argv )
   }
   if (a != NULL) {
     if (pargs.m1_fname != NULL || pargs.m2_fname != NULL) {
-      c = new ScreenWidget(&model1, &model2, pargs.do_texture);
+      c = new ScreenWidget(&model1, &model2, &pargs);
       c->setIcon(*qpxMeshIcon);
       a->setMainWidget(c);
       c->show(); 

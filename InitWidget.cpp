@@ -1,4 +1,4 @@
-/* $Id: InitWidget.cpp,v 1.33 2002/04/11 08:59:40 aspert Exp $ */
+/* $Id: InitWidget.cpp,v 1.34 2002/04/24 12:49:23 aspert Exp $ */
 
 
 /*
@@ -284,7 +284,7 @@ void InitWidget::meshRun() {
   pr.cb_out = &qProg;
   mesh_run(&pargs,model1,model2, log, &pr);
   outbuf_flush(log);
-  c = new ScreenWidget(model1, model2, pargs.do_texture);
+  c = new ScreenWidget(model1, model2, &pargs);
   c->setIcon(*qpxMeshIcon);
   if (qApp != NULL) {
     qApp->setMainWidget(c);

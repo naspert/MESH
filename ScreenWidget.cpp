@@ -1,4 +1,4 @@
-/* $Id: ScreenWidget.cpp,v 1.44 2002/04/02 08:05:17 aspert Exp $ */
+/* $Id: ScreenWidget.cpp,v 1.45 2002/04/24 12:49:23 aspert Exp $ */
 
 
 /*
@@ -54,13 +54,15 @@
 #include <qvbuttongroup.h>
 #include <qcheckbox.h>
 #include <qstring.h>
+#include <qlabel.h>
 #include <RawWidget.h>
 #include <ColorMapWidget.h>
 #include <mesh.h>
+#include <mesh_run.h>
 
 ScreenWidget::ScreenWidget(struct model_error *model1,
                            struct model_error *model2,
-                           int do_texture,
+                           const struct args *pargs,
                            QWidget *parent, 
                            const char *name ):QWidget(parent,name) {
   QAction *fileQuitAction;
@@ -76,7 +78,9 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   QRadioButton *linBut, *logBut;
   QButtonGroup *dispInfoGrp=NULL, *histoGrp=NULL, *rmodGrp;
   QCheckBox  *qcbLight;
+  QLabel *qlM1Name, *qlM2Name;
   QString tmp;
+  int do_texture = pargs->do_texture;
   const float p = 0.95f; // max proportion of screen to use
   const float wLF = 0.2f; // proportion for width of Line/Fill switch
   const float wSync = 0.3f; // proportion for width of Sync. switch
@@ -125,10 +129,14 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   // --------------
 
   // Create frames to put around the OpenGL widgets
+  tmp.sprintf("%s", pargs->m1_fname);
+  qlM1Name = new QLabel(tmp, this);
   frameModel1 = new QHBox(this, "frameModel1");
   frameModel1->setFrameStyle(QFrame::Sunken | QFrame::Panel);
   frameModel1->setLineWidth(2);
 
+  tmp.sprintf("%s", pargs->m2_fname);
+  qlM2Name = new QLabel(tmp, this);
   frameModel2 = new QHBox(this, "frameModel2");
   frameModel2->setFrameStyle(QFrame::Sunken | QFrame::Panel);
   frameModel2->setLineWidth(2);
@@ -276,15 +284,17 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
           errorColorBar, SLOT(doHistogram(int)));
 
   // Build the topmost grid layout
-  bigGrid = new QGridLayout (this, 3, 7, 5, -1);
+  bigGrid = new QGridLayout (this, 4, 7, 5, -1);
   bigGrid->setMenuBar(mainBar);
-  bigGrid->addWidget(errorColorBar, 0, 0);
-  bigGrid->addMultiCellWidget(frameModel1, 0, 0, 1, 3);
-  bigGrid->addMultiCellWidget(frameModel2, 0, 0, 4, 6);
-  bigGrid->addWidget(lineSwitch1, 1, 2, Qt::AlignCenter);
-  bigGrid->addWidget(lineSwitch2, 1, 5, Qt::AlignCenter);
-  bigGrid->addMultiCellWidget(syncBut, 1, 1, 3, 4, Qt::AlignCenter);
-  bigGrid->addMultiCellWidget(histoGrp, 1, 2, 0, 0, Qt::AlignTop);
+  bigGrid->addWidget(errorColorBar, 1, 0);
+  bigGrid->addMultiCellWidget(qlM1Name, 0, 0, 1, 3, Qt::AlignCenter);
+  bigGrid->addMultiCellWidget(qlM2Name, 0, 0, 4, 6, Qt::AlignCenter);
+  bigGrid->addMultiCellWidget(frameModel1, 1, 1, 1, 3);
+  bigGrid->addMultiCellWidget(frameModel2, 1, 1, 4, 6);
+  bigGrid->addWidget(lineSwitch1, 2, 2, Qt::AlignCenter);
+  bigGrid->addWidget(lineSwitch2, 2, 5, Qt::AlignCenter);
+  bigGrid->addMultiCellWidget(syncBut, 2, 2, 3, 4, Qt::AlignCenter);
+  bigGrid->addMultiCellWidget(histoGrp, 2, 3, 0, 0, Qt::AlignTop);
 
   // sub layout for dispInfoGrp and Quit button -> avoid resize problems
   smallGrid = new QGridLayout(1, 5, 3);
@@ -292,7 +302,7 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   smallGrid->addMultiCellWidget(qgbSlider, 0, 0, 1, 2, Qt::AlignCenter);
   smallGrid->addWidget(rmodGrp, 0, 3, Qt::AlignCenter);
   smallGrid->addWidget(quitBut, 0, 4, Qt::AlignCenter);
-  bigGrid->addMultiCellLayout(smallGrid, 2, 2, 1, 6);
+  bigGrid->addMultiCellLayout(smallGrid, 3, 3, 1, 6);
 
   // Now set a sensible default widget size
   QSize prefSize = layout()->sizeHint();
