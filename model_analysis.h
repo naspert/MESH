@@ -1,7 +1,13 @@
-/* $Id: model_analysis.h,v 1.3 2001/09/27 13:19:15 aspert Exp $ */
+/* $Id: model_analysis.h,v 1.4 2001/11/06 10:16:46 dsanta Exp $ */
 
 #ifndef _MODEL_ANALYSIS_PROTO
 #define _MODEL_ANALYSIS_PROTO
+
+/* --------------------------------------------------------------------------*
+ *                         External includes                                 *
+ * --------------------------------------------------------------------------*/
+
+#include <3dmodel.h>
 
 #ifdef __cplusplus
 #define BEGIN_DECL extern "C" {
@@ -10,12 +16,6 @@
 #define BEGIN_DECL
 #define END_DECL
 #endif
-
-/* --------------------------------------------------------------------------*
- *                         External includes                                 *
- * --------------------------------------------------------------------------*/
-
-#include <3dmodel.h>
 
 BEGIN_DECL
 #undef BEGIN_DECL
