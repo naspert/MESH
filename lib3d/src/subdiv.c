@@ -1,26 +1,5 @@
-/* $Id: subdiv.c,v 1.1 2001/03/13 13:20:23 aspert Exp $ */
+/* $Id: subdiv.c,v 1.2 2001/03/13 13:26:11 aspert Exp $ */
 #include <3dutils.h>
-
-vertex compute_mp_boundary(vertex *e) {
-  vertex p;
-  int i;
-  double a,b;
-
-  a = 9.0/16.0;
-  b = -1.0/16.0;
-  
-  for (i=0; i<4; i++)
-    printf("e[%d] = %f %f %f\n",i, e[i].x, e[i].y, e[i].z);
-
-  p.x = (e[0].x+e[3].x)*b + (e[1].x+e[2].x)*a;
-  p.y = (e[0].y+e[3].y)*b + (e[1].y+e[2].y)*a;
-  p.z = (e[0].z+e[3].z)*b + (e[1].z+e[2].z)*a;
-
-
-  printf("p = %f %f %f\n", p.x, p.y, p.z);
-  return p;
-
-}
 
 /* v0 & v1 are the indices in rings[center].ord_vert */
 vertex compute_midpoint(ring_info *rings, int center,  int v1, 
