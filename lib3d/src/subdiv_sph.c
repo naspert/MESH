@@ -1,4 +1,4 @@
-/* $Id: subdiv_sph.c,v 1.9 2002/10/31 10:26:13 aspert Exp $ */
+/* $Id: subdiv_sph.c,v 1.10 2002/10/31 13:03:20 aspert Exp $ */
 #include <3dmodel.h>
 #include <normals.h>
 #include <geomutils.h>
@@ -53,7 +53,9 @@ static void half_sph(const vertex_t *p,
   if (norm_v(&v) < EPS) {
     add_v(p, q, &np);
     prod_v(0.5, &np, vout);
+#ifdef __SUBDIV_SPH_DEBUG
     printf("Ouch !!\n");
+#endif
     return;
   }
 
@@ -98,8 +100,7 @@ void compute_midpoint_sph(const struct ring_info *rings, const int center,
   int center2 = rings[center].ord_vert[v1];
   struct ring_info ring_op = rings[center2];
   int v2 = 0;
-  vertex_t n,p, vj, dir, m, u, v, np1, np2, np;
-  float r, ph, lambda, pl_off, nr, nph, dz, rp;
+  vertex_t n, p, vj, np1, np2, np;
 
 
   n = raw_model->normals[center];
@@ -139,8 +140,8 @@ void compute_midpoint_sph_crease(const struct ring_info *rings,
   int nrop;
   int v3 = -1;
   int v2 = 0;
-  vertex_t p, q, np, a, b, ns1, ns2, n, m, u, v, np1, np2;
-  float r1, r2, pl_off, lambda, th, nth, nr, dz, rp;
+  vertex_t p, q, np, a, b, ns1, ns2, n, np1, np2;
+  float r1, r2;
 
   p = raw_model->vertices[center];
   q = raw_model->vertices[center2];
