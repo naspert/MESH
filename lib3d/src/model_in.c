@@ -1,4 +1,4 @@
-/* $Id: model_in.c,v 1.44 2004/08/17 14:49:40 aspert Exp $ */
+/* $Id: model_in.c,v 1.45 2004/10/12 12:32:11 aspert Exp $ */
 
 
 /*
@@ -650,8 +650,13 @@ static int detect_file_format(struct file_data *data)
 	/* possible SMF leading comment -> check SMF */
 	data->pos = 1; /* rewind file */
 	if ((c = skip_ws_comm(data)) == EOF) rcode = MESH_BAD_FF;
-	if (c == 'v' || c == 'b' || c == 'f' || c == 'c')
+	if (c == 'v' || c == 'b' || c == 'f' || c == 'c') {
+	  c = ungetc(c, data);
 	  rcode = MESH_FF_SMF;
+	} else if (c == 'O') {
+	  c = ungetc(c, data);
+	  rcode = MESH_FF_OFF;
+	}
 	else 
 	  rcode = loc_ferror(data->f) ? MESH_CORRUPTED : MESH_BAD_FF;
       }
@@ -692,8 +697,10 @@ static int detect_file_format(struct file_data *data)
       rcode = MESH_FF_SMF;
       break;
       
-      
-      
+    case 'O':
+      rcode = MESH_FF_OFF;  
+      break;
+
     default:
       rcode = loc_ferror(data->f) ? MESH_CORRUPTED : MESH_BAD_FF;
       break;
@@ -732,6 +739,9 @@ int read_model(struct model **models_ref, struct file_data *data,
     break;
   case MESH_FF_PLY:
     rcode = read_ply_tmesh(&models, data);
+    break;
+  case MESH_FF_OFF:
+    rcode = read_off_tmesh(&models, data);
     break;
   default:
     rcode = MESH_BAD_FF;

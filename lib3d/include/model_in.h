@@ -1,4 +1,4 @@
-/* $Id: model_in.h,v 1.25 2004/08/17 14:49:40 aspert Exp $ */
+/* $Id: model_in.h,v 1.26 2004/10/12 12:32:10 aspert Exp $ */
 
 
 /*
@@ -151,6 +151,7 @@ struct file_data {
 #define MESH_FF_IV        3 /* Inventor 2 ascii */
 #define MESH_FF_PLY       4 /* Ply ascii */
 #define MESH_FF_SMF       5 /* SMF format (from QSlim) */
+#define MESH_FF_OFF	  6 /* OFF format (from geomview) */
 
 /* --------------------------------------------------------------------------
    ERROR CODES (always negative)
@@ -274,7 +275,7 @@ int read_smf_tmesh(struct model**, struct file_data*);
 int read_ply_tmesh(struct model**, struct file_data*);
 int read_vrml_tmesh(struct model**, struct file_data*, int);
 int read_iv_tmesh(struct model**, struct file_data*);
-
+int read_off_tmesh(struct model**, struct file_data*);
 
 /* Reads the 3D triangular mesh models from the input '*data' stream, in the
  * file format specified by 'fformat'. The model meshes are returned in the

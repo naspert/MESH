@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.58 2003/05/09 11:45:37 aspert Exp $
+# $Id: Makefile,v 1.59 2004/10/12 12:32:11 aspert Exp $
 
 #Set PROFILE to something to enable profiling
 #PROFILE=1
@@ -98,7 +98,7 @@ BASE_OBJECTS = $(OBJDIR)/geomutils.o $(OBJDIR)/normals.o \
 	$(OBJDIR)/model_in.o $(OBJDIR)/model_in_raw.o \
 	$(OBJDIR)/model_in_smf.o $(OBJDIR)/block_list.o \
 	$(OBJDIR)/model_in_ply.o $(OBJDIR)/model_in_vrml_iv.o \
-	$(OBJDIR)/curvature.o
+	$(OBJDIR)/model_in_off.o $(OBJDIR)/curvature.o
 SUBDIV_OBJECTS = $(OBJDIR)/subdiv.o $(OBJDIR)/subdiv_loop.o \
 	$(OBJDIR)/subdiv_sph.o $(OBJDIR)/subdiv_butterfly.o \
 	$(OBJDIR)/subdiv_sqrt3.o $(OBJDIR)/kobbelt_sqrt3.o
