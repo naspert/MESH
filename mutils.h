@@ -1,4 +1,4 @@
-/* $Id: mutils.h,v 1.1 2001/08/07 14:27:39 dsanta Exp $ */
+/* $Id: mutils.h,v 1.2 2001/08/16 14:57:17 dsanta Exp $ */
 
 /*
  * mutils: various utilities for Metro
@@ -29,6 +29,11 @@ void * xcalloc(size_t nmemb, size_t size);
 
 /* Same as realloc, but exits if out of memory. */
 void * xrealloc(void *ptr, size_t size);
+
+/* Same as free, but should be used to free every xmalloc, xcalloc and
+ * xrealloc allocation (compatibility with some other versions of these
+ * functions, such as mpatrol's). */
+void xfree(void *ptr);
 
 END_DECL
 #undef END_DECL

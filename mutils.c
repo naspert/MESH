@@ -1,4 +1,4 @@
-/* $Id: mutils.c,v 1.1 2001/08/07 14:27:39 dsanta Exp $ */
+/* $Id: mutils.c,v 1.2 2001/08/16 14:59:14 dsanta Exp $ */
 
 #include <mutils.h>
 #include <stdlib.h>
@@ -37,3 +37,7 @@ void * xrealloc(void *ptr, size_t size)
   return new_ptr;
 }
 
+void xfree(void *ptr)
+{
+  free(ptr);
+}
