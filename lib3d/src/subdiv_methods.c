@@ -1,4 +1,4 @@
-/* $Id: subdiv_methods.c,v 1.4 2001/10/18 16:22:19 aspert Exp $ */
+/* $Id: subdiv_methods.c,v 1.5 2001/10/22 08:58:34 aspert Exp $ */
 #include <3dmodel.h>
 #include <geomutils.h>
 #include <subdiv_methods.h>
@@ -484,7 +484,12 @@ void compute_midpoint_butterfly_crease(struct ring_info *rings, int center,
 #endif
     }
     else {
+#ifdef __BUTTERFLY_CREASE_DEBUG
       fprintf(stderr, "Strange boundary v2=%d/%d\n", v2, m-1);
+#endif
+      add_v(&(raw_model->vertices[center]), 
+	    &(raw_model->vertices[center2]), vout);
+      prod_v(0.5, vout, vout);
       return;
     }
 
@@ -499,7 +504,12 @@ void compute_midpoint_butterfly_crease(struct ring_info *rings, int center,
       fprintf(stderr, "-1/16 * vert[%d]\n", ring.ord_vert[0]);
 #endif
     } else {
+#ifdef __BUTTERFLY_CREASE_DEBUG
       fprintf(stderr, "Strange boundary v1=%d/%d\n", v1, n-1);
+#endif
+      add_v(&(raw_model->vertices[center]), 
+	    &(raw_model->vertices[center2]), vout);
+      prod_v(0.5, vout, vout);
       return;
     }
 

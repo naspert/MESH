@@ -1,4 +1,4 @@
-/* $Id: subdiv.c,v 1.11 2001/10/18 16:22:18 aspert Exp $ */
+/* $Id: subdiv.c,v 1.12 2001/10/22 08:58:34 aspert Exp $ */
 #include <3dutils.h>
 #include <subdiv_methods.h>
 #include <assert.h>
@@ -23,14 +23,12 @@ struct model* subdiv(struct model *raw_model,
   int v0, v1, v2;
   int u0=-1, u1=-1, u2=-1;
   unsigned char ufound_bm;
-  struct edge_v edge;
   vertex_t p;
-  struct edge_sub *edge_list=NULL; 
   int nedges = 0;
   int vert_idx = raw_model->num_vert;
   int face_idx = 0;
-  unsigned char *done;
-  int *midpoint_idx;
+
+  int v_idx=raw_model->num_vert;
   face_t *temp_face;
 
 
@@ -40,6 +38,12 @@ struct model* subdiv(struct model *raw_model,
 
   for (i=0; i<raw_model->num_vert; i++) {
     build_star(raw_model, i, &(rings[i]));
+    rings[i].midpoint_idx = (int*)malloc(rings[i].size*sizeof(int));
+    /* Initialize the values of this array to -1 */
+    rings[i].midpoint_idx = memset(rings[i].midpoint_idx, 0xff, 
+				   rings[i].size*sizeof(int));
+    rings[i].midpoint = (vertex_t*)malloc(rings[i].size*sizeof(vertex_t));
+      
 #ifdef __SUBDIV_DEBUG
     printf("Vertex %d : star_size = %d\n", i, rings[i].size);
     for (j=0; j<rings[i].size; j++)
@@ -48,7 +52,8 @@ struct model* subdiv(struct model *raw_model,
 
   }
   
-  
+
+
   for (i=0; i<raw_model->num_vert; i++) {
     for (j=0; j<rings[i].size; j++) {
 
@@ -63,11 +68,14 @@ struct model* subdiv(struct model *raw_model,
 	else {
 	  midpoint_func_bound(rings, i, j, raw_model, &p);
 	  nedges ++;
-	  edge_list = (struct edge_sub*)
-	    realloc(edge_list, nedges*sizeof(struct edge_sub));
-	  edge_list[nedges-1].edge.v0 = i;
-	  edge_list[nedges-1].edge.v1 = rings[i].ord_vert[j];
-	  edge_list[nedges-1].p = p;
+	  rings[i].midpoint_idx[j] = v_idx;
+	  rings[i].midpoint[j] = p;
+	  v2 = rings[i].ord_vert[j];
+	  v0 = 0;
+	  while (rings[v2].ord_vert[v0] != i)
+	    v0++;
+	  rings[v2].midpoint_idx[v0] = v_idx++;
+	  rings[v2].midpoint[v0] = p;
 	  continue;
 	}
       }
@@ -75,8 +83,7 @@ struct model* subdiv(struct model *raw_model,
       
       midpoint_func(rings, i, j, raw_model, &p);
       nedges ++;
-      edge_list = (struct edge_sub*)realloc(edge_list, 
-					    nedges*sizeof(struct edge_sub));
+
 
 #ifdef __SUBDIV_DEBUG
       printf("i=%d j=%d  rings[%d].ord_vert[%d]=%d\n",i,j, 
@@ -84,10 +91,15 @@ struct model* subdiv(struct model *raw_model,
       printf("nedges-1=%d\n",nedges-1);
 #endif
 
-      edge_list[nedges-1].edge.v0 = i;
-      edge_list[nedges-1].edge.v1 = rings[i].ord_vert[j];
-      edge_list[nedges-1].p = p;
-      
+
+      rings[i].midpoint_idx[j] = v_idx;
+      rings[i].midpoint[j] = p;
+      v2 = rings[i].ord_vert[j];
+      v0 = 0;
+      while (rings[v2].ord_vert[v0] != i)
+	v0++;
+      rings[v2].midpoint_idx[v0] = v_idx++;
+      rings[v2].midpoint[v0] = p;
     }
 
   }
@@ -112,9 +124,7 @@ struct model* subdiv(struct model *raw_model,
   else /* Approx. subdivision */
     update_func(raw_model, subdiv_model, rings);
 
-  
-  done = (unsigned char*)calloc(nedges, sizeof(unsigned char));
-  midpoint_idx = (int*)malloc(nedges*sizeof(int));
+
   
   for (j=0; j<raw_model->num_faces; j++) {
     v0 = raw_model->faces[j].f0;
@@ -123,84 +133,37 @@ struct model* subdiv(struct model *raw_model,
 
     ufound_bm = 0;
 
-    /* v0 v1 */
-    if (v0 < v1) {
-      edge.v0 = v0;
-      edge.v1 = v1;
-    } else {
-      edge.v1 = v0;
-      edge.v0 = v1;
-    }
-    for (i=0; i<nedges; i++) {
-      if(edge_list[i].edge.v0 != edge.v0)
-	continue;
-      if(edge_list[i].edge.v1 == edge.v1) {
-	if (!done[i]) {
-	  subdiv_model->vertices[vert_idx] = edge_list[i].p;
-	  u0 = vert_idx;
-	  ufound_bm |= U0_FOUND;
-	  done[i] = 1;
-	  midpoint_idx[i] = vert_idx;
-	  vert_idx++;
-	} else {
-	  u0 = midpoint_idx[i];
-	  ufound_bm |= U0_FOUND;
-	}
-	break;
-      }
-    }
-    /* v1 v2 */
-    if (v1 < v2) {
-      edge.v0 = v1;
-      edge.v1 = v2;
-    } else {
-      edge.v1 = v1;
-      edge.v0 = v2;
-    }
-    for (i=0; i<nedges; i++) {
-      if(edge_list[i].edge.v0 != edge.v0)
-	continue;
-      if(edge_list[i].edge.v1 == edge.v1) {
-	if (!done[i]) {
-	  subdiv_model->vertices[vert_idx] = edge_list[i].p;
-	  u1 = vert_idx;
-	  ufound_bm |= U1_FOUND;
-	  midpoint_idx[i] = vert_idx;
-	  done[i] = 1;
-	  vert_idx++;
-	} else {
-	  u1 = midpoint_idx[i];
-	  ufound_bm |= U1_FOUND;
-	}
-	break;
-      }
-    }
-    /* v2 v0 */
-    if (v2 < v0) {
-      edge.v0 = v2;
-      edge.v1 = v0;
-    } else {
-      edge.v1 = v2;
-      edge.v0 = v0;
-    }
-    for (i=0; i<nedges; i++) {
-      if(edge_list[i].edge.v0 != edge.v0)
-	continue;
-      if(edge_list[i].edge.v1 == edge.v1) {
-	if (!done[i]) {
-	  subdiv_model->vertices[vert_idx] = edge_list[i].p;
-	  u2 = vert_idx;
-	  ufound_bm |= U2_FOUND;
-	  midpoint_idx[i] = vert_idx;
-	  done[i] = 1;
-	  vert_idx++;
-	} else {
-	  u2 = midpoint_idx[i];
-	  ufound_bm |= U2_FOUND;
-	}
-	break;
-      }
-    }
+    i = 0;
+    while (rings[v0].ord_vert[i] != v1)
+      i++;
+    if (rings[v0].midpoint_idx[i] != -1) {
+      u0 = rings[v0].midpoint_idx[i];
+      subdiv_model->vertices[u0] = 
+	rings[v0].midpoint[i];
+      ufound_bm |= U0_FOUND;
+    } 
+     
+    i = 0;
+    while (rings[v1].ord_vert[i] != v2)
+      i++;
+    if (rings[v1].midpoint_idx[i] != -1) {
+      u1 = rings[v1].midpoint_idx[i];
+      subdiv_model->vertices[u1] = 
+	rings[v1].midpoint[i];
+      ufound_bm |= U1_FOUND;
+    } 
+
+    i = 0;
+    while (rings[v2].ord_vert[i] != v0)
+      i++;
+    if (rings[v2].midpoint_idx[i] != -1) {
+      u2 = rings[v2].midpoint_idx[i];
+      subdiv_model->vertices[u2] = 
+	rings[v2].midpoint[i];
+      ufound_bm |= U2_FOUND;
+    } 
+
+  
 #ifdef __BUTTERFLY_CREASE_DEBUG
     if (ufound_bm != 7)
       fprintf(stderr, "ufound_bm = %d\n", ufound_bm);
@@ -326,10 +289,14 @@ struct model* subdiv(struct model *raw_model,
   free(subdiv_model->faces);
   subdiv_model->faces = temp_face;
   subdiv_model->num_faces = face_idx;
-  free(edge_list); 
+
+  for (i=0; i<raw_model->num_vert; i++) {
+    free(rings[i].ord_vert);
+    free(rings[i].ord_face);
+    free(rings[i].midpoint_idx);
+    free(rings[i].midpoint);
+  }
   free(rings);
-  free(done);
-  free(midpoint_idx); 
   return subdiv_model;
 }
 

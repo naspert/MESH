@@ -1,4 +1,4 @@
-/* $Id: 3dmodel.h,v 1.20 2001/10/08 13:12:04 aspert Exp $ */
+/* $Id: 3dmodel.h,v 1.21 2001/10/22 08:58:34 aspert Exp $ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -138,9 +138,6 @@ struct model {
   double total_area; /* area of the whole model */
   vertex_t bBox[2]; /* bBox[0] is the min  bBox[1] is the max */
   struct face_tree **tree; /* spanning tree of the dual graph */
-#ifdef EST_NORMALS
-  vertex_t *est_normals;
-#endif
 };
 
 
@@ -166,15 +163,16 @@ struct ring_info {
   int *ord_vert; /* ordered list of vertex */
   int type; /* 0=regular 1=boundary 2=non-manifold */
   int size;
+  int n_faces;
+  int *ord_face;
+  int *midpoint_idx; /* stores the midpoint idx for each edge of the 1-ring */
+  vertex_t *midpoint;
 };
 
 
 struct edge_sub {
   struct edge_v edge;
   vertex_t p;
-#ifdef EST_NORMALS
-  vertex_t n;
-#endif
 };
 
 
