@@ -1,4 +1,4 @@
-/* $Id: subdiv.c,v 1.34 2003/03/12 17:55:00 aspert Exp $ */
+/* $Id: subdiv.c,v 1.35 2003/03/13 14:47:35 aspert Exp $ */
 #include <3dutils.h>
 #include <subdiv_methods.h>
 #include <subdiv.h>
@@ -127,7 +127,8 @@ struct model* subdiv(struct model *raw_model, const int sub_method,
       if (cur->elem_filled == cur->nelem)
         cur = get_next_block(cur);
       assert(cur != NULL);
-      ((vertex_t*)cur->data)[cur->elem_filled++] = p;
+      TAIL_BLOCK_LIST_INCR(cur, vertex_t) = p;
+
 
       mp_info[v0].midpoint_idx[i0] = v_idx;
       mp_info[v1].midpoint_idx[u0] = v_idx++;
@@ -147,7 +148,7 @@ struct model* subdiv(struct model *raw_model, const int sub_method,
       if (cur->elem_filled == cur->nelem)
         cur = get_next_block(cur);
       assert(cur != NULL);
-      ((vertex_t*)cur->data)[cur->elem_filled++] = p;
+      TAIL_BLOCK_LIST_INCR(cur, vertex_t) = p;
 
       mp_info[v1].midpoint_idx[i1] = v_idx;
       mp_info[v2].midpoint_idx[u1] = v_idx++;
@@ -165,7 +166,7 @@ struct model* subdiv(struct model *raw_model, const int sub_method,
       if (cur->elem_filled == cur->nelem)
         cur = get_next_block(cur);
       assert(cur != NULL);
-      ((vertex_t*)cur->data)[cur->elem_filled++] = p;
+      TAIL_BLOCK_LIST_INCR(cur, vertex_t) = p;
 
       mp_info[v2].midpoint_idx[i2] = v_idx;
       mp_info[v0].midpoint_idx[u2] = v_idx++;

@@ -1,4 +1,4 @@
-/* $Id: model_in_smf.c,v 1.9 2003/01/13 12:46:10 aspert Exp $ */
+/* $Id: model_in_smf.c,v 1.10 2003/03/13 14:47:34 aspert Exp $ */
 
 
 /*
@@ -121,10 +121,9 @@ int read_smf_tmesh(struct model **tmesh_ref, struct file_data *data) {
 #ifdef DEBUG
       DEBUG_PRINT("%f %f %f\n", x, y, z);
 #endif
-
-      ((vertex_t*)cur_vert->data)[cur_vert->elem_filled].x = x;
-      ((vertex_t*)cur_vert->data)[cur_vert->elem_filled].y = y;
-      ((vertex_t*)cur_vert->data)[cur_vert->elem_filled++].z = z;
+      TAIL_BLOCK_LIST(cur_vert, vertex_t).x = x;
+      TAIL_BLOCK_LIST(cur_vert, vertex_t).y = y;
+      TAIL_BLOCK_LIST_INCR(cur_vert, vertex_t).z = z;
       nvtcs++;
 
       if (x < bbmin.x) bbmin.x = x;
@@ -162,9 +161,9 @@ int read_smf_tmesh(struct model **tmesh_ref, struct file_data *data) {
       DEBUG_PRINT("%d %d %d\n", f0, f1, f2);
 #endif
       /* Do not forget that SMF vertex indices start at 1 !! */
-      ((face_t*)cur_face->data)[cur_face->elem_filled].f0 = --f0;
-      ((face_t*)cur_face->data)[cur_face->elem_filled].f1 = --f1;
-      ((face_t*)cur_face->data)[cur_face->elem_filled++].f2 = --f2;
+      TAIL_BLOCK_LIST(cur_face, face_t).f0 = --f0;
+      TAIL_BLOCK_LIST(cur_face, face_t).f1 = --f1;
+      TAIL_BLOCK_LIST_INCR(cur_face, face_t).f2 = --f2;
       nfaces++;
       if (f0 > max_vidx) max_vidx = f0;
       if (f1 > max_vidx) max_vidx = f1;

@@ -1,4 +1,4 @@
-/* $Id: subdiv_sqrt3.c,v 1.2 2003/03/13 12:10:05 aspert Exp $ */
+/* $Id: subdiv_sqrt3.c,v 1.3 2003/03/13 14:47:35 aspert Exp $ */
 #include <3dutils.h>
 #include <subdiv_methods.h>
 #include <subdiv.h>
@@ -12,11 +12,11 @@
 #endif
 
 /* This is the function that performs the subdivision.
-   The argument 'midpoint_func' is the pointer to the 
+   The argument 'face_midpoint_func' is the pointer to the 
    function that performs the computation of the midpoint.
    The 'update_func' stands for the function that updates 
    the postion of 'old' vertices. This is only used for 
-   non-interpolating subd. (i.e. Loop). For interpolating subd. 
+   non-interpolating subd. (i.e. Kobbelt). For interpolating subd. 
    you just pass NULL as argument */
 struct model* subdiv_sqrt3(struct model *raw_model, const int sub_method,
                            void (*face_midpoint_func)(const struct ring_info*,
@@ -79,10 +79,10 @@ struct model* subdiv_sqrt3(struct model *raw_model, const int sub_method,
           cur = get_next_block(cur);
         assert(cur != NULL);
 
-        ((face_t*)cur->data)[cur->elem_filled].f0 = i;
-        ((face_t*)cur->data)[cur->elem_filled].f1 = rings[i].ord_face[j] + 
+        TAIL_BLOCK_LIST(cur, face_t).f0 = i;
+        TAIL_BLOCK_LIST(cur, face_t).f1 = rings[i].ord_face[j] + 
           raw_model->num_vert;
-        ((face_t*)cur->data)[cur->elem_filled++].f2 = rings[i].ord_face[j+1] + 
+        TAIL_BLOCK_LIST_INCR(cur, face_t).f2 = rings[i].ord_face[j+1] + 
           raw_model->num_vert;
 
         face_idx++;
@@ -99,10 +99,10 @@ struct model* subdiv_sqrt3(struct model *raw_model, const int sub_method,
           cur = get_next_block(cur);
         assert(cur != NULL);
 
-        ((face_t*)cur->data)[cur->elem_filled].f0 = i;
-        ((face_t*)cur->data)[cur->elem_filled].f1 = 
+        TAIL_BLOCK_LIST(cur, face_t).f0 = i;
+        TAIL_BLOCK_LIST(cur, face_t).f1 = 
           rings[i].ord_face[nedges-1] + raw_model->num_vert;
-        ((face_t*)cur->data)[cur->elem_filled++].f2 = rings[i].ord_face[0] + 
+        TAIL_BLOCK_LIST_INCR(cur, face_t).f2 = rings[i].ord_face[0] + 
           raw_model->num_vert;
 
         face_idx++;
@@ -119,10 +119,10 @@ struct model* subdiv_sqrt3(struct model *raw_model, const int sub_method,
           cur = get_next_block(cur);
         assert(cur != NULL);
 
-        ((face_t*)cur->data)[cur->elem_filled].f0 = i;
-        ((face_t*)cur->data)[cur->elem_filled].f1 = rings[i].ord_face[j] + 
+        TAIL_BLOCK_LIST(cur, face_t).f0 = i;
+        TAIL_BLOCK_LIST(cur, face_t).f1 = rings[i].ord_face[j] + 
           raw_model->num_vert;
-        ((face_t*)cur->data)[cur->elem_filled++].f2 = rings[i].ord_face[j+1] + 
+        TAIL_BLOCK_LIST_INCR(cur, face_t).f2 = rings[i].ord_face[j+1] + 
           raw_model->num_vert;
 
         face_idx++;
@@ -140,23 +140,22 @@ struct model* subdiv_sqrt3(struct model *raw_model, const int sub_method,
       assert(cur != NULL);
       
       /* FIXME: replace this by the MP of the edge every even
-       * subdivision level */
-      ((face_t*)cur->data)[cur->elem_filled].f0 = i;
-      ((face_t*)cur->data)[cur->elem_filled].f1 = 
-        rings[i].ord_face[nedges-2] + raw_model->num_vert;
-      ((face_t*)cur->data)[cur->elem_filled++].f2 = 
-        rings[i].ord_vert[nedges-1];
+       * subdivision level. Anyway, this generates duplicates in
+       * triangles so it _sucks_. It *must* die !! */
+      TAIL_BLOCK_LIST(cur, face_t).f0 = i;
+      TAIL_BLOCK_LIST(cur, face_t).f1 = rings[i].ord_face[nedges-2] + 
+        raw_model->num_vert;
+      TAIL_BLOCK_LIST_INCR(cur, face_t).f2 = rings[i].ord_vert[nedges-1];
 
       face_idx++;
 
       if (cur->elem_filled == cur->nelem)
         cur = get_next_block(cur);
       assert(cur != NULL);
-      ((face_t*)cur->data)[cur->elem_filled].f0 = i;
-      ((face_t*)cur->data)[cur->elem_filled].f1 = 
-        rings[i].ord_face[0] + raw_model->num_vert;
-      ((face_t*)cur->data)[cur->elem_filled++].f2 = 
-        rings[i].ord_vert[0];
+      TAIL_BLOCK_LIST(cur, face_t).f0 = i;
+      TAIL_BLOCK_LIST(cur, face_t).f1 = rings[i].ord_face[0] + 
+        raw_model->num_vert;
+      TAIL_BLOCK_LIST_INCR(cur, face_t).f2 = rings[i].ord_vert[0];
 
       face_idx++;
 
