@@ -1,4 +1,4 @@
-/* $Id: mesh.cpp,v 1.1 2001/09/12 12:44:41 dsanta Exp $ */
+/* $Id: mesh.cpp,v 1.2 2001/09/20 15:46:41 dsanta Exp $ */
 
 #include <time.h>
 #include <string.h>
@@ -322,6 +322,7 @@ int main( int argc, char **argv )
   if(pargs.no_gui){
     free_face_error(fe);
     fe = NULL;
+    return 0;
   } else {
     /* Get the per vertex error metric */
     calc_vertex_error(&model1,fe,vfl);
