@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.53 2001/09/05 08:00:46 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.54 2001/09/05 12:00:54 dsanta Exp $ */
 
 #include <compute_error.h>
 
@@ -1316,6 +1316,15 @@ void dist_surf_surf(const model *m1, model *m2, int n_spt,
   free(fic->triag_idx);
   free(fic->empty_cell);
   free(fic);
+  for (k=0, kmax=grid_sz.x*grid_sz.y*grid_sz.z; k<kmax; k++) {
+    if (dcl[k].list != NULL) {
+      for (i=0; i<dcl[k].n_dists; i++) {
+        free(dcl[k].list[i].cell);
+      }
+      free(dcl[k].list);
+    }
+  }
+  free(dcl);
   free_triag_sample_error(&tse);
   free(ts.sample);
 }
