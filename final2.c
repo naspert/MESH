@@ -1,4 +1,4 @@
-/* $Id: final2.c,v 1.9 2001/04/09 11:01:52 jacquet Exp $ */
+/* $Id: final2.c,v 1.10 2001/04/10 13:16:03 jacquet Exp $ */
 
 #include <stdio.h>
 #include <math.h>
@@ -210,30 +210,34 @@ sample* echantillon(vertex a, vertex b, vertex c,double k)
 /* fonction qui repertorie pour chaque face les cellules avec lesquelles    */
 /*     elle a une intersection                                              */
 /****************************************************************************/
-cellules* liste(model *raw_model)
+vertex** liste(model *raw_model,double samplethin)
 {
-cellules *cell;
-int h,i,j,k,m,n,o,cellule,state=0;
+vertex **groupts;
+int i,j,k,m,n,o,cellule;
 sample *sample1;
-vertex A,B,C,bbox0,bbox1;
+vertex A,B,C,bbox0,bbox1,test;
+int mem[1000][1]={0};
+
+groupts=(vertex**)malloc(1000*sizeof(vertex*));
 
 bbox0=raw_model->BBOX[0];
 bbox1=raw_model->BBOX[1];
 
-cell=(cellules *)malloc((raw_model->nbfaces)*sizeof(cellules));
+test.x=bbox0.x-1;
+test.y=0;
+test.z=0; 
+
 
  for(i=0;i<raw_model->nbfaces;i++){
-   h=0;
-   cell[i].cube=(int *)malloc(sizeof(int));   
 
    A=raw_model->vertices[raw_model->faces[i].f0];
    B=raw_model->vertices[raw_model->faces[i].f1];
    C=raw_model->vertices[raw_model->faces[i].f2];
 
-   sample1=echantillon(A,B,C,0.05);
+   sample1=echantillon(A,B,C,samplethin);
 
    for(j=0;j<sample1->nbsamples;j++){
-     state=0;
+
      m=(sample1->sample[j].x-bbox0.x)*10/(bbox1.x-bbox0.x);
      n=(sample1->sample[j].y-bbox0.y)*10/(bbox1.y-bbox0.y);
      o=(sample1->sample[j].z-bbox0.z)*10/(bbox1.z-bbox0.z);
@@ -246,145 +250,44 @@ cell=(cellules *)malloc((raw_model->nbfaces)*sizeof(cellules));
        o=9;
 
      cellule=m+n*10+o*100;
+     
+     if(mem[cellule][0]==0)
+       groupts[cellule]=NULL;
+     groupts[cellule]=(vertex*)realloc(groupts[cellule],
+				       (mem[cellule][0]+1)*sizeof(vertex));
+     groupts[cellule][mem[cellule][0]]=sample1->sample[j];
+     mem[cellule][0]++;
 
-     for(k=0;k<=h;k++){
-       if(cellule==cell[i].cube[k]){
-         state=1;
-         break;
-       }
-     }
-     if(state==0){
-       if(h>0){
-         if((cell[i].cube=(int *)realloc(cell[i].cube,(h+1)*sizeof(int)))==NULL){
-	   printf("erreur d'allocation memoire");
-	   exit(-1);
-	 }
-       }
-       cell[i].cube[h]=cellule;
-       h++;
-     } 
    }
-   if(sample1->sample != NULL)
-     free(sample1->sample);
-   if(sample1 != NULL)
-     free(sample1);
-   cell[i].nbcube=h;
 
- }
- for(i=0;i<raw_model->nbfaces;i++){
-   printf("face %d",i);
-   for(j=0;j<cell[i].nbcube;j++){
-     printf(" %d",cell[i].cube[j]);
-   }
-   printf("\n");
- }
- 
-return cell;
-}
-
-
-/*****************************************************************************/
-/* fonction qui repertorie pour chaque cellule la liste des faces avec       */
-/*      lesquelles elle a une intersection                                   */
-/*****************************************************************************/
-
-int** cublist(cellules *cell,model *raw_model)
-{
-
-int **tab,i,j,k;
-int mem[1000][1]={0};
-
-tab=(int **)malloc(1000*sizeof(int*));
-
- for(j=0;j<raw_model->nbfaces;j++){
-   for(k=0;k<cell[j].nbcube;k++){
-     i=cell[j].cube[k];
-     if(mem[i][0]==0)
-       tab[i]=NULL;
-     tab[i]=(int *)realloc(tab[i],(mem[i][0]+1)*sizeof(int));
-     tab[i][mem[i][0]]=j;
-     mem[i][0]++;
-   }
+   free(sample1->sample);
+   free(sample1);   
  }
 
  for(i=0;i<1000;i++){
    if(mem[i][0]==0)
-     tab[i]=NULL;
-   tab[i]=(int *)realloc(tab[i],(mem[i][0]+1)*sizeof(int));
-   tab[i][mem[i][0]]=-1;
+     groupts[i]=NULL;
+   groupts[i]=(vertex*)realloc(groupts[i],(mem[i][0]+1)*sizeof(vertex));
+   groupts[i][mem[i][0]]=test;
  }
-
- for(i=0;i<1000;i++){
-   j=0;
-   printf("cell %d ",i);
-   while(tab[i][j]!=-1){
-     printf("%d ",tab[i][j]);
-     j++;
-   }
-   printf("\n");
- }
-
-
-return(tab);
+return groupts;
 }
 
-/*****************************************************************************/
-/* on repertorie pour chaque cellule les faces qui intersectent les cellules */
-/*                    adjacentes                                             */
-/*****************************************************************************/
 
-void repface(int **cublist,int cellule,int **repertory)
-{
-int h,j,k;
-int m,n,o;
-int a,b,c;
-int state,cellule2;
 
- h=0;
- o=cellule/100;
- n=(cellule-o*100)/10;
- m=cellule-o*100-n*10;
- for(a=m-2;a<=m+2;a++){
-   for(b=n-2;b<=n+2;b++){
-     for(c=o-2;c<=o+2;c++){
-       cellule2=c*100+b*10+a;
-       if(cellule2>=0 && cellule2<1000){
-	   j=0;
-	   while(cublist[cellule2][j]!=-1){
-	     state=0;
-	     for(k=0;k<h;k++){
-	       if(repertory[cellule][k]==cublist[cellule2][j]){
-		 state=1;
-		 break;
-	       }
-	     }
-	     if(state==0){
-	       repertory[cellule]=(int *)realloc(repertory[cellule],(h+1)*sizeof(int));
-	       repertory[cellule][h]=cublist[cellule2][j];
-	     h++;
-	     }
-	     j++;
-	   }
-       }
-     }
-   }
- }
- repertory[cellule]=(int *)realloc(repertory[cellule],(h+1)*sizeof(int));
- repertory[cellule][h]=-1;
-
-}
 
 /*****************************************************************************/
 /*                fonction qui calcule la plus courte distance d'un          */
 /*                       point a une surface                                 */
 /*****************************************************************************/
 
-double pcd(vertex point,model *raw_model2, double k,int **memoire,int **list)
+double pcd(vertex point,model *raw_model2, double k,vertex **groupts)
 {
 double d,dmin;
 int m,n,o,i=0,j,cellule,mem;
 sample *sample1;
 vertex bbox0,bbox1;
+int a,b,c;
 
 bbox0=raw_model2->BBOX[0];
 bbox1=raw_model2->BBOX[1];
@@ -401,38 +304,31 @@ if(o==10)
   o=9; 
 cellule=m+n*10+o*100;
 
-if(memoire[cellule]==NULL)
-  repface(list,cellule,memoire);
+d=dist(point,groupts[cellule][0]);
+dmin=d;
 
-
-
- while(memoire[cellule][i]!=-1){
-   mem=memoire[cellule][i];
-   
-   sample1=echantillon(raw_model2->vertices[raw_model2->faces[mem].f0],
-		       raw_model2->vertices[raw_model2->faces[mem].f1],
-		       raw_model2->vertices[raw_model2->faces[mem].f2],
-		       k);
-   
-   for(j=0;j<sample1->nbsamples;j++){
-     
-     d=dist(point,sample1->sample[j]);
+ for(c=o-1;c<=o+1;c++){ 
+   for(b=n-1;b<=n+1;b++){
+     for(a=m-1;a<=m+1;a++){
        
-     if (i==0){
-       dmin=d;
-       }
-     else if(d<dmin)
-       dmin=d;
+       cellule=a+b*10+c*100;
+       j=0;
+       if(cellule>=0 && cellule<1000){
+	 while(groupts[cellule][j].x>bbox0.x-1){
+	   
+	   d=dist(point,groupts[cellule][j]);
+	   
+	   if(d<dmin)
+	     dmin=d;
+	   j++;
+	 }       
+       } 
+     }
    }
-   if(sample1->sample != NULL)
-     free(sample1->sample);
-   if(sample1 != NULL)
-     free(sample1);
-   i++;
- } 
+ }
+ 
 
-
- /*printf("nb face test: %d;dmin: %lf\n",h,dmin);*/    
+/*printf("nb face test: %d;dmin: %lf\n",h,dmin);*/    
 /*printf("%lf\n ",dmin);*/
 return(dmin);  
 }
@@ -446,14 +342,9 @@ model* raw_model1;
 model* raw_model2;
 cellules *cell;
 double samplethin,diag,diag2,dcourant,dmax=0,superdmax=0;
-int **list,i,j;
-int **memoire;
+int i,j;
 vertex bbox0,bbox1;
-
-memoire=(int **)malloc(1000*sizeof(int*));
- for(i=0;i<1000;i++)
-   memoire[i]=NULL;
-
+vertex **groupts;
 
  if (argc!=4) {
    printf("nbre d'arg incorrect\n");
@@ -489,15 +380,7 @@ printf("%lf %lf %lf\n",bbox0.x,bbox0.y,bbox0.z);
 printf("%lf %lf %lf\n",bbox1.x,bbox1.y,bbox1.z);
 
 
-cell=liste(raw_model2);
-
-list=cublist(cell,raw_model2);
- for(i=0;i<raw_model1->nbfaces;i++){
-   if(cell[i].cube != NULL) 
-     free(cell[i].cube);
- }
- if(cell != NULL) 
-   free(cell);
+groupts=liste(raw_model2,samplethin);
 
 diag=dist(raw_model1->BBOX[0],raw_model1->BBOX[1]);
 diag2=dist(raw_model2->BBOX[0],raw_model2->BBOX[1]);
@@ -511,7 +394,7 @@ printf("diagBBOX2: %lf\n",diag2);
 		       raw_model1->vertices[raw_model1->faces[i].f2],
 		       samplethin); 
    for(j=0;j<sample2->nbsamples;j++){
-     dcourant=pcd(sample2->sample[j],raw_model2,samplethin,memoire,list);
+     dcourant=pcd(sample2->sample[j],raw_model2,samplethin,groupts);
      if(dcourant>dmax)
        dmax=dcourant;
    }
@@ -519,10 +402,10 @@ printf("diagBBOX2: %lf\n",diag2);
    if(dmax>superdmax)
      superdmax=dmax;
    dmax=0;
-   if(sample2->sample != NULL)
-     free(sample2->sample);
-   if(sample2 != NULL)
-     free(sample2);
+
+   free(sample2->sample);
+
+   free(sample2);
     
  }
 printf("distance maximale: %lf\n",superdmax);
