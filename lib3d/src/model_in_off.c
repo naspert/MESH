@@ -1,4 +1,4 @@
-/* $Id: model_in_off.c,v 1.1 2004/10/12 12:32:11 aspert Exp $ */
+/* $Id: model_in_off.c,v 1.2 2004/10/12 12:55:58 aspert Exp $ */
 /*Adapted from  John Burkardt's IVCON code.*/
 
 
@@ -103,13 +103,12 @@ int read_off_tmesh(struct model **tmesh_ref,struct file_data *data)
   int header_found = 0;
   int rcode = MESH_CORRUPTED;
   int tmp;
-  int i, n;
+  int i;
   struct model *tmesh;
   
   if(data == NULL)
     return MESH_CORRUPTED;
  
-  printf("Entering read off\n"); 
   do {
     tmp = skip_ws_comm(data);
     i = 0;
@@ -128,7 +127,7 @@ int read_off_tmesh(struct model **tmesh_ref,struct file_data *data)
       return MESH_CORRUPTED;
     
     line[--i] = '\0';
-    printf("line =%s\n", line);
+    
     if (header_found == 0) {/* header must be the 1st non-comment line */
       if (strstr(line, "OFF") == NULL) 
 	return MESH_CORRUPTED;
@@ -138,7 +137,7 @@ int read_off_tmesh(struct model **tmesh_ref,struct file_data *data)
   } while (tmp != EOF && header_found == 0);
   if (header_found == 0 || tmp == EOF) 
     return MESH_CORRUPTED;
-  printf("Here header=%d\n", header_found); 
+  
   skip_ws_comm(data);
   /* read the number of verts, faces and edges */
   if (int_scanf(data, &vert_num) != 1)
