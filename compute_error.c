@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.23 2001/08/09 12:34:43 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.24 2001/08/09 13:54:25 dsanta Exp $ */
 
 #include <compute_error.h>
 
@@ -45,7 +45,8 @@ struct t_in_cell_list {
   int ** triag_idx;         /* The list of the indices of the triangles
                              * intersecting each cell, terminated by -1
                              * (triag_idx[i] is the list for the cell with
-                             * linear index i) */
+                             * linear index i). If cell i is empty,
+                             * triag_idx[i] is NULL. */
   int n_cells;              /* The number of cells in triag_idx */
   ec_bitmap_t *empty_cell;  /* A bitmap indicating which cells are empty. If
                              * cell i is empty, the bit (i&EC_BITMAP_T_MASK)
@@ -142,24 +143,6 @@ static INLINE void neg_v(const vertex *v, vertex *vout)
   vout->x = -v->x;
   vout->y = -v->y;
   vout->z = -v->z;
-}
-
-/* Compares integers *i0 and *i1. Returns -1 if *i0 < *i1, 0 if *i0 == *i1 and
- * 1 if *i0 > *i1. To be used with the qsort function of the standard C
- * library. */
-static int intcmp(const void *i0, const void *i1)
-{
-  int *f0, *f1;
-
-  f0 = (int*)i0;
-  f1 = (int*)i1;
-
-  if (*f0 == *f1)
-    return 0;
-  else if (*f0 < *f1)
-    return -1;
-  else
-    return 1;
 }
 
 /* Reallocates the buffers of tse to store the sample errors for a triangle
@@ -519,38 +502,50 @@ static void sample_triangle(const vertex *a, const vertex *b, const vertex *c,
   }
 }
 
-/* Returns the list of cells that intersect each triangle. The returned object
- * is an array of length tl->n_triangles, where each element i contains the list
- * of cells intersecting triangle i. The returned array is malloc'ed, as well
- * as the array of each cell list. */
-static struct cell_list *cells_in_triangles(struct triangle_list *tl,
-                                            struct size3d grid_sz,
-                                            double cell_sz, vertex bbox_min)
+/* Given a triangle list tl, returns the list of triangle indices that
+ * intersect a cell, for each cell in the grid. The size of the grid is given
+ * by grid_sz, the side length of the cubic cells by cell_sz and the minimum
+ * coordinates of the bounding box of tl2 by bbox_min. The returned struct, its
+ * arrays and subarrays are malloc'ed independently. */
+static struct t_in_cell_list *triangles_in_cells(const struct triangle_list *tl,
+                                                 struct size3d grid_sz,
+                                                 double cell_sz,
+                                                 vertex bbox_min)
 {
-  struct cell_list *cl;       /* the cell list to return */
-  int h,i,j;                  /* counters */
-  int m,n,o;                  /* 3D cell indices for samples */
-  int cell_idx,cell_idx_prev; /* linear (1D) cell indices */
-  int n_cells;                /* number of cells */
+  struct t_in_cell_list *lst; /* The list to return */
   struct sample_list sl;      /* samples from a triangle */
-  int *tmp;                   /* temp storage for cell list */
+  int **tab;                  /* Table containing the indices of intersecting
+                               * triangles for each cell. */
+  int *nt;                    /* Array with the number of intersecting
+                               * triangles found so far for each cell */
+  ec_bitmap_t *ecb;           /* The empty cell bitmap */
+  int cell_idx,cell_idx_prev; /* linear (1D) cell indices */
   int cell_stride_z;          /* spacement for Z index in 3D addressing of
                                * cell list */
+  int i,j,h,imax;             /* counters and loop limits */
   int m_a,n_a,o_a,m_b,n_b,o_b,m_c,n_c,o_c; /* 3D cell indices for vertices */
   int tmpi,max_cell_dist;     /* maximum cell distance along any axis */
   int n_samples;              /* number of samples to use for triangles */
+  int m,n,o;                  /* 3D cell indices for samples */
+  int *c_buf;                 /* temp storage for cell list */
+  int c_buf_sz;               /* the size of c_buf */
 
   /* Initialize */
   cell_stride_z = grid_sz.x*grid_sz.y;
-  cl= xmalloc((tl->n_triangles)*sizeof(*cl));
-  tmp = NULL;
+  c_buf = NULL;
+  c_buf_sz = 0;
   sl.sample = NULL;
+  lst = xmalloc(sizeof(*lst));
+  nt = xcalloc(grid_sz.x*grid_sz.y*grid_sz.z,sizeof(*nt));
+  tab = xcalloc(grid_sz.x*grid_sz.y*grid_sz.z,sizeof(*tab));
+  ecb = xcalloc((grid_sz.x*grid_sz.y*grid_sz.z+EC_BITMAP_T_BITS-1)/
+                EC_BITMAP_T_BITS,EC_BITMAP_T_SZ);
+  lst->triag_idx = tab;
+  lst->n_cells = grid_sz.x*grid_sz.y*grid_sz.z;
+  lst->empty_cell = ecb;
 
   /* Get intersecting cells for each triangle */
-  for(i=0;i<tl->n_triangles;i++){
-    h = 0;
-    cl[i].cell = NULL;
-
+  for (i=0, imax=tl->n_triangles; i<imax;i++) {
     /* Get the cells in which the triangle vertices are. For non-negative
      * values, cast to int is equivalent to floor and probably faster (here
      * negative values can not happen since bounding box is obtained from the
@@ -568,9 +563,9 @@ static struct cell_list *cells_in_triangles(struct triangle_list *tl,
     if (m_a == m_b && m_a == m_c && n_a == n_b && n_a == n_c &&
         o_a == o_b && o_a == o_c) {
       /* The ABC triangle fits entirely into one cell => fast case */
-      cl[i].cell = xmalloc(sizeof(*(cl->cell))*1);
-      cl[i].cell[0] = m_a+n_a*grid_sz.x+o_a*cell_stride_z;
-      cl[i].n_cells = 1;
+      cell_idx = m_a+n_a*grid_sz.x+o_a*cell_stride_z;
+      tab[cell_idx] = xrealloc(tab[cell_idx],(nt[cell_idx]+2)*sizeof(**tab));
+      tab[cell_idx][nt[cell_idx]++] = i;
       continue;
     }
 
@@ -592,6 +587,7 @@ static struct cell_list *cells_in_triangles(struct triangle_list *tl,
                     &(tl->triangles[i].c),n_samples,&sl);
     /* Get the intersecting cells from the samples */
     cell_idx_prev = -1;
+    h = 0;
     for(j=0;j<sl.n_samples;j++){
       /* Get cell in which the sample is. Due to rounding in the triangle
        * sampling process we check the indices to be within bounds. As above,
@@ -614,80 +610,42 @@ static struct cell_list *cells_in_triangles(struct triangle_list *tl,
       } else if (o < 0) {
         o = 0;
       }
-      cell_idx = m + n*grid_sz.x + o*cell_stride_z;
 
       /* Include cell index in list only if not the same as previous one
        * (avoid too many duplicates). */
+      cell_idx = m + n*grid_sz.x + o*cell_stride_z;
       if (cell_idx != cell_idx_prev) {
-        tmp = (int *)xrealloc(tmp, (h+1)*sizeof(int));
-        tmp[h++] = cell_idx;
+        if (c_buf_sz <= h) {
+          c_buf = xrealloc(c_buf, (h+1)*sizeof(*c_buf));
+          c_buf_sz++;
+        }
+        c_buf[h++] = cell_idx;
         cell_idx_prev = cell_idx;
       }
     }
 
-    /* Remove duplicate cell indices, sorting makes it easier and faster to
-     * remove them. */
-    qsort(tmp, h, sizeof(int), intcmp);
-    cell_idx_prev = -1;
-    n_cells = 0;
+    /* Include triangle in intersecting cell lists, without duplicate. */
     for (j=0; j<h; j++) {
-      if (tmp[j] != cell_idx_prev) {
-        cl[i].cell = (int*)xrealloc(cl[i].cell,(n_cells+1)*sizeof(*(cl->cell)));
-        cl[i].cell[n_cells++] = tmp[j];
-        cell_idx_prev = tmp[j];
+      cell_idx = c_buf[j];
+      if (nt[cell_idx] == 0 || tab[cell_idx][nt[cell_idx]-1] != i) {
+        tab[cell_idx] = xrealloc(tab[cell_idx],(nt[cell_idx]+2)*sizeof(**tab));
+        tab[cell_idx][nt[cell_idx]++] = i;
       }
     }
-    cl[i].n_cells = n_cells;
-
   }
-  free(sl.sample);
-  free(tmp);
- 
-  return cl;
-}
 
-/* Returns the list of triangle indices that intersect a cell, for each cell
- * in the grid. The returned struct, its arrays and subarrays are malloc'ed
- * independently. */
-static struct t_in_cell_list *triangles_in_cells(const struct cell_list *cl,
-                                                 const struct triangle_list *tl,
-                                                 const struct size3d grid_sz)
-{
-
-  int i,j,k,maxi,maxj,maxk;   /* counters and limits */
-  struct t_in_cell_list *lst; /* The list to return */
-  int **tab; /* Table containing the indices of intersecting triangles for
-              * each cell. */
-  int *nt;   /* Array with the number of intersecting triangles found so far
-              * for each cell */
-  ec_bitmap_t *ecb; /* The empty cell bitmap */
-
-  lst = xmalloc(sizeof(*lst));
-  nt = xcalloc(grid_sz.x*grid_sz.y*grid_sz.z,sizeof(*nt));
-  tab = xcalloc(grid_sz.x*grid_sz.y*grid_sz.z,sizeof(*tab));
-  ecb = xcalloc((grid_sz.x*grid_sz.y*grid_sz.z+EC_BITMAP_T_BITS-1)/
-                EC_BITMAP_T_BITS,EC_BITMAP_T_SZ);
-  lst->triag_idx = tab;
-  lst->n_cells = grid_sz.x*grid_sz.y*grid_sz.z;
-  lst->empty_cell = ecb;
-
-  /* Include each triangle in the intersecting cells */
-  for (j=0, maxj=tl->n_triangles; j<maxj; j++) {
-    for (k=0, maxk=cl[j].n_cells; k<maxk; k++) {
-      i = cl[j].cell[k];
-      tab[i] = (int*) xrealloc(tab[i],(nt[i]+1)*sizeof(**tab));
-      tab[i][nt[i]++] = j;
-    }
-  }
-  /* Mark the end of the list for each cell with -1 */
-  for(i=0, maxi=grid_sz.x*grid_sz.y*grid_sz.z; i<maxi; i++){
-    tab[i] = (int*) xrealloc(tab[i],(nt[i]+1)*sizeof(**tab));
-    tab[i][nt[i]] = -1;
+  /* Terminate lists with -1 and set empty cell bitmap */
+  for(i=0, imax=grid_sz.x*grid_sz.y*grid_sz.z; i<imax; i++){
     if (nt[i] == 0) { /* mark empty cell in bitmap */
       ecb[i/EC_BITMAP_T_BITS] |= 0x01<<(i&EC_BITMAP_T_MASK);
+    } else {
+      tab[i][nt[i]] = -1;
     }
   }
+
   free(nt);
+  free(sl.sample);
+  free(c_buf);
   return lst;
 }
 
@@ -939,7 +897,6 @@ void dist_surf_surf(const model *m1, const model *m2, int n_spt,
   vertex bbox2_min,bbox2_max; /* min and max coords of bounding box of m2 */
   struct triangle_list *tl2;  /* triangle list for m2 */
   struct t_in_cell_list *fic; /* list of faces intersecting each cell */
-  struct cell_list *cl;       /* list of cells intersecting each triangle */
   struct sample_list ts;      /* list of sample from a triangle */
   struct triag_sample_error tse; /* the errors at the triangle samples */
   int i,k,kmax;               /* counters and loop limits */
@@ -971,13 +928,7 @@ void dist_surf_surf(const model *m1, const model *m2, int n_spt,
   grid_sz.z = (int) ceil((bbox2_max.z-bbox2_min.z)/cell_sz);
 
   /* Get the list of triangles in each cell */
-  cl = cells_in_triangles(tl2,grid_sz,cell_sz,bbox2_min);
-  fic = triangles_in_cells(cl,tl2,grid_sz);
-  for (k=0, kmax=tl2->n_triangles; k<kmax; k++) {
-    free(cl[k].cell);
-  }
-  free(cl);
-  cl = NULL;
+  fic = triangles_in_cells(tl2,grid_sz,cell_sz,bbox2_min);
 
   /* Allocate storage for errors */
   *fe_ptr = xrealloc(*fe_ptr,m1->num_faces*sizeof(**fe_ptr));
