@@ -1,4 +1,4 @@
-/* $Id: ColorMap.h,v 1.2 2001/08/06 11:48:34 aspert Exp $ */
+/* $Id: ColorMap.h,v 1.3 2001/10/01 16:46:42 dsanta Exp $ */
 #ifndef COLORMAP_H
 #define COLORMAP_H
 
@@ -8,6 +8,7 @@
 extern "C" {
 #endif
 double** HSVtoRGB(void);
+void free_colormap(double **);
 #ifdef __cplusplus
 }
 #endif

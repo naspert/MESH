@@ -1,4 +1,4 @@
-/* $Id: ColorMap.c,v 1.7 2001/09/05 09:55:46 dsanta Exp $ */
+/* $Id: ColorMap.c,v 1.8 2001/10/01 16:46:53 dsanta Exp $ */
 #include <ColorMap.h>
 #include <xalloc.h>
 
@@ -68,4 +68,16 @@ double** HSVtoRGB(void)
   }
 
   return(colormap);
+}
+
+void free_colormap(double **cmap)
+{
+  int i;
+
+  if (cmap != NULL) {
+    for (i=0; i<8; i++) {
+      free(cmap[i]);
+    }
+    free(cmap);
+  }
 }
