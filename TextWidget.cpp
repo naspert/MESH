@@ -1,4 +1,4 @@
-/* $Id: TextWidget.cpp,v 1.7 2002/03/15 16:32:08 aspert Exp $ */
+/* $Id: TextWidget.cpp,v 1.8 2002/04/04 15:21:23 dsanta Exp $ */
 
 
 /*
@@ -52,6 +52,8 @@ TextWidget::TextWidget(QWidget *parent, const char *name)
   view = new QTextView(this);
   view->setTextFormat(Qt::PlainText);
   font.setFamily("courier");
+  font.setStyleHint(QFont::TypeWriter,QFont::PreferQuality);
+  font.setFixedPitch(TRUE);
   view->setFont(font);
   layout->addWidget(view,0,0);
   butClose = new QPushButton("Close", this);
