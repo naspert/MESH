@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.62 2003/05/26 15:22:29 aspert Exp $
+# $Id: Makefile,v 1.63 2003/05/26 15:23:46 aspert Exp $
 
 
 
@@ -181,7 +181,7 @@ WARN_CFLAGS = -pedantic -Wall -W -Winline -Wmissing-prototypes \
         -Wstrict-prototypes -Wnested-externs -Wshadow -Waggregate-return
 # Following options might produce incorrect behaviour if code
 # is modified (only ANSI C aliasing allowed, and no math error checking)
-#XTRA_CFLAGS += -fstrict-aliasing -fno-math-errno
+XTRA_CFLAGS += -fstrict-aliasing -fno-math-errno
 endif
 
 ifeq ($(CC_IS_ICC),Intel)
