@@ -1,4 +1,4 @@
-/* $Id: RawWidget.cpp,v 1.47 2002/03/01 09:57:52 aspert Exp $ */
+/* $Id: RawWidget.cpp,v 1.48 2002/03/05 07:51:43 aspert Exp $ */
 
 #include <RawWidget.h>
 #include <qmessagebox.h>
@@ -863,7 +863,7 @@ void RawWidget::invertNormals(bool state) {
 void RawWidget::setTwoSidedMaterial(bool state) {
   
   if ((renderFlag & RW_CAPA_MASK) == RW_LIGHT_TOGGLE) {
-    if (state != two_sided_material) // harmless ...
+    if (state != (bool)two_sided_material) // harmless ...
       printf("Mismatched state qcbTwoSide/two_sided_material\n");
     makeCurrent();
     QApplication::setOverrideCursor(Qt::waitCursor);
