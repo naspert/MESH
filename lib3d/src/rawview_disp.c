@@ -1,4 +1,4 @@
-/* $Id: rawview_disp.c,v 1.4 2002/06/05 14:04:41 aspert Exp $ */
+/* $Id: rawview_disp.c,v 1.5 2002/09/12 11:55:41 aspert Exp $ */
 
 #include <rawview_misc.h>
 
@@ -250,7 +250,8 @@ void display_wrapper(struct gl_render_context *gl_ctx,
       case 0:
         if (gl_ctx->wf_bc)
           glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); 
-	if (!gl_ctx->ps_rend)
+	if (gl_ctx->ps_rend%2 == 0) /* rendering to buffer or to a PS
+                                       file in negative */
 	  glColor3f(1.0, 1.0, 1.0);
 	else 
 	  glColor3f(0.0, 0.0, 0.0);
@@ -258,7 +259,8 @@ void display_wrapper(struct gl_render_context *gl_ctx,
 	break;
       case 1:
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-	if (!gl_ctx->ps_rend) {
+	if (gl_ctx->ps_rend%2 == 0) {/* rendering to buffer or to a PS
+                                        file in negative */
 	  glEnable(GL_POLYGON_OFFSET_FILL);
 	  glPolygonOffset(1.0, 1.0);
 	  glColor4f(0.0, 0.0, 0.0, 0.0);

@@ -1,4 +1,4 @@
-/* $Id: rawview_misc.h,v 1.4 2002/09/09 08:36:15 aspert Exp $ */
+/* $Id: rawview_misc.h,v 1.5 2002/09/12 11:55:40 aspert Exp $ */
 
 #include <GL/gl.h>
 #include <GL/glu.h>
@@ -17,7 +17,7 @@ extern "C" {
 #endif
 
   void frame_grab(struct gl_render_context*);
-  void ps_grab(struct gl_render_context*, struct display_lists_indices*);
+  void ps_grab(struct gl_render_context*, struct display_lists_indices*, int);
   float** colormap_hsv(int);
   void free_colormap(float**);
   void set_light_on(void);

@@ -1,4 +1,4 @@
-/* $Id: rawview_grab.c,v 1.1 2002/06/04 13:06:40 aspert Exp $ */
+/* $Id: rawview_grab.c,v 1.2 2002/09/12 11:55:41 aspert Exp $ */
 
 #include <rawview_misc.h>
 
@@ -52,7 +52,7 @@ void frame_grab(struct gl_render_context *gl_ctx) {
 /* Writes the frame to a PS file */
 /* ***************************** */
 void ps_grab(struct gl_render_context *gl_ctx, 
-             struct display_lists_indices *dl_idx) {
+             struct display_lists_indices *dl_idx, int flag) {
   int bufsize = 0, state = GL2PS_OVERFLOW;
   char filename[13];
   FILE *ps_file;
@@ -62,8 +62,17 @@ void ps_grab(struct gl_render_context *gl_ctx,
   if (ps_file == NULL)
     fprintf(stderr, "Unable to open PS outfile %s\n", filename);
   else {
-    gl_ctx->ps_rend = 1;
-    glClearColor(1.0, 1.0, 1.0, 0.0);
+
+
+    if (flag == 1) {
+      glClearColor(1.0, 1.0, 1.0, 0.0);
+      gl_ctx->ps_rend = 1;
+    }
+    else { /* If we are rendering a negative, we have to switch also
+              rendering colors */
+      glClearColor(0.0, 0.0, 0.0, 0.0);
+      gl_ctx->ps_rend = 2;
+    }
     while (state == GL2PS_OVERFLOW) {
       bufsize += 1024*1024;
       gl2psBeginPage("PS Grab", "LaTeX", GL2PS_PS, GL2PS_SIMPLE_SORT, 

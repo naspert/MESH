@@ -1,4 +1,4 @@
-/* $Id: rawview.c,v 1.20 2002/09/09 08:36:16 aspert Exp $ */
+/* $Id: rawview.c,v 1.21 2002/09/12 11:55:41 aspert Exp $ */
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -371,9 +371,13 @@ static void sp_key_pressed(int key, int x, int y) {
     rebuild_list(&gl_ctx, &dl_idx);
     break;
 
-  case GLUT_KEY_F10: 
+  case GLUT_KEY_F10:
     printf("Rendering to a PostScript file...\n");
-    ps_grab(&gl_ctx, &dl_idx);
+    if (glutGetModifiers() ==  GLUT_ACTIVE_SHIFT)
+      ps_grab(&gl_ctx, &dl_idx, 0); /* render negative */
+    else 
+      ps_grab(&gl_ctx, &dl_idx, 1);
+
     printf("done\n");
     break;
 
