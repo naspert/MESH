@@ -1,4 +1,4 @@
-/* $Id: normals.c,v 1.7 2001/09/03 11:14:44 aspert Exp $ */
+/* $Id: normals.c,v 1.8 2001/09/03 11:21:15 aspert Exp $ */
 #include <3dmodel.h>
 #include <geomutils.h>
 
@@ -687,9 +687,8 @@ void build_normals(model *raw_model, face_tree_ptr tree, vertex* normals) {
   tree->v1 = v1;
   tree->v2 = v2;
 
-  normals[tree->face_idx] = ncrossp(raw_model->vertices[v0],
-				    raw_model->vertices[v1], 
-				    raw_model->vertices[v2]);
+  ncrossp_v(&raw_model->vertices[v0], &raw_model->vertices[v1], 
+	    &raw_model->vertices[v2], &normals[tree->face_idx]);
 #ifdef NORM_DEBUG
   if (tree->parent != NULL) {
     printf("Parent=%d type=%d n=%f %f %f\n", tree->parent->face_idx, 
@@ -787,7 +786,7 @@ void compute_vertex_normal(model* raw_model, info_vertex* curv,
     p2 = raw_model->vertices[raw_model->faces[i].f1];
     p3 = raw_model->vertices[raw_model->faces[i].f2];
     
-    raw_model->area[i] = tri_area(p1, p2, p3);
+    raw_model->area[i] = tri_area_v(&p1, &p2, &p3);
   }
 
   /* Alloc array for normal of each vertex */
@@ -807,7 +806,7 @@ void compute_vertex_normal(model* raw_model, info_vertex* curv,
 	raw_model->area[curv[i].list_face[j]];
     }
   
-    normalize(&tmp);
+    normalize_v(&tmp);
     raw_model->normals[i] = tmp;
 #ifdef NORM_DEBUG
     printf("%d : %f %f %f\n",i, raw_model->normals[i].x, 
