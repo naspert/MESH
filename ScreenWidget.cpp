@@ -1,8 +1,8 @@
-/* $Id: ScreenWidget.cpp,v 1.13 2001/08/10 10:04:57 dsanta Exp $ */
+/* $Id: ScreenWidget.cpp,v 1.14 2001/09/11 16:31:27 dsanta Exp $ */
 #include <ScreenWidget.h>
 
-ScreenWidget::ScreenWidget(model *raw_model1, model *raw_model2, 
-			   double dmoymin, double dmoymax, QWidget *parent, 
+ScreenWidget::ScreenWidget(model_error *model1, model_error *model2, 
+			   QWidget *parent, 
 			   const char *name ):QWidget(parent,name) {
   QAction *fileQuitAction;
   QPushButton *syncBut;
@@ -52,12 +52,12 @@ ScreenWidget::ScreenWidget(model *raw_model1, model *raw_model2,
 
 
   // Create the colorbar and the 2 GL windows.
-  glModel1 = new RawWidget(raw_model1, RW_COLOR, frameModel1, "glModel1");
+  glModel1 = new RawWidget(model1, RW_COLOR, frameModel1, "glModel1");
   glModel1->setFocusPolicy(StrongFocus);
-  glModel2 = new RawWidget(raw_model2, RW_LIGHT_TOGGLE, 
-			   frameModel2,"glModel2");
+  glModel2 = new RawWidget(model2, RW_LIGHT_TOGGLE, frameModel2, "glModel2");
   glModel2->setFocusPolicy(StrongFocus);
-  colorBar = new ColorMapWidget(dmoymin, dmoymax, this, "colorBar");
+  colorBar = new ColorMapWidget(model1->min_verror,
+                                model1->max_verror, this, "colorBar");
 
   // Put the 1st GL widget inside the frame
   hLay1 = new QHBoxLayout(frameModel1, 2, 2, "hLay1");
@@ -103,10 +103,9 @@ void ScreenWidget::aboutKeys()
 {
     QMessageBox::about( this, "Key bindings",
 			"F1: Toggle Wireframe/Fill\n"
-			"F2: Toggle Light/No light (2nd model only)\n"
+			"F2: Toggle Light/No light (right model only)\n"
 			"F3: Toggle viewpoint synchronization\n"
-			"F4: Invert normals (if applicable)\n"
-                        "F5: Force computed (vs. loaded) normals");
+			"F4: Invert normals (if applicable)");
 }
 
 void ScreenWidget::aboutBugs()
