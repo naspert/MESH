@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.13 2001/09/12 13:42:45 aspert Exp $
+# $Id: Makefile,v 1.14 2001/09/13 11:48:14 aspert Exp $
 
 #CC = /home/sun1/aspert/gcc/bin/gcc
 CC = gcc
@@ -21,7 +21,7 @@ GL_CFLAGS = $(INCLFLAGS) $(GLINCLFLAGS) $(XTRA_CFLAGS)
 
 BASE_LIBFLAGS = -L$(LIBDIR) -lm
 GL_LIBFLAGS = -L$(LIBDIR) -L$(HPGLDIR)/lib -L$(GLDIR)/lib -lglut -lGLU -lGL \
-	-lXmu -lXext -lX11 -lXi -l3d -limage -lm -lmpatrol -lbfd -liberty
+	-lXmu -lXext -lX11 -lXi -l3d -limage -lm
 
 STATIC_GLFLAGS =   -L$(LIBDIR) -L$(GLDIR)/lib -lglut -lGLU -lGL -lXmu -lXext \
 	-lX11 -lXi -lm 

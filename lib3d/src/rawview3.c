@@ -1,4 +1,4 @@
-/* $Id: rawview3.c,v 1.15 2001/09/03 11:40:11 aspert Exp $ */
+/* $Id: rawview3.c,v 1.16 2001/09/13 11:48:14 aspert Exp $ */
 
 #include <GL/gl.h>
 #include <GL/glu.h>
@@ -6,7 +6,6 @@
 #include <3dutils.h>
 #include <image.h>
 
-#define TEST_GL2PS
 
 #ifdef TEST_GL2PS
 #include <gl2ps.h>
@@ -41,8 +40,6 @@ int normals_done = 0;
 model *raw_model;
 char *in_filename;
 int grab_number = 0;
-int mesa_minor = -1; /* Used 'cause Mesa > 3.1 is not trusted when rendering */
-/* in the 'lighted' mode */
 
 model *r_model;
 
@@ -409,40 +406,11 @@ void rebuild_list(model *raw_model) {
 /* ******************************************** */
 void gfx_init(model *raw_model) {
   const char *glverstr;
-  char *mesa, *irix, *hp;
-  int mesa_major;
-  
+
   glverstr = (const char*)glGetString(GL_VERSION);
   printf("GL_VERSION = %s\n", glverstr);
-  /* Now we try to identify what kind of OpenGL implementation we have */
-  
 
-  mesa = strstr(glverstr, "Mesa");
-  irix = strstr(glverstr, "Irix");
-  hp = strstr(glverstr, "Revision");
 
-  
-  if (mesa != NULL) {
-    mesa += 5;
-    if (sscanf(mesa, "%i.%i", &mesa_major, &mesa_minor) != 2) {
-      printf("Error checking Mesa version\n");
-
-      free_raw_model(raw_model);
-      exit(1);
-    }
-    if (mesa_major != 3) {
-      printf("Incorrect (too old ?) Mesa version found ?\n");
-    }
-  } else if (irix != NULL) /* SGI OpenGL found */
-    mesa_minor = 0; /* should be OK with this */
-  else if (hp != NULL) /* HP (Vis') OpenGL */
-    mesa_minor = 4; /* same behaviour as recent Mesa version */
-  else { /* Unknown OpenGL */
-    printf("Error checking OpenGL version\n");
-
-    free_raw_model(raw_model);
-    exit(1);
-  }
 
 
   glEnable(GL_DEPTH_TEST);
@@ -495,11 +463,13 @@ void display_vtx_labels() {
 void display() {
   GLenum errorCode;
   GLboolean light_mode;
+  GLfloat lpos[] = {-1.0, 1.0, 1.0, 0.0};
   int i;
   
   light_mode = glIsEnabled(GL_LIGHTING);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glLoadIdentity();
+  glLightfv(GL_LIGHT0, GL_POSITION, lpos);
   glTranslated(0.0, 0.0, -distance); /* Translate the object along z */
   glMultMatrixd(mvmatrix); /* Perform rotation */
   if (!light_mode)
@@ -571,14 +541,17 @@ void norm_key_pressed(unsigned char key, int x, int y) {
 /* ********************************************************* */
 void sp_key_pressed(int key, int x, int y) {
   GLdouble tmp[16];
-  GLfloat amb[] = {0.5, 0.5, 0.5, 1.0};
-  GLfloat dif[] = {0.5, 0.5, 0.5, 1.0};
-  GLfloat spec[] = {0.5, 0.5, 0.5, 0.5};
-  GLfloat ldir[] = {0.0, 0.0, 0.0, 0.0};
-  GLfloat mat_spec[] = {0.3, 0.7, 0.5, 0.5};
-  GLfloat amb_light[] = {0.6, 0.6, 0.6, 1.0};
-  GLfloat shine[] = {0.6};
-  GLfloat lpos[4];
+  /* Light specification */
+  static const GLfloat amb[] = {0.1, 0.1, 0.1, 1.0};
+  static const GLfloat dif[] = {0.3, 0.3, 0.3, 1.0};
+  static const GLfloat spec[] = {0.3, 0.3, 0.3, 0.3};
+  static const GLfloat amb_light[] = {0.8, 0.8, 0.8, 1.0};
+  /* Material specifications */
+  static const GLfloat mat_spec[] = {0.3, 0.3, 0.3, 1.0};
+  static const GLfloat mat_diff[] = {0.7, 0.7, 0.7, 1.0};
+  static const GLfloat mat_amb[] = {0.5, 0.5, 0.5, 1.0};  
+  static const GLfloat shine[] = {30.0};
+
   GLboolean light_mode;
   info_vertex *curv;
   face_tree_ptr top;
@@ -588,17 +561,6 @@ void sp_key_pressed(int key, int x, int y) {
   FILE *ps_file;
 #endif
 
-
-  
-  /* This one must be handled 'by hand' to please the MIPS compiler on SGI */
-  lpos[0] = 0.0;
-  lpos[1] = 0.0;
-  if (mesa_minor <= 1) 
-    /* This causes trouble w. Mesa > 3.1 when distance is too large */
-    lpos[2] = -distance;  
-  else
-    lpos[2] = 1.0; 
-  lpos[3] = 0.0;
   
   light_mode = glIsEnabled(GL_LIGHTING);
   switch(key) {
@@ -611,7 +573,6 @@ void sp_key_pressed(int key, int x, int y) {
     break;
   case GLUT_KEY_F2: /* Toggle Light+filled mode */
     if (light_mode == GL_FALSE) {
-/*       light_mode = 1; */
       printf("Lighted mode\n");
       if (normals_done != 1) {/* We have to build the normals */
 	printf("Computing normals...");
@@ -639,10 +600,10 @@ void sp_key_pressed(int key, int x, int y) {
  	  glLightfv(GL_LIGHT0, GL_AMBIENT, amb); 
 	  glLightfv(GL_LIGHT0, GL_DIFFUSE, dif);
 	  glLightfv(GL_LIGHT0, GL_SPECULAR, spec);
-  	  glLightfv(GL_LIGHT0, GL_POSITION, lpos);  
-  	  glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, ldir);  
 	  glLightModelfv(GL_LIGHT_MODEL_AMBIENT,amb_light);
 	  glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, mat_spec);
+	  glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, mat_amb);
+	  glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, mat_diff);
 	  glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, shine);
 	  glEnable(GL_LIGHT0);
 	  glColor3f(1.0, 1.0, 1.0);
@@ -651,18 +612,16 @@ void sp_key_pressed(int key, int x, int y) {
 	  printf("Rebuild display list\n"); 
 	  rebuild_list(raw_model);
 	  glutPostRedisplay();
-	} else {
+	} else 
 	  printf("Unable to compute normals... non-manifold model\n");
-/* 	  light_mode = 0; */
-	}
       } else {
 	glEnable(GL_LIGHTING);
 	glLightfv(GL_LIGHT0, GL_AMBIENT, amb);
 	glLightfv(GL_LIGHT0, GL_DIFFUSE, dif);
 	glLightfv(GL_LIGHT0, GL_SPECULAR, spec);
-	glLightfv(GL_LIGHT0, GL_POSITION, lpos);
-	glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, ldir);
 	glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, mat_spec);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, mat_amb);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, mat_diff);
 	glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, shine);
 	glEnable(GL_LIGHT0);
 	glColor3f(1.0, 1.0, 1.0);
@@ -674,7 +633,6 @@ void sp_key_pressed(int key, int x, int y) {
       }
       break;
     } else if (light_mode == GL_TRUE) {
-/*       light_mode = 0; */
       printf("Wireframe mode\n");
       glDisable(GL_LIGHTING);
       glColor3f(1.0, 1.0, 1.0);
@@ -829,22 +787,21 @@ void sp_key_pressed(int key, int x, int y) {
     break;
 #endif
 
-  case GLUT_KEY_F11:
+  case GLUT_KEY_F11: /* backface culling when in wf mode */
     if (wf_bc) { /* goto classic wf mode */
       wf_bc = 0;
-/*       glDisable(GL_LIGHTING); */
-/*       glColor3f(1.0, 1.0, 1.0); */
-/*       glFrontFace(GL_CCW); */
-/*       glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); */
-/*       rebuild_list(raw_model); */
+      glDisable(GL_LIGHTING);
+      glColor3f(1.0, 1.0, 1.0);
+      glFrontFace(GL_CCW);
+      glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+      rebuild_list(raw_model);
     } else {
       wf_bc = 1;
-   
-/*       glDisable(GL_LIGHTING); */
-/*       glColor3f(1.0, 1.0, 1.0); */
-/*       glFrontFace(GL_CCW); */
-/*       glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); */
-/*       rebuild_list(raw_model); */
+      glDisable(GL_LIGHTING);
+      glColor3f(1.0, 1.0, 1.0);
+      glFrontFace(GL_CCW);
+      glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+      rebuild_list(raw_model);
     }
     glutPostRedisplay();
     break;
