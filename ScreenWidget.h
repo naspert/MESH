@@ -1,4 +1,4 @@
-/* $Id: ScreenWidget.h,v 1.8 2001/08/10 08:24:12 aspert Exp $ */
+/* $Id: ScreenWidget.h,v 1.9 2001/09/11 16:30:54 dsanta Exp $ */
 #ifndef SCREENWIDGET_H
 #define SCREENWIDGET_H
 
@@ -25,8 +25,8 @@
 class ScreenWidget : public QWidget {
   Q_OBJECT
 public:
-  ScreenWidget(model *raw_model1, model *raw_model2, double dmoymin, 
-	       double dmoymax, QWidget *parent=0, const char *name=0 );
+  ScreenWidget(model_error *model1, model_error *model2,
+               QWidget *parent=0, const char *name=0 );
   QPushButton *quitBut;// Needed to get the 'clicked' signal in the viewer
 
 public slots:
