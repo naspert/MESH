@@ -8,6 +8,8 @@
 	  at -1 (thx Valgrind ...)
 	- Fixed : field 'builtin_normals' of 'struct model' should only be 
           set if the vertex normals are present (not for the face normals) 
+	- Added/Updated comments in 'model_in.[ch]'
+	- Minor tweaks in the block size in 'model_in.c'
 
 * Changes from v1.0 to v1.1 :
 	- Added possibility to read gzipped VRML using zlib
