@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.29 2001/08/10 13:05:03 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.30 2001/08/15 12:47:23 dsanta Exp $ */
 
 #include <compute_error.h>
 
@@ -937,17 +937,26 @@ static double dist_pt_surf(vertex p, const struct triangle_list *tl,
 /* See compute_error.h */
 struct face_list *faces_of_vertex(model *m)
 {
-  int i,j,imax,jmax;    /* indices and loop limits */
+  int j,jmax;           /* indices and loop limits */
+  int v0,v1,v2;         /* current triangle's vertex indices */
   struct face_list *fl; /* the face list to return */
 
   fl = xcalloc(m->num_vert,sizeof(*fl));
-  for (i=0, imax=m->num_vert; i<imax; i++) {
-    for (j=0, jmax=m->num_faces; j<jmax; j++) {
-      if (m->faces[j].f0 == i || m->faces[j].f1 == i || m->faces[j].f2 == i) {
-        fl[i].face = xrealloc(fl[i].face,(fl[i].n_faces+1)*sizeof(*(fl->face)));
-        fl[i].face[fl[i].n_faces++] = j;
-      }
+  for (j=0, jmax=m->num_faces; j<jmax; j++) {
+    v0 = m->faces[j].f0;
+    v1 = m->faces[j].f1;
+    v2 = m->faces[j].f2;
+    if (v0 == v1 || v0 == v2 || v1 == v2) {
+      fprintf(stderr,
+              "WARNING: face %d is degenerated, skipped from face list\n",j);
+      continue;
     }
+    fl[v0].face = xrealloc(fl[v0].face,(fl[v0].n_faces+1)*sizeof(*(fl->face)));
+    fl[v0].face[fl[v0].n_faces++] = j;
+    fl[v1].face = xrealloc(fl[v1].face,(fl[v1].n_faces+1)*sizeof(*(fl->face)));
+    fl[v1].face[fl[v1].n_faces++] = j;
+    fl[v2].face = xrealloc(fl[v2].face,(fl[v2].n_faces+1)*sizeof(*(fl->face)));
+    fl[v2].face[fl[v2].n_faces++] = j;
   }
   return fl;
 }
