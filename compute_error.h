@@ -1,6 +1,4 @@
-/* $Id: compute_error.h,v 1.10 2001/08/10 13:05:55 dsanta Exp $ */
-#include <3dmodel.h>
-
+/* $Id: compute_error.h,v 1.11 2001/08/16 12:56:23 dsanta Exp $ */
 #ifndef _COMPUTE_ERROR_PROTO
 #define _COMPUTE_ERROR_PROTO
 
@@ -11,6 +9,12 @@
 #define BEGIN_DECL
 #define END_DECL
 #endif
+
+/* --------------------------------------------------------------------------*
+ *                         External includes                                 *
+ * --------------------------------------------------------------------------*/
+
+#include <3dmodel.h>
 
 BEGIN_DECL
 #undef BEGIN_DECL
@@ -24,12 +28,6 @@ struct size3d {
   int x; /* Number of elements in the X direction */
   int y; /* Number of elements in the Y direction */
   int z; /* Number of elements in the Z direction */
-};
-
-/* A list of model faces */
-struct face_list {
-  int *face;   /* Array of indices of the faces in the list */
-  int n_faces; /* Number of faces in the array */
 };
 
 /* Per face error metrics */
@@ -57,13 +55,6 @@ struct dist_surf_surf_stats {
 /* --------------------------------------------------------------------------*
  *                       Exported functions                                  *
  * --------------------------------------------------------------------------*/
-
-/* Returns an array of length m->num_vert with the list of faces incident on
- * each vertex. */
-struct face_list *faces_of_vertex(model *m);
-
-/* Frees the storage for the array of face lists fl, of length n */
-void free_face_lists(struct face_list *fl, int n);
 
 /* Calculates the distance from model m1 to model m2. The triangles of m1 are
  * sampled using n_spt samples in each direction. The per face (of m1) error
