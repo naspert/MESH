@@ -1,4 +1,4 @@
-/* $Id: subdiv_methods.c,v 1.11 2002/02/19 09:09:32 aspert Exp $ */
+/* $Id: subdiv_methods.c,v 1.12 2002/02/19 12:42:13 aspert Exp $ */
 #include <3dmodel.h>
 #include <geomutils.h>
 #include <subdiv_methods.h>
@@ -30,13 +30,13 @@ void compute_midpoint_sph(struct ring_info *rings, int center, int v1,
   p = raw_model->vertices[center];
   vj = raw_model->vertices[rings[center].ord_vert[v1]];
   
-  pl_off = -scalprod_v(&p, &n);
+  pl_off = -__scalprod_v(p, n);
 
   __substract_v(vj, p, dir);
   
-  r = norm_v(&dir);
+  r = __norm_v(dir);
   
-  lambda = -(pl_off + scalprod_v(&vj, &n));
+  lambda = -(pl_off + __scalprod_v(vj, n));
   
   __prod_v(lambda, n, m);
 
@@ -46,9 +46,9 @@ void compute_midpoint_sph(struct ring_info *rings, int center, int v1,
 
 
   if (lambda >= 0.0)
-    ph = -atan(norm_v(&m)/norm_v(&v));
+    ph = -atan(__norm_v(m)/__norm_v(v));
   else
-    ph = atan(norm_v(&m)/norm_v(&v));
+    ph = atan(__norm_v(m)/__norm_v(v));
 
 
 
@@ -74,7 +74,9 @@ void compute_midpoint_sph(struct ring_info *rings, int center, int v1,
   
   __prod_v(rp, v, np1);
 
-  __add_prod_v(dz, n, p, np1);
+  /* np1 += dz*n + p */
+  __add_prod_v(dz, n, np1, np1);
+  __add_v(np1, p, np1);
 
   while (ring_op.ord_vert[v2] != center)
       v2++;
@@ -83,15 +85,15 @@ void compute_midpoint_sph(struct ring_info *rings, int center, int v1,
   p = raw_model->vertices[center2];
   vj = raw_model->vertices[ring_op.ord_vert[v2]];
   
-  pl_off = -scalprod_v(&p, &n);
+  pl_off = -__scalprod_v(p, n);
   
   __substract_v(vj, p, dir);
   
 
   
-  r = norm_v(&dir);
+  r = __norm_v(dir);
   
-  lambda = -(pl_off + scalprod_v(&vj, &n));
+  lambda = -(pl_off + __scalprod_v(vj, n));
   
   __prod_v(lambda, n, m);
 
@@ -101,9 +103,9 @@ void compute_midpoint_sph(struct ring_info *rings, int center, int v1,
 
 
   if (lambda >= 0.0)
-    ph = -atan(norm_v(&m)/norm_v(&v));
+    ph = -atan(__norm_v(m)/__norm_v(v));
   else
-    ph = atan(norm_v(&m)/norm_v(&v));
+    ph = atan(__norm_v(m)/__norm_v(v));
 
 
 #ifdef __SUBDIV_SPH_DEBUG
@@ -127,8 +129,10 @@ void compute_midpoint_sph(struct ring_info *rings, int center, int v1,
 
   normalize_v(&v);
   __prod_v(rp, v, np2);
-  __add_prod_v(dz, n, p, np2);
 
+  /* np2 += dz*n + p */
+  __add_prod_v(dz, n, np2, np2);
+  __add_v(np2, p, np2);
 
 
   __add_v(np1, np2, np);
@@ -365,7 +369,7 @@ void compute_midpoint_butterfly_crease(struct ring_info *rings, int center,
   struct ring_info ring = rings[center];
   int center2 = ring.ord_vert[v1];
   struct ring_info ring_op = rings[center2]; /* center of opp ring */
-  int m=ring_op.size;
+  int m = ring_op.size;
   int v2 = 0; /* index of center vertex_t in opp. ring */
   int i;
   vertex_t p;

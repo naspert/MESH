@@ -1,4 +1,4 @@
-/* $Id: geomutils.h,v 1.23 2002/02/19 10:00:34 aspert Exp $ */
+/* $Id: geomutils.h,v 1.24 2002/02/19 12:42:13 aspert Exp $ */
 #include <3dmodel.h>
 
 #ifndef _GEOMUTILS_PROTO_
@@ -547,7 +547,7 @@ extern "C" {
 #endif
 
 #ifndef __crossprod_v
-#define __crossprod_v(v1, v2, vout)                              \
+#define __crossprod_v(v1, v2, vout)                             \
         do {                                                    \
              vertex_t res;                                      \
              res.x = (v1).y*(v2).z - (v1).z*(v2).y;             \
@@ -555,6 +555,30 @@ extern "C" {
              res.z = (v1).x*(v2).y - (v1).y*(v2).x;             \
              vout = res;                                        \
            } while(0)
+#endif
+
+/* 
+ * Computes the scalar product of 'v1' and 'v2'
+ */
+#ifndef __scalprod_v
+#define __scalprod_v(v1, v2)                            \
+        ((v1).x*(v2).x + (v1).y*(v2).y + (v1).z*(v2).z)
+#endif
+
+/* 
+ * Computes the norm of 'v'
+ */
+#ifndef __norm_v
+#define __norm_v(v)                             \
+        sqrt((v).x*(v).x + (v).y*(v).y + (v).z*(v).z)
+#endif
+
+/* 
+ * Computes the squared norm of 'v'
+ */
+#ifndef __norm2_v
+#define __norm2_v(v)                             \
+        ((v).x*(v).x + (v).y*(v).y + (v).z*(v).z)
 #endif
 
 #endif
