@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.68 2001/11/12 15:27:02 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.69 2001/11/13 10:25:27 dsanta Exp $ */
 
 #include <compute_error.h>
 
@@ -96,6 +96,7 @@ struct t_in_cell_list {
 struct sample_list {
   dvertex_t* sample; /* Array of sample 3D coordinates */
   int n_samples;     /* The number of samples in the array */
+  int buf_sz;        /* The size, in elements, of the sample buffer */
 };
 
 /* A list of cells */
@@ -331,18 +332,21 @@ static double get_cell_size(const struct triangle_list *tl,
  * from the list of faces in each cell, fic. The size of the cell grid is
  * given by grid_sz. The distance between two cells is the minimum distance
  * between points in each cell. For distance zero the center cell is also
- * included in the list. */
+ * included in the list. The temporary buffer used to construct the list is
+ * given by *buf (can be NULL) and its size (in elements) by *buf_sz. If a
+ * larger buffer is required it is realloc'ed and the new address and size are
+ * returned in *buf and *buf_sz. */
 static void get_cells_at_distance(struct dist_cell_lists *dlists,
                                   struct size3d cell_gr_coord,
                                   struct size3d grid_sz, int k,
-                                  const struct t_in_cell_list *fic)
+                                  const struct t_in_cell_list *fic,
+                                  int **buf, int *buf_sz)
 {
   int max_n_cells;
   int cell_idx;
   int cell_idx1,cell_idx2;
   int cell_stride_z;
   ec_bitmap_t *fic_empty_cell;
-  int *cell_list;
   int *cur_cell;
   int cll;
   int m,n,o;
@@ -370,8 +374,11 @@ static void get_cells_at_distance(struct dist_cell_lists *dlists,
    * center cell. For the zero distance we also include the center cell. */
   max_n_cells = 6*(2*k+1)*(2*k+1)+12*(2*k+1)+8;
   if (k == 0) max_n_cells += 1; /* add center cell */
-  cell_list = xa_malloc(max_n_cells*sizeof(*cell_list));
-  cur_cell = cell_list;
+  if (*buf == NULL || *buf_sz < max_n_cells) {
+    *buf_sz = max_n_cells;
+    *buf = xa_realloc(*buf,(*buf_sz)*sizeof(**buf));
+  }
+  cur_cell = *buf;
   if (k == 0) { /* add center cell */
     cell_idx = cell_gr_coord.x+cell_gr_coord.y*grid_sz.x+
       cell_gr_coord.z*cell_stride_z;
@@ -509,14 +516,14 @@ static void get_cells_at_distance(struct dist_cell_lists *dlists,
     }
   }
   /* Store resulting cell list */
-  cll = cur_cell-cell_list;
+  cll = cur_cell-*buf;
   if (cll != 0) {
-    dlists->list[k].cell = xa_realloc(cell_list,cll*sizeof(*cell_list));
+    dlists->list[k].cell = xa_malloc(cll*sizeof(*cur_cell));
+    memcpy(dlists->list[k].cell,*buf,cll*sizeof(*cur_cell));
     dlists->list[k].n_cells = cll;
   } else {
     dlists->list[k].cell = NULL;
     dlists->list[k].n_cells = 0;
-    free(cell_list);
   }
 }
 
@@ -894,7 +901,10 @@ static void sample_triangle(const dvertex_t *a, const dvertex_t *b,
   /* initialize */
   a_cache = *a;
   s->n_samples = n*(n+1)/2;
-  s->sample = xa_realloc(s->sample,sizeof(*(s->sample))*s->n_samples);
+  if (s->buf_sz < s->n_samples) {
+    s->sample = xa_realloc(s->sample,sizeof(*(s->sample))*s->n_samples);
+    s->buf_sz = s->n_samples;
+  }
   /* get basis vectors */
   substract_dv(b,a,&u);
   substract_dv(c,a,&v);
@@ -949,7 +959,7 @@ triangles_in_cells(const struct triangle_list *tl,
   cell_stride_z = grid_sz.x*grid_sz.y;
   c_buf = NULL;
   c_buf_sz = 0;
-  sl.sample = NULL;
+  memset(&(sl.sample),0,sizeof(sl));
   lst = xa_malloc(sizeof(*lst));
   nt = xa_calloc(grid_sz.x*grid_sz.y*grid_sz.z,sizeof(*nt));
   tab = xa_calloc(grid_sz.x*grid_sz.y*grid_sz.z,sizeof(*tab));
@@ -1081,7 +1091,10 @@ triangles_in_cells(const struct triangle_list *tl,
  * an array of length grid_sz.x*grid_sz.y*grid_sz.z and must be initialized to
  * all zero on the first call to this function. The distance obtained from a
  * previous point *prev_p is prev_d (it is used to minimize the work). For the
- * first call set prev_d as zero. */
+ * first call set prev_d as zero. The temporary buffer used to construct each
+ * list in dcl is given by *dcl_buf (can be NULL) and its size (in elements)
+ * by *dcl_buf_sz. If a larger buffer is required it is realloc'ed and the new
+ * address and size are returned in *dcl_buf and *dcl_buf_sz. */
 static double dist_pt_surf(dvertex_t p, const struct triangle_list *tl,
                            const struct t_in_cell_list *fic,
 #ifdef DO_DIST_PT_SURF_STATS
@@ -1089,7 +1102,8 @@ static double dist_pt_surf(dvertex_t p, const struct triangle_list *tl,
 #endif
                            struct size3d grid_sz, double cell_sz,
                            dvertex_t bbox_min, struct dist_cell_lists *dcl,
-                           const dvertex_t *prev_p, double prev_d)
+                           const dvertex_t *prev_p, double prev_d,
+                           int **dcl_buf, int *dcl_buf_sz)
 {
   dvertex_t p_rel;      /* coordinates of p relative to bbox_min */
   struct size3d grid_coord; /* coordinates of cell in which p is */
@@ -1162,7 +1176,8 @@ static double dist_pt_surf(dvertex_t p, const struct triangle_list *tl,
      * list. */
     cell_idx = grid_coord.x+grid_coord.y*grid_sz.x+grid_coord.z*cell_stride_z;
     if (dcl[cell_idx].n_dists <= k || dcl[cell_idx].list == NULL) {
-      get_cells_at_distance(&(dcl[cell_idx]),grid_coord,grid_sz,k,fic);
+      get_cells_at_distance(&(dcl[cell_idx]),grid_coord,grid_sz,k,fic,
+                            dcl_buf,dcl_buf_sz);
     }
 
     /* Scan each (non-empty) cell in the compiled list */
@@ -1240,6 +1255,8 @@ void dist_surf_surf(const struct model *m1, struct model *m2,
   int report_step;            /* The step to update the progress report */
   struct dist_cell_lists *dcl;/* Cache for the list of non-empty cells at each
                                * distance, for each cell. */
+  int *dcl_buf;               /* Temporary buffer to construct dcl lists */
+  int dcl_buf_sz;             /* Size of dcl_buf */
   dvertex_t prev_p;           /* previous point */
   double prev_d;              /* distance for previous point */
   dvertex_t v1,v2,v3;         /* double version of triangle vertices */
@@ -1267,6 +1284,8 @@ void dist_surf_surf(const struct model *m1, struct model *m2,
   tl2 = model_to_triangle_list(m2);
   cell_sz = get_cell_size(tl2,&bbox_min,&bbox_max,&grid_sz);
   dcl = xa_calloc(grid_sz.x*grid_sz.y*grid_sz.z,sizeof(*dcl));
+  dcl_buf = NULL;
+  dcl_buf_sz = 0;
 
   /* Get the list of triangles in each cell */
   fic = triangles_in_cells(tl2,grid_sz,cell_sz,bbox_min);
@@ -1311,7 +1330,7 @@ void dist_surf_surf(const struct model *m1, struct model *m2,
                                     &dps_stats,
 #endif
                                     grid_sz,cell_sz,bbox_min,dcl,
-                                    &prev_p,prev_d);
+                                    &prev_p,prev_d,&dcl_buf,&dcl_buf_sz);
       prev_p = ts.sample[i];
       prev_d = tse.err_lin[i];
     }
@@ -1362,6 +1381,7 @@ void dist_surf_surf(const struct model *m1, struct model *m2,
     }
   }
   free(dcl);
+  free(dcl_buf);
   free_triag_sample_error(&tse);
   free(ts.sample);
 }
