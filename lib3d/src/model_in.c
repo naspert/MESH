@@ -1,4 +1,4 @@
-/* $Id: model_in.c,v 1.19 2002/04/12 11:49:07 aspert Exp $ */
+/* $Id: model_in.c,v 1.20 2002/04/12 13:39:30 aspert Exp $ */
 
 
 /*
@@ -1699,36 +1699,9 @@ static int read_iv_tmesh(struct model **tmesh_ref, struct file_data *data) {
   return rcode;
 }
 
-/* This function reads a line from 'data' into 'line_buf', which must
- * be pre-malloc'ed, and have a size 'max_len'. It returns the number
- * of characters read of a negative value if an error is encountered
- */
-static INLINE int read_line(char *line_buf, const int max_len, 
-                            struct file_data *data) {
-  int tmp, i=0, rcode=0;
 
 
-  do {
-    tmp = getc(data);
-    line_buf[i++] = (char)tmp;
-  } while (i < max_len && tmp != '\r' && tmp != '\n' && 
-	   tmp != EOF);
-
-  if (tmp == EOF) {
-    if (i > 0 && i < max_len) { /* we have been able to read a last
-                                 *  line */
-      line_buf[--i] = '\0';   
-      rcode =  i;
-    } else
-      rcode =  MESH_CORRUPTED;
-  } else {
-    line_buf[--i]='\0';   
-    rcode = i;
-  }
-  return rcode;
-}
-
-/* Reads a triangular mesh from a SMF file (used by M. Garland's QSlim).
+/* Reads a _triangular_ mesh from a SMF file (used by M. Garland's QSlim).
  * Only the vertices and faces are read. All other possible fields in
  * SMF files (i.e. color, bindings, begin/end, transform ...) are
  * skipped silently. However, this code should be sufficient to read
@@ -1736,16 +1709,14 @@ static INLINE int read_line(char *line_buf, const int max_len,
  * It returns the number of meshes read (i.e. 1) if successful, and a 
  * negative code if it failed. */
 static int read_smf_tmesh(struct model **tmesh_ref, struct file_data *data) {
-  char line_buf[256], tmp[10];
   int  c;
   struct model *tmesh;
   vertex_t bbmin, bbmax;
-  int nread=0;
   int max_vidx=-1;
   int nvtcs=0;
   int nfaces=0;
   int l_vertices=0, l_faces=0;
-  int f0, f1, f2, f3;
+  int f0, f1, f2;
   float x, y, z;
   int rcode = 1;
 
@@ -1759,11 +1730,12 @@ static int read_smf_tmesh(struct model **tmesh_ref, struct file_data *data) {
     c = skip_ws_comm(data);
     if (c == EOF) break; /* maybe ok if we have reached the end of
                           *  file */
-    nread = read_line(line_buf, (int)sizeof(line_buf), data);
+
+    c = getc(data); /* get 1st char of the current line */
 #ifdef DEBUG
     printf("[read_smf_tmesh] nread=%d line_buf=%s\n", nread, line_buf);
 #endif
-    switch (line_buf[0]) {
+    switch (c) {
     case 'v': /* vertex line found */
       if (nvtcs == l_vertices) { /* Reallocate storage if needed */
         tmesh->vertices = grow_array(tmesh->vertices, 
@@ -1774,10 +1746,22 @@ static int read_smf_tmesh(struct model **tmesh_ref, struct file_data *data) {
           break;
         }
       }
-      if ((c = sscanf(line_buf, "%s %f %f %f", tmp, &x, &y, &z)) != 4) {
+      if (float_scanf(data, &x) != 1) {
         rcode = MESH_CORRUPTED;
         break;
       }
+      if (float_scanf(data, &y) != 1) {
+        rcode = MESH_CORRUPTED;
+        break;
+      }
+      if (float_scanf(data, &z) != 1) {
+        rcode = MESH_CORRUPTED;
+        break;
+      }
+
+#ifdef DEBUG
+      printf("[read_smf_tmesh] %f %f %f\n", x, y, z);
+#endif
 
       tmesh->vertices[nvtcs].x = x;
       tmesh->vertices[nvtcs].y = y;
@@ -1790,10 +1774,7 @@ static int read_smf_tmesh(struct model **tmesh_ref, struct file_data *data) {
       if (z < bbmin.z) bbmin.z = z;
       if (z > bbmax.z) bbmax.z = z;
 
-#ifdef DEBUG
-      printf("[read_smf_tmesh] %s %f %f %f\n", tmp, x, y, z);
-#endif
-      break;
+      break; /* end for 'v' */
 
     case 'f':/* face line found */
       if (nfaces == l_faces) { /* Reallocate storage if needed */
@@ -1804,49 +1785,49 @@ static int read_smf_tmesh(struct model **tmesh_ref, struct file_data *data) {
           break;
         }
       }
-      /* Do not forget that SMF vertex indices start at 1 !! */
-      if ((c = sscanf(line_buf, "%s %d %d %d %d\n", 
-                      tmp, &f0, &f1, &f2, &f3)) == 4) {
-        tmesh->faces[nfaces].f0 = --f0;
-        tmesh->faces[nfaces].f1 = --f1;
-        tmesh->faces[nfaces++].f2 = --f2;
 
-        if (f0 > max_vidx) max_vidx = f0;
-        if (f1 > max_vidx) max_vidx = f1;
-        if (f2 > max_vidx) max_vidx = f2;
-      } else if (c == 5) { /* quad -> split it */
-        tmesh->faces[nfaces].f0 = --f0;
-        tmesh->faces[nfaces].f1 = --f1;
-        tmesh->faces[nfaces++].f2 = --f2;
-
-        tmesh->faces[nfaces].f0 = f1;
-        tmesh->faces[nfaces].f1 = f2;
-        tmesh->faces[nfaces++].f2 = --f3;
-
-        if (f0 > max_vidx) max_vidx = f0;
-        if (f1 > max_vidx) max_vidx = f1;
-        if (f2 > max_vidx) max_vidx = f2;
-        if (f3 > max_vidx) max_vidx = f3;
-      } else {
+      if (int_scanf(data, &f0) != 1) {
+        rcode = MESH_CORRUPTED;
+        break;
+      }
+      if (int_scanf(data, &f1) != 1) {
+        rcode = MESH_CORRUPTED;
+        break;
+      }
+      if (int_scanf(data, &f2) != 1) {
         rcode = MESH_CORRUPTED;
         break;
       }
 #ifdef DEBUG
-      printf("[read_smf_tmesh] %s %d %d %d\n", tmp, f0, f1, f2);
+      printf("[read_smf_tmesh] %d %d %d\n", f0, f1, f2);
 #endif
-      break;
+      /* Do not forget that SMF vertex indices start at 1 !! */
+      tmesh->faces[nfaces].f0 = --f0;
+      tmesh->faces[nfaces].f1 = --f1;
+      tmesh->faces[nfaces++].f2 = --f2;
+
+      if (f0 > max_vidx) max_vidx = f0;
+      if (f1 > max_vidx) max_vidx = f1;
+      if (f2 > max_vidx) max_vidx = f2;
+
+      if (f0 < 0 || f1 < 0 || f2 < 0)
+        rcode = MESH_CORRUPTED;
+
+      break; /* end for 'f' */
 
     default: /* only the faces & vertices are read. We choose to
               *  ignore every other field from the SMF spec. */
-#ifdef DEBUG
-    printf("[read_smf_tmesh]nread=%d line_buf = %s\n", nread, line_buf);
-#endif
+
+      do { /* neither a face, nor a vertex => skip the whole line */
+        c = getc(data);
+      } while (c != EOF && c != '\n' && c != '\r');
+
       break;
     }
 
-  } while(nread > 0 && rcode > 0);
+  } while(c != EOF  && rcode > 0);
 
-  if (max_vidx > nvtcs)
+  if (max_vidx >= nvtcs)
     rcode = MESH_CORRUPTED;
 
   if (nvtcs == 0) {
