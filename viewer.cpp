@@ -1,4 +1,4 @@
-/* $Id: viewer.cpp,v 1.23 2001/07/11 14:43:38 jacquet Exp $ */
+/* $Id: viewer.cpp,v 1.24 2001/07/12 08:36:17 aspert Exp $ */
 
 #include <qapplication.h>
 #include <ScreenWidget.h>
@@ -45,61 +45,35 @@ int main( int argc, char **argv )
  QApplication a( argc, argv ); 
 
 
- if(argc<4){
-   InitWidget b;
-   a.setMainWidget( &b );
-   b.show(); 
+
+ if ((argc == 5) && !strcmp("-t", argv[1])) {
+     text = 0;     
+     in_filename1 = argv[2];
+     in_filename2 = argv[3];
+     samplethin=atof(argv[4]);
+ } else {
+   InitWidget *b;
+   b = new InitWidget() ;
+   a.setMainWidget( b );
+   b->show(); 
    a.exec();
-   m1=b.m; 
-   n1=b.n;
-   o1=b.o;
+   m1=b->m; 
+   n1=b->n;
+   o1=b->o;
    in_filename1=(char *)m1.latin1();
    in_filename2=(char *)n1.latin1();
    thin=(char *)o1.latin1();
    samplethin=atof(thin);
  }
- else {
-   if(strcmp("-t",argv[1]) == 0) {
-     text = 0;     
-     in_filename1 = argv[2];
-     in_filename2 = argv[3];
-     samplethin=atof(argv[4]);
-   }
-   else {
-     in_filename1 = argv[1];
-     in_filename2 = argv[2];
-     samplethin=atof(argv[3]);
-   }
-  
- } 
+
 
   k=(int)floor(1.0/samplethin);
-//   printf("k= %d\n",k);
 
-//   if (argc!=4) {
-//     printf("nbre d'arg incorrect\n");
-//     printf("le 1er argument correspond a l'objet de plus basse resolution\n");
-//     printf("le 2nd argument correspond a l'objet de plus haute resolution\n");
-//     printf("le 3eme argument correspond au pas d'echantillonnage\n");
-//     exit(-1);
-//   }
-  
   /* mise en memoire de chaque point des deux objets */
   raw_model1=read_raw_model(in_filename1);
   raw_model2=read_raw_model(in_filename2);
 
-  bbox0=raw_model1->bBox[0];
-  bbox1=raw_model1->bBox[1];
   
-//   printf("%lf %lf %lf\n",bbox0.x,bbox0.y,bbox0.z);
-//   printf("%lf %lf %lf\n",bbox1.x,bbox1.y,bbox1.z);
-  
-  bbox0=raw_model2->bBox[0];
-  bbox1=raw_model2->bBox[1];
-  
-//   printf("%lf %lf %lf\n",bbox0.x,bbox0.y,bbox0.z);
-//   printf("%lf %lf %lf\n",bbox1.x,bbox1.y,bbox1.z);
-
   raw_model2->area = (double*)malloc(raw_model2->num_faces*sizeof(double));
   curv = (info_vertex*)malloc(raw_model2->num_vert*sizeof(info_vertex));
   

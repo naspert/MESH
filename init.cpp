@@ -1,4 +1,4 @@
-/* $Id */
+/* $Id: init.cpp,v 1.6 2001/07/12 08:36:17 aspert Exp $ */
 
 #include <init.h>
 
@@ -7,16 +7,16 @@ InitWidget::InitWidget(QWidget *parent, const char *name)
 {
 
   textEd1 = new QLineEdit("first mesh",this);
-  QLabel *textLabel1 = new QLabel(textEd1,"&first mesh",this);
+  QLabel *textLabel1 = new QLabel(textEd1, "First Mesh", this);
   QPushButton *B1 = new QPushButton("parcourir",this);
   connect(B1, SIGNAL(clicked()), this, SLOT(load1()));
   textEd2 = new QLineEdit("second mesh",this);
-  QLabel *textLabel2 = new QLabel(textEd2,"&second mesh",this);
+  QLabel *textLabel2 = new QLabel(textEd2,"Second Mesh",this);
   QPushButton *B2 = new QPushButton("parcourir",this);
   connect(B2, SIGNAL(clicked()), this, SLOT(load2()));
   textEd3 = new QLineEdit("samplethin",this);
   QListBox *samplethin = new QListBox(this);
-  QLabel *textLabel3 = new QLabel(samplethin,"&samplethin",this);
+  QLabel *textLabel3 = new QLabel(samplethin,"Sampling step",this);
   samplethin->insertItem("0.5");
   samplethin->insertItem("0.2");
   samplethin->insertItem("0.1"); 

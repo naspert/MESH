@@ -11,7 +11,7 @@ ScreenWidget::ScreenWidget( model *raw_model1,model *raw_model2,double dmoymin, 
   setMaximumSize( 1070, 540 );
 
 
-  QAction *fileQuitAction = new QAction( "Quit", "&Quit", CTRL+Key_Q, this, "quit" );
+  QAction *fileQuitAction = new QAction( "Quit", "Quit", CTRL+Key_Q, this, "quit" );
   connect( fileQuitAction, SIGNAL( activated() ) , qApp, SLOT( closeAllWindows() ) );
 
 
