@@ -1,4 +1,4 @@
-/* $Id: normals.c,v 1.14 2001/10/23 09:29:36 aspert Exp $ */
+/* $Id: normals.c,v 1.15 2001/10/25 11:46:28 aspert Exp $ */
 #include <3dmodel.h>
 #include <geomutils.h>
 #include <normals.h>
@@ -10,10 +10,12 @@ void build_star(struct model *raw_model, int v, struct ring_info *ring) {
   int num_edges=0; /* number of edges in the 1-ring */
   struct edge_v *edge_list_primal=NULL;
   int *final_star;
+  int *face_star;
   unsigned char *done;
   int star_size;
+  int n_faces;
   int edge_added;
-/*   ring_info ring; */
+
 
   /* list all edges in the 1-ring */
   for (i=0; i<raw_model->num_faces; i++) {
@@ -30,7 +32,8 @@ void build_star(struct model *raw_model, int v, struct ring_info *ring) {
 #endif
 
       edge_list_primal[num_edges-1].v0 = raw_model->faces[i].f1;
-      edge_list_primal[num_edges-1].v1 = raw_model->faces[i].f2;      
+      edge_list_primal[num_edges-1].v1 = raw_model->faces[i].f2;
+      edge_list_primal[num_edges-1].face = i;
     } else if (raw_model->faces[i].f1 == v) {
       num_edges ++;
       edge_list_primal = (struct edge_v*)
@@ -45,6 +48,8 @@ void build_star(struct model *raw_model, int v, struct ring_info *ring) {
 
       edge_list_primal[num_edges-1].v0 = raw_model->faces[i].f0;
       edge_list_primal[num_edges-1].v1 = raw_model->faces[i].f2;      
+      edge_list_primal[num_edges-1].face = i;
+
     }  else if (raw_model->faces[i].f2 == v) {
       num_edges ++;
       edge_list_primal = (struct edge_v*)
@@ -53,6 +58,7 @@ void build_star(struct model *raw_model, int v, struct ring_info *ring) {
 
       edge_list_primal[num_edges-1].v0 = raw_model->faces[i].f0;
       edge_list_primal[num_edges-1].v1 = raw_model->faces[i].f1;      
+      edge_list_primal[num_edges-1].face = i;
     }
 
   }
@@ -68,11 +74,15 @@ void build_star(struct model *raw_model, int v, struct ring_info *ring) {
   done = (unsigned char*)calloc(num_edges, sizeof(unsigned char));
   /* worst case allocation */
   final_star = (int*)malloc(2*num_edges*sizeof(int));
+  face_star = (int*)malloc(2*num_edges*sizeof(int));
 
   /* Put 1st two elts in the star */
   final_star[0] = edge_list_primal[0].v0;
   final_star[1] = edge_list_primal[0].v1;
+  face_star[0] = edge_list_primal[0].face;
+
   star_size = 2;
+  n_faces = 1;
   done[0] = 1;
   i = 1;
 
@@ -87,11 +97,17 @@ void build_star(struct model *raw_model, int v, struct ring_info *ring) {
 	/* add v1 on top */
 	for (k=star_size-1; k>=0; k--) 
 	  final_star[k+1] = final_star[k];
+	for (k=n_faces-1; k>=0; k--)
+	  face_star[k+1] = face_star[k];
+       
 	
 	final_star[0] = edge_list_primal[j].v1;
+	face_star[0] = edge_list_primal[j].face;
+	
 	done[j] = 1;
 	i++;
 	star_size++;
+	n_faces++;
 	edge_added = 1;
 	break;
       }
@@ -99,29 +115,37 @@ void build_star(struct model *raw_model, int v, struct ring_info *ring) {
 	/* add v0 on top */
 	for (k=star_size-1; k>=0; k--) 
 	  final_star[k+1] = final_star[k];
-	
+	for (k=n_faces-1; k>=0; k--)
+	  face_star[k+1] = face_star[k];
+       
 	final_star[0] = edge_list_primal[j].v0;
+	face_star[0] = edge_list_primal[j].face;
 	done[j] = 1;
 	i++;
 	star_size++;
+	n_faces++;
 	edge_added = 1;
 	break;
       }
       else if (edge_list_primal[j].v0 == final_star[star_size-1]) {
 	/* add v1 on bottom */
 	final_star[star_size] = edge_list_primal[j].v1;
+	face_star[n_faces] = edge_list_primal[j].face;
 	done[j] = 1;
 	i++;
 	star_size++;
+	n_faces++;
 	edge_added = 1;
 	break;
       }
       else if (edge_list_primal[j].v1 == final_star[star_size-1]) {
 	/* add v0 on bottom */
 	final_star[star_size] = edge_list_primal[j].v0;
+	face_star[n_faces] = edge_list_primal[j].face;
 	done[j] = 1;
 	i++;
 	star_size++;
+	n_faces++;
 	edge_added = 1;
 	break;
       }
@@ -130,8 +154,11 @@ void build_star(struct model *raw_model, int v, struct ring_info *ring) {
       printf("Vertex %d is non-manifold\n", v);
       free(done);
       free(final_star);
+      free(face_star);
       ring->type = 2;
       ring->size = 0;
+      ring->n_faces = 0;
+      ring->ord_face = NULL;
       ring->ord_vert = NULL;
       return;
     }
@@ -147,16 +174,22 @@ void build_star(struct model *raw_model, int v, struct ring_info *ring) {
   ring->size = star_size;
   ring->ord_vert = (int*)malloc(star_size*sizeof(int));
   memcpy(ring->ord_vert, final_star, star_size*sizeof(int));
+  ring->n_faces = n_faces;
+  ring->ord_face = (int*)malloc(n_faces*sizeof(int));
+  memcpy(ring->ord_face, face_star, n_faces*sizeof(int));
 
-#ifdef NORM_DEBUG
-  printf("Vertex %d : star_size = %d num_edges = %d\n", v, star_size, 
-	 num_edges);
+#ifdef __RING_DEBUG
+  printf("Vertex %d : star_size=%d num_edges=%d n_faces=%d\n", v, star_size, 
+	 num_edges, n_faces);
   for (i=0; i<star_size; i++)
     printf("vertex %d \n", final_star[i]);
+  for (i=0; i<n_faces; i++)
+    printf("face %d\n", face_star[i]);
 #endif
 
   free(edge_list_primal);
   free(final_star);
+  free(face_star);
   free(done);
 
 }
