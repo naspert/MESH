@@ -1,4 +1,4 @@
-/* $Id: subdiv_methods.h,v 1.16 2002/11/05 13:34:45 aspert Exp $ */
+/* $Id: subdiv_methods.h,v 1.17 2003/03/12 17:54:59 aspert Exp $ */
 #include <3dmodel.h>
 #include <ring.h>
 
@@ -10,10 +10,7 @@
 # define SUBDIV_BUTTERFLY          0x01
 # define SUBDIV_SPH                0x02
 # define SUBDIV_LOOP               0x03
-
-
-
-
+# define SUBDIV_KOB_SQRT3          0x11
 
 # ifdef __cplusplus
 extern "C" {
@@ -44,6 +41,12 @@ extern "C" {
   void compute_midpoint_loop_crease(const struct ring_info*, const int, 
                                     const int, const struct model*,
 				    vertex_t*);
+
+  /* kobbelt-sqrt3 subdivision */
+  void compute_face_midpoint_kobsqrt3(const struct ring_info*, const int, 
+                                      const struct model*, vertex_t*);
+  void update_vertices_kobsqrt3(const struct model*, struct model*, 
+                                const struct ring_info*);
  
 # ifdef __cplusplus
 }

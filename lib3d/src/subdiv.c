@@ -1,4 +1,4 @@
-/* $Id: subdiv.c,v 1.33 2003/03/12 14:54:23 aspert Exp $ */
+/* $Id: subdiv.c,v 1.34 2003/03/12 17:55:00 aspert Exp $ */
 #include <3dutils.h>
 #include <subdiv_methods.h>
 #include <subdiv.h>
@@ -231,8 +231,11 @@ struct model* subdiv(struct model *raw_model, const int sub_method,
       free(mp_info[i].midpoint_idx);
       free(mp_info[i].edge_subdiv_done);
     }
+    free(rings[i].ord_vert);
+    free(rings[i].ord_face);
+ 
   }
-
+  free(rings);
   free(mp_info);
   return subdiv_model;
 }

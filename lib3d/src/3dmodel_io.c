@@ -1,4 +1,4 @@
-/* $Id: 3dmodel_io.c,v 1.23 2002/05/13 08:08:28 aspert Exp $ */
+/* $Id: 3dmodel_io.c,v 1.24 2003/03/12 17:54:59 aspert Exp $ */
 #include <3dmodel.h>
 #include <3dmodel_io.h>
 #include <normals.h>
@@ -232,7 +232,7 @@ void write_raw_model(struct model *raw_model, char *filename) {
 
   pf = fopen(finalname,"w");
   if (pf == NULL) {
-    printf("Unable to open %s\n",filename);
+    printf("Unable to open %s\n",finalname);
     exit(-1);
   }
   if (raw_model->normals == NULL) {
