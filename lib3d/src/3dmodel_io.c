@@ -1,4 +1,4 @@
-/* $Id: 3dmodel_io.c,v 1.9 2001/06/05 11:31:06 jacquet Exp $ */
+/* $Id: 3dmodel_io.c,v 1.10 2001/06/15 12:39:50 aspert Exp $ */
 #include <3dmodel.h>
 
 
@@ -213,10 +213,9 @@ void write_raw_model(model *raw_model, char *filename) {
     }
     finalname = (char*)malloc((strlen(rootname)+7)*sizeof(char));
     sprintf(finalname, "%s_n.raw", rootname);
-  } else if (raw_model->normals == NULL)
+  } else
     finalname = filename;
-  else /* This model already has normals, do nothing */
-    return;
+
 
   pf = fopen(finalname,"w");
   if (pf == NULL) {
