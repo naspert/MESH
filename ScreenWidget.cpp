@@ -1,4 +1,4 @@
-/* $Id: ScreenWidget.cpp,v 1.51 2003/01/13 12:46:06 aspert Exp $ */
+/* $Id: ScreenWidget.cpp,v 1.52 2003/04/08 09:08:03 dsanta Exp $ */
 
 
 /*
@@ -163,10 +163,10 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   // This is to synchronize the viewpoints of the two models
   // We need to pass the viewing matrix from one RawWidget
   // to another
-  connect(glModel1, SIGNAL(transferValue(double,double*)), 
-	  glModel2, SLOT(transfer(double,double*)));
-  connect(glModel2, SIGNAL(transferValue(double,double*)), 
-	  glModel1, SLOT(transfer(double,double*)));
+  connect(glModel1, SIGNAL(transferValue(double,double,double,double*)), 
+	  glModel2, SLOT(transfer(double,double,double,double*)));
+  connect(glModel2, SIGNAL(transferValue(double,double,double,double*)), 
+	  glModel1, SLOT(transfer(double,double,double,double*)));
 
 
   // Build synchro and quit buttons

@@ -1,4 +1,4 @@
-/* $Id: RawWidget.h,v 1.39 2003/01/13 12:46:06 aspert Exp $ */
+/* $Id: RawWidget.h,v 1.40 2003/04/08 09:08:03 dsanta Exp $ */
 
 
 /*
@@ -89,7 +89,7 @@ public:
 public slots: 
   void setLine(bool state);
   void switchSync(bool state);
-  void transfer(double dist,double *mvmat);
+  void transfer(double dist,double, double, double *mvmat);
   void setErrorMode(int emode);
   void setVEDownSampling(int n);
   void invertNormals(bool state);
@@ -101,7 +101,7 @@ public slots:
   void changeSpeed(int value);
 
 signals:
-  void transferValue(double,double*);
+  void transferValue(double,double,double,double*);
   void toggleSync();
   void toggleLight();
   void toggleLine();
@@ -121,7 +121,7 @@ protected:
 
 private:  
 // functions 
-  void display(double dist);
+  void display(double dist, double tx, double ty);
   void rebuildList();
   static void checkGlErrors(const char* where);
   void genErrorTextures();
@@ -140,6 +140,8 @@ private:
   ColorMapWidget::colorSpace csp;
   struct model_error *model;
   GLdouble distance, dstep;
+  GLdouble tx, ty;
+  GLint vp_w;
   int oldx,oldy;
   GLdouble mvmatrix[16]; // Buffer for GL_MODELVIEW_MATRIX 
   GLuint model_list; // display list index for the model 

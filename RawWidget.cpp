@@ -1,4 +1,4 @@
-/* $Id: RawWidget.cpp,v 1.65 2003/03/26 09:17:16 aspert Exp $ */
+/* $Id: RawWidget.cpp,v 1.66 2003/04/08 09:08:03 dsanta Exp $ */
 
 
 /*
@@ -107,7 +107,9 @@ RawWidget::RawWidget(struct model_error *model_err, int renderType,
   // This should be enough to see the whole model when starting
   distance = dist_v(&(model_err->mesh->bBox[0]), &(model_err->mesh->bBox[1]))/
     tan(FOV*M_PI_2/180.0);
-
+  tx = 0;
+  ty = 0;
+  vp_w = 1;
 
   // This is the increment used when moving closer/farther from the object
   dstep = distance*0.01;
@@ -141,9 +143,11 @@ RawWidget::~RawWidget() {
   free(etex_sz);
 }
 
-void RawWidget::transfer(double dist,double *mvmat) {
+void RawWidget::transfer(double dist, double tx, double ty, double *mvmat) {
 
   distance = dist;
+  this->tx = tx;
+  this->ty = ty;
   // Copy the 4x4 transformation matrix
   memcpy(mvmatrix, mvmat, 16*sizeof(double)); 
   // update display
@@ -153,7 +157,7 @@ void RawWidget::transfer(double dist,double *mvmat) {
 void RawWidget::switchSync(bool state) {
   if (state) {
     move_state = 1;
-    emit(transferValue(distance, mvmatrix));
+    emit(transferValue(distance, tx, ty, mvmatrix));
   } else
     move_state = 0;
 }
@@ -652,7 +656,7 @@ void RawWidget::setVEDownSampling(int n) {
 
 // display callback
 void RawWidget::paintGL() {
-  display(distance);
+  display(distance,tx,ty);
   checkGlErrors("paintGL()");
 }
 
@@ -665,6 +669,7 @@ void RawWidget::resizeGL(int width ,int height) {
 		 10.0*distance);
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
+  vp_w = width;
   checkGlErrors("resizeGL()");
 }
 
@@ -719,14 +724,14 @@ void RawWidget::initializeGL() {
 // 'display' function called by the paintGL call back
 // clears the buffers, computes correct transformation matrix
 // and calls the model's display list
-void RawWidget::display(double dist) {
+void RawWidget::display(double dist, double tx, double ty) {
   GLfloat lpos[] = {-1.0, 1.0, 1.0, 0.0} ;
 
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glLoadIdentity();
   /* Set the light position relative to eye point */
   glLightfv(GL_LIGHT0, GL_POSITION, lpos);  
-  glTranslated(0.0, 0.0, -dist); /* Translate the object along z axis */
+  glTranslated(-tx, -ty, -dist); /* Translate the object along z axis and pan*/
   glMultMatrixd(mvmatrix); /* Perform rotation */
   glCallList(model_list);
 }
@@ -930,7 +935,7 @@ void RawWidget::handleTimerEvent() {
   glPopMatrix(); 
   updateGL();
   if(move_state==1)
-    emit(transferValue(distance, mvmatrix));
+    emit(transferValue(distance, tx, ty, mvmatrix));
 }
 
 void RawWidget::changeSpeed(int value) {
@@ -956,7 +961,12 @@ void RawWidget::mouseMoveEvent(QMouseEvent *event) {
   makeCurrent();
   if (timer_state == 0) { // When in "demo" mode, the mousemove events
                           // _have_ to be ignored
-    if(left_button_state==1){  
+    if(left_button_state==1 && (event->state() & ControlButton)){  
+      tx -= ((double)dx/vp_w)*2*distance*tan(FOV/2/180.0*M_PI);
+      ty += ((double)dy/vp_w)*2*distance*tan(FOV/2/180.0*M_PI);
+      updateGL();
+    }
+    else if(left_button_state==1){  
       dth = dx*0.5; 
       dph = dy*0.5;
       glPushMatrix(); 
@@ -986,7 +996,7 @@ void RawWidget::mouseMoveEvent(QMouseEvent *event) {
   checkGlErrors("keyPressEvent(QMouseEvent)");
 
   if(move_state==1)
-    emit(transferValue(distance, mvmatrix));
+    emit(transferValue(distance, tx, ty, mvmatrix));
   oldx = event->x();
   oldy = event->y();
 
@@ -1049,7 +1059,7 @@ void RawWidget::keyPressEvent(QKeyEvent *k) {
   case Key_F3:
     // if we are going to sync make sure other widgets get out transformation
     // matrix first
-    if (move_state==0) emit transferValue(distance, mvmatrix);
+    if (move_state==0) emit transferValue(distance, tx, ty, mvmatrix);
     // now send the signal that we need to toggle synchronization
     emit toggleSync();
     break;
