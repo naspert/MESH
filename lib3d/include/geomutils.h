@@ -1,4 +1,4 @@
-/* $Id: geomutils.h,v 1.15 2001/10/08 13:12:05 aspert Exp $ */
+/* $Id: geomutils.h,v 1.16 2001/10/23 09:29:36 aspert Exp $ */
 #include <3dmodel.h>
 
 #ifndef _GEOMUTILS_PROTO_
@@ -24,13 +24,11 @@ extern "C" {
 
   /* exported functions */
   double dist(vertex_t, vertex_t);
-  vertex_t ncrossp(vertex_t, vertex_t, vertex_t);
-  vertex_t crossprod(vertex_t, vertex_t);
   double cross_product2d(vertex_t, vertex_t, vertex_t);
   double scalprod(vertex_t, vertex_t);
   double norm(vertex_t);
   void normalize(vertex_t*);
-  vertex_t rotate_3d(vertex_t, vertex_t, double);
+  void rotate_3d(vertex_t, vertex_t, double, vertex_t*);
   int inside(vertex_t, vertex_t, double);
   void compute_circle2d(vertex_t, vertex_t, vertex_t, double*, vertex_t*);
   void compute_circle3d(vertex_t, vertex_t, vertex_t, double*, vertex_t*);

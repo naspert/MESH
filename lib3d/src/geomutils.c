@@ -1,47 +1,8 @@
-/* $Id: geomutils.c,v 1.7 2001/09/27 11:44:46 aspert Exp $ */
+/* $Id: geomutils.c,v 1.8 2001/10/23 09:29:35 aspert Exp $ */
 #include <3dmodel.h>
 #define _GEOMUTILS_C_
 #include <geomutils.h> /* catch the inlined functions */
 
-/* Computes the normalized cross product between vectors p2p1 and p3p1 */
-vertex_t ncrossp(vertex_t p1, vertex_t p2, vertex_t p3) {
-  vertex_t v1, v2, tmp;
-  double norm;
-
-  v1.x = p2.x - p1.x;
-  v1.y = p2.y - p1.y;
-  v1.z = p2.z - p1.z;
-
-  v2.x = p3.x - p1.x;
-  v2.y = p3.y - p1.y;
-  v2.z = p3.z - p1.z;
-
-  tmp.x = v1.y*v2.z - v1.z*v2.y;
-  tmp.y = v1.z*v2.x - v1.x*v2.z;
-  tmp.z = v1.x*v2.y - v1.y*v2.x;
-  
-  norm = sqrt(tmp.x*tmp.x + tmp.y*tmp.y + tmp.z*tmp.z);
-  if (fabs(norm) < 1e-10) {
-    printf("ncrossp: Trouble\n");
-  }
-
-  tmp.x /= norm;
-  tmp.y /= norm;
-  tmp.z /= norm;
-  
-  return tmp;
-}
-
-/* Computes the cross product between vectors p2p1 and p3p1 */
-vertex_t crossprod(vertex_t v1, vertex_t v2) {
-  vertex_t res;
-
-  res.x = v1.y*v2.z - v1.z*v2.y;
-  res.y = v1.z*v2.x - v1.x*v2.z;
-  res.z = v1.x*v2.y - v1.y*v2.x;
-
-  return res;
-}
 
 /*Used for 2D triangulation */
 double cross_product2d(vertex_t p1, vertex_t p2, vertex_t p3) {
@@ -94,28 +55,27 @@ void normalize(vertex_t *v) {
 }
 
 /* Rotates the point 'p' around the axis 'u' */
-vertex_t rotate_3d(vertex_t p, vertex_t u, double theta) {
+void rotate_3d(vertex_t p, vertex_t u, double theta, vertex_t *vout) {
   double cth=cos(theta);
   double sth=sin(theta);
   double a=1.0-cth;
-  vertex_t q;
+
 
   
-  normalize(&u); /* useful ? */
+  normalize_v(&u); /* useful ? */
 
-  q.x = (cth + a*u.x*u.x)*p.x;
-  q.x += (a*u.x*u.y - sth*u.z)*p.y;
-  q.x += (a*u.x*u.z +u.y*sth)*p.z;
+  vout->x = (cth + a*u.x*u.x)*p.x;
+  vout->x += (a*u.x*u.y - sth*u.z)*p.y;
+  vout->x += (a*u.x*u.z +u.y*sth)*p.z;
 
-  q.y = (a*u.x*u.y + u.z*sth)*p.x;
-  q.y += (cth +a*u.y*u.y)*p.y;
-  q.y += (a*u.y*u.z -u.x*sth)*p.z;
+  vout->y = (a*u.x*u.y + u.z*sth)*p.x;
+  vout->y += (cth +a*u.y*u.y)*p.y;
+  vout->y += (a*u.y*u.z -u.x*sth)*p.z;
   
-  q.z = (a*u.x*u.z -u.y*sth)*p.x;
-  q.z += (u.y*u.z*a + u.x*sth)*p.y;
-  q.z += (u.z*u.z*a + cth)*p.z;
+  vout->z = (a*u.x*u.z -u.y*sth)*p.x;
+  vout->z += (u.y*u.z*a + u.x*sth)*p.y;
+  vout->z += (u.z*u.z*a + cth)*p.z;
 
-  return q;
   
 }
 
@@ -174,27 +134,22 @@ void compute_circle3d(vertex_t p1, vertex_t p2, vertex_t p3,
     double det;
     double a[9], b[3];
 
-    u.x = p2.x - p1.x;
-    u.y = p2.y - p1.y;
-    u.z = p2.z - p1.z;
+    substract_v(&p2, &p1, &u);
+    substract_v(&p3, &p1, &v);
 
-    v.x = p3.x - p1.x;
-    v.y = p3.y - p1.y;
-    v.z = p3.z - p1.z;
 
-    w = crossprod(u,v);
+    crossprod_v(&u, &v, &w);
 
    
     /* The center of the circle is the 
        intersection of 3 planes */
 
-    m1.x = (p1.x + p2.x)*0.5;
-    m1.y = (p1.y + p2.y)*0.5;
-    m1.z = (p1.z + p2.z)*0.5;
+    add_v(&p1, &p2, &m1);
+    prod_v(0.5, &m1, &m1);
 
-    m2.x = (p1.x + p3.x)*0.5;
-    m2.y = (p1.y + p3.y)*0.5;
-    m2.z = (p1.z + p3.z)*0.5;
+    add_v(&p1, &p3, &m2);
+    prod_v(0.5, &m2, &m2);
+
 
     /* Is the equation system OK ? */
     det = u.x*(v.y*w.z - v.z*w.y) - 
@@ -233,11 +188,12 @@ void compute_circle3d(vertex_t p1, vertex_t p2, vertex_t p3,
     for (i=0; i<3; i++)
 	 center->z += a[i+6]*b[i];
 
+    substract_v(center, &p1, &tmp);
     tmp.x = center->x - p1.x;
     tmp.y = center->y - p1.y;
     tmp.z = center->z - p1.z;
 
-    *r = norm(tmp);
+    *r = norm_v(&tmp);
     
 }
 

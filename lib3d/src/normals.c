@@ -1,7 +1,7 @@
-/* $Id: normals.c,v 1.13 2001/10/08 13:12:05 aspert Exp $ */
+/* $Id: normals.c,v 1.14 2001/10/23 09:29:36 aspert Exp $ */
 #include <3dmodel.h>
 #include <geomutils.h>
-
+#include <normals.h>
 
 /* find the 1-ring of vertex v */
 void build_star(struct model *raw_model, int v, struct ring_info *ring) {
@@ -556,7 +556,7 @@ struct face_tree** bfs_build_spanning_tree(struct model *raw_model,
 
 
 
-int find_center(face_t *cur,int v1, int v2) {
+int find_center(const face_t *cur,int v1, int v2) {
   if (cur->f0==v1) {
     if (cur->f1==v2)
       return cur->f2;

@@ -1,5 +1,6 @@
-/* $Id: 3dmodel_io.c,v 1.17 2001/10/12 13:42:15 aspert Exp $ */
+/* $Id: 3dmodel_io.c,v 1.18 2001/10/23 09:29:35 aspert Exp $ */
 #include <3dmodel.h>
+#include <3dmodel_io.h>
 #include <normals.h>
 
 int read_header(FILE *pf, int *nvert, int *nfaces, int *nnorms, int *nfnorms) {
