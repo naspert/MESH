@@ -1,4 +1,4 @@
-/* $Id: colormap.c,v 1.3 2002/03/15 16:03:57 aspert Exp $ */
+/* $Id: colormap.c,v 1.4 2002/03/15 16:32:09 aspert Exp $ */
 
 
 /*
@@ -40,7 +40,14 @@
  *
  */
 
+#include <colormap.h>
+#include <stdlib.h>
+#include <math.h>
+#include <xalloc.h>
 
+/* Transforms a hue (in degrees) to the RGB equivalent. The saturation and
+ * value are taken as the maximum. 
+ */
 static void hue2rgb(float hue, float *r, float *g, float *b) {
   float p,n;
   int k;

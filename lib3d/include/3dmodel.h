@@ -1,4 +1,4 @@
-/* $Id: 3dmodel.h,v 1.30 2002/03/15 16:04:07 aspert Exp $ */
+/* $Id: 3dmodel.h,v 1.31 2002/03/15 16:32:19 aspert Exp $ */
 
 
 /*
@@ -40,7 +40,10 @@
  *
  */
 
-
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <string.h>
 /* with '-ansi' flag and still use the */
 /* useful constants from 'math.h' */
 #ifndef __USE_BSD

@@ -1,4 +1,4 @@
-/* $Id: TextWidget.h,v 1.6 2002/03/15 16:03:57 aspert Exp $ */
+/* $Id: TextWidget.h,v 1.7 2002/03/15 16:32:09 aspert Exp $ */
 
 
 /*
@@ -40,7 +40,17 @@
  *
  */
 
+#include <qpushbutton.h>
+#include <qtextview.h>
+#include <qlayout.h>
 
+#ifndef _TEXTWIDGET_PROTO
+#define _TEXTWIDGET_PROTO
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+  /* Called within a C function via its pointer -> make it "extern C" */
   void TextWidget_puts(void *out, const char *str);
 
 #ifdef __cplusplus

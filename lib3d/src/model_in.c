@@ -1,4 +1,4 @@
-/* $Id: model_in.c,v 1.7 2002/03/15 16:04:09 aspert Exp $ */
+/* $Id: model_in.c,v 1.8 2002/03/15 16:32:21 aspert Exp $ */
 
 
 /*
@@ -40,7 +40,11 @@
  *
  */
 
-
+/*
+ * Functions to read 3D model data from files
+ *
+ * Author: Diego Santa Cruz
+ */
 
 #include <assert.h>
 #include <stdlib.h>

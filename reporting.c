@@ -1,4 +1,4 @@
-/* $Id: reporting.c,v 1.3 2002/03/15 16:04:05 aspert Exp $ */
+/* $Id: reporting.c,v 1.4 2002/03/15 16:32:17 aspert Exp $ */
 
 
 /*
@@ -40,7 +40,16 @@
  *
  */
 
+#include <reporting.h>
 
+#include <assert.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+#include <xalloc.h>
+
+/* Minimum amount of free space in buffer */
 #define OUTBUF_MIN_FREE (2*OUTBUF_MAX_SZ)
 
 /* --------------------------------------------------------------------------*

@@ -1,4 +1,4 @@
-/* $Id: mesh.cpp,v 1.31 2002/03/15 16:04:02 aspert Exp $ */
+/* $Id: mesh.cpp,v 1.32 2002/03/15 16:32:12 aspert Exp $ */
 
 
 /*
@@ -40,7 +40,23 @@
  *
  */
 
+#include <time.h>
+#include <string.h>
+#include <qapplication.h>
+#include <qprogressdialog.h>
+#include <qpixmap.h>
+#include <mesh.h>
+#include <ScreenWidget.h>
+#include <InitWidget.h>
+#include <mesh_run.h>
+#include <3dmodel.h>
 
+#ifndef _MESHICON_XPM
+# define _MESHICON_XPM
+# include <meshIcon.xpm>
+#endif
+
+/* The version string, also parsed by Makefile */
 const char *version = "1.0-rc2";
 
 /* The Copyright */

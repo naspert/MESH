@@ -1,4 +1,4 @@
-/* $Id: mesh_run.h,v 1.9 2002/03/15 16:04:04 aspert Exp $ */
+/* $Id: mesh_run.h,v 1.10 2002/03/15 16:32:14 aspert Exp $ */
 
 
 /*
@@ -40,7 +40,24 @@
  *
  */
 
+#ifndef _MESH_RUN_PROTO
+#define _MESH_RUN_PROTO
 
+#include <compute_error.h>
+#include <reporting.h>
+
+#ifdef __cplusplus
+#define BEGIN_DECL extern "C" {
+#define END_DECL }
+#else
+#define BEGIN_DECL
+#define END_DECL
+#endif
+
+BEGIN_DECL
+#undef BEGIN_DECL
+
+/* To store the parsed arguments */
 struct args {
   char *m1_fname; /* filename of model 1 */
   char *m2_fname; /* filename of model 2 */

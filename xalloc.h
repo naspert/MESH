@@ -1,4 +1,4 @@
-/* $Id: xalloc.h,v 1.2 2002/03/15 16:04:06 aspert Exp $ */
+/* $Id: xalloc.h,v 1.3 2002/03/15 16:32:18 aspert Exp $ */
 
 
 /*
@@ -40,7 +40,9 @@
  *
  */
 
-
+/*
+ * xalloc: non-failing memory allocation functions
+ */
 
 #ifndef _XALLOC_PROTO
 #define _XALLOC_PROTO

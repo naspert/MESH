@@ -1,4 +1,4 @@
-/* $Id: mesh_run.c,v 1.14 2002/03/15 16:04:03 aspert Exp $ */
+/* $Id: mesh_run.c,v 1.15 2002/03/15 16:32:14 aspert Exp $ */
 
 
 /*
@@ -40,7 +40,19 @@
  *
  */
 
+#include <time.h>
+#include <string.h>
+#include <xalloc.h>
+#include <model_analysis.h>
+#include <compute_error.h>
+#include <model_in.h>
+#include <geomutils.h>
 
+#include <mesh_run.h>
+
+/* Reads a model from file 'fname' and returns the model read. If an error
+ * occurs a message is printed and the program exists. 
+ */
 static struct model *read_model_file(const char *fname)
 {
   int rcode;

@@ -1,4 +1,4 @@
-/* $Id: compute_error.h,v 1.26 2002/03/15 16:04:01 aspert Exp $ */
+/* $Id: compute_error.h,v 1.27 2002/03/15 16:32:11 aspert Exp $ */
 
 
 /*
@@ -41,6 +41,14 @@
  */
 
 
+#ifndef _COMPUTE_ERROR_PROTO
+#define _COMPUTE_ERROR_PROTO
+
+/*
+ * --------------------------------------------------------------------------*
+ *                         External includes                                 *
+ * --------------------------------------------------------------------------*
+ */
 
 #include <model_analysis.h>
 #include <reporting.h>

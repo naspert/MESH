@@ -1,4 +1,4 @@
-/* $Id: mesh.h,v 1.2 2002/03/15 16:04:02 aspert Exp $ */
+/* $Id: mesh.h,v 1.3 2002/03/15 16:32:13 aspert Exp $ */
 
 
 /*
@@ -40,7 +40,18 @@
  *
  */
 
+#ifndef MESH_H
+#define MESH_H
 
+#ifdef __cplusplus
+#define BEGIN_CDECL extern "C" {
+#define END_CDECL }
+#else
+#define BEGIN_CDECL
+#define END_CDECL
+#endif
+
+BEGIN_CDECL /* Start things exported to C and C++ */
 #undef BEGIN_CDECL
 
 /* The mesh version string */

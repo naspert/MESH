@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.84 2002/03/15 16:03:59 aspert Exp $ */
+/* $Id: compute_error.c,v 1.85 2002/03/15 16:32:10 aspert Exp $ */
 
 
 /*
@@ -40,7 +40,18 @@
  *
  */
 
+#include <compute_error.h>
 
+#include <geomutils.h>
+#include <xalloc.h>
+#include <math.h>
+#include <assert.h>
+
+/* Use a bitmap for marking empty cells. Otherwise use array of a simple
+ * type. Using a bitmap uses less memory and can be faster than a simple type
+ * depending on the cache system and number of cells in the grid (number of
+ * cache misses). 
+ */
 #define USE_EC_BITMAP
 
 /* Ratio used to derive the cell size. It is the ratio between the cubic cell

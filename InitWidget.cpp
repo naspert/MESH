@@ -1,4 +1,4 @@
-/* $Id: InitWidget.cpp,v 1.27 2002/03/15 16:03:43 aspert Exp $ */
+/* $Id: InitWidget.cpp,v 1.28 2002/03/15 16:32:05 aspert Exp $ */
 
 
 /*
@@ -40,7 +40,39 @@
  *
  */
 
+#include <InitWidget.h>
+#include <mesh.h>
+#include <qlabel.h>
+#include <qlayout.h>
+#include <qpushbutton.h>
+#include <qfiledialog.h>
+#include <qlistbox.h>
+#include <qhbox.h>
+#include <qmessagebox.h>
+#include <qvalidator.h>
+#include <qcheckbox.h>
+#include <qtimer.h>
+#include <qapplication.h>
+#include <qprogressdialog.h>
 
+#ifndef _MESHICON_XPM
+# define _MESHICON_XPM
+# include <meshIcon.xpm>
+#endif
+
+InitWidget::InitWidget(struct args defArgs,
+                       struct model_error *m1, struct model_error *m2,
+                       QWidget *parent, const char *name):
+  QWidget(parent, name) {
+
+  QLabel *qlabMesh1, *qlabMesh2, *qlabSplStep, *qlabMinSplFreq;
+  QPushButton *B1, *B2, *OK;
+  QListBox *qlboxSplStep;
+  QGridLayout *bigGrid;
+  QString tmp;
+
+
+  /* Initialize */
   pargs = defArgs;
   model1 = m1;
   model2 = m2;

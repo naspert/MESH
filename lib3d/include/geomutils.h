@@ -1,4 +1,4 @@
-/* $Id: geomutils.h,v 1.29 2002/03/15 16:04:07 aspert Exp $ */
+/* $Id: geomutils.h,v 1.30 2002/03/15 16:32:20 aspert Exp $ */
 
 
 /*
@@ -40,7 +40,16 @@
  *
  */
 
+#include <3dmodel.h>
 
+#ifndef _GEOMUTILS_PROTO_
+#define _GEOMUTILS_PROTO_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* a few useful macros */
 #ifndef min
 #  define min(__X, __Y) ((__X)<(__Y)?(__X):(__Y))
 #endif

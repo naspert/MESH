@@ -1,4 +1,4 @@
-/* $Id: model_analysis.h,v 1.5 2002/03/15 16:04:05 aspert Exp $ */
+/* $Id: model_analysis.h,v 1.6 2002/03/15 16:32:16 aspert Exp $ */
 
 
 /*
@@ -40,6 +40,13 @@
  *
  */
 
+#ifndef _MODEL_ANALYSIS_PROTO
+#define _MODEL_ANALYSIS_PROTO
+
+/* --------------------------------------------------------------------------*
+ *                         External includes                                 *
+ * --------------------------------------------------------------------------*
+ */
 
 
 #include <3dmodel.h>

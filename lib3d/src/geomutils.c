@@ -1,4 +1,4 @@
-/* $Id: geomutils.c,v 1.10 2002/03/15 16:04:09 aspert Exp $ */
+/* $Id: geomutils.c,v 1.11 2002/03/15 16:32:21 aspert Exp $ */
 
 
 /*
@@ -40,7 +40,9 @@
  *
  */
 
-
+#include <3dmodel.h>
+#define _GEOMUTILS_C_
+#include <geomutils.h> /* catch the inlined functions */
 
 
 /*Used for 2D triangulation */

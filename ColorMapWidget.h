@@ -1,4 +1,4 @@
-/* $Id: ColorMapWidget.h,v 1.15 2002/03/15 16:03:41 aspert Exp $ */
+/* $Id: ColorMapWidget.h,v 1.16 2002/03/15 16:32:05 aspert Exp $ */
 
 
 /*
@@ -40,7 +40,13 @@
  *
  */
 
+#ifndef COLORMAPWIDGET_H
+#define COLORMAPWIDGET_H
 
+#include <qwidget.h>
+#include <compute_error.h>
+
+/* Colorbar constants */
 #ifndef CBAR_WIDTH
 # define CBAR_WIDTH 25
 #endif

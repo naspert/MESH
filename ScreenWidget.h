@@ -1,4 +1,4 @@
-/* $Id: ScreenWidget.h,v 1.23 2002/03/15 16:03:55 aspert Exp $ */
+/* $Id: ScreenWidget.h,v 1.24 2002/03/15 16:32:08 aspert Exp $ */
 
 
 /*
@@ -40,7 +40,10 @@
  *
  */
 
+#ifndef SCREENWIDGET_H
+#define SCREENWIDGET_H
 
+/* QT includes */
 #include <qwidget.h>
 #include <qhgroupbox.h>
 #include <qslider.h>

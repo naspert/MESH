@@ -1,4 +1,4 @@
-/* $Id: model_analysis.c,v 1.11 2002/03/15 16:04:04 aspert Exp $ */
+/* $Id: model_analysis.c,v 1.12 2002/03/15 16:32:15 aspert Exp $ */
 
 
 /*
@@ -40,7 +40,12 @@
  *
  */
 
+#include <model_analysis.h>
 
+#include <assert.h>
+#include <xalloc.h>
+
+/* The state for recursively walking the vertex tree */
 struct vtx_walk_state {
   char *visited_vertex;          /* array to mark the already visited
                                   * vertices (visited_vertex[i] == 1 if vertex

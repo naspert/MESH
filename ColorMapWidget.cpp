@@ -1,4 +1,4 @@
-/* $Id: ColorMapWidget.cpp,v 1.21 2002/03/15 16:03:40 aspert Exp $ */
+/* $Id: ColorMapWidget.cpp,v 1.22 2002/03/15 16:32:04 aspert Exp $ */
 
 
 /*
@@ -40,7 +40,14 @@
  *
  */
 
+#include <ColorMapWidget.h>
+#include <qapplication.h>
+#include <qpainter.h>
+#include <colormap.h>
+#include <qfont.h>
+#include <math.h>
 
+/* Constructor of the ColorMapWidget class */
 /* Only initializes a few values and build a HSV colormap */
 ColorMapWidget::ColorMapWidget(const struct model_error *model1_error,
 			       QWidget *parent, 
