@@ -1,4 +1,4 @@
-/* $Id: mesh_run.c,v 1.20 2002/04/05 09:27:26 aspert Exp $ */
+/* $Id: mesh_run.c,v 1.21 2002/04/24 12:04:03 aspert Exp $ */
 
 
 /*
@@ -229,12 +229,12 @@ void mesh_run(const struct args *args, struct model_error *model1,
   }
 
 
-  outbuf_printf(out,"                 \t       Absolute\t   %% BBox diag\t    "
-                " Expected samples\n"
-                "               \t               \t       model 2\t   "
+  outbuf_printf(out,"                 \tAbsolute\t   %% BBox diag\t     "
+                "Expected samples\n"
+                "                 \t        \t   model 2     \t   "
                 "model 1\tmodel 2\n");
   if (!args->do_symmetric) {
-    outbuf_printf(out,"Sampling step: \t%15g\t%14g\t%10d\t%7d\n",
+    outbuf_printf(out,"Sampling step:   \t%8g\t   %7g     \t   %7d\t%7d\n",
                   abs_sampling_step,abs_sampling_step/bbox2_diag*100,
                   (int)(stats.m1_area*abs_sampling_dens),0);
     outbuf_printf(out,"\n");
