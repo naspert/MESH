@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.60 2003/05/21 15:21:04 aspert Exp $
+# $Id: Makefile,v 1.61 2003/05/26 11:49:53 aspert Exp $
 
 
 
@@ -332,8 +332,8 @@ LIB3D_C_SRCS = geomutils.c model_in.c model_in_raw.c model_in_smf.c \
 	model_in_ply.c model_in_vrml_iv.c block_list.c
 
 # Files for distribution
-MISC_FILES = Makefile Mesh.dsp Mesh.dsw meshIcon.xpm README COPYING AUTHORS \
-	CHANGELOG
+MISC_FILES = Makefile Mesh.dsp Mesh.dsw meshIcon.xpm Mesh.spec \
+	README COPYING AUTHORS CHANGELOG
 LIB3D_INCLUDES = 3dmodel.h geomutils.h model_in.h model_in_ply.h types.h \
 	block_list.h debug_print.h
 MESH_INCLUDES := $(wildcard *.h)
