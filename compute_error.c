@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.93 2002/09/26 12:23:55 aspert Exp $ */
+/* $Id: compute_error.c,v 1.94 2002/09/26 12:38:43 dsanta Exp $ */
 
 
 /*
@@ -618,9 +618,6 @@ static void init_triangle(const vertex_t *a, const vertex_t *b,
   dvertex_t ab,ac,bc;
   double ab_len_sqr,ac_len_sqr,bc_len_sqr;
   double n_len;
-  double ca_ab;
-  double height_sqr;
-  int is_point;
 
   /* Convert float vertices to double */
   vertex_f2d_dv(a,&dv_a);
@@ -680,7 +677,6 @@ static void init_triangle(const vertex_t *a, const vertex_t *b,
     }
   }
   if (t->ab_len_sqr < DBL_MIN*DMARGIN) {
-    is_point = 1; /* ABC coincident => degenerates to a point */
     t->ab.x = 0;
     t->ab.y = 0;
     t->ab.z = 0;
@@ -689,8 +685,6 @@ static void init_triangle(const vertex_t *a, const vertex_t *b,
     t->ab_len_sqr = 0;
     t->ca_len_sqr = 0;
     t->cb_len_sqr = 0;
-  } else {
-    is_point = 0;
   }
   /* Get side lengths */
   t->ab_1_len_sqr = 1/t->ab_len_sqr;
@@ -703,8 +697,10 @@ static void init_triangle(const vertex_t *a, const vertex_t *b,
     t->normal.x = 0;
     t->normal.y = 0;
     t->normal.z = 0;
+    t->s_area = 0;
   } else {
     __prod_dv(1/n_len,t->normal,t->normal);
+    t->s_area = n_len*0.5;
   }
   /* Get planes trough sides */
   __crossprod_dv(t->ab,t->normal,t->nhsab);
@@ -717,15 +713,6 @@ static void init_triangle(const vertex_t *a, const vertex_t *b,
   /* Miscellaneous fields */
   t->obtuse_at_c = (t->ab_len_sqr > t->ca_len_sqr+t->cb_len_sqr);
   t->a_n = __scalprod_v(t->a,t->normal);
-  /* Get surface area */
-  if (is_point) {
-    t->s_area = 0;
-  } else {
-    ca_ab = __scalprod_v(t->ca,t->ab);
-    height_sqr = t->ca_len_sqr-ca_ab*ca_ab*t->ab_1_len_sqr;
-    if (height_sqr < 0) height_sqr = 0; /* avoid rounding problems */
-    t->s_area = sqrt(t->ab_len_sqr*height_sqr)*0.5;
-  }
 }
 
 /* Compute the square of the distance between point 'p' and triangle 't' in 3D
