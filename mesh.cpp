@@ -1,4 +1,4 @@
-/* $Id: mesh.cpp,v 1.57 2003/01/13 12:46:07 aspert Exp $ */
+/* $Id: mesh.cpp,v 1.58 2003/01/15 09:26:51 aspert Exp $ */
 
 
 /*
@@ -64,7 +64,7 @@
 #endif
 
 /* The version string, also parsed by Makefile */
-const char *version = "1.8-rc1";
+const char *version = "1.8";
 
 /* The Copyright */
 const char *copyright = "2001-2003 EPFL";
