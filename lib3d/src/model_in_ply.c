@@ -1,4 +1,4 @@
-/* $Id: model_in_ply.c,v 1.2 2002/08/16 06:52:15 aspert Exp $ */
+/* $Id: model_in_ply.c,v 1.3 2002/08/16 06:53:34 aspert Exp $ */
 
 /*
  *
@@ -202,7 +202,6 @@ int read_ply_tmesh(struct model **tmesh_ref, struct file_data *data)
           fprintf(stderr, "[Warning] Unrecognized 'element' field found."
                   " Skipping...\n");
         }
-      }
     } else
       rcode = MESH_CORRUPTED;
   } while (rcode >= 0 && (tmesh->num_faces == 0 || tmesh->num_vert == 0));
