@@ -1,4 +1,4 @@
-/* $Id: model_in.h,v 1.5 2002/04/10 17:42:14 aspert Exp $ */
+/* $Id: model_in.h,v 1.6 2002/04/11 08:51:04 aspert Exp $ */
 
 
 /*
@@ -119,7 +119,7 @@ BEGIN_DECL
 #define MESH_CORRUPTED -2   /* corrupted file or I/O error */
 #define MESH_MODEL_ERR -3   /* error in model */
 #define MESH_NOT_TRIAG -4   /* not a triangular mesh */
-#define MESH_BAD_FF    -5   /* not a recongnized file format */
+#define MESH_BAD_FF    -5   /* not a recognized file format */
 #define MESH_BAD_FNAME -6   /* Could not open file name */
 
 /* -------------------------------------------------------------------------
