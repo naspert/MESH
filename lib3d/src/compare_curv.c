@@ -1,4 +1,4 @@
-/* $Id: compare_curv.c,v 1.2 2001/09/25 09:07:14 aspert Exp $ */
+/* $Id: compare_curv.c,v 1.3 2001/09/25 14:50:43 aspert Exp $ */
 #include <3dutils.h>
 
 
@@ -201,6 +201,7 @@ int main(int argc, char **argv) {
   double maxk1=-FLT_MAX, maxk2=-FLT_MAX, maxkg=-FLT_MAX;
   double max_rel_k1=-FLT_MAX, max_rel_k2=-FLT_MAX, max_rel_kg=-FLT_MAX;
   double mean_dk1=0.0, mean_dk2=0.0, mean_dkg=0.0;
+  double area=0.0;
 
   if (argc != 3) {
     fprintf(stderr, "Usage: compare_curv or_file.raw mod_file.raw\n");
@@ -273,10 +274,11 @@ int main(int argc, char **argv) {
     deltak1[i] /= maxk1;
     deltak2[i] /= maxk2;
     deltakg[i] /= maxkg;
+    
+    mean_dk1 += info2[i].mixed_area*deltak1[i];
+    mean_dk2 += info2[i].mixed_area*deltak2[i];
+    mean_dkg += info2[i].mixed_area*deltakg[i];
 
-    mean_dk1 += deltak1[i];
-    mean_dk2 += deltak2[i];
-    mean_dkg += deltakg[i];
 
     if (deltak1[i] > max_rel_k1)
       max_rel_k1 = deltak1[i];
@@ -287,9 +289,12 @@ int main(int argc, char **argv) {
 
   }
 
-  mean_dk1 /= (double)raw_model1->num_vert;
-  mean_dk2 /= (double)raw_model1->num_vert;
-  mean_dkg /= (double)raw_model1->num_vert;
+  for (i=0; i<raw_model2->num_faces; i++)
+    area += raw_model2->area[i];
+
+  mean_dk1 /= area;
+  mean_dk2 /= area;
+  mean_dkg /= area;
   
   printf("max_dk1 = %f\n", max_rel_k1);
   printf("max_dk2 = %f\n", max_rel_k2);
