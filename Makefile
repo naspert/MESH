@@ -1,12 +1,23 @@
-# $Id: Makefile,v 1.14 2001/08/09 17:41:03 dsanta Exp $
+# $Id: Makefile,v 1.15 2001/08/17 09:50:55 dsanta Exp $
 
 #
-# If the make variable PROFILE is defined, profiling flags are automatically
-# added. If the value of the variable is 'full' (without the quotes) the
-# executable is linked with the profiling versions of the standard C library.
+# If the make variable PROFILE is defined to a non-empty value, profiling
+# flags are automatically added. If the value of the variable is 'full'
+# (without the quotes) the executable is linked with the profiling versions
+# of the standard C library.
 # Note that 'full' requires the creation of a fully static executable, and
 # thus the complete list of libraries might need to be adjusted depending on
 # your installation.
+#
+
+#
+# If the MPATROL library is defined to a non-empty value, the resulting
+# executable is linked to the mpatrol library for memory checking. If the
+# value of the variable contains the 'c-mem-check' string (without quotes)
+# all C source files will be compiled with full pointer dereferencing checking.
+# Likewise, if the variable contains the 'cxx-mem-check' string, all C++ source
+# files will be compiled with full pointer dereferencing checking. These two
+# last options require GCC and will significantly slow down the execution.
 #
 
 # Autodetect platform
@@ -35,7 +46,7 @@ OBJDIR = ./obj
 LIB3DDIR = ./lib3d
 # QTDIR should come from the environment
 ifndef QTDIR
-$(error The QTDIR envirnoment variable is not defined. Define it as the path \
+$(error The QTDIR environment variable is not defined. Define it as the path \
 	to the QT installation directory)
 endif
 
@@ -63,7 +74,7 @@ WARN_CFLAGS = -pedantic -Wall -W -Winline -Wmissing-prototypes \
 endif
 ifeq ($(CC_IS_GCC)$(OS),IRIX)
 C_PROF_OPT = -fbgen
-XTRA_CFLAGS += -IPA
+XTRA_CFLAGS += -IPA -g3
 XTRA_LDFLAGS += -IPA
 endif
 ifeq ($(CXX_IS_GCC),gcc)
@@ -73,6 +84,7 @@ WARN_CXXFLAGS = -pedantic -Wall -W -Wmissing-prototypes
 endif
 ifeq ($(CXX_IS_GCC)$(OS),IRIX)
 CXX_PROF_OPT = -fbgen
+XTRA_CXXFLAGS += -g3
 endif
 
 # Add profiling flags if requested
@@ -82,6 +94,30 @@ XTRA_CXXFLAGS += $(CXX_PROF_OPT)
 XTRA_LDFLAGS += $(CXX_PROF_OPT)
 ifeq ($(PROFILE)-$(OS),full-Linux)
 XTRA_LDFLAGS += -static
+endif
+endif
+
+# Add MPATROL flags if requested
+ifdef MPATROL
+ifeq ($(OS),Linux)
+XTRA_LDLIBS += -lmpatrol -lbfd -liberty
+endif
+ifeq ($(OS),IRIX)
+$(error Need to add list of mpatrol libraries for IRIX)
+endif
+ifeq ($(findstring c-mem-check,$(MPATROL)),c-mem-check)
+ifeq ($(CC_IS_GCC),gcc)
+XTRA_CFLAGS += -fcheck-memory-usage
+else
+$(error c-mem-check mpatrol option only supported with GCC C compiler)
+endif
+endif
+ifeq ($(findstring cxx-mem-check,$(MPATROL)),cxx-mem-check)
+ifeq ($(CXX_IS_GCC),gcc)
+XTRA_CXXFLAGS += -fcheck-memory-usage
+else
+$(error cxx-mem-check mpatrol option only supported with GCC C++ compiler)
+endif
 endif
 endif
 
@@ -100,7 +136,8 @@ GLINCFLAGS = -I/usr/X11R6/include
 # Libraries and search path for final linking
 ifeq ($(PROFILE)-$(OS),full-Linux)
 LDLIBS = -lqt -lGL -lGLU -lXmu -lXext -lSM -lICE -lXft -lpng -ljpeg -lmng \
-	-lXi -ldl -lXt -lz -lfreetype -lXrender -lX11 -lm_p -lc_p
+	-lXi -ldl -lXt -lz -lfreetype -lXrender -lX11
+XTRA_LDLIBS += -lm_p -lc_p
 else
 LDLIBS = -lqt -lGL -lGLU -lXmu -lXext -lX11 -lm
 endif
@@ -108,12 +145,13 @@ LOADLIBES = -L$(QTDIR)/lib -L/usr/X11R6/lib
 LDFLAGS =
 
 # Preprocessor flags
-CPPFLAGS = $(INCFLAGS) -D_METRO
+CPPFLAGS = $(INCFLAGS) -D_METRO $(XTRA_CPPFLAGS)
 
 # Construct basic compiler flags
 CFLAGS = $(WARN_CFLAGS) $(XTRA_CFLAGS)
 CXXFLAGS = $(WARN_CXXFLAGS) $(XTRA_CXXFLAGS)
 LDFLAGS = $(XTRA_LDFLAGS)
+LDLIBS += $(XTRA_LDLIBS)
 
 # Automatically derived file names
 MOC_CXX_SRCS = $(addprefix moc_,$(VIEWER_MOC_SRCS:.h=.cpp))
