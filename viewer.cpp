@@ -1,4 +1,4 @@
-/* $Id: viewer.cpp,v 1.27 2001/08/08 13:24:35 dsanta Exp $ */
+/* $Id: viewer.cpp,v 1.28 2001/08/08 13:32:40 dsanta Exp $ */
 
 #include <time.h>
 #include <string.h>
@@ -27,7 +27,6 @@ int main( int argc, char **argv )
   struct face_list *vfl;
   int i,j,k;
   double surfacemoy=0;
-  info_vertex *curv;
   QString m1,n1,o1;
   int text=1;
   struct face_error *fe = NULL;
@@ -101,20 +100,6 @@ int main( int argc, char **argv )
   fflush(stdout);
 
   if(text == 1){
-    /* Get normals of model 2 */
-    raw_model2->area = (double*)xmalloc(raw_model2->num_faces*sizeof(double));
-    curv = (info_vertex*)xmalloc(raw_model2->num_vert*sizeof(info_vertex));
-    if (raw_model2->face_normals==NULL) {
-      raw_model2->face_normals = compute_face_normals(raw_model2,curv);
-        
-      if (raw_model2->face_normals != NULL){
-        compute_vertex_normal(raw_model2, curv, raw_model2->face_normals);
-        for (i=0; i<raw_model2->num_vert; i++) 
-          free(curv[i].list_face);
-        free(curv);
-      }
-    }
-
     /* Get the faces incident on each vertex to assign error values to each
      * vertex for display. */
     vfl = faces_of_vertex(raw_model1);
