@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.65 2001/09/27 13:19:14 aspert Exp $ */
+/* $Id: compute_error.c,v 1.66 2001/11/06 10:38:25 dsanta Exp $ */
 
 #include <compute_error.h>
 
@@ -1219,7 +1219,7 @@ void dist_surf_surf(const struct model *m1, struct model *m2,
 		    double sampling_step,
                     struct face_error *fe_ptr[],
                     struct dist_surf_surf_stats *stats, int calc_normals,
-                    int quiet)
+                    struct prog_reporter *prog)
 {
   vertex_t bbox_min,bbox_max;   /* min and max of bounding box of m1 and m2 */
   struct triangle_list *tl2;  /* triangle list for m2 */
@@ -1243,7 +1243,7 @@ void dist_surf_surf(const struct model *m1, struct model *m2,
   /* Initialize */
   memset(&ts,0,sizeof(ts));
   memset(&tse,0,sizeof(tse));
-  report_step = m1->num_faces/(100/1); /* report every 1 % */
+  report_step = m1->num_faces/(100.0/2); /* report every 2 % */
   if (report_step <= 0) report_step = 1;
   bbox_min.x = min(m1->bBox[0].x,m2->bBox[0].x);
   bbox_min.y = min(m1->bBox[0].y,m2->bBox[0].y);
@@ -1283,11 +1283,10 @@ void dist_surf_surf(const struct model *m1, struct model *m2,
 #endif
 
   /* For each triangle in model 1, sample and calculate the error */
-  if (!quiet) printf("Progress %2d %%",0);
+  if (prog != NULL) prog_report(prog,0);
   for (k=0, kmax=m1->num_faces; k<kmax; k++) {
-    if (!quiet && k!=0 && k%report_step==0) {
-      printf("\rProgress %2d %%",100*k/(kmax-1));
-      fflush(stdout);
+    if (prog != NULL && k!=0 && k%report_step==0) {
+      prog_report(prog,(100*k/(kmax-1)));
     }
     fe[k].face_area = tri_area(m1->vertices[m1->faces[k].f0],
                                m1->vertices[m1->faces[k].f1],
@@ -1318,19 +1317,17 @@ void dist_surf_surf(const struct model *m1, struct model *m2,
     stats->mean_dist += fe[k].mean_error*fe[k].face_area;
     stats->rms_dist += fe[k].mean_sqr_error*fe[k].face_area;
   }
-  if (!quiet) printf("\r              \r"); /* Remove progress message */
+  if (prog != NULL) prog_report(prog,-1);
 #ifdef DO_DIST_PT_SURF_STATS
-  if (!quiet) {
-    printf("Average number of scanned non-empty cells per sample: %g\n",
-           ((double)dps_stats.n_cell_scans)/stats->m1_samples);
-    printf("Average number of cells per sample for which triangles are "
-           "scanned: %g\n",
-           ((double)dps_stats.n_cell_t_scans)/stats->m1_samples);
-    printf("Average number of triangles scanned per sample: %g\n",
-           ((double)dps_stats.n_triag_scans)/stats->m1_samples);
-    printf("Average maximum cell to cell distance: %g\n",
-           ((double)dps_stats.sum_kmax)/stats->m1_samples);
-  }
+  fprintf(stderr,"Average number of scanned non-empty cells per sample: %g\n",
+          ((double)dps_stats.n_cell_scans)/stats->m1_samples);
+  fprintf(stderr,"Average number of cells per sample for which triangles are "
+          "scanned: %g\n",
+          ((double)dps_stats.n_cell_t_scans)/stats->m1_samples);
+  fprintf(stderr,"Average number of triangles scanned per sample: %g\n",
+          ((double)dps_stats.n_triag_scans)/stats->m1_samples);
+  fprintf(stderr,"Average maximum cell to cell distance: %g\n",
+          ((double)dps_stats.sum_kmax)/stats->m1_samples);
 #endif
   /* Finalize overall statistics */
   stats->mean_dist /= stats->m1_area;

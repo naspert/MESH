@@ -1,4 +1,4 @@
-/* $Id: compute_error.h,v 1.17 2001/10/25 12:30:46 aspert Exp $ */
+/* $Id: compute_error.h,v 1.18 2001/11/06 10:38:26 dsanta Exp $ */
 #ifndef _COMPUTE_ERROR_PROTO
 #define _COMPUTE_ERROR_PROTO
 
@@ -7,6 +7,7 @@
  * --------------------------------------------------------------------------*/
 
 #include <model_analysis.h>
+#include <reporting.h>
 
 #ifdef __cplusplus
 #define BEGIN_DECL extern "C" {
@@ -90,14 +91,14 @@ struct dist_surf_surf_stats {
  * normals are calculated assuming that the model m2 is oriented, if it is not
  * the case the resulting normals can be incorrect. Information already used
  * to calculate the distance is reused to compute the normals, so it is very
- * fast. If quiet is zero a progress meter is displayed in stdout. The memory
+ * fast. If prog in not NULL it is used for reporting progress. The memory
  * allocated at *fe_ptr should be freed by calling
  * free_face_error(*fe_ptr). */
 void dist_surf_surf(const struct model *m1, struct model *m2, 
 		    double sampling_step,
                     struct face_error *fe_ptr[],
                     struct dist_surf_surf_stats *stats, int calc_normals,
-                    int quiet);
+                    struct prog_reporter *prog);
 
 
 /* Frees the memory allocated by dist_surf_surf() for the per face error

@@ -1,22 +1,14 @@
-/* $Id: mesh.cpp,v 1.10 2001/10/25 12:30:46 aspert Exp $ */
+/* $Id: mesh.cpp,v 1.11 2001/11/06 10:35:28 dsanta Exp $ */
 
 #include <time.h>
 #include <string.h>
 #include <qapplication.h>
-
+#include <qprogressdialog.h>
 #include <ScreenWidget.h>
 #include <InitWidget.h>
 
 #include <mesh_run.h>
 #include <3dmodel_io.h>
-
-// For some strange reason, this *&(*&( symbol is not defined
-// maybe related to the fact that this is C++ compiled....
-#ifndef __USE_POSIX
-#  define __USE_POSIX
-#endif
-#include <stdio.h>
-
 
 /* Prints usage information to the out stream */
 static void print_usage(FILE *out)
@@ -60,7 +52,8 @@ static void print_usage(FILE *out)
   fprintf(out,"      \tmodel should be the 'modified' one whereas the\n");
   fprintf(out,"      \tsecond should be the 'reference' one\n");
   fprintf(out,"\n");
-  fprintf(out,"  -log\tDisplay the results into a window (beta)\n");
+  fprintf(out,"  -wlog\tDisplay textual results in a window instead of on\n");
+  fprintf(out,"standard output. Not compatible with the -t option.\n");
 }
 
 /* Initializes *pargs to default values and parses the command line arguments
@@ -99,7 +92,7 @@ static void parse_args(int argc, char **argv, struct args *pargs)
       else if (strcmp(argv[i],"-c") == 0) { /* curvature */
 	pargs->do_curvature = 1;
       }
-      else if (strcmp(argv[i], "-log") == 0) { /* log into window */
+      else if (strcmp(argv[i], "-wlog") == 0) { /* log into window */
 	pargs->do_wlog = 1;
       } else { /* unrecognized option */
         fprintf(stderr,
@@ -120,7 +113,7 @@ static void parse_args(int argc, char **argv, struct args *pargs)
     i++; /* next argument */
   }
   if (pargs->no_gui && pargs->do_wlog) {
-    fprintf(stderr, "ERROR: incompatible options -t and -log\n");
+    fprintf(stderr, "ERROR: incompatible options -t and -wlog\n");
     exit(1);
   }
   pargs->sampling_step /= 100; /* convert percent to fraction */
@@ -140,17 +133,21 @@ int main( int argc, char **argv )
   InitWidget *b;
   ScreenWidget *c; 
   TextWidget *textOut;
+  QProgressDialog *qProg;
   struct model_error model1,model2;
-  int filedes[2], rcode;
-  FILE *out_p=NULL, *in_p=NULL;
-  
+  int rcode;
+  struct outbuf *log;
+  struct prog_reporter pr;
 
   /* Initialize application */
   a = NULL;
   b = NULL;
   c = NULL;
+  qProg = NULL;
   memset(&model1,0,sizeof(model1));
   memset(&model2,0,sizeof(model2));
+  memset(&pr,0,sizeof(pr));
+  log = NULL;
   i = 0;
   while (i<argc) {
     if (strcmp(argv[i],"-t") == 0) /* text version requested */
@@ -175,35 +172,26 @@ int main( int argc, char **argv )
       fprintf(stderr,"ERROR: missing file name(s) in command line\n");
       exit(1);
     }
-    if (!pargs.do_wlog)
-      mesh_run(&pargs,&model1,&model2, stdout);
-    else {
-
-#ifdef _WIN32
-      if (_pipe(filedes, 8192, _O_TEXT) == -1) {
-	fprintf(stderr, "ERROR: unable to create pipe ");
-	exit(1);
-      }
-#else
-      if (pipe(filedes)) {
-	perror("ERROR: unable to create pipe ");
-	exit(1);
-      }
-#endif
-
-      if ((out_p = fdopen(filedes[1], "w"))==NULL) {
-	fprintf(stderr, "ERROR: unable to open output stream\n");
-	exit(1);
-      }
-      if ((in_p = fdopen(filedes[0], "r"))==NULL) {
-	fprintf(stderr, "ERROR: unable to open input stream\n");
-	exit(1);
-      }
-      mesh_run(&pargs,&model1,&model2, out_p);
-      fclose(out_p); /* Output should be finished by here ... */
+    if (!pargs.do_wlog) {
+      log = outbuf_new(stdio_puts,stdout);
     }
+    else {
+      textOut = new TextWidget();
+      log = outbuf_new(TextWidget_puts,textOut);
+      textOut->show();
+    }
+    if (pargs.no_gui) {
+      pr.prog = stdio_prog;
+      pr.cb_out = stdout;
+    } else {
+      qProg = new QProgressDialog("Calculating distance",0,100);
+      qProg->setMinimumDuration(1500);
+      pr.prog = QT_prog;
+      pr.cb_out = qProg;
+    }
+    mesh_run(&pargs,&model1,&model2, log, &pr);
   } else {
-    b = new InitWidget(pargs, &model1, &model2, a);
+    b = new InitWidget(pargs, &model1, &model2);
     b->show(); 
   }
   if (a != NULL) {
@@ -211,11 +199,6 @@ int main( int argc, char **argv )
       c = new ScreenWidget(&model1, &model2);
       a->setMainWidget(c);
       c->show(); 
-      if (pargs.do_wlog) {
-	textOut = new TextWidget(in_p);
-	textOut->show();
-	fclose(in_p);
-      }
     }
     rcode = a->exec();
   } else {
@@ -233,6 +216,8 @@ int main( int argc, char **argv )
   free(model2.kg_error);
   free(model2.info);
   /* Free widgets */
+  outbuf_delete(log);
+  delete qProg;
   delete b;
   delete c;
   delete a; // QApplication must be last QT thing to delete

@@ -1,4 +1,4 @@
-/* $Id: InitWidget.cpp,v 1.11 2001/10/10 14:51:34 aspert Exp $ */
+/* $Id: InitWidget.cpp,v 1.12 2001/11/06 10:35:27 dsanta Exp $ */
 
 #include <InitWidget.h>
 
@@ -11,13 +11,12 @@
 #include <qvalidator.h>
 #include <qcheckbox.h>
 #include <qtimer.h>
-#define __USE_POSIX
-#include <stdio.h>
+#include <qapplication.h>
+#include <qprogressdialog.h>
 
 InitWidget::InitWidget(struct args defArgs,
                        struct model_error *m1, struct model_error *m2,
-		       QApplication *app,
-                       QWidget *parent, const char *name):
+		       QWidget *parent, const char *name):
   QWidget( parent, name) {
 
   QLabel *qlabMesh1, *qlabMesh2, *qlabSplStep;
@@ -32,8 +31,7 @@ InitWidget::InitWidget(struct args defArgs,
   model1 = m1;
   model2 = m2;
   c = NULL;
-  in_p = NULL;
-  qApp = app;
+  log = NULL;
 
   /* First mesh */
   qledMesh1 = new QLineEdit("", this);
@@ -116,13 +114,12 @@ InitWidget::InitWidget(struct args defArgs,
   smallGrid4 = new QHBoxLayout(bigGrid);
   smallGrid4->addSpacing(100);
   smallGrid4->addWidget(OK, 0, 1);
-
-  // Bypass Diego's "QTimer hack" ;-)
-  connect(this, SIGNAL(signalrunDone()), this, SLOT(runDone()));
 }
 
 InitWidget::~InitWidget() {
   delete c;
+  delete textOut;
+  outbuf_delete(log);
 }
 
 void InitWidget::loadMesh1() {
@@ -148,35 +145,21 @@ void InitWidget::getParameters() {
       QValidator::Acceptable) {
     incompleteFields();
   } else {
+    meshSetUp();
+    hide();
     // Use a timer, so that the current events can be processed before
     // starting the compute intensive work.
-     QTimer::singleShot(0,this,SLOT(meshRun()));
-     hide();
-
+    QTimer::singleShot(0,this,SLOT(meshRun()));
   }
-  
 }
 
-void InitWidget::runDone() {
-
-   if (pargs.do_wlog && in_p!=NULL) {
-     textOut = new TextWidget(in_p);
-     textOut->show();
-     fclose(in_p);
-   }
- 
-}
-  
 void InitWidget::incompleteFields() {
   QMessageBox::about(this,"ERROR",
 		     "Incomplete or invalid values in fields\n"
                      "Please correct");
 }
 
-void InitWidget::meshRun() {
-  int filedes[2];
-  FILE *out_p=NULL;
-
+void InitWidget::meshSetUp() {
   pargs.m1_fname = (char *) qledMesh1->text().latin1();
   pargs.m2_fname = (char *) qledMesh2->text().latin1();
   pargs.sampling_step = atof((char*)qledSplStep->text().latin1())/100;
@@ -185,45 +168,35 @@ void InitWidget::meshRun() {
   pargs.do_wlog = chkLogWindow->isChecked() == TRUE;
 
   if (!pargs.do_wlog) {
-    mesh_run(&pargs,model1,model2, stdout);
-    c = new ScreenWidget(model1, model2);
-    if (qApp != NULL)
-      qApp->setMainWidget(c);
-    c->show();
+    log = outbuf_new(stdio_puts,stdout);
   } else {
-
-#ifdef _WIN32
-    if (_pipe(filedes, 8192, O_TEXT) == -1) {
-      fprintf(stderr, "ERROR: Unable to create pipe\n");
-      exit(1);
-    }
-#else
-    if (pipe(filedes)) {
-      perror("ERROR: unable to create pipe ");
-      exit(1);
-    }
-#endif
-
-    if ((out_p = fdopen(filedes[1], "w"))==NULL) {
-      fprintf(stderr, "ERROR: unable to open output stream\n");
-      perror("ERROR ");
-      exit(1);
-    }
-    if ((in_p = fdopen(filedes[0], "r"))==NULL) {
-      fprintf(stderr, "ERROR: unable to open input stream\n");
-      perror("ERROR ");
-      exit(1);
-    }
-    mesh_run(&pargs, model1, model2, out_p);
-    fclose(out_p);
-
-    c = new ScreenWidget(model1, model2);
-    if (qApp != NULL)
-      qApp->setMainWidget(c);
-    c->show();
-	
-    // This is a trick to bypass Diego's "QTimer hack" ;-)
-    emit signalrunDone();
+    textOut = new TextWidget();
+    log = outbuf_new(TextWidget_puts,textOut);
+    textOut->show();
   }
-
 }
+
+// Should only be called after meshSetUp
+void InitWidget::meshRun() {
+  QProgressDialog qProg("Calculating distance",0,100);
+  struct prog_reporter pr;
+
+  qProg.setMinimumDuration(1500);
+  pr.prog = QT_prog;
+  pr.cb_out = &qProg;
+  mesh_run(&pargs,model1,model2, log, &pr);
+  outbuf_flush(log);
+  c = new ScreenWidget(model1, model2);
+  if (qApp != NULL) {
+    qApp->setMainWidget(c);
+  }
+  c->show();
+}
+
+void QT_prog(void *out, int p) {
+  QProgressDialog *qpd;
+  qpd = (QProgressDialog*)out;
+  qpd->setProgress(p<0 ? qpd->totalSteps() : p );
+  qApp->processEvents();
+}
+
