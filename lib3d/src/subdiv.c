@@ -1,6 +1,7 @@
-/* $Id: subdiv.c,v 1.21 2002/05/27 15:12:11 aspert Exp $ */
+/* $Id: subdiv.c,v 1.22 2002/05/27 15:52:05 aspert Exp $ */
 #include <3dutils.h>
 #include <subdiv_methods.h>
+#include <subdiv.h>
 #include <assert.h>
 
 /* This is the function that performs the subdivision.
