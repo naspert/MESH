@@ -1,4 +1,4 @@
-/* $Id: viewer.cpp,v 1.42 2001/08/21 15:41:48 dsanta Exp $ */
+/* $Id: viewer.cpp,v 1.43 2001/09/05 08:02:57 dsanta Exp $ */
 
 #include <time.h>
 #include <string.h>
@@ -19,6 +19,7 @@ struct args {
   int  no_gui;    /* text only flag */
   int quiet;      /* do not display extra info flag*/
   int sampling_freq; /* sampling frequency */
+  int do_symmetric; /* do symmetric error measure */
 };
 
 /* Prints usage information to the out stream */
@@ -40,6 +41,10 @@ static void print_usage(FILE *out)
   fprintf(out,"options:");
   fprintf(out,"\n");
   fprintf(out,"  -h\tDisplays this help message and exits.\n");
+  fprintf(out,"\n");
+  fprintf(out,"  -s\tCalculate a symmetric distance measure. It calculates\n");
+  fprintf(out,"    \tthe distance in the two directions and uses the max\n");
+  fprintf(out,"    \tas the symmetric distance (Hausdorff distance).\n");
   fprintf(out,"\n");
   fprintf(out,"  -q\tQuiet, do not print progress meter.\n");
   fprintf(out,"\n");
@@ -74,6 +79,8 @@ static void parse_args(int argc, char **argv, struct args *pargs)
         pargs->no_gui = 1;
       } else if (strcmp(argv[i],"-q") == 0) { /* quiet */
         pargs->quiet = 1;
+      } else if (strcmp(argv[i],"-s") == 0) { /* symmetric distance */
+        pargs->do_symmetric = 1;
       } else if (strcmp(argv[i],"-f") == 0) { /* sampling freq */
         if (argc <= i+1) {
           fprintf(stderr,"ERROR: missing argument for -f option\n");
@@ -119,7 +126,9 @@ int main( int argc, char **argv )
   double surfacemoy=0;
   QString m1,n1,o1;
   struct face_error *fe = NULL;
+  struct face_error *fe_rev = NULL;
   struct dist_surf_surf_stats stats;
+  struct dist_surf_surf_stats stats_rev;
   double bbox1_diag,bbox2_diag;
   double *tmp_error;
   struct args pargs;
@@ -219,11 +228,56 @@ int main( int argc, char **argv )
   printf("RMS:    \t%11g\t%11g\n",
          stats.rms_dist,stats.rms_dist/bbox2_diag*100);
   printf("\n");
+  fflush(stdout);
+
+  if (pargs.do_symmetric) { /* Invert models and recompute distance */
+    printf("       Distance from model 2 to model 1\n\n");
+    dist_surf_surf(raw_model2,raw_model1,pargs.sampling_freq,&fe_rev,&stats_rev,
+                   0,pargs.quiet);
+    free_face_error(fe_rev);
+    fe_rev = NULL;
+    printf("        \t   Absolute\t%% BBox diag\n");
+    printf("        \t           \t  (Model 2)\n");
+    printf("Min:    \t%11g\t%11g\n",
+           stats_rev.min_dist,stats_rev.min_dist/bbox2_diag*100);
+    printf("Max:    \t%11g\t%11g\n",
+           stats_rev.max_dist,stats_rev.max_dist/bbox2_diag*100);
+    printf("Mean:   \t%11g\t%11g\n",
+           stats_rev.mean_dist,stats_rev.mean_dist/bbox2_diag*100);
+    printf("RMS:    \t%11g\t%11g\n",
+           stats_rev.rms_dist,stats_rev.rms_dist/bbox2_diag*100);
+    printf("\n");
+
+    /* Print symmetric distance measures */
+    printf("       Symmetric distance between model 1 and model 2\n\n");
+    printf("        \t   Absolute\t%% BBox diag\n");
+    printf("        \t           \t  (Model 2)\n");
+    printf("Min:    \t%11g\t%11g\n",
+           max(stats.min_dist,stats_rev.min_dist),
+           max(stats.min_dist,stats_rev.min_dist)/bbox2_diag*100);
+    printf("Max:    \t%11g\t%11g\n",
+           max(stats.max_dist,stats_rev.max_dist),
+           max(stats.max_dist,stats_rev.max_dist)/bbox2_diag*100);
+    printf("Mean:   \t%11g\t%11g\n",
+           max(stats.mean_dist,stats_rev.mean_dist),
+           max(stats.mean_dist,stats_rev.mean_dist)/bbox2_diag*100);
+    printf("RMS:    \t%11g\t%11g\n",
+           max(stats.rms_dist,stats_rev.rms_dist),
+           max(stats.rms_dist,stats_rev.rms_dist)/bbox2_diag*100);
+    printf("\n");
+  }
+
   printf("Calculated error in %g seconds\n",
          (double)(clock()-start_time)/CLOCKS_PER_SEC);
   printf("Used %d samples per triangle of model 1 (%d total)\n",
          (pargs.sampling_freq)*(pargs.sampling_freq+1)/2,
          (pargs.sampling_freq)*(pargs.sampling_freq+1)/2*raw_model1->num_faces);
+  if (pargs.do_symmetric) {
+    printf("Used %d samples per triangle of model 2 (%d total)\n",
+           (pargs.sampling_freq)*(pargs.sampling_freq+1)/2,
+           (pargs.sampling_freq)*(pargs.sampling_freq+1)/2*
+           raw_model2->num_faces);
+  }
   printf("Size of partitioning grid (X,Y,Z): %d %d %d (%d total)\n",
          stats.grid_sz.x,stats.grid_sz.y,stats.grid_sz.z,
          stats.grid_sz.x*stats.grid_sz.y*stats.grid_sz.z);
