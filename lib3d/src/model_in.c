@@ -1,4 +1,4 @@
-/* $Id: model_in.c,v 1.26 2002/04/22 10:27:24 aspert Exp $ */
+/* $Id: model_in.c,v 1.27 2002/04/22 11:57:42 dsanta Exp $ */
 
 
 /*
@@ -1262,6 +1262,8 @@ static int read_vrml_ifs(struct model *tmesh, struct file_data *data)
           printf("[read_vrml_ifs]read_vrml_coordinate done\n");
 #endif
           if (n_vtcs < 0) rcode = n_vtcs; /* error */
+        } else {
+          rcode = MESH_CORRUPTED;
         }
       } else if (strcmp(stmp,"coordIndex") == 0) { /* faces */
         if (n_faces != -1) {
@@ -1279,6 +1281,8 @@ static int read_vrml_ifs(struct model *tmesh, struct file_data *data)
                    strcmp(stmp,"Normal") == 0) {
           n_nrmls = read_vrml_normal(&normals,data);
           if (n_nrmls < 0) rcode = n_nrmls; /* error */
+        } else {
+          rcode = MESH_CORRUPTED;
         }
       } else if (strcmp(stmp,"normalIndex") == 0) {
         if (n_nrml_idcs != -1) {
