@@ -1,4 +1,4 @@
-/* $Id: rawview.c,v 1.31 2003/02/18 13:49:32 aspert Exp $ */
+/* $Id: rawview.c,v 1.32 2003/02/19 09:18:12 aspert Exp $ */
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -341,9 +341,10 @@ static void sp_key_pressed(int key, int x, int y) {
   switch(key) {
   case GLUT_KEY_F1:/* Print Help */
     fprintf(stderr, "\n***********************\n");
-    fprintf(stderr, "* Rawview    -    Help *\n");
+    fprintf(stderr, "* Rawview    -   Help *\n");
     fprintf(stderr, "***********************\n\n");
     fprintf(stderr, "b/B      :\tPerforms Butterfly subdivision\n");
+    fprintf(stderr, "d/D      :\tSaves the viewing coordinates in a file (coordxxx.mat)\n");
     fprintf(stderr, "g/G      :\tDisplay Gaussian curvature\n");
     fprintf(stderr, "i/I      :\tDisplay model information\n");
     fprintf(stderr, "l/L      :\tPerforms Loop subdivision\n");
@@ -549,7 +550,7 @@ int main(int argc, char **argv) {
 
   int i, rcode=0;
   char *title;
-  const char s_title[]="Raw Mesh Viewer $Revision: 1.31 $ - ";
+  const char s_title[]="Raw Mesh Viewer $Revision: 1.32 $ - ";
   vertex_t center;
   struct model* raw_model;
 
