@@ -1,4 +1,4 @@
-/* $Id: subdiv_methods.h,v 1.4 2002/02/13 10:25:57 aspert Exp $ */
+/* $Id: subdiv_methods.h,v 1.5 2002/02/13 12:02:40 aspert Exp $ */
 
 
 #ifndef __SUBDIV_METHODS_PROTO
@@ -17,9 +17,11 @@
 # define SUBDIV_LOOP_BOUNDARY      0x13
 
 /* These are parameters for Butterfly subdivision */
-#define __QT   0.75
-#define __QS   0.75
-#define __2W  -0.125
+# define __QT    0.75
+# define __QS    0.75
+# define __2W   -0.125           /* w = -1.0/16.0 */
+# define _M1_12 -0.0833333333333 /* -1.0/12.0 */
+# define _5_12   0.4166666666666 /* 5.0/12.0 */
 
 /* Precomputed regular stencil */
 const static float r_sten[6] = {0.25 - __2W,  0.125 + __2W, -0.125 - __2W, 

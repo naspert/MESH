@@ -1,7 +1,20 @@
-/* $Id: subdiv_methods.c,v 1.7 2002/02/13 10:25:57 aspert Exp $ */
+/* $Id: subdiv_methods.c,v 1.8 2002/02/13 12:02:41 aspert Exp $ */
 #include <3dmodel.h>
 #include <geomutils.h>
 #include <subdiv_methods.h>
+
+
+/* ph -> h(ph) */
+float h(float ph) {
+  if (ph <= -M_PI_2 || ph >= M_PI_2)
+    return ph;
+  else if (ph < -M_PI_4) 
+    return 0.5*ph*(1.0 + (ph/M_PI_4 + 1.0)*(ph/M_PI_4 + 1.0));
+  else if (ph > M_PI_4) 
+    return 0.5*ph*(1.0 + (ph/M_PI_4 - 1.0)*(ph/M_PI_4 - 1.0));
+  else 
+    return 0.5*ph;  
+}
 
 void compute_midpoint_sph(struct ring_info *rings, int center, int v1, 
 			  struct model *raw_model, vertex_t *vout) {
@@ -10,7 +23,7 @@ void compute_midpoint_sph(struct ring_info *rings, int center, int v1,
   struct ring_info ring_op = rings[center2];
   int v2 = 0;
   vertex_t n,p, vj, dir, m, u, v, np1, np2, np;
-  float r, ph, lambda, pl_off, nr, nph, dz, rp, g;
+  float r, ph, lambda, pl_off, nr, nph, dz, rp;
 
 
   n = raw_model->normals[center];
@@ -52,17 +65,7 @@ void compute_midpoint_sph(struct ring_info *rings, int center, int v1,
 
   /* Compute the new position */
   nr = 0.5*r;
-  if (ph <= -M_PI_2 || ph >= M_PI_2)
-    nph = ph;
-  else if (ph < -M_PI_4) {
-    g = 0.5*(1.0 + (ph/M_PI_4 + 1.0)*(ph/M_PI_4 + 1.0));
-    nph = g*ph;
-  } else if (ph > M_PI_4) {
-    g = 0.5*(1.0 + (ph/M_PI_4 - 1.0)*(ph/M_PI_4 - 1.0));
-    nph = g*ph;
-  } else {
-    nph = 0.5*ph; 
-  }
+  nph = h(ph);
 
   dz = nr*sin(nph);
   rp = nr*cos(nph);
@@ -70,11 +73,8 @@ void compute_midpoint_sph(struct ring_info *rings, int center, int v1,
   normalize_v(&v);
   
   prod_v(rp, &v, &np1);
-  
- 
-  np1.x += dz*n.x + p.x;
-  np1.y += dz*n.y + p.y;
-  np1.z += dz*n.z + p.z;
+
+  add_prod_v(dz, &n, &p, &np1);
 
   while (ring_op.ord_vert[v2] != center)
       v2++;
@@ -118,17 +118,7 @@ void compute_midpoint_sph(struct ring_info *rings, int center, int v1,
 #endif
 
   nr = 0.5*r;
-  if (ph <= -M_PI_2 || ph >= M_PI_2)
-    nph = ph;
-  else if (ph < -M_PI_4) {
-    g = 0.5*(1.0 + (ph/M_PI_4 + 1.0)*(ph/M_PI_4 + 1.0));
-    nph = g*ph;
-  } else if (ph > M_PI_4) {
-    g = 0.5*(1.0 + (ph/M_PI_4 - 1.0)*(ph/M_PI_4 - 1.0));
-    nph = g*ph;
-  } else {
-    nph = 0.5*ph; 
-  } 
+  nph = h(ph);
 
 
 
@@ -137,10 +127,8 @@ void compute_midpoint_sph(struct ring_info *rings, int center, int v1,
 
   normalize_v(&v);
   prod_v(rp, &v, &np2);
+  add_prod_v(dz, &n, &p, &np2);
 
-  np2.x += dz*n.x + p.x;
-  np2.y += dz*n.y + p.y;
-  np2.z += dz*n.z + p.z;
 
 
   add_v(&np1, &np2, &np);
@@ -150,6 +138,33 @@ void compute_midpoint_sph(struct ring_info *rings, int center, int v1,
   *vout = np;
 }
 
+
+/* 
+ * Builds a Butterfly subd. mask of size n for irregular vertices.
+ * The array must be pre-malloc'ed !
+ */
+void make_sub_mask(float *mask, int n) {
+  int j;
+
+  switch(n) {
+  case 3:
+    mask[0] = _5_12;
+    mask[1] = _M1_12;
+    mask[2] = mask[1];
+    break;
+  case 4:
+    mask[0] = 0.375;
+    mask[1] = 0.0;
+    mask[2] = -0.125;
+    mask[3] = 0.0;
+    break;
+  default:
+    for (j=0; j<n; j++) 
+      mask[j] = (0.25 + cos(2*M_PI*j/(float)n) +
+                 0.5*cos(4*M_PI*j/(float)n))/(float)n;
+    break;
+  }
+}
 
 void compute_midpoint_butterfly(struct ring_info *rings, int center,  int v1, 
 				struct model *raw_model, vertex_t *vout) {
@@ -183,43 +198,16 @@ void compute_midpoint_butterfly(struct ring_info *rings, int center,  int v1,
     while (ring_op.ord_vert[v2] != center)
       v2++;
     
-    s = (float*)calloc(n, sizeof(float));
-    t = (float*)calloc(m, sizeof(float));
+    s = (float*)malloc(n*sizeof(float));
+    t = (float*)malloc(m*sizeof(float));
 
     /* Compute values of stencil for end-vertex_t */
-    if (m > 4) {
-      for (j=0; j<m; j++) {
- 	t[j] = (0.25 + cos(2*M_PI*j/(float)m) + 
-		0.5*cos(4*M_PI*j/(float)m))/(float)m;
-      }
-      
-    } else if (m == 4) {
-      t[0] = 0.375;
-      t[2] = -0.125;
-    } else if (m == 3) {
-      t[0] = 5.0/12.0;
-      t[1] = -1.0/12.0;
-      t[2] = t[1];
-    }
+    make_sub_mask(t, m);
 
 
     /* Compute values of stencil for center vertex_t */
-    if (n > 4) {
-      for (j=0; j<n; j++) {
-	s[j] = (0.25 + cos(2*M_PI*j/(float)n) + 
-		0.5*cos(4*M_PI*j/(float)n))/(float)n;
-      }
+    make_sub_mask(s, n);
 
-      
-    } else if (n == 4) {
-      s[0] = .375;
-      s[2] = -0.125;
-    } else if (n == 3) {
-      s[0] = 5.0/12.0;
-      s[1] = -1.0/12.0;
-      s[2] = s[1];
-    }
-    
     p.x = 0.0;
     p.y = 0.0;
     p.z = 0.0;
@@ -298,21 +286,8 @@ void compute_midpoint_butterfly(struct ring_info *rings, int center,  int v1,
 
   }
   else if (n!=6 && m==6){ /* only one irreg. vertex_t */
-    s = (float*)calloc(n, sizeof(float));
-    if (n > 4) {
-      for (j=0; j<n; j++) {
-	s[j] = (0.25 + cos(2*M_PI*j/(float)n) + 
-		0.5*cos(4*M_PI*j/(float)n))/(float)n;
-      }
-      
-    } else if (n == 4) {
-      s[0] = .375;
-      s[2] = -0.125;
-    } else if (n == 3) {
-      s[0] = 5.0/12.0;
-      s[1] = -1.0/12.0;
-      s[2] = s[1];
-    }
+    s = (float*)malloc(n*sizeof(float));
+    make_sub_mask(s, n);
     
     p.x = 0.0;
     p.y = 0.0;
@@ -324,28 +299,13 @@ void compute_midpoint_butterfly(struct ring_info *rings, int center,  int v1,
 
     add_prod_v(__QS, &(raw_model->vertices[center]), &p, &p);
 
-
+    free(s);
   } else if (n==6 && m!=6) {
-    t = (float*)calloc(m, sizeof(float));
+    t = (float*)malloc(m*sizeof(float));
+    make_sub_mask(t, m);
 
     while (ring_op.ord_vert[v2] != center)
       v2++;
-
-    if (m > 4) {
-      for (j=0; j<m; j++) {
-	t[j] = (0.25 + cos(2*M_PI*j/(float)m) + 
-		0.5*cos(4*M_PI*j/(float)m))/(float)m;
-      }
-
-      
-    } else if (m == 4) {
-      t[0] = 0.375;
-      t[2] = -0.125;
-    } else if (m == 3) {
-      t[0] = 5.0/12.0;
-      t[1] = -1.0/12.0;
-      t[2] = t[1];
-    }
     
     p.x = 0.0;
     p.y = 0.0;
