@@ -1,4 +1,4 @@
-/* $Id: model_in.h,v 1.8 2002/04/12 13:47:15 aspert Exp $ */
+/* $Id: model_in.h,v 1.9 2002/04/12 13:51:15 aspert Exp $ */
 
 
 /*
@@ -56,7 +56,7 @@
  *      Only the IndexedFaceSet nodes are read. All transformations are
  *      ignored. DEF/USE and PROTO tags are not parsed. Vertices, faces,
  *      vertex normals and face normals are read. Due to lack of support in
- *      'struct model' for indexed vertex normals, they convertex to
+ *      'struct model' for indexed vertex normals, they are converted to
  *      non-indexed ones by taking the last appearing normal for each vertex
  *      (i.e. if multiple normals exist for a vertex only the last one is
  *      considered). Likewise for indexed face normals.
@@ -88,7 +88,7 @@
 
 /* 
  * 'zlib' is not part of the Window$ platforms. Comment out this to use zlib
- * under Windows.
+ * under Windows (It *does* work ! I saw it on my PC !).
  */
 #ifdef WIN32
 #define DONT_USE_ZLIB
