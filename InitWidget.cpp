@@ -1,4 +1,4 @@
-/* $Id: InitWidget.cpp,v 1.30 2002/04/03 09:24:48 aspert Exp $ */
+/* $Id: InitWidget.cpp,v 1.31 2002/04/03 10:38:49 aspert Exp $ */
 
 
 /*
@@ -42,6 +42,7 @@
 
 #include <InitWidget.h>
 #include <mesh.h>
+#include <model_in.h>
 #include <qlabel.h>
 #include <qlayout.h>
 #include <qpushbutton.h>
