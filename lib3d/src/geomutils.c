@@ -1,4 +1,4 @@
-/* $Id: geomutils.c,v 1.16 2002/09/26 13:01:41 aspert Exp $ */
+/* $Id: geomutils.c,v 1.17 2002/11/14 12:01:23 aspert Exp $ */
 
 
 /*
@@ -60,7 +60,7 @@ void rotate_3d(vertex_t p, vertex_t u, double theta, vertex_t *vout) {
   double tmp;
 
   
-  normalize_v(&u); /* useful ? */
+  __normalize_v(u); /* useful ? */
 
   tmp = (cth + a*u.x*u.x)*p.x;
   tmp += (a*u.x*u.y - sth*u.z)*p.y;
@@ -125,21 +125,21 @@ void compute_circle3d(vertex_t p1, vertex_t p2, vertex_t p3,
     float det;
     float a[9], b[3];
 
-    substract_v(&p2, &p1, &u);
-    substract_v(&p3, &p1, &v);
+    __substract_v(p2, p1, u);
+    __substract_v(p3, p1, v);
 
 
-    crossprod_v(&u, &v, &w);
+    __crossprod_v(u, v, w);
 
    
     /* The center of the circle is the 
        intersection of 3 planes */
 
-    add_v(&p1, &p2, &m1);
-    prod_v(0.5f, &m1, &m1);
+    __add_v(p1, p2, m1);
+    __prod_v(0.5f, m1, m1);
 
-    add_v(&p1, &p3, &m2);
-    prod_v(0.5f, &m2, &m2);
+    __add_v(p1, p3, m2);
+    __prod_v(0.5f, m2, m2);
 
 
     /* Is the equation system OK ? */
@@ -184,6 +184,6 @@ void compute_circle3d(vertex_t p1, vertex_t p2, vertex_t p3,
     tmp.y = center->y - p1.y;
     tmp.z = center->z - p1.z;
 
-    *r = norm_v(&tmp);
+    *r = __norm_v(tmp);
     
 }
