@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.23 2001/10/10 12:57:55 aspert Exp $
+# $Id: Makefile,v 1.24 2001/10/23 11:43:13 aspert Exp $
 
 #
 # If the make variable PROFILE is defined to a non-empty value, profiling
@@ -61,7 +61,7 @@ CXX_IS_GCC := $(findstring gcc,$(shell $(CXX) -v 2>&1))
 XTRA_CFLAGS = -O2 -ansi
 XTRA_CXXFLAGS = -O2 -ansi
 XTRA_CPPFLAGS = -DNDEBUG
-XTRA_LDFLAGS =
+XTRA_LDFLAGS = 
 
 # Derive compiler specific flags
 ifeq ($(CC_IS_GCC)-$(OS)-$(ARCH),gcc-Linux-i686)
@@ -69,7 +69,7 @@ XTRA_CFLAGS += -march=i686
 endif
 ifeq ($(CC_IS_GCC),gcc)
 C_PROF_OPT = -pg
-XTRA_CFLAGS += -g
+XTRA_CFLAGS += -g -pipe
 WARN_CFLAGS = -pedantic -Wall -W -Winline -Wmissing-prototypes \
         -Wstrict-prototypes -Wnested-externs -Wshadow -Waggregate-return
 # Following options might produce incorrect behaviour if code
@@ -83,7 +83,7 @@ XTRA_LDFLAGS += -IPA
 endif
 ifeq ($(CXX_IS_GCC),gcc)
 CXX_PROF_OPT = -pg
-XTRA_CXXFLAGS += -g
+XTRA_CXXFLAGS += -g -pipe
 WARN_CXXFLAGS = -pedantic -Wall -W -Wmissing-prototypes
 endif
 ifeq ($(CXX_IS_GCC)$(OS),IRIX)
