@@ -1,4 +1,4 @@
-/* $Id: normals.h,v 1.13 2002/03/01 11:58:58 aspert Exp $ */
+/* $Id: normals.h,v 1.14 2002/03/26 08:42:03 aspert Exp $ */
 #include <3dmodel.h>
 
 #ifndef _NORMALS_PROTO
@@ -53,23 +53,25 @@ struct edge_list {
 #ifdef __cplusplus
 extern "C" {
 #endif
-  void build_star_global(struct model*, struct ring_info**);
-  void build_star(struct model*, int, struct ring_info*);
+  void build_star_global(const struct model*, struct ring_info**);
+  void build_star(const struct model*, int, struct ring_info*);
   int compar(const void*, const void*);
   void add_edge_dg(struct dual_graph_info*, const struct edge_sort*, 
 		   const struct edge_sort*);
-  int build_edge_list(struct model*, struct dual_graph_info*, 
+  int build_edge_list(const struct model*, struct dual_graph_info*, 
 		      struct info_vertex*, struct dual_graph_index **);
-  struct edge_list* find_dual_edges(int, int*, struct dual_graph_info*, 
-				struct edge_list*, struct dual_graph_index*);
-  struct face_tree** bfs_build_spanning_tree(struct model*, 
+  struct edge_list* find_dual_edges(const int, int*, struct dual_graph_info*, 
+                                    struct edge_list*, 
+                                    const struct dual_graph_index*);
+  struct face_tree** bfs_build_spanning_tree(const struct model*, 
 					     struct info_vertex*);
-  int find_center(const face_t*, int, int);
-  void swap_vert(struct edge_v*);
-  void update_child_edges(struct face_tree*, int, int, int);
-  void build_normals(struct model*, struct face_tree*, vertex_t*);
-  vertex_t* compute_face_normals(struct model*, struct info_vertex*);
-  void compute_vertex_normal(struct model*, struct info_vertex*, vertex_t*);
+  int find_center(const face_t*, const int, const int);
+  void update_child_edges(struct face_tree*, const int, 
+                          const int, const int);
+  void build_normals(const struct model*, struct face_tree*, vertex_t*);
+  vertex_t* compute_face_normals(const struct model*, struct info_vertex*);
+  void compute_vertex_normal(struct model*, const struct info_vertex*, 
+                             const vertex_t*);
 #ifdef __cplusplus
 }
 #endif

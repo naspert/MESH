@@ -1,11 +1,12 @@
-/* $Id: normals.c,v 1.26 2002/03/01 11:58:58 aspert Exp $ */
+/* $Id: normals.c,v 1.27 2002/03/26 08:42:03 aspert Exp $ */
 #include <3dmodel.h>
 #include <geomutils.h>
 #include <normals.h>
 
 
 
-void build_star_global(struct model *raw_model, struct ring_info **ring) {
+void build_star_global(const struct model *raw_model, 
+                       struct ring_info **ring) {
   int i, j, k, l;
   int *num_edges=NULL; /* number of edges in the 1-ring */
   struct edge_v **edge_list_primal=NULL;
@@ -175,7 +176,7 @@ void build_star_global(struct model *raw_model, struct ring_info **ring) {
 }
 
 /* find the 1-ring of vertex v */
-void build_star(struct model *raw_model, int v, struct ring_info *ring) {
+void build_star(const struct model *raw_model, int v, struct ring_info *ring) {
 
   int i, j, k;
   int num_edges=0; /* number of edges in the 1-ring */
@@ -396,7 +397,7 @@ void add_edge_dg(struct dual_graph_info *dual_graph,
 /* Returns the number of edges from the dual graph or -1 if a non-manifold */
 /* edge is encoutered. The list of faces surrounding each vertex is done */
 /* at the same time */
-int build_edge_list(struct model *raw_model, 
+int build_edge_list(const struct model *raw_model, 
 		    struct dual_graph_info *dual_graph, 
 		    struct info_vertex *curv, 
 		    struct dual_graph_index **dg_idx){
@@ -468,20 +469,14 @@ int build_edge_list(struct model *raw_model,
     if (!compar(&(list[i]), &(list[i+1]))) {/*New entry in the dual graph*/
       add_edge_dg(dual_graph, &(list[i]), &(list[i+1]));
 
-
       /* update the index */
       f = list[i].face;
       (*dg_idx)[f].ring[(*dg_idx)[f].face_info++] = dual_graph->num_edges_dual;
 
 
       f = list[i+1].face;      
-      (*dg_idx)[f].ring[(*dg_idx)[f].face_info++] = dual_graph->num_edges_dual;
-
-
-      dual_graph->num_edges_dual++;
-      
-
-
+      (*dg_idx)[f].ring[(*dg_idx)[f].face_info++] = 
+        dual_graph->num_edges_dual++;
 
       /* test for non-manifoldness */
       if (i<3*raw_model->num_faces-2 && 
@@ -508,10 +503,10 @@ int build_edge_list(struct model *raw_model,
 /* into 'bot' and update 'ne_dual'*/
 /* we assume that 'bot' points on the last non-NULL elt of the and we return */
 /* the last elt. of this list afterwards */
-struct edge_list* find_dual_edges(int cur_face,  int *nfound, 
+struct edge_list* find_dual_edges(const int cur_face,  int *nfound, 
 				  struct dual_graph_info *dual_graph, 
 				  struct edge_list *bot, 
-				  struct dual_graph_index *dg_index) {
+				  const struct dual_graph_index *dg_index) {
 
 
   int i, id;
@@ -544,7 +539,7 @@ struct edge_list* find_dual_edges(int cur_face,  int *nfound,
 
 
 /* Builds the spanning tree of the dual graph */
-struct face_tree** bfs_build_spanning_tree(struct model *raw_model, 
+struct face_tree** bfs_build_spanning_tree(const struct model *raw_model, 
 					   struct info_vertex *curv) {
   int faces_traversed=0;
   int list_size=0, i;
@@ -730,94 +725,71 @@ struct face_tree** bfs_build_spanning_tree(struct model *raw_model,
 
 
 
-int find_center(const face_t *cur,int v1, int v2) {
+int find_center(const face_t *cur,const int v1, const int v2) {
   if (cur->f0==v1) {
     if (cur->f1==v2)
       return cur->f2;
-    else if (cur->f2==v2)
+    else
       return cur->f1;
   } else if (cur->f1==v1) {
     if (cur->f0==v2)
       return cur->f2;
-    else if (cur->f2==v2)
+    else
       return cur->f0;
   } else {
     if (cur->f1==v2)
       return cur->f0;
-    else if (cur->f0==v2)
+    else
       return cur->f1;
-  } 
-  printf("find_center: Error\n");
+  }
   return -1;
 }
 
-void swap_vert(struct edge_v *p) {
-  int tmp;
 
-  tmp = p->v0;
-  p->v0 = p->v1;
-  p->v1 = tmp;
-}
 
-void update_child_edges(struct face_tree *tree, int v0, int v1, int v2) {
-  
-  if (tree->left != NULL) {
-    if (tree->right == NULL) { /* update prim_left */
+void update_child_edges(struct face_tree *tree, const int v0, 
+                        const int v1, const int v2) {
+  int __tmp;
 
-      
+#ifndef __swap_vert
+#define __swap_vert(p)                          \
+  do {                                          \
+    __tmp = (p).v1;                             \
+    (p).v1 = (p).v0;                            \
+    (p).v0 = __tmp;                             \
+  } while(0)
+#endif
+
+  if (tree->left != NULL) {/* update prim_left */
       if ((tree->prim_left).v0 == v1 && (tree->prim_left).v1 == v0)  
 	/* prim_left = v1v0 */
-	swap_vert(&(tree->prim_left));
+	__swap_vert(tree->prim_left);
       else if ((tree->prim_left).v0 == v0 && (tree->prim_left).v1 == v2) 
 	/* prim_left = v0v2 */
-	swap_vert(&(tree->prim_left));
+	__swap_vert(tree->prim_left);
       else if ((tree->prim_left).v0 == v2 && (tree->prim_left).v1 == v1)
 	/* prim_left = v2v1 */
-	swap_vert(&(tree->prim_left));
-      
-    } else { /* update prim_left & prim_right */
-      if ((tree->prim_left).v0 == v1 && (tree->prim_left).v1 == v0)  
-	/* prim_left = v1v0 */
-	swap_vert(&(tree->prim_left));
-      else if ((tree->prim_left).v0 == v0 && (tree->prim_left).v1 == v2) 
-	/* prim_left = v0v2 */
-	swap_vert(&(tree->prim_left));
-      else if ((tree->prim_left).v0 == v2 && (tree->prim_left).v1 == v1)
-	/* prim_left = v2v1 */
-	swap_vert(&(tree->prim_left));
-
-
-      if ((tree->prim_right).v0 == v1 && (tree->prim_right).v1 == v0)  
-	/* prim_right = v1v0 */
-	swap_vert(&(tree->prim_right));
-      else if ((tree->prim_right).v0 == v0 && (tree->prim_right).v1 == v2) 
-	/* prim_right = v0v2 */
-	swap_vert(&(tree->prim_right));
-      else if ((tree->prim_right).v0 == v2 && (tree->prim_right).v1 == v1)
-	/* prim_right = v2v1 */
-	swap_vert(&(tree->prim_right));
-
-
-    }
-  } else {
-    if (tree->right != NULL) { /* update prim_right */
-     if ((tree->prim_right).v0 == v1 && (tree->prim_right).v1 == v0)  
-	/* prim_right = v1v0 */
-	swap_vert(&(tree->prim_right));
-      else if ((tree->prim_right).v0 == v0 && (tree->prim_right).v1 == v2) 
-	/* prim_right = v0v2 */
-	swap_vert(&(tree->prim_right));
-      else if ((tree->prim_right).v0 == v2 && (tree->prim_right).v1 == v1)
-	/* prim_right = v2v1 */
-	swap_vert(&(tree->prim_right)); 
-    }
+	__swap_vert(tree->prim_left);    
   }
+
+  if (tree->right != NULL) {/* update prim_right */
+    if ((tree->prim_right).v0 == v1 && (tree->prim_right).v1 == v0)  
+      /* prim_right = v1v0 */
+      __swap_vert(tree->prim_right);
+    else if ((tree->prim_right).v0 == v0 && (tree->prim_right).v1 == v2) 
+      /* prim_right = v0v2 */
+      __swap_vert(tree->prim_right);
+    else if ((tree->prim_right).v0 == v2 && (tree->prim_right).v1 == v1)
+      /* prim_right = v2v1 */
+      __swap_vert(tree->prim_right);
+  }
+#undef __swap_vert
 }
 
 
 
 
-void build_normals(struct model *raw_model, struct face_tree *tree, 
+void build_normals(const struct model *raw_model, struct face_tree *tree, 
 		   vertex_t* normals) {
 
   int v0=-1, v1=-1, v2=-1;
@@ -910,7 +882,7 @@ void build_normals(struct model *raw_model, struct face_tree *tree,
 }
 
 /* Compute consistent normals for each face of the model */
-vertex_t* compute_face_normals(struct model* raw_model, 
+vertex_t* compute_face_normals(const struct model* raw_model, 
 			       struct info_vertex *curv) {
   
   vertex_t *normals;
@@ -950,16 +922,14 @@ vertex_t* compute_face_normals(struct model* raw_model,
 
   free(tree);
 
-/*   for (i=0; i<raw_model->num_vert; i++) */
-/*     printf("curv[%d].num_faces=%d\n", i, curv[i].num_faces); */
-
   return normals;
 }
 
 
 /* Compute a "normal" for each vertex */
-void compute_vertex_normal(struct model* raw_model, struct info_vertex* curv,  
-			   vertex_t *model_normals) {
+void compute_vertex_normal(struct model* raw_model, 
+                           const struct info_vertex* curv,  
+			   const vertex_t *model_normals) {
   int i,j;
   vertex_t tmp, *p1, *p2, *p3;
 
