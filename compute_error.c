@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.19 2001/08/09 09:06:06 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.20 2001/08/09 10:05:55 dsanta Exp $ */
 
 #include <compute_error.h>
 
@@ -551,16 +551,19 @@ static struct cell_list *cells_in_triangles(struct triangle_list *tl,
     h = 0;
     cl[i].cell = NULL;
 
-    /* Get the cells in which the triangle vertices are */
-    m_a = (int)floor((tl->triangles[i].a.x-bbox_min.x)/cell_sz);
-    n_a = (int)floor((tl->triangles[i].a.y-bbox_min.y)/cell_sz);
-    o_a = (int)floor((tl->triangles[i].a.z-bbox_min.z)/cell_sz);
-    m_b = (int)floor((tl->triangles[i].b.x-bbox_min.x)/cell_sz);
-    n_b = (int)floor((tl->triangles[i].b.y-bbox_min.y)/cell_sz);
-    o_b = (int)floor((tl->triangles[i].b.z-bbox_min.z)/cell_sz);
-    m_c = (int)floor((tl->triangles[i].c.x-bbox_min.x)/cell_sz);
-    n_c = (int)floor((tl->triangles[i].c.y-bbox_min.y)/cell_sz);
-    o_c = (int)floor((tl->triangles[i].c.z-bbox_min.z)/cell_sz);
+    /* Get the cells in which the triangle vertices are. For non-negative
+     * values, cast to int is equivalent to floor and probably faster (here
+     * negative values can not happen since bounding box is obtained from the
+     * vertices in tl). */
+    m_a = (int)((tl->triangles[i].a.x-bbox_min.x)/cell_sz);
+    n_a = (int)((tl->triangles[i].a.y-bbox_min.y)/cell_sz);
+    o_a = (int)((tl->triangles[i].a.z-bbox_min.z)/cell_sz);
+    m_b = (int)((tl->triangles[i].b.x-bbox_min.x)/cell_sz);
+    n_b = (int)((tl->triangles[i].b.y-bbox_min.y)/cell_sz);
+    o_b = (int)((tl->triangles[i].b.z-bbox_min.z)/cell_sz);
+    m_c = (int)((tl->triangles[i].c.x-bbox_min.x)/cell_sz);
+    n_c = (int)((tl->triangles[i].c.y-bbox_min.y)/cell_sz);
+    o_c = (int)((tl->triangles[i].c.z-bbox_min.z)/cell_sz);
 
     if (m_a == m_b && m_a == m_c && n_a == n_b && n_a == n_c &&
         o_a == o_b && o_a == o_c) {
@@ -591,20 +594,21 @@ static struct cell_list *cells_in_triangles(struct triangle_list *tl,
     cell_idx_prev = -1;
     for(j=0;j<sl.n_samples;j++){
       /* Get cell in which the sample is. Due to rounding in the triangle
-       * sampling process we check the indices to be within bounds. */
-      m=(int)floor((sl.sample[j].x-bbox_min.x)/cell_sz);
+       * sampling process we check the indices to be within bounds. As above,
+       * we can use cast to int instead of floor (probably faster) */
+      m=(int)((sl.sample[j].x-bbox_min.x)/cell_sz);
       if(m >= grid_sz.x) {
         m = grid_sz.x - 1;
       } else if (m < 0) {
         m = 0;
       }
-      n=(int)floor((sl.sample[j].y-bbox_min.y)/cell_sz);
+      n=(int)((sl.sample[j].y-bbox_min.y)/cell_sz);
       if (n >= grid_sz.y) {
         n = grid_sz.y - 1;
       } else if (n < 0) {
         n = 0;
       }
-      o=(int)floor((sl.sample[j].z-bbox_min.z)/cell_sz);
+      o=(int)((sl.sample[j].z-bbox_min.z)/cell_sz);
       if (o >= grid_sz.z) {
         o = grid_sz.z - 1;
       } else if (o < 0) {
