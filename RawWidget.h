@@ -1,13 +1,9 @@
-/* $Id: RawWidget.h,v 1.16 2001/09/13 08:18:53 dsanta Exp $ */
+/* $Id: RawWidget.h,v 1.17 2001/09/25 13:17:43 dsanta Exp $ */
 #ifndef RAWWIDGET_H
 #define RAWWIDGET_H
 
 #include <compute_error.h>
 #include <qgl.h>
-#include <qevent.h>
-#include <ColorMap.h>
-#include <qkeycode.h>
-#include <qnamespace.h>
 
 #define FOV 40.0 // Vertical field of view for the rendering
 
@@ -27,7 +23,7 @@ class RawWidget : public QGLWidget
   Q_OBJECT 
 
 public:  
-  RawWidget(model_error *model, int renderType, QWidget *parent=0, 
+  RawWidget(struct model_error *model, int renderType, QWidget *parent=0, 
 	    const char *name=0); // Constructor
 
   
@@ -55,7 +51,6 @@ private:
 // functions 
   void display(double distance);
   void rebuild_list();
-  int compute_normals(void);
 
 
 // vars
@@ -63,7 +58,7 @@ private:
   // the lighted mode or not
   GLdouble dth, dph, dpsi;
   double **colormap;
-  model_error *model;
+  struct model_error *model;
   GLdouble distance, dstep;
   int oldx,oldy;
   GLdouble mvmatrix[16]; // Buffer for GL_MODELVIEW_MATRIX 

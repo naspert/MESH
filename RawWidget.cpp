@@ -1,12 +1,14 @@
-/* $Id: RawWidget.cpp,v 1.23 2001/09/20 15:45:52 dsanta Exp $ */
+/* $Id: RawWidget.cpp,v 1.24 2001/09/25 13:17:43 dsanta Exp $ */
+
 #include <RawWidget.h>
 #include <qmessagebox.h>
+#include <ColorMap.h>
 
 // 
 // This is a derived class from QGLWidget used to render models
 // 
 
-RawWidget::RawWidget(model_error *model, int renderType, 
+RawWidget::RawWidget(struct model_error *model, int renderType, 
 		     QWidget *parent, const char *name)
   :QGLWidget(parent, name) { 
   
@@ -66,6 +68,7 @@ void RawWidget::transfer(double dist,double *mvmat) {
   // Copy the 4x4 transformation matrix
   memcpy(mvmatrix, mvmat, 16*sizeof(double)); 
   // update display
+  makeCurrent();
   glDraw();
 }
 
@@ -87,10 +90,6 @@ void RawWidget::setLine(bool state) {
   // and this causes a _silly_ behaviour !
   makeCurrent();
 
-
-
-
-
   glGetIntegerv(GL_POLYGON_MODE,line_state);
   if (line_state[0]==GL_FILL && line_state[1]==GL_FILL && state==TRUE) {
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -108,6 +107,7 @@ void RawWidget::setLine(bool state) {
 void RawWidget::setLight() {
   GLboolean light_state;
 
+  makeCurrent();
   // Get state from renderer
   if (renderFlag == RW_LIGHT_TOGGLE) {
     light_state = glIsEnabled(GL_LIGHTING);
@@ -197,6 +197,7 @@ void RawWidget::initializeGL() {
 void RawWidget::display(double distance) {
   GLfloat lpos[] = {-1.0, 1.0, 1.0, 0.0} ;
 
+  makeCurrent();
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glLoadIdentity();
   /* Set the light position relative to eye point */
@@ -371,8 +372,6 @@ void RawWidget::mouseMoveEvent(QMouseEvent *event) {
   dx= event->x() - oldx;
   dy= event->y() - oldy;
 
-
-
   if(left_button_state==1){  
     dth = dx*0.5; 
     dph = dy*0.5;
@@ -426,6 +425,7 @@ void RawWidget::keyPressEvent(QKeyEvent *k) {
     emit toggleSync();
     break;
   case Key_F4:
+    makeCurrent();
     if (renderFlag == RW_LIGHT_TOGGLE) {
       light_state = glIsEnabled(GL_LIGHTING);
       if (light_state == GL_TRUE) { // Invert normals
@@ -441,6 +441,7 @@ void RawWidget::keyPressEvent(QKeyEvent *k) {
     break;
   case Key_F5:
     if (renderFlag == RW_LIGHT_TOGGLE) {
+      makeCurrent();
       two_sided_material = !two_sided_material;
       rebuild_list();
       glDraw();
