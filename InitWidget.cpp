@@ -1,4 +1,4 @@
-/* $Id: InitWidget.cpp,v 1.21 2002/02/26 13:36:11 aspert Exp $ */
+/* $Id: InitWidget.cpp,v 1.22 2002/02/27 07:51:59 aspert Exp $ */
 
 #include <InitWidget.h>
 
@@ -136,6 +136,7 @@ void InitWidget::loadMesh1() {
   fd.setMode(QFileDialog::ExistingFile);
   fd.setFilters(mfilters);
   fd.setIcon(*qpxMeshIcon);
+  fd.setCaption("Left model");
   fd.show();
   QString fn = fd.selectedFile();
   if ( !fn.isEmpty() )
@@ -150,6 +151,7 @@ void InitWidget::loadMesh2() {
   fd.setMode(QFileDialog::ExistingFile);
   fd.setFilters(mfilters);
   fd.setIcon(*qpxMeshIcon);
+  fd.setCaption("Right model");
   fd.show();
   QString fn = fd.selectedFile();
   if ( !fn.isEmpty() )
