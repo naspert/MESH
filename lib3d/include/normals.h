@@ -1,4 +1,4 @@
-/* $Id: normals.h,v 1.17 2002/06/04 08:47:30 aspert Exp $ */
+/* $Id: normals.h,v 1.18 2002/11/04 15:25:05 aspert Exp $ */
 #include <3dmodel.h>
 
 #ifndef _NORMALS_PROTO
@@ -9,9 +9,9 @@ typedef int bitmap_t;
 #define BITMAP_T_BITS (8*BITMAP_T_SZ)
 #define BITMAP_T_MASK (BITMAP_T_BITS-1)
 #define BITMAP_TEST_BIT(bm, i) \
-        ((bm)[(i)/BITMAP_T_BITS] & (1 << ((i)&BITMAP_T_MASK)))
+        ((bm)[(i)/BITMAP_T_BITS] & (1 << ((i) & BITMAP_T_MASK)))
 #define BITMAP_SET_BIT(bm, i) \
-        ((bm)[(i)/BITMAP_T_BITS] |= 1 << ((i)&BITMAP_T_MASK))
+        ((bm)[(i)/BITMAP_T_BITS] |= 1 << ((i) & BITMAP_T_MASK))
 
 
 struct edge_sort {
