@@ -1,4 +1,4 @@
-/* $Id: model_in.c,v 1.12 2002/04/08 14:55:31 aspert Exp $ */
+/* $Id: model_in.c,v 1.13 2002/04/08 15:28:03 dsanta Exp $ */
 
 
 /*
@@ -580,7 +580,6 @@ static int concat_models(struct model **outmesh_ref,
         mesh->face_normals[j] = inmeshes[k].face_normals[i];
       }
     }
-    mesh->builtin_normals = 1;
   }
 
   /* Return resulting model */
@@ -1327,7 +1326,7 @@ static int read_vrml_ifs(struct model *tmesh, struct file_data *data)
     tmesh->num_faces = n_faces;
     tmesh->normals = vnormals;
     tmesh->face_normals = fnormals;
-    tmesh->builtin_normals = (n_nrmls > 0);
+    tmesh->builtin_normals = (vnormals != NULL);
     tmesh->bBox[0] = bbmin;
     tmesh->bBox[1] = bbmax;
   } else {
