@@ -1,4 +1,4 @@
-/* $Id: rawview.c,v 1.9 2002/04/03 09:04:37 aspert Exp $ */
+/* $Id: rawview.c,v 1.10 2002/06/04 09:27:10 aspert Exp $ */
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -27,11 +27,10 @@
 GLfloat distance, dstep; /* distance and incremental distance step */
 GLdouble mvmatrix[16]; /* Buffer for GL_MODELVIEW_MATRIX */
 
-#ifndef __DONT_USE_DISPLAY_LISTS_
+
 GLuint model_list = 0; /* display lists idx storage */
 GLuint normal_list = 0;
 GLuint tree_list = 0;
-#endif
 GLuint char_list = 0; /* those ones do not eat all the mem. with NV cards */
 
 int oldx, oldy;
@@ -205,8 +204,7 @@ void rebuild_list(struct model *raw_model) {
   vertex_t center1, center2;
   face_t *cur_face2;
   int j, face1=-1, face2=-1;
-  
-#ifndef __DONT_USE_DISPLAY_LISTS_
+
   /* delete all lists */
   if (glIsList(model_list) == GL_TRUE)
     glDeleteLists(model_list, 1);
@@ -227,7 +225,7 @@ void rebuild_list(struct model *raw_model) {
   
   if (draw_normals)
     normal_list = glGenLists(1);
-#endif
+
   
   if (draw_vtx_labels) {
     char_list = glGenLists(256);
@@ -261,9 +259,8 @@ void rebuild_list(struct model *raw_model) {
   
 
   if (draw_spanning_tree == 1) {
-#ifndef __DONT_USE_DISPLAY_LISTS_
+
     glNewList(tree_list, GL_COMPILE);
-#endif
     glColor3f(1.0, 1.0, 0.0);
     glBegin(GL_LINES);
     for (j=0; j<raw_model->num_faces; j++) {
@@ -295,18 +292,15 @@ void rebuild_list(struct model *raw_model) {
     }
     glEnd();
     glColor3f(1.0, 1.0, 1.0);
-#ifndef __DONT_USE_DISPLAY_LISTS_
     glEndList();
-#endif
+
 
   }
 
 
 
-/* Model drawing (w. or wo. lighting) */ 
-#ifndef __DONT_USE_DISPLAY_LISTS_
+/* Model drawing (w. or wo. lighting) */
   glNewList(model_list, GL_COMPILE);
-#endif
   if (tr_mode == 1)
     glBegin(GL_TRIANGLES);
   else 
@@ -318,17 +312,15 @@ void rebuild_list(struct model *raw_model) {
     glArrayElement(cur_face->f2);
   }
   glEnd();
-#ifndef __DONT_USE_DISPLAY_LISTS_
   glEndList();
-#endif
+
 
 
   if (draw_normals) {
     scale_fact = NORMALS_DISPLAY_FACTOR*dist_v(&(raw_model->bBox[0]), 
 					       &(raw_model->bBox[1]));
-#ifndef __DONT_USE_DISPLAY_LISTS_
+
     glNewList(normal_list, GL_COMPILE);
-#endif
     glColor3f(1.0, 0.0, 0.0);
     glBegin(GL_LINES);
     for (i=0; i<raw_model->num_vert; i++) {
@@ -342,9 +334,7 @@ void rebuild_list(struct model *raw_model) {
     }
     glEnd();
     glColor3f(1.0, 1.0, 1.0);
-#ifndef __DONT_USE_DISPLAY_LISTS_
     glEndList();
-#endif
   }
   
 }
@@ -409,7 +399,6 @@ void display_vtx_labels() {
 /* Display function : clear buffers, build correct MODELVIEW matrix, */
 /* call display list and swap the buffers                            */
 /* ***************************************************************** */
-#ifndef __DONT_USE_DISPLAY_LISTS_
 void display() {
   GLenum errorCode;
   GLboolean light_mode;
@@ -475,63 +464,7 @@ void display() {
   glutSwapBuffers();
 
 }
-#else
-void display() {
-  GLenum errorCode;
-  GLboolean light_mode;
-  GLfloat lpos[] = {-1.0, 1.0, 1.0, 0.0};
-  int i;
-  
-  light_mode = glIsEnabled(GL_LIGHTING);
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  glLoadIdentity();
-  glLightfv(GL_LIGHT0, GL_POSITION, lpos);
-  glTranslated(0.0, 0.0, -distance); /* Translate the object along z */
-  glMultMatrixd(mvmatrix); /* Perform rotation */
-  if (!light_mode)
-    for (i=0; i<=wf_bc; i++) {
-      switch (i) {
-      case 0:
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-	if (!ps_rend)
-	  glColor3f(1.0, 1.0, 1.0);
-	else
-	  glColor3f(0.0, 0.0, 0.0);
-	break;
-      case 1:
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-	if (!ps_rend) {
-	  glEnable(GL_POLYGON_OFFSET_FILL);
-	  glPolygonOffset(1.0, 1.0);
-	  glColor4f(0.0, 0.0, 0.0, 0.0);
-	}
-	else {
-	  gl2psEnable(GL2PS_POLYGON_OFFSET_FILL);
-	  glPolygonOffset(1.0, 1.0);
-	  glColor4f(1.0, 1.0, 1.0, 0.0);
-	}
-	break;
-      }
-    
-      rebuild_list(raw_model);
-      
-      glDisable(GL_POLYGON_OFFSET_FILL);
-      if (ps_rend)
-	gl2psDisable(GL2PS_POLYGON_OFFSET_FILL);
-    }
-  else
-    rebuild_list(raw_model);
 
-  if (draw_vtx_labels)
-    display_vtx_labels();
-
-  /* Check for errors (leave at the end) */
-  while ((errorCode = glGetError()) != GL_NO_ERROR) {
-    fprintf(stderr,"GL error: %s\n",(const char *)gluErrorString(errorCode));
-  }
-  glutSwapBuffers();
-}
-#endif
 /* ***************************** */
 /* Writes the frame to a PS file */
 /* ***************************** */

@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.38 2002/06/04 09:17:33 aspert Exp $
+# $Id: Makefile,v 1.39 2002/06/04 09:27:10 aspert Exp $
 
 
 OS := $(shell uname -s)
@@ -13,7 +13,7 @@ GSL_TARGETS = maps_lsq
 ifeq ($(OS), Linux)
 CC = gcc
 XTRA_CFLAGS = -g  -pipe -ansi -pedantic -Wall -DREAD_TIME  # \
-	-D__BUTTERFLY_CREASE_DEBUG -D__DONT_USE_DISPLAY_LISTS_ -DDONT_USE_ZLIB
+	-D__BUTTERFLY_CREASE_DEBUG -DDONT_USE_ZLIB
 
 
 GL_VENDOR := $(shell $(GLXINFO)|grep "OpenGL vendor"|cut -d\: -f2|cut -d\  -f2)
