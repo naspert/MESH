@@ -162,6 +162,10 @@ SOURCE=.\ScreenWidget.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\TextWidget.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\xalloc.c
 # End Source File
 # End Group
@@ -339,6 +343,10 @@ InputName=ScreenWidget
 
 !ENDIF 
 
+# End Source File
+# Begin Source File
+
+SOURCE=.\TextWidget.h
 # End Source File
 # Begin Source File
 

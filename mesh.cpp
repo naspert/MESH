@@ -1,4 +1,4 @@
-/* $Id: mesh.cpp,v 1.8 2001/10/10 12:57:56 aspert Exp $ */
+/* $Id: mesh.cpp,v 1.9 2001/10/10 14:51:35 aspert Exp $ */
 
 #include <time.h>
 #include <string.h>
@@ -178,10 +178,19 @@ int main( int argc, char **argv )
     if (!pargs.do_wlog)
       mesh_run(&pargs,&model1,&model2, stdout);
     else {
+
+#ifdef _WIN32
+      if (_pipe(filedes, 8192, _O_TEXT) == -1) {
+	fprintf(stderr, "ERROR: unable to create pipe ");
+	exit(1);
+      }
+#else
       if (pipe(filedes)) {
 	perror("ERROR: unable to create pipe ");
 	exit(1);
       }
+#endif
+
       if ((out_p = fdopen(filedes[1], "w"))==NULL) {
 	fprintf(stderr, "ERROR: unable to open output stream\n");
 	exit(1);

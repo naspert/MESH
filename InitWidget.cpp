@@ -1,4 +1,4 @@
-/* $Id: InitWidget.cpp,v 1.10 2001/10/10 12:57:55 aspert Exp $ */
+/* $Id: InitWidget.cpp,v 1.11 2001/10/10 14:51:34 aspert Exp $ */
 
 #include <InitWidget.h>
 
@@ -158,12 +158,13 @@ void InitWidget::getParameters() {
 }
 
 void InitWidget::runDone() {
+
    if (pargs.do_wlog && in_p!=NULL) {
      textOut = new TextWidget(in_p);
-//      textOut->openFile(in_p);
      textOut->show();
      fclose(in_p);
    }
+ 
 }
   
 void InitWidget::incompleteFields() {
@@ -190,10 +191,19 @@ void InitWidget::meshRun() {
       qApp->setMainWidget(c);
     c->show();
   } else {
+
+#ifdef _WIN32
+    if (_pipe(filedes, 8192, O_TEXT) == -1) {
+      fprintf(stderr, "ERROR: Unable to create pipe\n");
+      exit(1);
+    }
+#else
     if (pipe(filedes)) {
       perror("ERROR: unable to create pipe ");
       exit(1);
     }
+#endif
+
     if ((out_p = fdopen(filedes[1], "w"))==NULL) {
       fprintf(stderr, "ERROR: unable to open output stream\n");
       perror("ERROR ");
@@ -206,10 +216,12 @@ void InitWidget::meshRun() {
     }
     mesh_run(&pargs, model1, model2, out_p);
     fclose(out_p);
+
     c = new ScreenWidget(model1, model2);
     if (qApp != NULL)
       qApp->setMainWidget(c);
     c->show();
+	
     // This is a trick to bypass Diego's "QTimer hack" ;-)
     emit signalrunDone();
   }

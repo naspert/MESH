@@ -1,4 +1,4 @@
-/* $Id: InitWidget.h,v 1.9 2001/10/10 12:57:55 aspert Exp $ */
+/* $Id: InitWidget.h,v 1.10 2001/10/10 14:51:34 aspert Exp $ */
 
 #ifndef INITW_H
 #define INITW_H
@@ -15,11 +15,21 @@
 #include <TextWidget.h>
 
 // Needed for 'pipe' function
-#include <unistd.h>
+#ifdef _WIN32
+#  include <io.h>
+#  include <fcntl.h>
+#else
+#  include <unistd.h>
+#endif
 
 // This needs to be here... don't ask me why
 // Including stdio.h is not sufficient... sigh
-extern "C" FILE* fdopen(int, const char *); 
+#ifdef _WIN32
+#  define fdopen _fdopen
+#else
+   extern "C" FILE* fdopen(int, const char*);
+#endif
+ 
 
 
 class InitWidget : public QWidget {
