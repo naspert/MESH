@@ -1,4 +1,4 @@
-/* $Id: geomutils.h,v 1.9 2001/08/07 15:22:48 dsanta Exp $ */
+/* $Id: geomutils.h,v 1.10 2001/08/23 09:04:25 dsanta Exp $ */
 #include <3dmodel.h>
 
 #ifndef _GEOMUTILS_PROTO_
@@ -41,6 +41,7 @@ extern "C" {
   double norm2_v(const vertex*);
   double norm_v(const vertex*);
   double dist_v(const vertex*, const vertex*);
+  double dist2_v(const vertex *, const vertex *);
   void normalize_v(vertex*);
   void substract_v(const vertex*, const vertex*, vertex*);
   void add_v(const vertex*, const vertex*, vertex*);
@@ -96,6 +97,17 @@ extern "C" {
     tmp.z = v1->z - v2->z;
     
     return sqrt(tmp.x*tmp.x+tmp.y*tmp.y+tmp.z*tmp.z);
+  }
+
+  /* Returns the squared distance between vertices v1 and v2 */
+  INLINE double dist2_v(const vertex *v1, const vertex *v2) {
+    vertex tmp;
+  
+    tmp.x = v1->x - v2->x;
+    tmp.y = v1->y - v2->y;
+    tmp.z = v1->z - v2->z;
+    
+    return tmp.x*tmp.x+tmp.y*tmp.y+tmp.z*tmp.z;
   }
   
   /* Normalizes the vector v to be of unit length */
