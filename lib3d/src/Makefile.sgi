@@ -1,4 +1,4 @@
-# $Id: Makefile.sgi,v 1.1 2001/03/12 16:46:30 aspert Exp $
+# $Id: Makefile.sgi,v 1.2 2001/03/13 08:00:47 aspert Exp $
 
 CC = cc
 #CC = /tmpsg3j/aspert/gcc/bin/gcc 
@@ -15,8 +15,8 @@ XTRA_CFLAGS = -g -O2
 BASE_CFLAGS = $(INCLFLAGS) $(XTRA_CFLAGS)
 GL_CFLAGS = $(GLINCLFLAGS) $(XTRA_CFLAGS)
 
-BASE_LIBFLAGS = -L$(LIBDIR) -l3d -limage -lm
-GL_LIBFLAGS = -L$(LIBDIR) -lglut -lGLU -lGL -lm -lXmu -lXext -lX11 -l3d -limage -lm
+BASE_LIBFLAGS = -L$(LIBDIR)  -lm
+GL_LIBFLAGS = -L$(LIBDIR) -lglut -lGLU -lGL -lXmu -lXext -lX11 -l3d -limage -lm
 
 
 BASE_LDFLAGS = -g -O2 $(BASE_LIBFLAGS)
@@ -33,8 +33,8 @@ libimage : $(OBJDIR)/image.o
 lib3d : $(OBJDIR)/geomutils.o $(OBJDIR)/3dmodel_io.o $(OBJDIR)/normals.o
 	$(CC) -g -shared -o $(LIBDIR)/lib3d.so $^
 
-torus : $(OBJDIR)/torus.o $(OBJDIR)/geomutils.o
-	$(CC) -o $(BINDIR)/torus $^ -lm
+torus : $(OBJDIR)/torus.o lib3d
+	$(CC) -o $(BINDIR)/torus $< $(BASE_LDFLAGS) -l3d
 
 $(OBJDIR)/rawview3.o : rawview3.c
 	$(CC) $(GL_CFLAGS) -c $< -o $@
