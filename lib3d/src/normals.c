@@ -1,4 +1,4 @@
-/* $Id: normals.c,v 1.24 2002/02/19 12:58:55 aspert Exp $ */
+/* $Id: normals.c,v 1.25 2002/02/26 13:18:17 aspert Exp $ */
 #include <3dmodel.h>
 #include <geomutils.h>
 #include <normals.h>
@@ -363,33 +363,6 @@ void build_star(struct model *raw_model, int v, struct ring_info *ring) {
   free(done);
 
 }
-
-
-
-
-
-
-
-/* tree destructor */
-void destroy_tree(struct face_tree *tree) {
-  
-  if (tree->left != NULL)
-    destroy_tree(tree->left);
-  if (tree->right != NULL)
-    destroy_tree(tree->right);
-
-  if (tree->left == NULL && tree->right == NULL) {
-    if (tree->parent != NULL) {
-      if (tree->node_type == 0)
-	(tree->parent)->left = NULL;
-      else
-	(tree->parent)->right = NULL;
-    }
-    free(tree);
-
-  }
-}
-
 
 
 /* Compares two edges (s.t. they are in lexico. order after qsort) */

@@ -1,4 +1,4 @@
-/* $Id: 3dmodel_io.c,v 1.21 2001/12/07 17:15:29 aspert Exp $ */
+/* $Id: 3dmodel_io.c,v 1.22 2002/02/26 13:18:17 aspert Exp $ */
 #include <3dmodel.h>
 #include <3dmodel_io.h>
 #include <normals.h>
@@ -267,19 +267,7 @@ void write_raw_model(struct model *raw_model, char *filename) {
   fclose(pf);
 }
 
-void free_raw_model(struct model *raw_model) {
-  free(raw_model->vertices);
-  free(raw_model->faces);
-  if (raw_model->normals != NULL)
-    free(raw_model->normals);
-  if (raw_model->face_normals != NULL)
-    free(raw_model->face_normals);
-  if (raw_model->area != NULL)
-    free(raw_model->area);
-  if (raw_model->tree != NULL)
-    destroy_tree(*(raw_model->tree));
-  free(raw_model);
-}
+
 
 void write_brep_file(struct model *raw_model, char *filename, int grid_size_x,
 		     int grid_size_y, int  grid_size_z,

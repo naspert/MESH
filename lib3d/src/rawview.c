@@ -1,4 +1,4 @@
-/* $Id: rawview.c,v 1.5 2002/02/05 09:27:39 aspert Exp $ */
+/* $Id: rawview.c,v 1.6 2002/02/26 13:18:19 aspert Exp $ */
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -565,6 +565,29 @@ void ps_grab() {
   }
 }
 
+
+/* tree destructor */
+void destroy_tree(struct face_tree *tree) {
+  
+  if (tree->left != NULL)
+    destroy_tree(tree->left);
+  if (tree->right != NULL)
+    destroy_tree(tree->right);
+
+  if (tree->left == NULL && tree->right == NULL) {
+    if (tree->parent != NULL) {
+      if (tree->node_type == 0)
+	(tree->parent)->left = NULL;
+      else
+	(tree->parent)->right = NULL;
+    }
+    free(tree);
+
+  }
+}
+
+
+
 /* **************************** */
 /* Callback for the normal keys */
 /* **************************** */
@@ -577,6 +600,8 @@ void norm_key_pressed(unsigned char key, int x, int y) {
     break;
   case 'q':
   case 'Q':
+    if (raw_model->tree != NULL)
+      destroy_tree(*(raw_model->tree));
     free_raw_model(raw_model);
     exit(0);
     break;
