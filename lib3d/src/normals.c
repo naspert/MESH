@@ -1,4 +1,4 @@
-/* $Id: normals.c,v 1.28 2002/04/16 06:42:23 aspert Exp $ */
+/* $Id: normals.c,v 1.29 2002/04/16 06:47:21 aspert Exp $ */
 #include <3dmodel.h>
 #include <geomutils.h>
 #include <normals.h>
@@ -163,7 +163,7 @@ void build_star_global(const struct model *raw_model,
     ring[i].size = star_size;
     ring[i].ord_vert = (int*)malloc(star_size*sizeof(int));
     memcpy(ring[i].ord_vert, final_star, star_size*sizeof(int));
-#if 1
+#if 0
     printf("vertex %d: valence=%d\n", i, star_size);
 #endif
     ring[i].n_faces = n_faces;
