@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.81 2002/02/21 09:15:18 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.82 2002/02/24 19:48:31 dsanta Exp $ */
 
 #include <compute_error.h>
 
@@ -961,10 +961,10 @@ static void sample_triangle(const dvertex_t *a, const dvertex_t *b,
     s->sample = xa_realloc(s->sample,sizeof(*(s->sample))*s->n_samples);
     s->buf_sz = s->n_samples;
   }
-  /* get basis vectors */
-  substract_dv(b,a,&u);
-  substract_dv(c,a,&v);
   if (n != 1) { /* normal case */
+    /* get basis vectors */
+    substract_dv(b,a,&u);
+    substract_dv(c,a,&v);
     a_cache = *a;
     __prod_dv(1/(double)(n-1),u,u);
     __prod_dv(1/(double)(n-1),v,v);
@@ -977,9 +977,9 @@ static void sample_triangle(const dvertex_t *a, const dvertex_t *b,
       }
     }
   } else { /* special case, use triangle middle point */
-    s->sample[0].x = a->x+0.5*u.x+0.5*v.x;
-    s->sample[0].y = a->y+0.5*u.y+0.5*v.y;
-    s->sample[0].z = a->z+0.5*u.z+0.5*v.z;
+    s->sample[0].x = 1/3.0*(a->x+b->x+c->x);
+    s->sample[0].y = 1/3.0*(a->y+b->y+c->y);
+    s->sample[0].z = 1/3.0*(a->z+b->z+c->z);
   }
 }
 
