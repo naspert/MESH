@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.33 2002/02/27 07:55:43 aspert Exp $
+# $Id: Makefile,v 1.34 2002/02/27 09:54:41 aspert Exp $
 
 #
 # If the make variable PROFILE is defined to a non-empty value, profiling
@@ -38,12 +38,18 @@ endif
 ifeq ($(OS),Linux)
 CC = gcc
 CXX = g++
+DEPFLAG = -M
 endif
 ifeq ($(OS),IRIX)
 CC = cc
 CXX = CC
+DEPFLAG = -M
 endif
-
+ifeq ($(OS),SunOS)
+CC = cc
+CXX = CC
+DEPFLAG = -xM
+endif
 # Default directories
 BINDIR = ./bin
 LIBDIR = ./lib
@@ -65,10 +71,17 @@ CXX_IS_GCC := $(findstring gcc,$(shell $(CXX) -v 2>&1))
 CC_IS_ICC := $(findstring Intel,$(shell $(CC) -V 2>&1))
 
 # Extra compiler flags (optimization, profiling, debug, etc.)
+ifneq ($(OS),SunOS)
 XTRA_CFLAGS = -O2 -ansi
 XTRA_CXXFLAGS = -O2 -ansi
 XTRA_CPPFLAGS = -DNDEBUG
 XTRA_LDFLAGS =
+else
+XTRA_CFLAGS = -xO2
+XTRA_CXXFLAGS = -xO2
+XTRA_CPPFLAGS = -DNDEBUG
+XTRA_LDFLAGS =
+endif
 ifeq ($(OS),Linux)
 # Need -D_GNU_SOURCE for getting non-standard unlocked stdio functions
 XTRA_CPPFLAGS +=  -D_GNU_SOURCE
@@ -268,15 +281,15 @@ endif
 OBJDIRRE := $(shell echo $(OBJDIR)/ | sed 's/\./\\\./g;s/\//\\\//g;')
 
 $(MESH_C_SRCS:.c=.d): %.d: %.c
-	set -e; $(CC) -M $(CPPFLAGS) $< \
+	set -e; $(CC) $(DEPFLAG) $(CPPFLAGS) $< \
 		| sed 's/\($*\)\.o[ :]*/$(OBJDIRRE)\1.o $@ : /g' > $@; \
 		[ -s $@ ] || rm -f $@
 $(LIB3D_C_SRCS:.c=.d): %.d : $(LIB3DDIR)/src/%.c
-	set -e; $(CC) -M $(CPPFLAGS) $< \
+	set -e; $(CC) $(DEPFLAG) $(CPPFLAGS) $< \
 		| sed 's/\($*\)\.o[ :]*/$(OBJDIRRE)\1.o $@ : /g' > $@; \
 		[ -s $@ ] || rm -f $@
 $(MESH_CXX_SRCS:.cpp=.d): %.d : %.cpp
-	set -e; $(CXX) -M $(CPPFLAGS) $(QTINCFLAGS) $(GLINCFLAGS) $< \
+	set -e; $(CXX) $(DEPFLAG) $(CPPFLAGS) $(QTINCFLAGS) $(GLINCFLAGS) $< \
 		| sed 's/\($*\)\.o[ :]*/$(OBJDIRRE)\1.o $@ : /g' > $@; \
 		[ -s $@ ] || rm -f $@
 
