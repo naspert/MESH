@@ -1,4 +1,4 @@
-/* $Id: viewer.cpp,v 1.32 2001/08/10 09:59:42 dsanta Exp $ */
+/* $Id: viewer.cpp,v 1.33 2001/08/10 12:34:11 dsanta Exp $ */
 
 #include <time.h>
 #include <string.h>
@@ -206,7 +206,10 @@ int main( int argc, char **argv )
          stats.grid_sz.x*stats.grid_sz.y*stats.grid_sz.z);
   fflush(stdout);
 
-  if(!pargs.no_gui){
+  if(pargs.no_gui){
+    free(fe);
+    fe = NULL;
+  } else {
     /* Get the faces incident on each vertex to assign error values to each
      * vertex for display. */
     vfl = faces_of_vertex(raw_model1);
@@ -233,7 +236,10 @@ int main( int argc, char **argv )
      if(dmoy<dmoymin)
        dmoymin = dmoy;
    }
-   
+
+   free(fe);
+   fe = NULL;
+
    for(i=0;i<raw_model1->num_vert;i++){
      raw_model1->error[i] = 
        (int)floor(7*(tmp_error[i] - dmoymin)/(dmoymax - dmoymin));
