@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.22 2001/08/09 11:48:56 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.23 2001/08/09 12:34:43 dsanta Exp $ */
 
 #include <compute_error.h>
 
@@ -675,13 +675,13 @@ static struct t_in_cell_list *triangles_in_cells(const struct cell_list *cl,
   for (j=0, maxj=tl->n_triangles; j<maxj; j++) {
     for (k=0, maxk=cl[j].n_cells; k<maxk; k++) {
       i = cl[j].cell[k];
-      tab[i] = (int*) xrealloc(tab[i],(nt[i]+1)*sizeof(*tab));
+      tab[i] = (int*) xrealloc(tab[i],(nt[i]+1)*sizeof(**tab));
       tab[i][nt[i]++] = j;
     }
   }
   /* Mark the end of the list for each cell with -1 */
   for(i=0, maxi=grid_sz.x*grid_sz.y*grid_sz.z; i<maxi; i++){
-    tab[i] = (int*) xrealloc(tab[i],(nt[i]+1)*sizeof(*tab));
+    tab[i] = (int*) xrealloc(tab[i],(nt[i]+1)*sizeof(**tab));
     tab[i][nt[i]] = -1;
     if (nt[i] == 0) { /* mark empty cell in bitmap */
       ecb[i/EC_BITMAP_T_BITS] |= 0x01<<(i&EC_BITMAP_T_MASK);
