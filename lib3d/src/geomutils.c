@@ -1,4 +1,4 @@
-/* $Id: geomutils.c,v 1.3 2001/03/28 07:57:01 aspert Exp $ */
+/* $Id: geomutils.c,v 1.4 2001/04/27 13:51:11 aspert Exp $ */
 #include <3dmodel.h>
 
 /* Computes the normalized cross product between vectors p2p1 and p3p1 */
@@ -76,6 +76,7 @@ double dist(vertex v1, vertex v2) {
   
 }
 
+
 /* Normalizes vertex v */
 void normalize(vertex *v) {
   double n;
@@ -88,6 +89,32 @@ void normalize(vertex *v) {
   v->x /= n;
   v->y /= n;
   v->z /= n;
+}
+
+/* Rotates the point 'p' around the axis 'u' */
+vertex rotate_3d(vertex p, vertex u, double theta) {
+  double cth=cos(theta);
+  double sth=sin(theta);
+  double a=1.0-cth;
+  vertex q;
+
+  
+  normalize(&u); /* useful ? */
+
+  q.x = (cth + a*u.x*u.x)*p.x;
+  q.x += (a*u.x*u.y - sth*u.z)*p.y;
+  q.x += (a*u.x*u.z +u.y*sth)*p.z;
+
+  q.y = (a*u.x*u.y + u.z*sth)*p.x;
+  q.y += (cth +a*u.y*u.y)*p.y;
+  q.y += (a*u.y*u.z -u.x*sth)*p.z;
+  
+  q.z = (a*u.x*u.z -u.y*sth)*p.x;
+  q.z += (u.y*u.z*a + u.x*sth)*p.y;
+  q.z += (u.z*u.z*a + cth)*p.z;
+
+  return q;
+  
 }
 
 /* Returns 1 if p is inside the circle defined by center & r */

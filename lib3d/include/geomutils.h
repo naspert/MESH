@@ -1,4 +1,4 @@
-/* $Id: geomutils.h,v 1.5 2001/04/26 11:40:21 aspert Exp $ */
+/* $Id: geomutils.h,v 1.6 2001/04/27 13:51:36 aspert Exp $ */
 #include <3dmodel.h>
 
 #ifndef _GEOMUTILS_PROTO
@@ -14,6 +14,7 @@ extern "C" {
   double scalprod(vertex, vertex);
   double norm(vertex);
   void normalize(vertex*);
+  vertex rotate_3d(vertex, vertex, double);
   int inside(vertex, vertex, double);
   void compute_circle2d(vertex, vertex, vertex, double*, vertex*);
   void compute_circle3d(vertex, vertex, vertex, double*, vertex*);
