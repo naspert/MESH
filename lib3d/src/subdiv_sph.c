@@ -1,4 +1,4 @@
-/* $Id: subdiv_sph.c,v 1.12 2002/11/13 12:18:25 aspert Exp $ */
+/* $Id: subdiv_sph.c,v 1.13 2002/11/15 10:01:40 aspert Exp $ */
 #include <3dutils.h>
 #include <3dmodel.h>
 #include <normals.h>
@@ -9,7 +9,7 @@
 # include <debug_print.h>
 #endif
 
-#define EPS 1e-10
+#define EPS 1e-10f
 #define DEG(x) ((x)*180.0/M_PI)
 
 
@@ -59,7 +59,7 @@ static void half_sph(const vertex_t *p,
   /* It sucks. Let's take the midpoint of the edge */
   if (__norm_v(v) < EPS) {
     add_v(p, q, &np);
-    prod_v(0.5, &np, vout);
+    prod_v(0.5f, &np, vout);
 #ifdef SUBDIV_SPH_DEBUG
     DEBUG_PRINT("Ouch");
 #endif
@@ -88,12 +88,9 @@ static void half_sph(const vertex_t *p,
   printf("p = %f %f %f\n", p->x, p->y, p->z);
   printf("n = %f %f %f\n", n->x, n->y, n->z);
   printf("q = %f %f %f\n", q->x, q->y, q->z);
-  printf("pl_off = %f\n", pl_off);
-  printf("r = %f\n", r);
-  printf("th = %f\n", DEG(th));
-  printf("nth = %f\n", DEG(nth));
+  printf("pl_off = %f r = %f\n", pl_off, r);
+  printf("th = %f nth = %f\n", DEG(th), DEG(nth));
   printf("u.n + d = %f\n", scalprod_v(&u,n)+pl_off);
-  printf("test %f %f %f\n", norm_v(&v), r*cos(th), norm_v(&v)-r*cos(th));
 #endif
 
 
@@ -194,7 +191,9 @@ void compute_midpoint_sph_crease(const struct ring_info *rings,
     __add_prod_v(r2, ns2, n, n);
     __normalize_v(n);
 
-
+#ifdef SUBDIV_SPH_DEBUG
+  DEBUG_PRINT("Edge %d %d\n", center, center2);
+#endif
     /* Now proceed through a usual spherical subdivision */
     half_sph(&p, &n, &q, &np1);
 
@@ -205,7 +204,7 @@ void compute_midpoint_sph_crease(const struct ring_info *rings,
       v3 = ring_op.ord_vert[0];
     else {
       __add_v(p, q, np);
-      prod_v(0.5, &np, vout);
+      prod_v(0.5f, &np, vout);
       return;
     }
 
@@ -228,13 +227,15 @@ void compute_midpoint_sph_crease(const struct ring_info *rings,
     __add_prod_v(r2, ns2, n, n);
     __normalize_v(n);
 
-
+#ifdef SUBDIV_SPH_DEBUG
+  DEBUG_PRINT("Edge %d %d\n", center2, center);
+#endif
     /* Perform sph. subdivision */
     half_sph(&q, &n, &p, &np2);
 
     /* gather those new points */
     __add_v(np1, np2, np);
-    prod_v(0.5, &np, vout);
+    prod_v(0.5f, &np, vout);
 
   } else if (ring.type == 1)  /* && ring_op.type == 0 */
     compute_midpoint_sph(rings, center2, v2, raw_model, vout);
