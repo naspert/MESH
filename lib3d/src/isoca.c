@@ -1,124 +1,18 @@
-/* $Id: isoca.c,v 1.6 2002/02/26 14:46:46 aspert Exp $ */
+/* $Id: isoca.c,v 1.7 2002/03/22 16:11:34 aspert Exp $ */
 #include <3dutils.h>
+#include <subdiv.h>
 
+void midpoint_sph(struct ring_info *rings, int center, int v1, 
+                  struct model *raw_model, vertex_t *vout) {
+  int center2 = rings[center].ord_vert[v1];
+  vertex_t p;
 
-int test_vertex(struct model *raw_model, vertex_t v) {
-  int i;
-  vertex_t tmp;
+  __add_v(raw_model->vertices[center], raw_model->vertices[center2], p);
+  __prod_v(0.5, p, p);
 
-  for (i=0; i<raw_model->num_vert; i++) {
-    substract_v(&(raw_model->vertices[i]), &v, &tmp);
-    if (fabs(norm(tmp))<1e-6)
-      return i;
-  }
-  return -1;
-}
-
-struct model* subdiv(struct model *raw_model) {
-  int nfaces = 0; 
-  int i;
-  struct model *subd;
-  vertex_t tmp1, tmp2, tmp3;
-  int new1, new2, new3;
-
-
-  subd = (struct model*)calloc(1, sizeof(struct model));
-  subd->num_faces = 4*raw_model->num_faces;
-  subd->faces = (face_t*)malloc(subd->num_faces*sizeof(face_t));
-  subd->vertices = (vertex_t*)malloc(raw_model->num_vert*sizeof(vertex_t));
-  memcpy(subd->vertices, raw_model->vertices, 
-	 raw_model->num_vert*sizeof(vertex_t));
+  __normalize_v(p);
   
-  subd->num_vert = raw_model->num_vert;
-  
-  for (i=0; i<raw_model->num_faces; i++) {
-
-    /* Edge f0f1 */
-    tmp1 = raw_model->vertices[raw_model->faces[i].f0];
-    tmp2 = raw_model->vertices[raw_model->faces[i].f1];
-
-    add_v(&tmp1, &tmp2, &tmp3);
-    prod_v(0.5, &tmp3, &tmp3);
-
-    
-    new1 = test_vertex(subd, tmp3);
-    if (new1 == -1) {/* New vertex in the model */
-      subd->vertices = realloc(subd->vertices, 
-			       (subd->num_vert+1)*sizeof(vertex_t));
-     
-      subd->vertices[subd->num_vert].x = tmp3.x;
-      subd->vertices[subd->num_vert].y = tmp3.y;
-      subd->vertices[subd->num_vert].z = tmp3.z;
-      new1 = subd->num_vert;
-      subd->num_vert++;
-      
-    }
-
-
-    /* Edge f1f2 */
-    tmp1 = raw_model->vertices[raw_model->faces[i].f1];
-    tmp2 = raw_model->vertices[raw_model->faces[i].f2];
-
-    tmp3.x = (tmp1.x + tmp2.x)*0.5;
-    tmp3.y = (tmp1.y + tmp2.y)*0.5;
-    tmp3.z = (tmp1.z + tmp2.z)*0.5;
-
-    new2 = test_vertex(subd, tmp3);
-    if (new2 == -1) {/* New vertex in the model */
-      subd->vertices = realloc(subd->vertices, 
-			       (subd->num_vert+1)*sizeof(vertex_t));
-      subd->vertices[subd->num_vert].x = tmp3.x;
-      subd->vertices[subd->num_vert].y = tmp3.y;
-      subd->vertices[subd->num_vert].z = tmp3.z;
-      new2 = subd->num_vert;
-      subd->num_vert++;
-    }
-
-
-    /*Edge f2f0 */
-    tmp1 = raw_model->vertices[raw_model->faces[i].f2];
-    tmp2 = raw_model->vertices[raw_model->faces[i].f0];
-
-    add_v(&tmp1, &tmp2, &tmp3);
-    prod_v(0.5, &tmp3, &tmp3);
-
-    new3 = test_vertex(subd, tmp3);
-    if (new3 == -1) {/* New vertex in the model */
-      subd->vertices = realloc(subd->vertices, 
-			       (subd->num_vert+1)*sizeof(vertex_t));
-      subd->vertices[subd->num_vert].x = tmp3.x;
-      subd->vertices[subd->num_vert].y = tmp3.y;
-      subd->vertices[subd->num_vert].z = tmp3.z;
-      new3 = subd->num_vert;
-      subd->num_vert++;
-    }
-
-    subd->faces[nfaces].f0 = raw_model->faces[i].f0;
-    subd->faces[nfaces].f1 = new1;
-    subd->faces[nfaces].f2 = new3;
-    nfaces++;
-
-    subd->faces[nfaces].f0 = new1;
-    subd->faces[nfaces].f1 = new2;
-    subd->faces[nfaces].f2 = new3;
-    nfaces++;
-
-    subd->faces[nfaces].f0 = raw_model->faces[i].f1;
-    subd->faces[nfaces].f1 = new2;
-    subd->faces[nfaces].f2 = new1;
-    nfaces++;
-
-    subd->faces[nfaces].f0 = raw_model->faces[i].f2;
-    subd->faces[nfaces].f1 = new2;
-    subd->faces[nfaces].f2 = new3;
-    nfaces++;
-  }
-  
-  for (i=raw_model->num_vert; i<subd->num_vert; i++) 
-    normalize_v(&(subd->vertices[i]));
-
-
-  return subd;
+  *vout = p;
 }
 
 int main(int argc, char **argv) {
@@ -221,9 +115,9 @@ int main(int argc, char **argv) {
   or_mod = &isoca;
   sub_mod = &isoca;
  
-  for (i=1; i<n; i++) {
+  for (i=0; i<n; i++) {
     printf("Level %d ... ", i+1);fflush(stdout);
-    sub_mod = subdiv(or_mod);
+    sub_mod = subdiv(or_mod, midpoint_sph, NULL, NULL);
     free(or_mod->faces);
     free(or_mod->vertices);
     or_mod = sub_mod;

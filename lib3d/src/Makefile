@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.32 2002/03/05 15:28:57 aspert Exp $
+# $Id: Makefile,v 1.33 2002/03/22 16:11:34 aspert Exp $
 
 
 OS := $(shell uname -s)
@@ -8,12 +8,12 @@ GLXINFO = $(shell which glxinfo)
 STD_GLDIR = /usr/X11R6
 HP_GLDIR = /usr/GL/hp
 BASE_LIBFLAGS = -lm
-TARGETS = torus cone isoca dirac compare_curv
+TARGETS = torus cone dirac compare_curv
 GSL_TARGETS = maps_lsq
 ifeq ($(OS), Linux)
 CC = gcc
 XTRA_CFLAGS = -g  -pipe -ansi -pedantic -Wall -D_POSIX_C_SOURCE=199506L \
-	#-D__DONT_USE_DISPLAY_LISTS_	
+#-D__DONT_USE_DISPLAY_LISTS_	
 
 
 GL_VENDOR := $(shell $(GLXINFO)|grep "OpenGL vendor"|cut -d\: -f2|cut -d\  -f2)
@@ -93,7 +93,11 @@ $(TARGETS): % : $(OBJDIR)/%.o $(BASE_OBJECTS)
 $(GSL_TARGETS): % : $(OBJDIR)/%.o $(BASE_OBJECTS)
 	$(CC) -o $(BINDIR)/$@ $^ $(GSL_LDFLAGS)
 
-subdiv : $(OBJDIR)/subdiv.o $(OBJDIR)/subdiv_methods.o $(BASE_OBJECTS)
+isoca: $(OBJDIR)/isoca.o $(OBJDIR)/subdiv.o $(BASE_OBJECTS)
+	$(CC) -o $(BINDIR)/$@ $^ $(BASE_LDFLAGS) 
+
+subdiv : $(OBJDIR)/subdiv_main.o $(OBJDIR)/subdiv.o \
+	$(OBJDIR)/subdiv_methods.o $(BASE_OBJECTS)
 	$(CC) -o $(BINDIR)/$@ $^ $(BASE_LDFLAGS) 
 
 rawview_d : $(GL_OBJECTS) lib3d libimage
