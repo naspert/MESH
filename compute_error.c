@@ -1,17 +1,9 @@
-/* $Id: compute_error.c,v 1.7 2001/07/02 09:14:41 jacquet Exp $ */
+/* $Id: compute_error.c,v 1.8 2001/07/03 07:58:07 aspert Exp $ */
 
 #include <compute_error.h>
 
 #define E 0.0000001
 
-#ifndef min
-#define min(x,y) (((x)>(y))?(y):(x))
-#endif
-#ifndef max
-#define max(x,y) (((x)>(y))?(x):(y))
-#endif
-#define max3(x,y,z) (((x)>(y))?(((x)>(z))?(x):(z)):(((y)>(z))?(y):(z)))
-#define min3(x,y,z) (((x)<(y))?(((x)<(z))?(x):(z)):(((y)<(z))?(y):(z)))
 
 
 /* computes the distance between a point and a plan defined by 3 points */
@@ -473,7 +465,7 @@ cell=(cellules *)malloc((raw_model->num_faces)*sizeof(cellules));
 
      cellule=m+n*grille.x+o*grille.y*grille.z;
 
-     for(k=0;k<=h;k++){
+     for(k=0; k<h; k++){
        if(cellule==cell[i].cube[k]){
          state=1;
          break;
@@ -512,8 +504,8 @@ int** cublist(cellules *cell,model *raw_model,vertex grille)
 int **tab,i,j,k;
 int *mem;
 
-mem=(int*)calloc((int)grille.x*grille.y*grille.z,sizeof(int));
-tab=(int **)malloc((int)grille.x*grille.y*grille.z*sizeof(int*));
+mem=(int*)calloc((int)(grille.x*grille.y*grille.z),sizeof(int));
+tab=(int **)malloc((int)(grille.x*grille.y*grille.z)*sizeof(int*));
 
  for(j=0;j<raw_model->num_faces;j++){
    for(k=0;k<cell[j].nbcube;k++){

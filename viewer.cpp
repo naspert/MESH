@@ -1,4 +1,4 @@
-/* $Id: viewer.cpp,v 1.16 2001/07/02 10:47:41 jacquet Exp $ */
+/* $Id: viewer.cpp,v 1.17 2001/07/03 07:58:07 aspert Exp $ */
 
 #include <qapplication.h>
 #include <ScreenWidget.h>
@@ -9,13 +9,6 @@
 #include <string.h>
 
 
-#define min3(x,y,z) (((x)<(y))?(((x)<(z))?(x):(z)):(((y)<(z))?(y):(z)))
-#ifndef min
-#define min(x,y) (((x)>(y))?(y):(x))
-#endif
-#ifndef max
-#define max(x,y) (((x)>(y))?(x):(y))
-#endif
 
 
 /*****************************************************************************/
@@ -191,16 +184,17 @@ int main( int argc, char **argv )
     samples=0;
 
     for(j=0;j<k+1;j++){
-      for(l=0;l<k+1-j;l++){
-	dcourant=pcd(sample2->sample[samples],raw_model2,repface,grille,ccube,bbox0,bbox1);
+      for(l=0;l<k+1-j;l++, samples++){
+	dcourant = 
+	  pcd(sample2->sample[samples],raw_model2,repface,grille,ccube,bbox0,bbox1);
 
 	if(dcourant>dmax)
 	  dmax=dcourant;
 	if(dcourant<dmin)
 	  dmin=dcourant;
 	mem_err[j][l]=dcourant;
-	samples++;
-	h++;
+// 	samples++;
+// 	h++;
       }
     }
 
