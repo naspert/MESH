@@ -1,4 +1,4 @@
-/* $Id: 3dmodel.h,v 1.8 2001/06/12 08:33:44 aspert Exp $ */
+/* $Id: 3dmodel.h,v 1.9 2001/06/13 12:00:22 aspert Exp $ */
 #ifdef MPATROL_TEST
 #include <mpatrol.h>
 #endif
@@ -111,8 +111,6 @@ typedef struct {
   vertex *est_normals;
 #endif
 
-
-
 #ifdef _METRO
   int *error; 
 #endif
@@ -143,16 +141,5 @@ typedef struct {
 #endif
 }edge_sub;
 
-#ifdef _METRO
-typedef struct {
-  vertex* sample;
-  int nbsamples;
-}sample;
-
-typedef struct {
-  int *cube;
-  int nbcube;
-}cellules;
-#endif
 
 #endif
