@@ -1,0 +1,21 @@
+you must install the Rawview tool.
+
+then,
+ 
+type:
+	make all if you are under LINUX
+or 
+	gmake -f Makefile.sgi if you are under SGI
+
+
+
+for launching the programm with graphical interface, type
+	viewer 
+
+for launching the programm without graphical interface, type
+	viewer -t ARG1 ARG2 ARG3
+where 
+	ARG1 corresponds to the first mesh (file ".raw")
+	ARG2 corresponds to the second mesh (file ".raw")
+	ARG3 corresponds to the sampling step
+
