@@ -5,6 +5,8 @@
 	  external window and console.
 	- Made the main widget display a caption containing the filename of
 	  each model.
+	- Added a basic CPU detection (Linux only) in the Makefile (mostly
+	  for the Intel and PGCC compilers)
 
 * Changes from v1.2 to v1.3 :
 	- Fixed memory allocation bug for non-manifold models in
