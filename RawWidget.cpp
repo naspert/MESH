@@ -1,4 +1,4 @@
-/* $Id: RawWidget.cpp,v 1.34 2002/01/30 15:41:15 aspert Exp $ */
+/* $Id: RawWidget.cpp,v 1.35 2002/02/20 17:32:04 dsanta Exp $ */
 
 #include <RawWidget.h>
 #include <qmessagebox.h>
@@ -70,9 +70,11 @@ QSize RawWidget::minimumSizeHint() const {
 }
 
 RawWidget::~RawWidget() {
+  // NOTE: The GL context is being destroyed here (and maybe is has already
+  // been), so it is not safe to access any GL routines. Thus don't delete
+  // display lists and/or texture bindings. In any case those resources will
+  // be freed when the GL context if finally destroyed.
   free_colormap(colormap);
-  makeCurrent();
-  if (glIsList(model_list) == GL_TRUE) glDeleteLists(model_list,1);
 }
 
 void RawWidget::transfer(double dist,double *mvmat) {
