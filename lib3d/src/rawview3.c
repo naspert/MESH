@@ -1,4 +1,4 @@
-/* $Id: rawview3.c,v 1.7 2001/04/03 11:46:20 aspert Exp $ */
+/* $Id: rawview3.c,v 1.8 2001/04/18 13:37:26 aspert Exp $ */
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <GL/glut.h>
@@ -26,6 +26,9 @@ int normals_done = 0;
 model *raw_model;
 char *in_filename;
 int grab_number = 0;
+int mesa_minor = -1; /* Used 'cause Mesa > 3.1 is not trusted when rendering */
+/* in the 'lighted' mode */
+
 
 /* *********************************************************** */
 /* This is a _basic_ frame grabber -> copy all the RGB buffers */
@@ -300,10 +303,39 @@ void rebuild_list(model *raw_model) {
 /* Initial settings of the rendering parameters */
 /* ******************************************** */
 void gfx_init(model *raw_model) {
+  const char *glverstr;
+  char *needle;
+  int mesa_major;
+  
+  glverstr = (const char*)glGetString(GL_VERSION);
 
-  glDepthFunc(GL_LESS);
+  needle = strstr(glverstr, "Mesa");
+  printf("GL_VERSION = %s\n", glverstr);
+  if (needle != NULL) {
+    needle += 5;
+    if (sscanf(needle, "%i.%i", &mesa_major, &mesa_minor) != 2) {
+      printf("Error checking Mesa version\n");
+      free(raw_model->vertices);
+      free(raw_model->faces);
+      if (raw_model->normals != NULL)
+	free(raw_model->normals);
+      if (raw_model->face_normals != NULL)
+	free(raw_model->face_normals);
+      if (raw_model->area != NULL)
+	free(raw_model->area);
+      free(raw_model);
+      exit(1);
+    }
+    if (mesa_major != 3) {
+      printf("Incorrect Mesa version found ?\n");
+    }
+  } else { /* Non-Mesa OpenGL -> probably SGI */
+    mesa_minor = 0; /* should be OK with this */
+  }
+
   glEnable(GL_DEPTH_TEST);
-  glShadeModel(GL_SMOOTH);
+  glShadeModel(GL_SMOOTH); 
+
   glClearColor(0.0, 0.0, 0.0, 0.0);
   glColor3f(1.0, 1.0, 1.0); /* Settings for wireframe model */
   glFrontFace(GL_CCW);
@@ -351,19 +383,25 @@ void sp_key_pressed(int key, int x, int y) {
   GLfloat spec[] = {0.5, 0.5, 0.5, 0.5};
   GLfloat ldir[] = {0.0, 0.0, 0.0, 0.0};
   GLfloat mat_spec[] = {0.3, 0.7, 0.5, 0.5};
+  GLfloat amb_light[] = {0.6, 0.6, 0.6, 1.0};
   GLfloat shine[] = {0.6};
-
-
-/*   vertex *model_normals; */
+  GLfloat lpos[4];
   info_vertex *curv;
   int i;
 
+
+
+  
   /* This one must be handled 'by hand' to please the MIPS compiler on SGI */
-  GLfloat lpos[4];
   lpos[0] = 0.0;
   lpos[1] = 0.0;
-  lpos[2] = -distance;
+  if (mesa_minor <= 1) 
+    /* This causes trouble w. Mesa > 3.1 when distance is too large */
+    lpos[2] = -distance;  
+  else
+    lpos[2] = 1.0; 
   lpos[3] = 0.0;
+  
 
   switch(key) {
   case GLUT_KEY_F1:/* Print MODELVIEW matrix */
@@ -400,11 +438,13 @@ void sp_key_pressed(int key, int x, int y) {
 	  printf("done\n");
 	
 	  glEnable(GL_LIGHTING);
-	  glLightfv(GL_LIGHT0, GL_AMBIENT, amb);
+ 	  glLightfv(GL_LIGHT0, GL_AMBIENT, amb); 
 	  glLightfv(GL_LIGHT0, GL_DIFFUSE, dif);
 	  glLightfv(GL_LIGHT0, GL_SPECULAR, spec);
-	  glLightfv(GL_LIGHT0, GL_POSITION, lpos);
-	  glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, ldir);
+  	  glLightfv(GL_LIGHT0, GL_POSITION, lpos);  
+  	  glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, ldir);  
+	  glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
+	  glLightModelfv(GL_LIGHT_MODEL_AMBIENT,amb_light);
 	  glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, mat_spec);
 	  glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, shine);
 	  glEnable(GL_LIGHT0);
@@ -587,6 +627,8 @@ void sp_key_pressed(int key, int x, int y) {
 /* call display list and swap the buffers                            */
 /* ***************************************************************** */
 void display() {
+  GLenum errorCode;
+
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glLoadIdentity();
   glTranslated(0.0, 0.0, -distance); /* Translate the object along z */
@@ -594,7 +636,14 @@ void display() {
   glCallList(model_list);
   if (draw_normals)
     glCallList(normal_list);
+
+ /* Check for errors (leave at the end) */
+  while ((errorCode = glGetError()) != GL_NO_ERROR) {
+    fprintf(stderr,"GL error: %s\n",(const char *)gluErrorString(errorCode));
+  }
   glutSwapBuffers();
+
+
 }
 
 /* ************************************************************ */
