@@ -1,4 +1,4 @@
-/* $Id: model_analysis.c,v 1.32 2002/04/09 12:44:04 dsanta Exp $ */
+/* $Id: model_analysis.c,v 1.33 2002/04/22 09:21:39 dsanta Exp $ */
 
 
 /*
@@ -435,7 +435,8 @@ static void add_adj_face_extra(struct adj_faces *af, int edge_idx, int face_idx)
   }
   j = (af->extra->n_faces_on_edge[edge_idx])++;
   af->extra->faces_on_edge[edge_idx] =
-    xa_realloc(af->extra->faces_on_edge[edge_idx],j+1);
+    xa_realloc(af->extra->faces_on_edge[edge_idx],
+               sizeof(*(af->extra->faces_on_edge[0]))*(j+1));
   af->extra->faces_on_edge[edge_idx][j] = face_idx;
   
 }
