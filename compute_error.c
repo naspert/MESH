@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.57 2001/09/10 15:16:29 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.58 2001/09/11 08:12:04 dsanta Exp $ */
 
 #include <compute_error.h>
 
@@ -198,6 +198,7 @@ static void realloc_triag_sample_error(struct triag_sample_error *tse, int n)
 {
   int i;
 
+  if (tse->n_samples == n) return;
   tse->n_samples = n;
   tse->n_samples_tot = n*(n+1)/2;
   if (tse->n_samples_tot >  tse->buf_sz) {
