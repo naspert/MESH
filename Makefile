@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.4 2001/06/01 09:43:11 jacquet Exp $
+# $Id: Makefile,v 1.5 2001/06/11 08:01:24 jacquet Exp $
 
 CC = gcc
 CPP = g++
@@ -54,7 +54,7 @@ $(OBJDIR)/moc_RawWidget.o : moc_RawWidget.cpp
 	$(CPP) -D_METRO -O2 -ansi -lm $(QTINCFLAGS) $(GL_CFLAGS) -c $< -o $@
 
 moc_RawWidget.cpp : RawWidget.h
-	$(MOC) -D_METRO $< -o $@
+	$(MOC) $< -o $@
 
 $(LIB3DDIR)/obj/%.o : $(LIB3DDIR)/src/%.c
 	$(CC) $(BASE_CFLAGS) -D_METRO -c $< -o $@
