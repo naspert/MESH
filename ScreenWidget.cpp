@@ -31,11 +31,29 @@ ScreenWidget::ScreenWidget( model *raw_model1,model *raw_model2,double dmoymin, 
 
 
   // Create the GUI
-  RawWidget *w = new RawWidget(raw_model1,this,"w");
+  // Create nice frames to put around the OpenGL widgets
+  QFrame* f1 = new QFrame( this, "frame1" );
+  f1->setFrameStyle( QFrame::Sunken | QFrame::Panel );
+  f1->setLineWidth( 2 );
+  QFrame* f2 = new QFrame( this, "frame1" );
+  f2->setFrameStyle( QFrame::Sunken | QFrame::Panel );
+  f2->setLineWidth( 2 );
+
+
+
+  RawWidget *w = new RawWidget(raw_model1,f1,"w");
   w->setFocusPolicy(StrongFocus);
-  RawWidget *y = new RawWidget(raw_model2,this,"y");
+  RawWidget *y = new RawWidget(raw_model2,f2,"y");
   y->setFocusPolicy(StrongFocus);
   ColorMapWidget *z = new ColorMapWidget(dmoymin,dmoymax,this,"z");
+
+    // Put the GL widget inside the frame
+    QHBoxLayout* flayout1 = new QHBoxLayout( f1, 2, 2, "flayout1");
+    flayout1->addWidget( w, 1 );
+    // Put the GL widget inside the frame
+    QHBoxLayout* flayout2 = new QHBoxLayout( f2, 2, 2, "flayout1");
+    flayout2->addWidget( y, 1 );
+
 
 //   QPushButton *quit = new QPushButton ( "quit",this );
 //   connect(quit, SIGNAL(clicked()), qApp, SLOT(quit()) );
@@ -61,8 +79,8 @@ ScreenWidget::ScreenWidget( model *raw_model1,model *raw_model2,double dmoymin, 
 
   QGridLayout *bigrid = new QGridLayout (this,2, 3, 5);
   bigrid->addWidget(z,1,0);
-  bigrid->addWidget(w,1,1);
-  bigrid->addWidget(y,1,2);
+  bigrid->addWidget(f1,1,1);
+  bigrid->addWidget(f2,1,2);
 
 //   QHBoxLayout *smallgrid1 = new QHBoxLayout();
 //   smallgrid1->addWidget(quit,0,0);
