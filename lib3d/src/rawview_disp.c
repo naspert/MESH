@@ -1,6 +1,33 @@
-/* $Id: rawview_disp.c,v 1.2 2002/06/04 13:55:39 aspert Exp $ */
+/* $Id: rawview_disp.c,v 1.3 2002/06/05 09:30:56 aspert Exp $ */
 
 #include <rawview_misc.h>
+
+#define CMAP_LENGTH 256 
+void setGlColor(int vidx, float **cmap, 
+                struct gl_render_context *gl_ctx) {
+  float range;
+  int cidx;
+  
+  assert (cmap != NULL);
+
+  switch (gl_ctx->disp_curv) {
+  case 1: /* Gauss curv */
+    range = gl_ctx->max_kg - gl_ctx->min_kg;
+    cidx = (int)(CMAP_LENGTH*(gl_ctx->info[vidx].gauss_curv - gl_ctx->min_kg)/
+               range);
+  case 2: /* Mean curv */
+    range = gl_ctx->max_km - gl_ctx->min_km;
+    cidx = (int)(CMAP_LENGTH*(gl_ctx->info[vidx].mean_curv - gl_ctx->min_km)/
+               range);
+    break;
+  default: /* should never get here */
+    abort();
+  }
+
+  assert(cidx >=0 && cidx < CMAP_LENGTH);
+  glColor3fv(cmap[cidx]);
+
+}
 
 /* ************************************************************* */
 /* This functions rebuilds the display list of the current model */
@@ -11,6 +38,7 @@ void rebuild_list(struct gl_render_context *gl_ctx,
   int i;
   GLboolean light_mode;
   float scale_fact;
+  float **cmap=NULL;
   face_t *cur_face;
   vertex_t center1, center2;
   face_t *cur_face2;
@@ -53,7 +81,10 @@ void rebuild_list(struct gl_render_context *gl_ctx,
     }
   }
 
-
+  /* if we display curvature we need the colormap */
+  if (gl_ctx->disp_curv) {
+    cmap = colormap_hsv(CMAP_LENGTH);
+  }
   /* Get the state of the lighting */
   light_mode = glIsEnabled(GL_LIGHTING);
   if (light_mode && !glIsEnabled(GL_NORMAL_ARRAY)) {
@@ -116,16 +147,36 @@ void rebuild_list(struct gl_render_context *gl_ctx,
     glBegin(GL_TRIANGLES);
   else 
     glBegin(GL_POINTS);
-  for (i=0; i<r_m->num_faces; i++) {
-    cur_face = &(r_m->faces[i]);
-    glArrayElement(cur_face->f0);
-    glArrayElement(cur_face->f1);
-    glArrayElement(cur_face->f2);
+  switch (gl_ctx->disp_curv) {
+  case 0:
+    for (i=0; i<r_m->num_faces; i++) {
+      cur_face = &(r_m->faces[i]);
+      glArrayElement(cur_face->f0);
+      glArrayElement(cur_face->f1);
+      glArrayElement(cur_face->f2);
+    }
+    break;
+  case 1:
+  case 2:
+    for (i=0; i<r_m->num_faces; i++) {
+      cur_face = &(r_m->faces[i]);
+      setGlColor(cur_face->f0, cmap, gl_ctx);
+      glArrayElement(cur_face->f0);
+      setGlColor(cur_face->f1, cmap, gl_ctx);
+      glArrayElement(cur_face->f1);
+      setGlColor(cur_face->f2, cmap, gl_ctx);
+      glArrayElement(cur_face->f2);
+    }
+    break;
+  default: /* should never get here */
+    abort();
   }
+
   glEnd();
   glEndList();
 
-
+  if (gl_ctx->disp_curv)
+    free_colormap(cmap);
 
   if (gl_ctx->draw_normals) {
     scale_fact = NORMALS_DISPLAY_FACTOR*dist_v(&(r_m->bBox[0]), 
@@ -195,11 +246,13 @@ void display_wrapper(struct gl_render_context *gl_ctx,
     for (i=0; i<=gl_ctx->wf_bc; i++) {
       switch (i) {
       case 0:
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        if (gl_ctx->wf_bc)
+          glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); 
 	if (!gl_ctx->ps_rend)
 	  glColor3f(1.0, 1.0, 1.0);
-	else
+	else 
 	  glColor3f(0.0, 0.0, 0.0);
+        
 	break;
       case 1:
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);

@@ -1,8 +1,93 @@
-/* $Id: rawview_utils.c,v 1.1 2002/06/04 13:06:40 aspert Exp $ */
+/* $Id: rawview_utils.c,v 1.2 2002/06/05 09:30:56 aspert Exp $ */
 #include <3dutils.h>
 #include <rawview.h>
 #include <rawview_misc.h>
 
+/* Colormap generation (taken from the MESH code) */
+/* Transforms a hue (in degrees) to the RGB equivalent. The saturation and
+ * value are taken as the maximum. 
+ */
+static void hue2rgb(float hue, float *r, float *g, float *b) {
+  float p,n;
+  int k;
+
+  /* Get principal component of angle */
+  hue -= 360*(float)floor(hue/360);
+  /* Get section */
+  hue /= 60;
+  k = (int)floor(hue);
+  if (k == 6) {
+    k = 5;
+  } else if (k < 0) {
+    k = 0;
+  }
+  p = hue - k;
+  n = 1 - p;
+
+  /* Get RGB values based on section */
+  switch (k) {
+  case 0:
+    *r = 1;
+    *g = p;
+    *b = 0;
+    break;
+  case 1:
+    *r = n;
+    *g = 1;
+    *b = 0;
+    break;
+  case 2:
+    *r = 0;
+    *g = 1;
+    *b = p;
+    break;
+  case 3:
+    *r = 0;
+    *g = n;
+    *b = 1;
+    break;
+  case 4:
+    *r = p;
+    *g = 0;
+    *b = 1;
+    break;
+  case 5:
+    *r = 1;
+    *g = 0;
+    *b = n;
+    break;
+  default:
+    abort(); /* should never get here */
+  }
+}
+
+float** colormap_hsv(int len)
+{
+  float **cmap,step;
+  int i;
+
+  if (len <= 1) return NULL;
+
+  cmap = malloc(len*sizeof(*cmap));
+  *cmap = malloc(3*len*sizeof(**cmap));
+  for (i=1; i<len; i++) {
+    cmap[i] = cmap[i-1]+3;
+  }
+
+  step = 240/(float)(len-1);
+  for (i=0; i<len ; i++) 
+    hue2rgb(step*(len-1-i),cmap[i],cmap[i]+1,cmap[i]+2);
+  
+  return cmap;
+}
+
+void free_colormap(float **cmap)
+{
+  if (cmap != NULL) {
+    free(*cmap);
+    free(cmap);
+  }
+}
 
 
 void set_light_on() {
@@ -21,7 +106,6 @@ void set_light_on() {
 }
 
 void set_light_off() {
-  printf("Wireframe mode\n");
   glDisable(GL_LIGHTING);
   glColor3f(1.0, 1.0, 1.0);
   glFrontFace(GL_CCW);
@@ -101,3 +185,38 @@ void destroy_tree(struct face_tree *tree) {
 }
 
 
+int do_curvature(struct gl_render_context *gl_ctx) {
+  int i;
+
+  gl_ctx->info = (struct info_vertex*)
+    malloc(gl_ctx->raw_model->num_vert*sizeof(struct info_vertex));
+  if (compute_curvature(gl_ctx->raw_model, gl_ctx->info)) {
+    gl_ctx->disp_curv = 0;
+    free(gl_ctx->info);
+    gl_ctx->info = NULL;
+    return 1;
+  }
+  
+  /* if the computation was successful, find the maximum of the
+   * Gauss. curvature. TODO: Move this section outside
+   * (e.g. in rawview_utils.c) */
+  gl_ctx->max_kg = -FLT_MAX;
+  gl_ctx->min_kg = FLT_MAX;
+  
+  gl_ctx->max_km = -FLT_MAX;
+  gl_ctx->min_km = FLT_MAX;
+
+  for (i=0; i<gl_ctx->raw_model->num_vert; i++) {
+    if (gl_ctx->info[i].gauss_curv > gl_ctx->max_kg)
+      gl_ctx->max_kg = gl_ctx->info[i].gauss_curv;
+    if (gl_ctx->info[i].gauss_curv < gl_ctx->min_kg)
+      gl_ctx->min_kg = gl_ctx->info[i].gauss_curv;
+
+    if (gl_ctx->info[i].mean_curv > gl_ctx->max_km)
+      gl_ctx->max_km = gl_ctx->info[i].mean_curv;
+    if (gl_ctx->info[i].mean_curv < gl_ctx->min_km)
+      gl_ctx->min_km = gl_ctx->info[i].mean_curv;
+  }
+
+  return 0;
+}

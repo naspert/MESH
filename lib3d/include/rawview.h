@@ -1,4 +1,4 @@
-/* $Id: rawview.h,v 1.2 2002/06/04 13:06:38 aspert Exp $ */
+/* $Id: rawview.h,v 1.3 2002/06/05 09:30:55 aspert Exp $ */
 
 #include <GL/gl.h>
 
@@ -56,12 +56,19 @@ struct gl_render_context {
   int draw_normals;
   int draw_vtx_labels;
   int draw_spanning_tree;
+  int disp_curv; /* 0 -> normal 1 -> Gauss. curv. 2 -> Mean curv. */
   int wf_bc; /* draw wireframe w. backface cull. */
   int ps_rend; /* 0 -> render to screen, 1 -> render to a PS */
   
   
   int normals_done;
+  int curv_done;
+  double max_kg;
+  double min_kg;
+  double max_km;
+  double min_km;
   struct model *raw_model;
+  struct info_vertex *info;
   char *in_filename;
   int grab_number, ps_number;
 };

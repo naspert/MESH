@@ -1,4 +1,4 @@
-/* $Id: rawview.c,v 1.14 2002/06/04 13:53:17 aspert Exp $ */
+/* $Id: rawview.c,v 1.15 2002/06/05 09:30:56 aspert Exp $ */
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -173,11 +173,55 @@ static void display() {
 /* Callback for the normal keys */
 /* **************************** */
 static void norm_key_pressed(unsigned char key, int x, int y) {
+
+
   switch(key) {
+  case 'g':
+  case 'G': /* Enable Gaussian curvature display */
+    if (gl_ctx.disp_curv != 1) {
+      if (!gl_ctx.curv_done) { /* Compute curvatures at each vertex */
+        if (do_curvature(&gl_ctx)) {
+          fprintf(stderr, "Unable to compute curvatures...\n");
+          return;
+        }
+        gl_ctx.curv_done = 1;
+      }
+      gl_ctx.disp_curv = 1;
+      set_light_off();
+      glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    } else {
+      gl_ctx.disp_curv = 0;
+      glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    }
+    
+    rebuild_list(&gl_ctx, &dl_idx);
+    glutPostRedisplay();
+    break;
   case 'i':
   case 'I':
     fprintf(stderr, "\nModel Info :\n %d vertices and %d triangles\n\n", 
             gl_ctx.raw_model->num_vert, gl_ctx.raw_model->num_faces);
+    break;
+  case 'm':
+  case 'M': /* Enable Mean curvature display */
+    if (gl_ctx.disp_curv != 2) {
+      if (!gl_ctx.curv_done) { /* Compute curvatures at each vertex */
+        if (do_curvature(&gl_ctx)) {
+          fprintf(stderr, "Unable to compute curvatures...\n");
+          return;
+        }
+        gl_ctx.curv_done = 1;
+      }
+      gl_ctx.disp_curv = 2;
+      set_light_off();
+      glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    } else {
+      gl_ctx.disp_curv = 0;
+      glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    }
+    
+    rebuild_list(&gl_ctx, &dl_idx);
+    glutPostRedisplay();
     break;
   case 'q':
   case 'Q':
@@ -452,12 +496,11 @@ int main(int argc, char **argv) {
   /* Init GL renderer context */
   memset(&gl_ctx, 0, sizeof(struct gl_render_context));
   gl_ctx.tr_mode = 1; /* default -> wireframe w. triangles */
-
+  
   gl_ctx.distance = dist_v(&(raw_model->bBox[0]), &(raw_model->bBox[1]))/
     tan(FOV*M_PI_2/180.0);
   
   gl_ctx.dstep = gl_ctx.distance*TRANSL_STEP;
-
 
   gl_ctx.raw_model = raw_model;
 
