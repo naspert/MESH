@@ -1,4 +1,4 @@
-/* $Id: rawview.c,v 1.1 2001/11/30 13:55:08 aspert Exp $ */
+/* $Id: rawview.c,v 1.2 2002/01/10 16:34:00 aspert Exp $ */
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -783,8 +783,11 @@ void sp_key_pressed(int key, int x, int y) {
 	printf("Building spanning tree\n");
 	/* Compute spanning tree of the dual graph */
 	raw_model->tree = bfs_build_spanning_tree(raw_model, curv); 
-	if (raw_model->tree == NULL)
+	if (raw_model->tree == NULL) {
 	  printf("Uh oh... unable to build spanning tree\n");
+          draw_spanning_tree =0;
+          break;
+        }
 	top = raw_model->tree[0];
 	while (top->parent != NULL)
 	  top = top->parent;
