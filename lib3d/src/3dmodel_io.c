@@ -1,4 +1,4 @@
-/* $Id: 3dmodel_io.c,v 1.16 2001/09/27 11:44:46 aspert Exp $ */
+/* $Id: 3dmodel_io.c,v 1.17 2001/10/12 13:42:15 aspert Exp $ */
 #include <3dmodel.h>
 #include <normals.h>
 
@@ -64,15 +64,12 @@ struct model* alloc_read_model(FILE *pf, int nvert, int nfaces,
 
   printf("num_faces = %d num_vert = %d\n", nfaces, nvert); 
   raw_model = (struct model*)malloc(sizeof(struct model));
+  raw_model = memset(raw_model, 0, sizeof(struct model));
   raw_model->num_faces = nfaces;
   raw_model->num_vert = nvert;
   raw_model->faces = (face_t*)malloc(nfaces*sizeof(face_t));
   raw_model->vertices = (vertex_t*)malloc(nvert*sizeof(vertex_t));
 
-  raw_model->normals = NULL;
-  raw_model->face_normals = NULL;
-  raw_model->area = NULL;
-  raw_model->tree = NULL;
 
   raw_model->bBox[0].x = FLT_MAX;
   raw_model->bBox[0].y = FLT_MAX;
@@ -91,8 +88,7 @@ struct model* alloc_read_model(FILE *pf, int nvert, int nfaces,
     raw_model->normals = (vertex_t*)malloc(nnorms*sizeof(vertex_t));
     raw_model->builtin_normals = 1;
   }
-  else 
-    raw_model->builtin_normals = 0;
+
   
 
   for (i=0; i<nvert; i++) {
@@ -295,8 +291,8 @@ void free_raw_model(struct model *raw_model) {
     free(raw_model->normals);
   if (raw_model->face_normals != NULL)
     free(raw_model->face_normals);
-/*   if (raw_model->area != NULL) */
-/*     free(raw_model->area); */
+  if (raw_model->area != NULL)
+    free(raw_model->area);
   if (raw_model->tree != NULL)
     destroy_tree(*(raw_model->tree));
   free(raw_model);

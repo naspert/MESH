@@ -1,8 +1,8 @@
-# $Id: Makefile,v 1.18 2001/10/08 13:12:05 aspert Exp $
+# $Id: Makefile,v 1.19 2001/10/12 13:42:15 aspert Exp $
 
 #CC = /home/sun1/aspert/gcc/bin/gcc
 CC = gcc
-CPP = g++
+
 BINDIR = ../bin
 LIBDIR = ../lib
 OBJDIR = ../obj
@@ -13,12 +13,12 @@ HPGLDIR = /usr/GL/hp
 
 INCLFLAGS = -I../include
 GLINCLFLAGS = -I$(HPGLDIR)/include -I$(GLDIR)/include
-XTRA_CFLAGS = -g  -Wall -O2  -ansi -pedantic
+XTRA_CFLAGS = -g  -Wall -O2  -ansi -pedantic 
 
 BASE_CFLAGS = $(INCLFLAGS) $(XTRA_CFLAGS) 
 GL_CFLAGS = $(INCLFLAGS) $(GLINCLFLAGS) $(XTRA_CFLAGS) 
 
-BASE_LIBFLAGS = -L$(LIBDIR) -lm 
+BASE_LIBFLAGS = -L$(LIBDIR) -l3d -lm 
 GL_LIBFLAGS = -L$(LIBDIR) -L$(HPGLDIR)/lib -L$(GLDIR)/lib -lglut -lGLU -lGL \
 	-lXmu -lXext -lX11 -lXi -l3d -limage -lm 
 
@@ -31,7 +31,7 @@ GL_LDFLAGS = -g $(GL_LIBFLAGS)
 
 default : rawview3
 
-all: dirs rawview3 torus cone isoca butterfly loop subdiv_sph maps_lsq \
+all: dirs rawview3 torus cone isoca butterfly loop subdiv maps_lsq \
 	compare_curv
 
 clean : 
@@ -44,31 +44,23 @@ rawview3 : $(OBJDIR)/rawview3.o $(OBJDIR)/gl2ps.o lib3d libimage
 	$(CC) $(OBJDIR)/rawview3.o $(OBJDIR)/gl2ps.o -o $(BINDIR)/$@ $(GL_LDFLAGS)
 
 torus : $(OBJDIR)/torus.o lib3d 
-	$(CC) -o $(BINDIR)/$@ $< $(BASE_LDFLAGS) -l3d
-
-butterfly : $(OBJDIR)/butterfly.o lib3d
-	$(CC) -o $(BINDIR)/$@ $< $(BASE_LDFLAGS) -l3d
+	$(CC) -o $(BINDIR)/$@ $< $(BASE_LDFLAGS) 
 
 isoca : $(OBJDIR)/isoca.o lib3d
-	$(CC) -o $(BINDIR)/$@ $< $(BASE_LDFLAGS) -l3d
+	$(CC) -o $(BINDIR)/$@ $< $(BASE_LDFLAGS) 
 
 cone: $(OBJDIR)/cone.o lib3d
-	$(CC) -g -o $(BINDIR)/$@ $< $(BASE_LDFLAGS) -l3d
+	$(CC) -g -o $(BINDIR)/$@ $< $(BASE_LDFLAGS) 
 
 maps_lsq : $(OBJDIR)/maps_lsq.o lib3d
-	$(CC) -o $(BINDIR)/$@ $< $(BASE_LDFLAGS) -l3d -lgsl -lgslcblas
-
-loop : $(OBJDIR)/loop.o lib3d
-	$(CC) -o $(BINDIR)/$@ $< $(BASE_LDFLAGS) -l3d
-
-multires: $(OBJDIR)/multires.o lib3d
-	$(CC) -o $(BINDIR)/$@ $< $(BASE_LDFLAGS) -l3d
+	$(CC) -o $(BINDIR)/$@ $< $(BASE_LDFLAGS)  -lgsl -lgslcblas
 
 compare_curv : $(OBJDIR)/compare_curv.o lib3d
-	$(CC) -o $(BINDIR)/$@ $< $(BASE_LDFLAGS) -l3d
+	$(CC) -o $(BINDIR)/$@ $< $(BASE_LDFLAGS) 
 
-subdiv_sph : $(OBJDIR)/subdiv_sph.o lib3d
-	$(CC) -o $(BINDIR)/$@ $< $(BASE_LDFLAGS) -l3d
+subdiv : $(OBJDIR)/subdiv.o $(OBJDIR)/subdiv_methods.o lib3d
+	$(CC) -o $(BINDIR)/$@ $(OBJDIR)/subdiv.o $(OBJDIR)/subdiv_methods.o \
+	 $(BASE_LDFLAGS) 
 
 libimage : $(OBJDIR)/image.o
 	$(CC) -g -shared  -o $(LIBDIR)/$@.so $<
