@@ -1,4 +1,4 @@
-/* $Id: final2.c,v 1.4 2001/04/02 10:51:48 jacquet Exp $ */
+/* $Id: final2.c,v 1.5 2001/04/02 14:52:43 jacquet Exp $ */
 
 #include <stdio.h>
 #include <math.h>
@@ -208,7 +208,7 @@ cell=(cellules *)malloc((raw_model->nbfaces)*sizeof(cellules));
 
  for(i=0;i<raw_model->nbfaces;i++){
    h=0;
-   cell[i].cube=(int *)malloc(70*sizeof(int));   
+   cell[i].cube=(int *)malloc(50*sizeof(int));   
 
    A=raw_model->vertices[raw_model->faces[i].f0];
    B=raw_model->vertices[raw_model->faces[i].f1];
@@ -238,16 +238,20 @@ cell=(cellules *)malloc((raw_model->nbfaces)*sizeof(cellules));
        }
      }
      if(state==0){
+       if(h>49)
+         cell[i].cube=(int *)realloc(cell[i].cube,(h+1)*sizeof(int));
        cell[i].cube[h]=cellule;
        h++;
      } 
    }
    free(sample1->sample);
+   free(sample1);
    cell[i].nbcube=h;
  }
  
 return cell;
 }
+
 
 /*****************************************************************************/
 /* fonction qui repertorie pour chaque cellule la liste des faces avec       */
@@ -260,7 +264,7 @@ int **tab,i,j,k,l;
 
 tab=(int **)malloc(1000*sizeof(int));
  for(i=0;i<1000;i++){
-   tab[i]=(int *)malloc(100*sizeof(int));
+   tab[i]=(int *)malloc(50*sizeof(int));
    tab[i][0]='\0';
  }
 
@@ -269,9 +273,10 @@ tab=(int **)malloc(1000*sizeof(int));
    for(j=1;j<raw_model->nbfaces;j++){
      for(k=0;k<cell[j].nbcube;k++){
        if(cell[j].cube[k]==i){
+         if(l>49)
+	 tab[i]=(int *)realloc(tab[i],(l+1)*sizeof(int));
          tab[i][l]=j;
          l++;
-	 /*tab[i]=(int *)realloc(tab[i],(l+1)*sizeof(int));*/
          break;
        }
      }
@@ -282,48 +287,29 @@ return(tab);
 }
 
 /*****************************************************************************/
-/*                fonction qui calcule la plus courte distance d'un          */
-/*                         a une surface                                     */
+/* fonction recursive qui permet de trouver la face la plus proche           */
 /*****************************************************************************/
 
-double pcd(vertex point,model *raw_model2, double k, cellules *cell,int **list)
+void search(int m,int n,int o,int k,int init,double *dmin2,model* raw_model2,vertex point,int **list)
 {
-double d,dmin;
-sample *sample1;
-int i,j=0,h=0,l=0;
-int m,n,o;
 int a,b,c;
+int i,j,h=0,l;
+int nbtest;
+double d,dmin;
 int *memoire;
-int cellule,facemin,state=0;
-vertex bbox0,bbox1;
+int cellule,state=0;
+sample *sample1;
 
- if((memoire=(int *)malloc(50*sizeof(int)))==NULL){
+if((memoire=(int *)malloc(50*sizeof(int)))==NULL){
    printf("erreur d'allocation memoire\n");
    exit(-1);
  }
 memoire[0]='\0';
 
-bbox0=raw_model2->BBOX[0];
-bbox1=raw_model2->BBOX[1];
 
-m=(point.x-bbox0.x)*10/(bbox1.x-bbox0.x);
-n=(point.y-bbox0.y)*10/(bbox1.y-bbox0.y);
-o=(point.z-bbox0.z)*10/(bbox1.z-bbox0.z);
-
-if(m==10)
-  m=9;
-if(n==10)
-  n=9;
-if(o==10)
-  o=9; 
-
-cellule=m+n*10+o*100;
-/*printf("point dans cellule %d ",cellule);*/
-
- /*on echantillonne les faces qui se trouvent dans les cellules adjacentes*/
- for(a=m-2;a<=m+2;a++){
-   for(b=n-2;b<=n+2;b++){
-     for(c=o-2;c<=o+2;c++){
+ for(a=m-k;a<=m+k;a++){
+   for(b=n-k;b<=n+k;b++){
+     for(c=o-k;c<=o+k;c++){
 
        cellule=a+b*10+c*100;
        if(cellule>=0 && cellule<1000){
@@ -350,41 +336,67 @@ cellule=m+n*10+o*100;
    }
  }
 
- /* for(l=0;l<h;l++){
-printf("%d ",memoire[l]);
-}
-printf("\n");
- */
- for(l=0;l<h;l++){
 
-   sample1=echantillon(raw_model2->vertices[raw_model2->faces[memoire[l]].f0],raw_model2->vertices[raw_model2->faces[memoire[l]].f1],raw_model2->vertices[raw_model2->faces[memoire[l]].f2],0.5);
+
+nbtest=h;
+/*printf("nbtest : %d",nbtest);*/
+
+ for(l=init;l<nbtest;l++){
+   sample1=echantillon(raw_model2->vertices[raw_model2->faces[memoire[l]].f0],raw_model2->vertices[raw_model2->faces[memoire[l]].f1],raw_model2->vertices[raw_model2->faces[memoire[l]].f2],0.1);
    for(i=0;i<sample1->nbsamples;i++) {
 
      d=dist(point,sample1->sample[i]);
 
-     if (l==0){
+     if (l==init){
        dmin=d;
-       facemin=memoire[l];
      }
      else if(d<dmin)
        dmin=d;
-       facemin=memoire[l];
    }
    free(sample1->sample);
+   free(sample1);
  }
-
-sample1=echantillon(raw_model2->vertices[raw_model2->faces[facemin].f0],raw_model2->vertices[raw_model2->faces[facemin].f1],raw_model2->vertices[raw_model2->faces[facemin].f2],k);
- for(i=0;i<sample1->nbsamples;i++) {
-
-   d=dist(point,sample1->sample[i]);
-   if(d<dmin)
-     dmin=d;
- }
-free(sample1->sample);
 free(memoire);
 
+
+if(init==0 || dmin<*dmin2){
+  *dmin2=dmin;
+  search(m,n,o,k+1,nbtest,dmin2,raw_model2,point,list);
+  }
+}
+
+/*****************************************************************************/
+/*                fonction qui calcule la plus courte distance d'un          */
+/*                         a une surface                                     */
+/*****************************************************************************/
+
+double pcd(vertex point,model *raw_model2, double k,int **list)
+{
+double d,dmin=5;
+sample *sample1;
+int m,n,o;
+
+vertex bbox0,bbox1;
+
+
+
+bbox0=raw_model2->BBOX[0];
+bbox1=raw_model2->BBOX[1];
+
+m=(point.x-bbox0.x)*10/(bbox1.x-bbox0.x);
+n=(point.y-bbox0.y)*10/(bbox1.y-bbox0.y);
+o=(point.z-bbox0.z)*10/(bbox1.z-bbox0.z);
+
+if(m==10)
+  m=9;
+if(n==10)
+  n=9;
+if(o==10)
+  o=9; 
+
+search(m,n,o,0,0,&dmin,raw_model2,point,list);
  /*printf("nb face test: %d;dmin: %lf\n",h,dmin);*/    
- /*printf("%lf ",dmin);*/
+/*printf("%lf\n ",dmin);*/
 return(dmin);  
 }
 
@@ -436,6 +448,11 @@ printf("%lf %lf %lf\n",bbox1.x,bbox1.y,bbox1.z);
 
 cell=liste(raw_model2);
 list=cublist(cell,raw_model2);
+ for(i=0;i<raw_model1->nbfaces;i++){
+   free(cell[i].cube);
+ }
+free(cell);
+
 
 diag=dist(raw_model1->BBOX[0],raw_model1->BBOX[1]);
 diag2=dist(raw_model2->BBOX[0],raw_model2->BBOX[1]);
@@ -443,12 +460,11 @@ diag2=dist(raw_model2->BBOX[0],raw_model2->BBOX[1]);
 printf("diagBBOX: %lf\n",diag);
 printf("diagBBOX2: %lf\n",diag2);
  
-
  for(i=0;i<raw_model1->nbfaces;i++) {  
    sample2=echantillon(raw_model1->vertices[raw_model1->faces[i].f0],raw_model1->vertices[raw_model1->faces[i].f1],raw_model1->vertices[raw_model1->faces[i].f2],samplethin);
  
    for(j=0;j<sample2->nbsamples;j++){
-     dcourant=pcd(sample2->sample[j],raw_model2,samplethin,cell,list);
+     dcourant=pcd(sample2->sample[j],raw_model2,samplethin,list);
      if(dcourant>dmax)
        dmax=dcourant;
    } 
@@ -456,7 +472,7 @@ printf("diagBBOX2: %lf\n",diag2);
    dmax=0;
    free(sample2->sample);
    free(sample2);
-}
+ }
 }
 
 
