@@ -1,4 +1,4 @@
-/* $Id: compute_error.h,v 1.24 2002/02/20 18:19:31 dsanta Exp $ */
+/* $Id: compute_error.h,v 1.25 2002/02/20 23:43:50 dsanta Exp $ */
 #ifndef _COMPUTE_ERROR_PROTO
 #define _COMPUTE_ERROR_PROTO
 
@@ -94,21 +94,22 @@ struct dist_surf_surf_stats {
 
 /* Calculates the distance from model me1->mesh (m1) to model m2. The
  * triangles of m1 are sampled so that the sampling density (number of samples
- * per unit surface) is sampling_density. If force_sample_all is non-zero, all
- * triangles of m1 have at least one sample, even if the specified sampling
- * density is too low for that. The per face (of m1) error metrics are
- * returned in a new array (of length m1->num_faces) allocated at me1->fe. The
- * overall distance metrics and other statistics are returned in
- * stats. Optionally, if calc_normals is non-zero and m2 has no normals or
- * face normals, the normals will be calculated and added to m2 (only normals,
- * not face normals). The normals are calculated assuming that the model m2 is
- * oriented, if it is not the case the resulting normals can be
- * incorrect. Information already used to calculate the distance is reused to
- * compute the normals, so it is very fast. If prog in not NULL it is used for
- * reporting progress. The memory allocated at me1->fe should be freed by
- * calling free_face_error(me1->fe). */
+ * per unit surface) is sampling_density. If min_sample_freq is non-zero, all
+ * triangles must have at least min_sample_freq as their sample frequency,
+ * even if the specified sampling density is too low for that. The per face
+ * (of m1) error metrics are returned in a new array (of length m1->num_faces)
+ * allocated at me1->fe. The overall distance metrics and other statistics are
+ * returned in stats. Optionally, if calc_normals is non-zero and m2 has no
+ * normals or face normals, the normals will be calculated and added to m2
+ * (only normals, not face normals). The normals are calculated assuming that
+ * the model m2 is oriented, if it is not the case the resulting normals can
+ * be incorrect. Information already used to calculate the distance is reused
+ * to compute the normals, so it is very fast. If prog in not NULL it is used
+ * for reporting progress. The memory allocated at me1->fe should be freed by
+ * calling free_face_error(me1->fe). Note that non-zero values for
+ * min_sample_freq distort the uniform distribution of error samples. */
 void dist_surf_surf(struct model_error *me1, struct model *m2, 
-		    double sampling_density, int force_sample_all,
+		    double sampling_density, int min_sample_freq,
                     struct dist_surf_surf_stats *stats, int calc_normals,
                     struct prog_reporter *prog);
 

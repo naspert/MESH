@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.79 2002/02/20 18:19:30 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.80 2002/02/20 23:43:49 dsanta Exp $ */
 
 #include <compute_error.h>
 
@@ -1298,7 +1298,7 @@ static double dist_pt_surf(dvertex_t p, const struct triangle_list *tl,
 
 /* See compute_error.h */
 void dist_surf_surf(struct model_error *me1, struct model *m2, 
-		    double sampling_density, int force_sample_all,
+		    double sampling_density, int min_sample_freq,
                     struct dist_surf_surf_stats *stats, int calc_normals,
                     struct prog_reporter *prog)
 {
@@ -1383,7 +1383,7 @@ void dist_surf_surf(struct model_error *me1, struct model *m2,
     vertex_f2d_dv(&(m1->vertices[m1->faces[k].f2]),&v3);
     me1->fe[k].face_area = tri_area_dv(&v1,&v2,&v3);
     n = get_sampling_freq(me1->fe[k].face_area,sampling_density);
-    if (force_sample_all && n == 0) n = 1;
+    if (n < min_sample_freq) n = min_sample_freq;
     realloc_triag_sample_error(&tse,n);
     sample_triangle(&v1,&v2,&v3,n,&ts);
     for (i=0; i<tse.n_samples_tot; i++) {

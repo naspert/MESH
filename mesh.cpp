@@ -1,4 +1,4 @@
-/* $Id: mesh.cpp,v 1.17 2002/02/20 18:30:47 dsanta Exp $ */
+/* $Id: mesh.cpp,v 1.18 2002/02/20 23:43:50 dsanta Exp $ */
 
 #include <time.h>
 #include <string.h>
@@ -76,13 +76,18 @@ static void print_usage(FILE *out)
   fprintf(out,"      \tof side length s). A probabilistic model is used so\n");
   fprintf(out,"      \tthat the resulting number is as close as possible to\n");
   fprintf(out,"      \tthe target. The default is 0.5\n\n");
-  fprintf(out,"  -f\tForce to have at least one sample per triangle of\n");
-  fprintf(out,"    \tmodel 1. Otherwise, depending on the sampling step\n");
-  fprintf(out,"    \tsize and number of triangles in model 1, it can happen\n");
-  fprintf(out,"    \tthat some triangles of model 1 have no samples.\n");
-  fprintf(out,"    \tForcing at least one sample per triangle can improve\n");
-  fprintf(out,"    \tprecision in some situations, at the expense of larger\n");
-  fprintf(out,"    \trunning time.\n\n");
+  fprintf(out,"  -mf f\tEnsure that each triangle has a sampling frequency\n");
+  fprintf(out,"       \tof at least f. Normally the sampling frequency for\n");
+  fprintf(out,"       \ta triangle is determined by the sampling step and\n");
+  fprintf(out,"       \ttriangle size. For some combinations this can lead\n");
+  fprintf(out,"       \tto some triangles having no or few samples. With a\n");
+  fprintf(out,"       \tnon-zero f parameter this can be avoided, although\n");
+  fprintf(out,"       \tit disturbs the uniform distribution of samples.\n");
+  fprintf(out,"       \tWith f set to 1, all triangles get at least one\n");
+  fprintf(out,"       \tsample. With f set to 2, all triangles get at least\n");
+  fprintf(out,"       \tthree samples, and thus all vertices get a sample.\n");
+  fprintf(out,"       \tHigher values of f are less useful. By default it\n");
+  fprintf(out,"       \tis zero in non-GUI mode and two in GUI mode.\n");
   fprintf(out,"  -wlog\tDisplay textual results in a window instead of on\n");
   fprintf(out,"       \tstandard output. Not compatible with the -t option.\n");
   fprintf(out,"\n");
@@ -97,6 +102,7 @@ static void parse_args(int argc, char **argv, struct args *pargs)
 
   memset(pargs,0,sizeof(*pargs));
   pargs->sampling_step = 0.5;
+  pargs->min_sample_freq = -1;
   i = 1;
   while (i < argc) {
     if (argv[i][0] == '-') { /* Option */
@@ -120,8 +126,17 @@ static void parse_args(int argc, char **argv, struct args *pargs)
           fprintf(stderr,"ERROR: invalid number for -l option\n");
           exit(1);
         }
-      } else if (strcmp(argv[i], "-f") == 0) { /* sample all triangles */
-        pargs->force_sample_all = 1;
+      } else if (strcmp(argv[i], "-mf") == 0) { /* sample all triangles */
+        if (argc <= i+1) {
+          fprintf(stderr,"ERROR: missing argument for -mf option\n");
+          exit(1);
+        }
+        pargs->min_sample_freq = strtol(argv[++i],&endptr,10);
+        if (argv[i][0] == '\0' || *endptr != '\0' ||
+            pargs->min_sample_freq < 0) {
+          fprintf(stderr,"ERROR: invalid number for -mf option\n");
+          exit(1);
+        }
       } else if (strcmp(argv[i], "-wlog") == 0) { /* log into window */
 	pargs->do_wlog = 1;
       } else { /* unrecognized option */
@@ -145,6 +160,9 @@ static void parse_args(int argc, char **argv, struct args *pargs)
   if (pargs->no_gui && pargs->do_wlog) {
     fprintf(stderr, "ERROR: incompatible options -t and -wlog\n");
     exit(1);
+  }
+  if (pargs->min_sample_freq < 0) {
+    pargs->min_sample_freq = (pargs->no_gui) ? 0 : 2;
   }
   pargs->sampling_step /= 100; /* convert percent to fraction */
 }

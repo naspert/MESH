@@ -1,4 +1,4 @@
-/* $Id: InitWidget.cpp,v 1.15 2002/02/13 10:38:39 dsanta Exp $ */
+/* $Id: InitWidget.cpp,v 1.16 2002/02/20 23:43:49 dsanta Exp $ */
 
 #include <InitWidget.h>
 
@@ -19,7 +19,7 @@ InitWidget::InitWidget(struct args defArgs,
 		       QWidget *parent, const char *name):
   QWidget( parent, name) {
 
-  QLabel *qlabMesh1, *qlabMesh2, *qlabSplStep;
+  QLabel *qlabMesh1, *qlabMesh2, *qlabSplStep, *qlabMinSplFreq;
   QPushButton *B1, *B2, *OK;
   QListBox *qlboxSplStep;
   QGridLayout *bigGrid;
@@ -47,7 +47,7 @@ InitWidget::InitWidget(struct args defArgs,
   /* Sampling step */
   qledSplStep = new QLineEdit(QString("%1").arg(pargs.sampling_step*100), 
 			      this);
-  qledSplStep->setValidator(new QDoubleValidator(1e-3,1e10,10,0));
+  qledSplStep->setValidator(new QDoubleValidator(1e-3,1e10,10,qledSplStep));
   qlboxSplStep = new QListBox(this);
   qlabSplStep = new QLabel(qlboxSplStep, "Sampling step (%)", this);
   qlboxSplStep->insertItem("2");
@@ -65,10 +65,12 @@ InitWidget::InitWidget(struct args defArgs,
                              this);
   chkSymDist->setChecked(pargs.do_symmetric);
 
-  /* Force sample all checkbox */
-  chkForceSampleAll = new QCheckBox("Force at least a sample in all triangles",
-                                    this);
-  chkForceSampleAll->setChecked(pargs.force_sample_all);
+  /* Minimum sample frequency */
+  qledMinSplFreq = new QLineEdit(QString("%1").arg(pargs.min_sample_freq), 
+                                 this);
+  qledMinSplFreq->setValidator(new QIntValidator(0,INT_MAX,qledMinSplFreq));
+  qlabMinSplFreq = new QLabel(qledMinSplFreq,
+                              "Minimum sampling frequency", this);
 
   /* Log window checkbox */
   chkLogWindow = new QCheckBox("Log output in external window", this);
@@ -99,13 +101,14 @@ InitWidget::InitWidget(struct args defArgs,
   smallGrid3->addWidget(qledSplStep, 0, 1);
   smallGrid3->addWidget(qlboxSplStep, 0, 2);
 
+  /* Build grid layout for force sample all checkbox */
+  smallGrid7 = new QHBoxLayout(bigGrid);
+  smallGrid7->addWidget(qlabMinSplFreq, 0, 0);
+  smallGrid7->addWidget(qledMinSplFreq, 0, 1);
+
   /* Build grid layout for symmetric distance checkbox */
   smallGrid5 = new QHBoxLayout(bigGrid);
   smallGrid5->addWidget(chkSymDist);
-
-  /* Build grid layout for force sample all checkbox */
-  smallGrid7 = new QHBoxLayout(bigGrid);
-  smallGrid7->addWidget(chkForceSampleAll);
 
   /* Build grid layout for external log window */
   smallGrid6 = new QHBoxLayout(bigGrid);
@@ -151,12 +154,14 @@ void InitWidget::loadMesh2() {
 }
 
 void InitWidget::getParameters() {
-  QString str;
+  QString str,str2;
   int pos;
 
   str = qledSplStep->text();
+  str2 = qledMinSplFreq->text();
   if (qledMesh1->text().isEmpty() || qledMesh2->text().isEmpty() ||
-      qledSplStep->validator()->validate(str,pos) !=
+      qledSplStep->validator()->validate(str,pos) != QValidator::Acceptable ||
+      qledMinSplFreq->validator()->validate(str2,pos) !=
       QValidator::Acceptable) {
     incompleteFields();
   } else {
@@ -169,9 +174,9 @@ void InitWidget::getParameters() {
 }
 
 void InitWidget::incompleteFields() {
-  QMessageBox::about(this,"ERROR",
-		     "Incomplete or invalid values in fields\n"
-                     "Please correct");
+  QMessageBox::critical(this,"ERROR",
+                        "Incomplete or invalid values in fields\n"
+                        "Please correct");
 }
 
 void InitWidget::meshSetUp() {
@@ -179,7 +184,7 @@ void InitWidget::meshSetUp() {
   pargs.m2_fname = (char *) qledMesh2->text().latin1();
   pargs.sampling_step = atof((char*)qledSplStep->text().latin1())/100;
   pargs.do_symmetric = chkSymDist->isChecked() == TRUE;
-  pargs.force_sample_all = chkForceSampleAll->isChecked() == TRUE;
+  pargs.min_sample_freq = atoi((char*)qledMinSplFreq->text().latin1());
   pargs.do_wlog = chkLogWindow->isChecked() == TRUE;
 
   if (!pargs.do_wlog) {

@@ -1,4 +1,4 @@
-/* $Id: mesh_run.c,v 1.11 2002/02/20 18:21:58 dsanta Exp $ */
+/* $Id: mesh_run.c,v 1.12 2002/02/20 23:43:50 dsanta Exp $ */
 
 #include <time.h>
 #include <string.h>
@@ -123,7 +123,7 @@ void mesh_run(const struct args *args, struct model_error *model1,
   outbuf_flush(out);
 
   /* Compute the distance from one model to the other */
-  dist_surf_surf(model1,model2->mesh,abs_sampling_dens,args->force_sample_all,
+  dist_surf_surf(model1,model2->mesh,abs_sampling_dens,args->min_sample_freq,
                  &stats,!args->no_gui,(args->quiet ? NULL : progress));
 
   /* Print results */
@@ -147,7 +147,7 @@ void mesh_run(const struct args *args, struct model_error *model1,
 
   if (args->do_symmetric) { /* Invert models and recompute distance */
     outbuf_printf(out,"       Distance from model 2 to model 1\n\n");
-    dist_surf_surf(model2,model1->mesh,abs_sampling_dens,args->force_sample_all,
+    dist_surf_surf(model2,model1->mesh,abs_sampling_dens,args->min_sample_freq,
                    &stats_rev,0,(args->quiet ? NULL : progress));
     free_face_error(model2->fe);
     model2->fe = NULL;
