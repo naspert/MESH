@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.52 2001/08/24 14:52:23 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.53 2001/09/05 08:00:46 dsanta Exp $ */
 
 #include <compute_error.h>
 
@@ -1282,7 +1282,7 @@ void dist_surf_surf(const model *m1, model *m2, int n_spt,
     stats->mean_dist += fe[k].mean_error*fe[k].face_area;
     stats->rms_dist += fe[k].mean_sqr_error*fe[k].face_area;
   }
-  if (!quiet) printf("\r             \r"); /* Remove progress message */
+  if (!quiet) printf("\r              \r"); /* Remove progress message */
 #ifdef DO_DIST_PT_SURF_STATS
   if (!quiet) {
     int n_tot_samples;
