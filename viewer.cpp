@@ -1,4 +1,4 @@
-/* $Id: viewer.cpp,v 1.20 2001/07/10 12:53:16 jacquet Exp $ */
+/* $Id: viewer.cpp,v 1.21 2001/07/10 13:45:01 jacquet Exp $ */
 
 #include <qapplication.h>
 #include <ScreenWidget.h>
@@ -106,7 +106,7 @@ int main( int argc, char **argv )
   if (raw_model2->face_normals==NULL) {
     raw_model2->face_normals = compute_face_normals(raw_model2,curv);
         
-    if (raw_model2->face_normals != NULL && text==1){
+    if (raw_model2->face_normals != NULL){
       compute_vertex_normal(raw_model2, curv, raw_model2->face_normals);
       for (i=0; i<raw_model2->num_vert; i++) 
 	free(curv[i].list_face);
@@ -196,7 +196,7 @@ int main( int argc, char **argv )
     
     dmoy=err_moy(mem_err,sample2,k); /* dmoy= erreur moy * surface triangle */
     meanerror+=dmoy;
-    dmoy=dmoy/triarea;
+    dmoy=err_moy(mem_err,sample2,k)/triarea;
     error_per_face[i][0]=dmoy;
 
     for(j=0;j<k;j++)
