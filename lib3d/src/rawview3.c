@@ -1,4 +1,4 @@
-/* $Id: rawview3.c,v 1.20 2001/09/19 14:31:44 aspert Exp $ */
+/* $Id: rawview3.c,v 1.21 2001/09/20 08:01:44 aspert Exp $ */
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -573,14 +573,15 @@ void sp_key_pressed(int key, int x, int y) {
   GLdouble tmp[16];
   /* Light specification */
   static const GLfloat amb[] = {0.1, 0.1, 0.1, 1.0};
-  static const GLfloat dif[] = {0.3, 0.3, 0.3, 1.0};
-  static const GLfloat spec[] = {0.3, 0.3, 0.3, 0.3};
-  static const GLfloat amb_light[] = {0.8, 0.8, 0.8, 1.0};
+  static const GLfloat dif[] = {1.0, 1.0, 1.0, 1.0};
+  static const GLfloat spec[] = {1.0, 1.0, 1.0, 1.0};
+  /* Global ambien light */
+  static const GLfloat amb_light[] = {0.9, 0.9, 0.9, 1.0};
   /* Material specifications */
-  static const GLfloat mat_spec[] = {0.3, 0.3, 0.3, 1.0};
-  static const GLfloat mat_diff[] = {0.7, 0.7, 0.7, 1.0};
-  static const GLfloat mat_amb[] = {0.5, 0.5, 0.5, 1.0};  
-  static const GLfloat shine[] = {30.0};
+  static const GLfloat mat_spec[] = {0.33, 0.33, 0.52, 1.0};
+  static const GLfloat mat_diff[] = {0.43, 0.47, 0.54, 1.0};
+  static const GLfloat mat_amb[] = {0.11, 0.06, 0.11, 1.0};  
+  static const GLfloat shine[] = {10.0};
 
   GLboolean light_mode;
   info_vertex *curv;
