@@ -1,4 +1,4 @@
-/* $Id: RawWidget.cpp,v 1.43 2002/02/22 13:06:07 aspert Exp $ */
+/* $Id: RawWidget.cpp,v 1.44 2002/02/24 20:18:34 dsanta Exp $ */
 
 #include <RawWidget.h>
 #include <qmessagebox.h>
@@ -6,6 +6,7 @@
 #include <colormap.h>
 #include <geomutils.h>
 #include <xalloc.h>
+#include <assert.h>
 
 // 
 // This is a derived class from QGLWidget used to render models
@@ -41,6 +42,7 @@ RawWidget::RawWidget(struct model_error *model, int renderType,
   two_sided_material = 1;
   etex_id = NULL;
   etex_sz = NULL;
+  downsampling = 1;
 
   // Compute the center of the bounding box of the model
   add_v(&(model->mesh->bBox[0]), &(model->mesh->bBox[1]), &center);
@@ -277,6 +279,223 @@ void RawWidget::genErrorTextures() {
   QApplication::restoreOverrideCursor();
 }
 
+// Sets the GL color corresponding to the error.
+void RawWidget::setGlColorForError(float error) const {
+  int cidx;
+  float mine,drange;
+
+  mine = model->min_error;
+  if (error >= mine) {
+    drange = model->max_error-model->min_error;
+    cidx = (int) (CMAP_LENGTH*(error-mine)/drange);
+    if (cidx >= CMAP_LENGTH) cidx = CMAP_LENGTH-1;
+    glColor3fv(colormap[cidx]);
+  } else {
+    glColor3f(no_err_value,no_err_value,no_err_value); /* gray */
+  }
+}
+
+// Draws triangles with the mean face error.
+void RawWidget::drawMeanFaceErrorT() const {
+  int k;
+  face_t *cur_face;
+
+  glBegin(GL_TRIANGLES);
+  for (k=0; k<model->mesh->num_faces; k++) {
+    cur_face = &(model->mesh->faces[k]);
+    glVertex3f(model->mesh->vertices[cur_face->f0].x,
+               model->mesh->vertices[cur_face->f0].y,
+               model->mesh->vertices[cur_face->f0].z);
+    glVertex3f(model->mesh->vertices[cur_face->f1].x,
+               model->mesh->vertices[cur_face->f1].y,
+               model->mesh->vertices[cur_face->f1].z); 
+    if (model->fe[k].sample_freq > 0) {
+      setGlColorForError(model->fe[k].mean_error);
+    } else {
+      glColor3f(no_err_value,no_err_value,no_err_value); /* gray */
+    }
+    glVertex3f(model->mesh->vertices[cur_face->f2].x,
+               model->mesh->vertices[cur_face->f2].y,
+               model->mesh->vertices[cur_face->f2].z);
+  }
+  glEnd();
+}
+
+// Draws triangles with vertex error, using downsampling to reduce the total
+// number of triangles. If downsampling is one, each error sample will get
+// drawn.
+void RawWidget::drawVertexErrorT() const {
+  int k,i,j,jmax,n;
+  vertex_t u,v;
+  vertex_t a,b,c;
+  face_t *cur_face;
+  int i0,i1,i2,i3;
+  int j0,j1,j2,j3;
+  int l0,l1,l2,l3;
+  vertex_t v0,v1,v2,v3;
+
+  glBegin(GL_TRIANGLES);
+  for (k=0; k<model->mesh->num_faces; k++) {
+    n = model->fe[k].sample_freq;
+    cur_face = &(model->mesh->faces[k]);
+    if (n == 1 && downsampling == 1) {
+      /* displaying only at triangle vertices + center */
+      a = model->mesh->vertices[cur_face->f0];
+      b = model->mesh->vertices[cur_face->f1];
+      c = model->mesh->vertices[cur_face->f2];
+      v3.x = 1/3.0*(a.x+b.x+c.x);
+      v3.y = 1/3.0*(a.y+b.y+c.y);
+      v3.z = 1/3.0*(a.z+b.z+c.z);
+
+      setGlColorForError(model->verror[cur_face->f0]);
+      glEdgeFlag(GL_TRUE);
+      glVertex3f(a.x,a.y,a.z);
+      setGlColorForError(model->verror[cur_face->f1]);
+      glEdgeFlag(GL_FALSE);
+      glVertex3f(b.x,b.y,b.z);
+      setGlColorForError(model->fe[k].serror[0]);
+      glVertex3f(v3.x,v3.y,v3.z);
+
+      setGlColorForError(model->verror[cur_face->f0]);
+      glVertex3f(a.x,a.y,a.z);
+      setGlColorForError(model->fe[k].serror[0]);
+      glVertex3f(v3.x,v3.y,v3.z);
+      setGlColorForError(model->verror[cur_face->f2]);
+      glEdgeFlag(GL_TRUE);
+      glVertex3f(c.x,c.y,c.z);
+      
+      setGlColorForError(model->verror[cur_face->f1]);
+      glVertex3f(b.x,b.y,b.z);
+      setGlColorForError(model->verror[cur_face->f2]);
+      glEdgeFlag(GL_FALSE);
+      glVertex3f(c.x,c.y,c.z);
+      setGlColorForError(model->fe[k].serror[0]);
+      glVertex3f(v3.x,v3.y,v3.z);
+
+    } else if (downsampling >= n) {
+      /* displaying only at triangle vertices */
+      glEdgeFlag(GL_TRUE);
+      setGlColorForError(model->verror[cur_face->f0]);
+      glVertex3f(model->mesh->vertices[cur_face->f0].x,
+                 model->mesh->vertices[cur_face->f0].y,
+                 model->mesh->vertices[cur_face->f0].z);
+      setGlColorForError(model->verror[cur_face->f1]);
+      glVertex3f(model->mesh->vertices[cur_face->f1].x,
+                 model->mesh->vertices[cur_face->f1].y,
+                 model->mesh->vertices[cur_face->f1].z); 
+      setGlColorForError(model->verror[cur_face->f2]);
+      glVertex3f(model->mesh->vertices[cur_face->f2].x,
+                 model->mesh->vertices[cur_face->f2].y,
+                 model->mesh->vertices[cur_face->f2].z);
+    } else { /* displaying at error samples and triangle vertices */
+      assert(n > 1);
+      a = model->mesh->vertices[cur_face->f0];
+      b = model->mesh->vertices[cur_face->f1];
+      c = model->mesh->vertices[cur_face->f2];
+      substract_v(&b,&a,&u);
+      substract_v(&c,&a,&v);
+      prod_v(1/(float)(n-1),&u,&u);
+      prod_v(1/(float)(n-1),&v,&v);
+      for (i=0; i<n-1; i+=downsampling) {
+        i2 = (i+downsampling < n) ? i+downsampling : n-1;
+        for (j=0, jmax=n-i-1; j<jmax; j+=downsampling) {
+          if (i+j+downsampling < n) {
+            i0 = i;
+            j0 = j;
+            i1 = i+downsampling;
+            j1 = j;
+            i2 = i;
+            j2 = j+downsampling;
+            i3 = i1;
+            j3 = j2;
+          } else {
+            i2 = i;
+            j2 = j;
+            i0 = (i+downsampling < n) ? i+downsampling : n-1;
+            j0 = (j>0) ? j-downsampling : j;
+            assert(j0 >= 0);
+            i1 = i0;
+            j1 = n-1-i1;
+            i3 = i;
+            j3 = n-1-i3;
+            assert(j3 >= 0);
+          }
+          l0 = j0+i0*(2*n-i0+1)/2;
+          l1 = j1+i1*(2*n-i1+1)/2;
+          l2 = j2+i2*(2*n-i2+1)/2;
+          v0.x = a.x+i0*u.x+j0*v.x;
+          v0.y = a.y+i0*u.y+j0*v.y;
+          v0.z = a.z+i0*u.z+j0*v.z;
+          v1.x = a.x+i1*u.x+j1*v.x;
+          v1.y = a.y+i1*u.y+j1*v.y;
+          v1.z = a.z+i1*u.z+j1*v.z;
+          v2.x = a.x+i2*u.x+j2*v.x;
+          v2.y = a.y+i2*u.y+j2*v.y;
+          v2.z = a.z+i2*u.z+j2*v.z;
+          if (i0 != i1 || j0 != j1) { /* avoid possible degenerate */
+            setGlColorForError(model->fe[k].serror[l0]);
+            glEdgeFlag(j0 == 0 && j1 == 0);
+            glVertex3f(v0.x,v0.y,v0.z);
+            setGlColorForError(model->fe[k].serror[l1]);
+            glEdgeFlag(i1+j1 == n-1 && i2+j2 == n-1);
+            glVertex3f(v1.x,v1.y,v1.z);
+            setGlColorForError(model->fe[k].serror[l2]);
+            glEdgeFlag(i2 == 0 && i0 == 0);
+            glVertex3f(v2.x,v2.y,v2.z);
+          }
+          if (i3+j3 < n) {
+            l3 = j3+i3*(2*n-i3+1)/2;
+            v3.x = a.x+i3*u.x+j3*v.x;
+            v3.y = a.y+i3*u.y+j3*v.y;
+            v3.z = a.z+i3*u.z+j3*v.z;
+            setGlColorForError(model->fe[k].serror[l3]);
+            glEdgeFlag(i3 == 0 && i2 == 0);
+            glVertex3f(v3.x,v3.y,v3.z);
+            setGlColorForError(model->fe[k].serror[l2]);
+            glEdgeFlag(j2 == 0 && j1 == 0);
+            glVertex3f(v2.x,v2.y,v2.z);
+            setGlColorForError(model->fe[k].serror[l1]);
+            glEdgeFlag(i1+j1 == n-1 && i3+j3 == n-1);
+            glVertex3f(v1.x,v1.y,v1.z);
+          }
+        }
+      }
+    }
+  }
+  glEdgeFlag(GL_TRUE); /* restore default */
+  glEnd();
+}
+
+// Draws textured error, with a texel at each error sample
+void RawWidget::drawTexSampleErrorT() const {
+  int k;
+  face_t *cur_face;
+
+  if (etex_id == NULL || etex_sz == NULL) {
+    fprintf(stderr,"Attempted to draw textures before generating them!\n");
+    return;
+  }
+  glColor3f(1,1,1); /* white base */
+  for (k=0; k<model->mesh->num_faces; k++) {
+    glBindTexture(GL_TEXTURE_2D,etex_id[k]);
+    cur_face = &(model->mesh->faces[k]);
+    glBegin(GL_TRIANGLES);
+    glTexCoord2f(0.5f/etex_sz[k],0.5f/etex_sz[k]);
+    glVertex3f(model->mesh->vertices[cur_face->f0].x,
+               model->mesh->vertices[cur_face->f0].y,
+               model->mesh->vertices[cur_face->f0].z);
+    glTexCoord2f(0.5f/etex_sz[k],(model->fe[k].sample_freq-0.5f)/etex_sz[k]);
+    glVertex3f(model->mesh->vertices[cur_face->f1].x,
+               model->mesh->vertices[cur_face->f1].y,
+               model->mesh->vertices[cur_face->f1].z); 
+    glTexCoord2f((model->fe[k].sample_freq-0.5f)/etex_sz[k],0.5f/etex_sz[k]);
+    glVertex3f(model->mesh->vertices[cur_face->f2].x,
+               model->mesh->vertices[cur_face->f2].y,
+               model->mesh->vertices[cur_face->f2].z);
+    glEnd();
+  }      
+}
+
 void RawWidget::setErrorMode(int emode) {
   if ((renderFlag & RW_CAPA_MASK) == RW_ERROR_ONLY) {
     if (emode == VERTEX_ERROR || emode == MEAN_FACE_ERROR ||
@@ -287,6 +506,22 @@ void RawWidget::setErrorMode(int emode) {
       updateGL();
     } else {
       fprintf(stderr,"invalid mode in setErrorMode()\n");
+    }
+  }
+}
+
+// Sets the downsampling factor for the vertex error mode
+void RawWidget::setVEDownSampling(int n) {
+  if ((renderFlag & RW_CAPA_MASK) == RW_ERROR_ONLY) {
+    if (n < 1) {
+      fprintf(stderr,"Invalid vertex error downsampling value %i\n",n);
+      return;
+    }
+    downsampling = n;
+    if (error_mode == VERTEX_ERROR) {
+      makeCurrent();
+      rebuildList();
+      updateGL();
     }
   }
 }
@@ -387,8 +622,7 @@ void RawWidget::rebuildList() {
   // Color for non-lighted mode
   static const float lighted_color[3] = {1.0f, 1.0f, 1.0f};
   // Local vars
-  int i,cidx;
-  float drange;
+  int i;
   face_t *cur_face;
   GLenum glerr;
 
@@ -477,94 +711,34 @@ void RawWidget::rebuildList() {
     }
     break;
   case RW_ERROR_ONLY:
-    drange = model->max_error-model->min_error;
-    if (drange < FLT_MIN*100) drange = 1;
     if (error_mode == SAMPLE_ERROR && etex_id == NULL) {
       genErrorTextures();
     }
 
-    glShadeModel((error_mode == MEAN_FACE_ERROR) ? GL_FLAT : GL_SMOOTH);
-    if (error_mode != SAMPLE_ERROR) {
+    switch (error_mode) {
+    case VERTEX_ERROR:
       glDisable(GL_TEXTURE_2D);
+      glShadeModel(GL_SMOOTH);
       glNewList(model_list, GL_COMPILE);
-      glBegin(GL_TRIANGLES);
-      for (i=0; i<model->mesh->num_faces; i++) {
-        cur_face = &(model->mesh->faces[i]);
-        if (model->verror[cur_face->f0] >= model->min_error) {
-          cidx = (int) (CMAP_LENGTH*(model->verror[cur_face->f0]-
-                                     model->min_error)/drange);
-          if (cidx >= CMAP_LENGTH) cidx = CMAP_LENGTH-1;
-          glColor3fv(colormap[cidx]);
-        } else {
-          glColor3f(no_err_value,no_err_value,no_err_value); /* gray */
-        }
-        glVertex3f(model->mesh->vertices[cur_face->f0].x,
-                   model->mesh->vertices[cur_face->f0].y,
-                   model->mesh->vertices[cur_face->f0].z);
-        if (model->verror[cur_face->f1] >= model->min_error) {
-          cidx = (int) (CMAP_LENGTH*(model->verror[cur_face->f1]-
-                                     model->min_error)/drange);
-          if (cidx >= CMAP_LENGTH) cidx = CMAP_LENGTH-1;
-          glColor3fv(colormap[cidx]);
-        } else {
-          glColor3f(no_err_value,no_err_value,no_err_value); /* gray */
-        }
-        glVertex3f(model->mesh->vertices[cur_face->f1].x,
-                   model->mesh->vertices[cur_face->f1].y,
-                   model->mesh->vertices[cur_face->f1].z); 
-        if (error_mode == VERTEX_ERROR) {
-          if (model->verror[cur_face->f2] >= model->min_error) {
-            cidx = (int) (CMAP_LENGTH*(model->verror[cur_face->f2]-
-                                       model->min_error)/drange);
-            if (cidx >= CMAP_LENGTH) cidx = CMAP_LENGTH-1;
-            glColor3fv(colormap[cidx]);
-          } else {
-            glColor3f(no_err_value,no_err_value,no_err_value); /* gray */
-          }
-        } else {
-          if (model->fe[i].sample_freq > 0) {
-            cidx = (int) (CMAP_LENGTH*(model->fe[i].mean_error-
-                                       model->min_error)/drange);
-            if (cidx >= CMAP_LENGTH) cidx = CMAP_LENGTH-1;
-            glColor3fv(colormap[cidx]);
-          } else { /* no samples in this triangle => mean error meaningless */
-            glColor3f(no_err_value,no_err_value,no_err_value); /* gray */
-          }
-        }
-        glVertex3f(model->mesh->vertices[cur_face->f2].x,
-                   model->mesh->vertices[cur_face->f2].y,
-                   model->mesh->vertices[cur_face->f2].z);
-      }
-      glEnd();
+      drawVertexErrorT();
       glEndList();
-    } else {
-
-      glColor3f(1,1,1); /* white base */
+      break;
+    case MEAN_FACE_ERROR:
+      glDisable(GL_TEXTURE_2D);
+      glShadeModel(GL_FLAT);
+      glNewList(model_list, GL_COMPILE);
+      drawMeanFaceErrorT();
+      glEndList();
+      break;
+    case SAMPLE_ERROR:
       glEnable(GL_TEXTURE_2D);
       glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
       glNewList(model_list, GL_COMPILE);
-      for (i=0; i<model->mesh->num_faces; i++) {
-        glBindTexture(GL_TEXTURE_2D,etex_id[i]);
-        cur_face = &(model->mesh->faces[i]);
-        glBegin(GL_TRIANGLES);
-        glTexCoord2f(0.5f/etex_sz[i],0.5f/etex_sz[i]);
-        glVertex3f(model->mesh->vertices[cur_face->f0].x,
-                   model->mesh->vertices[cur_face->f0].y,
-                   model->mesh->vertices[cur_face->f0].z);
-        glTexCoord2f(0.5f/etex_sz[i],
-                     (model->fe[i].sample_freq-0.5f)/etex_sz[i]);
-        glVertex3f(model->mesh->vertices[cur_face->f1].x,
-                   model->mesh->vertices[cur_face->f1].y,
-                   model->mesh->vertices[cur_face->f1].z); 
-        glTexCoord2f((model->fe[i].sample_freq-0.5f)/etex_sz[i],
-                     0.5f/etex_sz[i]);
-        glVertex3f(model->mesh->vertices[cur_face->f2].x,
-                   model->mesh->vertices[cur_face->f2].y,
-                   model->mesh->vertices[cur_face->f2].z);
-        glEnd();
-      }      
-
+      drawTexSampleErrorT();
       glEndList();
+      break;
+    default:
+      fprintf(stderr,"Invalid error mode!\n");
     }
     break;
   default:

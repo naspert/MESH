@@ -1,10 +1,11 @@
-/* $Id: ScreenWidget.cpp,v 1.32 2002/02/22 13:06:08 aspert Exp $ */
+/* $Id: ScreenWidget.cpp,v 1.33 2002/02/24 20:18:35 dsanta Exp $ */
 #include <ScreenWidget.h>
 
 #include <qhbox.h>
 #include <qhbuttongroup.h>
 #include <qvbuttongroup.h>
 #include <qlabel.h>
+#include <qspinbox.h>
 #include <RawWidget.h>
 #include <ColorMapWidget.h>
 
@@ -18,14 +19,18 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   QMenuBar *mainBar;
   QPopupMenu *fileMenu, *infoMenu, *helpMenu;
   QHBox *frameModel1, *frameModel2;
-  QGridLayout *bigGrid;
+  QGridLayout *bigGrid, *smallGrid;
   RawWidget *glModel1, *glModel2;
   ColorMapWidget *errorColorBar;
   QPushButton *quitBut;
   QRadioButton *verrBut, *fmerrBut, *serrBut;
   QRadioButton *linBut, *logBut;
   QButtonGroup *radGrp=NULL, *histoGrp=NULL;
+  QSpinBox *qsbDownsampling;
+  QLabel *qlabDownsampling;
   const float p = 0.95; // max proportion of screen to use
+  int max_ds; // maximum downsampling value
+  int i;
 
   setCaption("Mesh: visualization");
 
@@ -129,6 +134,17 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   radGrp->insert(serrBut, RawWidget::SAMPLE_ERROR);
   connect(radGrp, SIGNAL(clicked(int)), glModel1, SLOT(setErrorMode(int)));
 
+  // Build downsampling control
+  for (i=0, max_ds=1; i<model1->mesh->num_faces; i++) {
+    if (model1->fe[i].sample_freq > max_ds) max_ds = model1->fe[i].sample_freq;
+  }
+  qsbDownsampling = new QSpinBox(1,max_ds,1,this);
+  qsbDownsampling->setButtonSymbols(QSpinBox::PlusMinus);
+  qlabDownsampling = new QLabel("Vertex error downsampling:",this);
+  connect(qsbDownsampling, SIGNAL(valueChanged(int)),
+          glModel1, SLOT(setVEDownSampling(int)));
+  qsbDownsampling->setValue(max_ds);
+  
   // Build scale selection buttons
   histoGrp = new QVButtonGroup("Histogram scale",this);
   linBut = new QRadioButton("Linear", histoGrp);
@@ -140,7 +156,7 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
           errorColorBar, SLOT(doHistogram(int)));
 
   // Build the topmost grid layout
-  bigGrid = new QGridLayout (this, 3, 7, 5);
+  bigGrid = new QGridLayout (this, 3, 7, 5, -1, "big");
   bigGrid->setMenuBar(mainBar);
   bigGrid->addWidget(errorColorBar, 0, 0);
   bigGrid->addMultiCellWidget(frameModel1, 0, 0, 1, 3);
@@ -148,9 +164,13 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   bigGrid->addWidget(lineSwitch1, 1, 2, Qt::AlignCenter);
   bigGrid->addWidget(lineSwitch2, 1, 5, Qt::AlignCenter);
   bigGrid->addMultiCellWidget(syncBut, 1, 1, 3, 4, Qt::AlignCenter);
-  bigGrid->addMultiCellWidget(radGrp, 2, 2, 1, 4, Qt::AlignLeft);
   bigGrid->addMultiCellWidget(histoGrp, 1, 2, 0, 0, Qt::AlignCenter);
-  bigGrid->addWidget(quitBut, 2, 5, Qt::AlignCenter);
+  smallGrid = new QGridLayout(1, 4, 3, "small");
+  smallGrid->addWidget(radGrp, 0, 0, Qt::AlignLeft);
+  smallGrid->addWidget(qlabDownsampling, 0, 1, Qt::AlignRight);
+  smallGrid->addWidget(qsbDownsampling, 0, 2, Qt::AlignLeft);
+  smallGrid->addWidget(quitBut, 0, 3, Qt::AlignCenter);
+  bigGrid->addMultiCellLayout(smallGrid, 2, 2, 1, 6);
 
   // Now set a sensible default widget size
   QSize prefSize = layout()->sizeHint();

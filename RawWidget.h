@@ -1,4 +1,4 @@
-/* $Id: RawWidget.h,v 1.27 2002/02/22 13:06:07 aspert Exp $ */
+/* $Id: RawWidget.h,v 1.28 2002/02/24 20:18:35 dsanta Exp $ */
 #ifndef RAWWIDGET_H
 #define RAWWIDGET_H
 
@@ -38,6 +38,7 @@ public slots:
   void switchSync(bool state);
   void transfer(double dist,double *mvmat);
   void setErrorMode(int emode);
+  void setVEDownSampling(int n);
   
 signals:
   void transferValue(double,double*);
@@ -61,6 +62,10 @@ private:
   void genErrorTextures();
   int fillTexture(const struct face_error *fe, GLubyte *texture) const;
   static int ceilLog2(int v);
+  void setGlColorForError(float error) const;
+  void drawMeanFaceErrorT() const;
+  void drawVertexErrorT() const;
+  void drawTexSampleErrorT() const;
 
 // vars
   int renderFlag; // flag to indicate whether the widget can be set in
@@ -74,7 +79,9 @@ private:
   GLuint model_list; // display list index for the model 
   GLuint *etex_id; // texture IDs for per triangle sample error
   int *etex_sz;    // texture size for each of etex_id textures
-  const GLfloat no_err_value; // gray value for when there is no error for primitive
+  const GLfloat no_err_value; // gray value for when there is no error for
+                              // primitive
+  int downsampling; // downsampling factor for vertex error
 // state vars
   int left_button_state;
   int middle_button_state;

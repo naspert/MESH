@@ -1,4 +1,4 @@
-/* $Id: mesh.cpp,v 1.19 2002/02/20 23:45:21 dsanta Exp $ */
+/* $Id: mesh.cpp,v 1.20 2002/02/24 20:18:35 dsanta Exp $ */
 
 #include <time.h>
 #include <string.h>
@@ -32,21 +32,32 @@ static void print_usage(FILE *out)
   fprintf(out,"\n");
   fprintf(out,"Display:\n");
   fprintf(out,"After calculating the distance, the error distribution on\n");
-  fprintf(out,"model 1 is be displayed in graphical form. There are three\n");
+  fprintf(out,"model 1 is displayed in graphical form. There are three\n");
   fprintf(out,"modes to display the error distribution: vertex error, face\n");
-  fprintf(out,"mean error and sample error. In vertex error, each vertex is\n");
-  fprintf(out,"assigned a color based on the calculated error at that\n");
-  fprintf(out,"vertex (if not calculated at that vertex, dark gray is used)\n");
-  fprintf(out,"and the color is interpolated between vertices. While fast,\n");
-  fprintf(out,"this method ignores any errors not located at the vertices\n");
-  fprintf(out,"and thus can provide misleading results. In mean face error,\n");
-  fprintf(out,"each triangle is assigned a color based on the mean error\n");
-  fprintf(out,"for that face (if that face has no samples a dark gray is\n");
-  fprintf(out,"used). In sample error mode a color is assigned to each\n");
-  fprintf(out,"sample point based on the error at that point, and applied\n");
-  fprintf(out,"to the model using texture mapping (if a face has no sample\n");
-  fprintf(out,"points a dark gray is assigned to it). This mode is the\n");
-  fprintf(out,"slowest but it accurately represents the error distribution.\n");
+  fprintf(out,"mean error and sample error.\n");
+  fprintf(out,"In vertex error, each vertex is assigned a color based on\n");
+  fprintf(out,"the calculated error at that vertex (if not calculated at\n");
+  fprintf(out,"that vertex, dark gray is used) and the color is\n");
+  fprintf(out,"interpolated between vertices. Invisible vertices are added\n");
+  fprintf(out,"as necessary to display error at sample points which are not\n");
+  fprintf(out,"vertices of model 1. The ratio between the total number of\n");
+  fprintf(out,"error samples and error samples displayed is controlled by\n");
+  fprintf(out,"the \"vertex error downsampling\" parameter. For low\n");
+  fprintf(out,"downsampling values it can be very accurate, but it can use\n");
+  fprintf(out,"a large number of triangles. For high downsampling values\n");
+  fprintf(out,"the result can be misleading, although very fast.\n");
+  fprintf(out,"In mean face error, each triangle is assigned a color based\n");
+  fprintf(out,"on the mean error for that face (if that face has no samples\n");
+  fprintf(out,"a dark gray is used).\n");
+  fprintf(out,"In sample error mode  a color is assigned to each sample\n");
+  fprintf(out,"point based on the error at that point, and  applied to the\n");
+  fprintf(out,"model using texture mapping (if a face has no sample points\n");
+  fprintf(out,"a dark gray is assigned to it). This mode is as accurate as\n");
+  fprintf(out,"the vertex error mode with a downsampling value of 1,\n");
+  fprintf(out,"although it can be very slow if model 1 has a large number\n");
+  fprintf(out,"of triangles. If model 1 has few triangles and there is a\n");
+  fprintf(out,"large number of samples this mode can be considerably faster\n");
+  fprintf(out,"than vertex error mode with a low downsampling value.\n");
   fprintf(out,"A colorbar showing the correspondance between error values\n");
   fprintf(out,"and color is displayed. The colorbar also shows the\n");
   fprintf(out,"approximate distribution, on the surface of model 1, of the\n");
