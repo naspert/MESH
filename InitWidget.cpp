@@ -1,4 +1,4 @@
-/* $Id: InitWidget.cpp,v 1.13 2002/01/15 17:02:04 aspert Exp $ */
+/* $Id: InitWidget.cpp,v 1.14 2002/02/04 17:34:16 dsanta Exp $ */
 
 #include <InitWidget.h>
 
@@ -117,13 +117,27 @@ InitWidget::~InitWidget() {
 }
 
 void InitWidget::loadMesh1() {
-  QString fn = QFileDialog::getOpenFileName(QString::null, "*.raw", this);
+  QStringList mfilters = QStringList() <<
+    "3D Models (*.raw; *.wrl)" <<
+    "All files (*.*)";
+  QFileDialog fd(QString::null,QString::null,this,"Model 1",TRUE);
+  fd.setMode(QFileDialog::ExistingFile);
+  fd.setFilters(mfilters);
+  fd.show();
+  QString fn = fd.selectedFile();
   if ( !fn.isEmpty() )
     qledMesh1->setText(fn);
 }
   
 void InitWidget::loadMesh2() {
-  QString fn = QFileDialog::getOpenFileName(QString::null, "*.raw", this);
+  QStringList mfilters = QStringList() <<
+    "3D Models (*.raw; *.wrl)" <<
+    "All files (*.*)";
+  QFileDialog fd(QString::null,QString::null,this,"Model 2",TRUE);
+  fd.setMode(QFileDialog::ExistingFile);
+  fd.setFilters(mfilters);
+  fd.show();
+  QString fn = fd.selectedFile();
   if ( !fn.isEmpty() )
     qledMesh2->setText(fn);
 
