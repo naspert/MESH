@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.40 2001/08/20 16:34:09 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.41 2001/08/21 16:12:46 dsanta Exp $ */
 
 #include <compute_error.h>
 
@@ -343,7 +343,7 @@ static void get_cells_at_distance(struct dist_cell_lists *dlists,
   }
 
   /* Non-zero distance k */
-  max_n_cells = 6*(2*k+1)*(2*k+1)+8*(2*k+1)+8;
+  max_n_cells = 6*(2*k-1)*(2*k-1)+12*(2*k-1)+8;
   cell_list = xa_malloc(max_n_cells*sizeof(*cell_list));
   cll = 0;
   min_m = max(cell_gr_coord.x-k,0);
@@ -442,6 +442,7 @@ static void init_triangle(const vertex *a, const vertex *b, const vertex *c,
   bc_len_sqr = norm2_v(&bc);
   if (ab_len_sqr <= ac_len_sqr) {
     if (ac_len_sqr <= bc_len_sqr) { /* BC longest side => A to C */
+      assert(bc_len_sqr >= ac_len_sqr && bc_len_sqr >= ab_len_sqr);
       t->c = *a;
       t->a = *b;
       t->b = *c;
@@ -452,6 +453,7 @@ static void init_triangle(const vertex *a, const vertex *b, const vertex *c,
       t->ac_len_sqr = ab_len_sqr;
       t->bc_len_sqr = ac_len_sqr;
     } else { /* AC longest side => B to C */
+      assert(ac_len_sqr >= bc_len_sqr && ac_len_sqr >= ab_len_sqr);
       t->b = *a;
       t->c = *b;
       t->a = *c;
@@ -463,17 +465,19 @@ static void init_triangle(const vertex *a, const vertex *b, const vertex *c,
       t->bc_len_sqr = ab_len_sqr;
     }
   } else {
-    if (ab_len_sqr <= ac_len_sqr) { /* AC longest side => B to C */
-      t->b = *a;
-      t->c = *b;
-      t->a = *c;
-      neg_v(&ac,&(t->ab));
-      neg_v(&bc,&(t->ac));
-      t->bc = ab;
-      t->ab_len_sqr = ac_len_sqr;
-      t->ac_len_sqr = bc_len_sqr;
-      t->bc_len_sqr = ab_len_sqr;
+    if (ab_len_sqr <= bc_len_sqr) { /* BC longest side => A to C */
+      assert(bc_len_sqr >= ac_len_sqr && bc_len_sqr >= ab_len_sqr);
+      t->c = *a;
+      t->a = *b;
+      t->b = *c;
+      t->ab = bc;
+      neg_v(&ab,&(t->ac));
+      neg_v(&ac,&(t->bc));
+      t->ab_len_sqr = bc_len_sqr;
+      t->ac_len_sqr = ab_len_sqr;
+      t->bc_len_sqr = ac_len_sqr;
     } else { /* AB longest side => C remains C */
+      assert(ab_len_sqr >= ac_len_sqr && ab_len_sqr >= bc_len_sqr);
       t->a = *a;
       t->b = *b;
       t->c = *c;
