@@ -1,4 +1,4 @@
-/* $Id: model_in_vrml_iv.c,v 1.5 2002/11/05 07:39:12 aspert Exp $ */
+/* $Id: model_in_vrml_iv.c,v 1.6 2002/11/13 12:18:23 aspert Exp $ */
 
 
 /*
@@ -46,6 +46,9 @@
 
 #include <model_in.h>
 #include <block_list.h>
+#ifdef DEBUG
+# include <debug_print.h>
+#endif
 
 /* Advances the '*data' stream past the end of the VRML field (single, array
  * or node). Returns zero on success and an error code (MESH_CORRUPTED, etc.) 
@@ -197,7 +200,7 @@ static int read_node_type(char *s, struct file_data *data, int slen)
     rcode = MESH_CORRUPTED;
   } else {
 #ifdef DEBUG
-    printf("[read_node_type] stmp = %s\n", stmp);
+    DEBUG_PRINT("stmp = %s\n", stmp);
 #endif
     if (strcmp("DEF",stmp) == 0) {
       /* DEF tag => skip node name and get node type */
@@ -206,7 +209,7 @@ static int read_node_type(char *s, struct file_data *data, int slen)
         rcode = MESH_CORRUPTED;
       }
 #ifdef DEBUG
-      printf("[read_node_type] stmp = %s\n", stmp);
+      DEBUG_PRINT("stmp = %s\n", stmp);
 #endif
     }
   }
@@ -298,7 +301,7 @@ static int read_mffloat(struct block_list *blk, struct file_data *data,
     }
   } while ((in_brackets || n < nelem) && c != EOF && n >= 0);
 #ifdef DEBUG
-  printf("[read_mffloat]in_brackets=%d n=%d c=%d \n", in_brackets, n, c);
+  DEBUG_PRINT("in_brackets=%d n=%d c=%d \n", in_brackets, n, c);
 #endif
   
   return n;
@@ -616,11 +619,11 @@ static int read_vrml_coordinate(vertex_t **vtcs_ref, struct file_data *data,
     } else if (c != EOF && string_scanf(data,stmp) == 1) { /* field */
       if (strcmp(stmp,"point") == 0) {
 #ifdef DEBUG
-        printf("[read_vrml_coordinate]point found\n");
+        DEBUG_PRINT("point found\n");
 #endif
         n_vtcs = read_mfvec3f_bbox(&vtcs,data,bbox_min,bbox_max);
 #ifdef DEBUG
-        printf("[read_vrml_coordinate]n_vtcs = %d\n", n_vtcs);
+        DEBUG_PRINT("n_vtcs = %d\n", n_vtcs);
 #endif
         if (n_vtcs < 0) { /* error */
           rcode = n_vtcs;
@@ -720,18 +723,18 @@ static int read_vrml_ifs(struct model *tmesh, struct file_data *data)
     } else if (c != EOF && string_scanf(data,stmp) == 1) { /* field */
       if (strcmp(stmp,"coord") == 0) { /* Coordinates */
 #ifdef DEBUG
-        printf("[read_vrml_ifs]coord found\n");
+        DEBUG_PRINT("coord found\n");
 #endif
         if (n_vtcs != -1) {
           rcode = MESH_CORRUPTED;
         } else if ((rcode = read_node_type(stmp,data,MAX_WORD_LEN+1)) == 0 &&
                    strcmp(stmp,"Coordinate") == 0) {
 #ifdef DEBUG
-          printf("[read_vrml_ifs]Coordinate found\n");
+          DEBUG_PRINT("Coordinate found\n");
 #endif
           n_vtcs = read_vrml_coordinate(&vtcs,data,&bbmin,&bbmax);
 #ifdef DEBUG
-          printf("[read_vrml_ifs]read_vrml_coordinate done\n");
+          DEBUG_PRINT("read_vrml_coordinate done\n");
 #endif
           if (n_vtcs < 0) rcode = n_vtcs; /* error */
         } else if (rcode == 0) {
@@ -803,7 +806,7 @@ static int read_vrml_ifs(struct model *tmesh, struct file_data *data)
     if (n_faces == -1) n_faces = 0;
     if (n_vtcs <= max_vidx) {
 #ifdef DEBUG
-      printf("[read_vrml_ifs] n_vtcs=%d <= max_vidx=%d\n", n_vtcs, max_vidx);
+      DEBUG_PRINT("n_vtcs=%d <= max_vidx=%d\n", n_vtcs, max_vidx);
 #endif
       rcode = MESH_MODEL_ERR;
     } else {
@@ -997,7 +1000,7 @@ int read_vrml_tmesh(struct model **tmeshes_ref, struct file_data *data,
   do {
     c = find_string(data,"IndexedFaceSet");
 #ifdef DEBUG
-    printf("found IndexedFaceSet c=%d\n", c);
+    DEBUG_PRINT("found IndexedFaceSet c=%d\n", c);
 #endif
     if (c != EOF) {
       if (n_tmeshes == len) {
@@ -1069,35 +1072,35 @@ int read_iv_tmesh(struct model **tmesh_ref, struct file_data *data) {
 
         if (strcmp(stmp, "Coordinate3") == 0) { /* Coordinate3 */
 #ifdef DEBUG
-          printf("[read_iv_tmesh] Coordinate3 found\n");
+          DEBUG_PRINT("Coordinate3 found\n");
 #endif
           if (n_vtcs != -1)
             rcode = MESH_CORRUPTED;
           else {
             n_vtcs = read_vrml_coordinate(&vtcs, data, &bbmin, &bbmax);
 #ifdef DEBUG
-            printf("[read_iv_tmesh] nvtcs=%d\n", n_vtcs);
+            DEBUG_PRINT("nvtcs=%d\n", n_vtcs);
 #endif
             if (n_vtcs < 0) rcode = n_vtcs; /* error */
           }
         } 
         else if (strcmp(stmp, "IndexedFaceSet") == 0) { /* IFS */
 #ifdef DEBUG
-          printf("[read_iv_tmesh] IndexedFaceSet found\n");
+          DEBUG_PRINT("IndexedFaceSet found\n");
 #endif
          /* a 'coordIndex' field should not be too far ...*/
           c = find_string(data, "coordIndex"); 
           if (c == EOF) 
             return MESH_CORRUPTED;
 #ifdef DEBUG
-          printf("[read_iv_tmesh] coordIndex found\n");
+          DEBUG_PRINT("coordIndex found\n");
 #endif
           if (n_faces != -1)
             rcode = MESH_CORRUPTED;
           else {
             n_faces = read_tcoordindex(&faces, data, &max_vidx);
 #ifdef DEBUG
-            printf("[read_iv_tmesh] nfaces=%d\n", n_faces);
+            DEBUG_PRINT("nfaces=%d\n", n_faces);
 #endif
             if (n_faces < 0) rcode = n_faces; /* error */
           }

@@ -1,4 +1,4 @@
-/* $Id: model_in.c,v 1.36 2002/11/04 15:40:29 aspert Exp $ */
+/* $Id: model_in.c,v 1.37 2002/11/13 12:18:22 aspert Exp $ */
 
 
 /*
@@ -64,7 +64,9 @@
 #include <string.h>
 #include <ctype.h>
 #include <model_in.h>
-
+#ifdef DEBUG
+# include <debug_print.h>
+#endif
 
 /* --------------------------------------------------------------------------
    LOCAL PARAMETERS
@@ -151,7 +153,7 @@ static int refill_buffer(struct file_data* data)
     memset(&(data->block[data->nbytes]), 0, 
            (GZ_BUF_SZ-data->nbytes)*sizeof(unsigned char));
 #ifdef DEBUG
-    printf("refill_buffer %d bytes\n", data->nbytes);
+    DEBUG_PRINT("refill_buffer %d bytes\n", data->nbytes);
 #endif
     return 1;
   }
@@ -166,7 +168,7 @@ static int refill_buffer(struct file_data* data)
              (GZ_BUF_SZ-data->nbytes)*sizeof(unsigned char));
 
 #ifdef DEBUG
-      printf("refill_buffer %d bytes\n", data->nbytes);
+      DEBUG_PRINT("refill_buffer %d bytes\n", data->nbytes);
 #endif
       return 1; /* kinda OK... */
     }
@@ -175,7 +177,7 @@ static int refill_buffer(struct file_data* data)
       data->block = grow_array(data->block, sizeof(unsigned char), 
                                &(data->size), GZ_BUF_INCR);
 #ifdef DEBUG 
-      printf("New block size = %d bytes\n", data->size);
+      DEBUG_PRINT("New block size = %d bytes\n", data->size);
 #endif 
       if (data->block == NULL)
         return MESH_NO_MEM;
@@ -185,7 +187,7 @@ static int refill_buffer(struct file_data* data)
          (GZ_BUF_SZ-data->nbytes)*sizeof(unsigned char));
 
 #ifdef DEBUG
-  printf("refill_buffer %d bytes\n", data->nbytes);
+  DEBUG_PRINT("refill_buffer %d bytes\n", data->nbytes);
 #endif
   return 1;
 }
@@ -207,17 +209,18 @@ int int_scanf(struct file_data *data, int *out)
   tmp = (int)strtol((char*)&(data->block[data->pos]), &endptr, 10);
   if (endptr == (char*)&(data->block[data->pos]) || endptr == NULL) {
 #ifdef DEBUG
-    printf("[int_scanf] pos=%d block= %s\n", data->pos, 
-	   &(data->block[data->pos]));
+    DEBUG_PRINT("pos=%d block= %s\n", data->pos, &(data->block[data->pos]));
 #endif
     return 0;
   }  
-
+#ifdef DEBUG
+  DEBUG_PRINT("tmp = %d\n", tmp);
+#endif
   data->pos += (endptr - (char*)&(data->block[data->pos]))*sizeof(char);
 
   if (data->pos == data->nbytes-1) {
 #ifdef DEBUG
-    printf("[int_scanf] calling refill_buffer\n");
+    DEBUG_PRINT("calling refill_buffer\n");
 #endif
     refill_buffer(data);
   }
@@ -259,6 +262,9 @@ int float_scanf(struct file_data *data, float *out)
 
   tmp = (float)atof(buf);
 
+#ifdef DEBUG
+  DEBUG_PRINT("tmp = %f\n", tmp);
+#endif
   if (data->pos == data->nbytes-1) {
     refill_buffer(data);
   }
@@ -282,7 +288,9 @@ int float_scanf(struct file_data *data, float *out)
   tmp = strtod((char*)&(data->block[data->pos]), &endptr);
   if (endptr == (char*)&(data->block[data->pos]) || endptr==NULL) 
     return 0;
-
+#ifdef DEBUG
+  DEBUG_PRINT("tmp = %f\n", tmp);
+#endif
   data->pos += (endptr - (char*)&(data->block[data->pos]))*sizeof(char);
 
   if (data->pos == data->nbytes-1) {
@@ -314,7 +322,7 @@ int string_scanf(struct file_data *data, char *out)
       ungetc(c, data);
     stmp[--nb_read] = '\0';
 #ifdef DEBUG
-    printf("[string_scanf] stmp=%s\n", stmp);
+    DEBUG_PRINT("stmp=%s\n", stmp);
 #endif
     strcpy(out, stmp);
     return 1;
@@ -512,7 +520,7 @@ int find_string(struct file_data *data, const char *string)
     if (string[i] == '\0' &&
         (c == EOF || strchr(VRML_WSCOMMSTR_CHARS,c) != NULL)) {
 #ifdef DEBUG
-      printf("[find_string] %s matched\n", string);
+      DEBUG_PRINT("%s matched\n", string);
 #endif
       break; /* string matched and is whole word */
     }

@@ -1,4 +1,4 @@
-/* $Id: model_in_raw.c,v 1.3 2002/08/30 09:18:46 aspert Exp $ */
+/* $Id: model_in_raw.c,v 1.4 2002/11/13 12:18:23 aspert Exp $ */
 
 
 /*
@@ -45,6 +45,9 @@
 
 
 #include <model_in.h>
+#ifdef DEBUG
+# include <debug_print.h>
+#endif
 
 /* Reads 'n_faces' triangular faces from the '*data' stream in raw ascii
  * format and stores them in the 'faces' array. The face's vertex indices are
@@ -64,7 +67,8 @@ static int read_raw_faces(face_t *faces, struct file_data *data,
       return MESH_CORRUPTED;
 
 #ifdef DEBUG
-    printf("i=%d f0=%d f1=%d f2=%d\n", i, faces[i].f0, faces[i].f1, faces[i].f2);
+    DEBUG_PRINT("i=%d f0=%d f1=%d f2=%d\n", i, faces[i].f0, 
+                faces[i].f1, faces[i].f2);
 #endif
     if (faces[i].f0 < 0 || faces[i].f0 >= n_vtcs ||
         faces[i].f1 < 0 || faces[i].f1 >= n_vtcs ||
@@ -98,7 +102,7 @@ static int read_raw_vertices(vertex_t *vtcs, struct file_data *data,
       return MESH_CORRUPTED;
 
 #ifdef DEBUG    
-    printf("i=%d x=%f y=%f z=%f\n", i, vtcs[i].x, vtcs[i].y, vtcs[i].z);
+    DEBUG_PRINT("i=%d x=%f y=%f z=%f\n", i, vtcs[i].x, vtcs[i].y, vtcs[i].z);
 #endif
     if (vtcs[i].x < bbmin.x) bbmin.x = vtcs[i].x;
     if (vtcs[i].x > bbmax.x) bbmax.x = vtcs[i].x;

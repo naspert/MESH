@@ -1,4 +1,4 @@
-/* $Id: block_list.c,v 1.2 2002/11/04 15:34:18 aspert Exp $ */
+/* $Id: block_list.c,v 1.3 2002/11/13 12:18:22 aspert Exp $ */
 
 /*
  *
@@ -51,6 +51,9 @@
 
 
 #include <block_list.h>
+#ifdef DEBUG
+# include <debug_print.h>
+#endif
 
 /* Create a block_list element having elements of size 'sz_elem' */
 int init_block_list(struct block_list *blk, size_t sz_elem) 
@@ -83,7 +86,7 @@ struct block_list* get_next_block(struct block_list *blk)
 
   rcode = init_block_list(blk->next, blk->size_elem);
 #ifdef DEBUG
-  printf("[get_next_block]new block = %d bytes\n", blk->size_elem*BL_NELEM);
+  DEBUG_PRINT("new block = %d bytes\n", blk->size_elem*BL_NELEM);
 #endif
  if(rcode<0)
    return NULL;
@@ -111,7 +114,7 @@ int gather_block_list(struct block_list *head_blk, void *dest, size_t sz_dest)
     }
     memcpy(pt_dest, cur_blk->data, cur_blk->elem_filled*cur_blk->size_elem);
 #ifdef DEBUG
-    printf("[gather_block_list]%d bytes gathered\n", tmp);
+    DEBUG_PRINT("%d bytes gathered\n", tmp);
 #endif
     pt_dest = pt_dest + cur_blk->elem_filled*cur_blk->size_elem;
     cur_blk = cur_blk->next;

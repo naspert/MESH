@@ -1,8 +1,11 @@
-/* $Id: normals.c,v 1.34 2002/11/07 09:51:43 aspert Exp $ */
+/* $Id: normals.c,v 1.35 2002/11/13 12:18:24 aspert Exp $ */
 #include <3dmodel.h>
 #include <geomutils.h>
 #include <normals.h>
 
+#if defined(DEBUG) || defined(NORM_DEBUG) || defined(NORM_DEBUG_BFS)
+# include <debug_print.h>
+#endif
 
 /* Compares two edges (s.t. they are in lexico. order after qsort) */
 static int compar(const void* ed0, const void* ed1) {
@@ -129,8 +132,8 @@ static int build_edge_list(const struct model *raw_model,
   free(list);        
 
 #ifdef NORM_DEBUG
-  printf("[build_edge_list]:%d edges in dual graph\n", 
-	 dual_graph->num_edges_dual);
+  DEBUG_PRINT("%d edges in dual graph\n", 
+              dual_graph->num_edges_dual);
 #endif
 
   return dual_graph->num_edges_dual;
@@ -155,7 +158,7 @@ find_dual_edges(const int cur_face,  int *nfound,
   for (i=0; i<dg_index[cur_face].face_info; i++) {
     id = dg_index[cur_face].ring[i];
     if (!BITMAP_TEST_BIT(dual_graph->done, id)) { 
-/* if this edge has not been visited */
+      /* if this edge has not been visited */
       /* add it to the list */
       if (dual_graph->edges[id].face0 == cur_face) 
 	bot->edge = dual_graph->edges[id];
@@ -219,10 +222,10 @@ struct face_tree** bfs_build_spanning_tree(const struct model *raw_model,
 
 #ifdef NORM_DEBUG_BFS
   for (i=0; i<dual_graph->num_edges_dual; i++) 
-    printf("[bfs_build_spanning_tree]: %d dual %d %d primal %d %d\n", 
-	   dual_graph->num_edges_dual, dual_graph->edges[i].face0, 
-	   dual_graph->edges[i].face1, dual_graph->edges[i].common.v0, 
-	   dual_graph->edges[i].common.v1);
+    DEBUG_PRINT("%d dual %d %d primal %d %d\n", 
+                dual_graph->num_edges_dual, dual_graph->edges[i].face0, 
+                dual_graph->edges[i].face1, dual_graph->edges[i].common.v0, 
+                dual_graph->edges[i].common.v1);
 #endif
 
 #ifdef NORM_VERB
@@ -269,9 +272,9 @@ struct face_tree** bfs_build_spanning_tree(const struct model *raw_model,
 	cur_node->prim_left = cur_list->edge.common;
 
 #ifdef NORM_DEBUG_BFS
-	printf("[bfs_build_spanning_tree]: face0=%d face1=%d left %d %d\n", 
-	       (cur_list->edge).face0, (cur_list->edge).face1, 
-	       cur_node->prim_left.v0, cur_node->prim_left.v1);
+	DEBUG_PRINT("face0=%d face1=%d left %d %d\n", 
+                    (cur_list->edge).face0, (cur_list->edge).face1, 
+                    cur_node->prim_left.v0, cur_node->prim_left.v1);
 #endif
 
 	new_node = cur_node->left;
@@ -289,9 +292,9 @@ struct face_tree** bfs_build_spanning_tree(const struct model *raw_model,
 	cur_node->right = tree[cur_list->edge.face1];
 
 #ifdef NORM_DEBUG_BFS
-	printf("[bfs_build_spanning_tree]: face0=%d face1=%d right %d %d\n", 
- 	       (cur_list->edge).face0, (cur_list->edge).face1, 
-	       cur_node->prim_right.v0, cur_node->prim_right.v1);
+	DEBUG_PRINT("face0=%d face1=%d right %d %d\n", 
+                    (cur_list->edge).face0, (cur_list->edge).face1, 
+                    cur_node->prim_right.v0, cur_node->prim_right.v1);
 #endif
 
 	new_node = cur_node->right;
@@ -312,9 +315,9 @@ struct face_tree** bfs_build_spanning_tree(const struct model *raw_model,
 	new_node->prim_left = cur_list->edge.common;
 
 #ifdef NORM_DEBUG_BFS
-	printf("[bfs_build_spanning_tree]: face0=%d face1=%d up %d %d\n", 
- 	       cur_list->edge.face0, cur_list->edge.face1,
-	       new_node->prim_left.v0, new_node->prim_left.v1);
+	DEBUG_PRINT("face0=%d face1=%d up %d %d\n", 
+                    cur_list->edge.face0, cur_list->edge.face1,
+                    new_node->prim_left.v0, new_node->prim_left.v1);
 #endif
 
 	new_node->node_type = 0;
@@ -342,8 +345,8 @@ struct face_tree** bfs_build_spanning_tree(const struct model *raw_model,
       old = cur_list;
 
 #ifdef NORM_DEBUG_BFS
-       printf("[bfs_build_spanning_tree]: Removing %d %d\n", 
-	      cur_list->edge.face0, cur_list->edge.face1);
+       DEBUG_PRINT("Removing %d %d\n", 
+                   cur_list->edge.face0, cur_list->edge.face1);
 #endif
 
       cur_list = cur_list->next;
@@ -353,8 +356,8 @@ struct face_tree** bfs_build_spanning_tree(const struct model *raw_model,
   }
 
 #ifdef NORM_DEBUG_BFS
-  printf("[bfs_build_spanning_tree]:faces_traversed = %d num_faces = %d\n", 
-	 faces_traversed, raw_model->num_faces); 
+  DEBUG_PRINT("faces_traversed = %d num_faces = %d\n", 
+              faces_traversed, raw_model->num_faces); 
 #endif
   if (bot->next != NULL)
     free(bot->next);  /* should be alloc'd but nothing inside */
@@ -397,41 +400,43 @@ static int find_center(const face_t *cur,const int v1, const int v2) {
 
 static void update_child_edges(struct face_tree *tree, const int v0, 
                                const int v1, const int v2) {
-  int __tmp;
+  int tmp;
 
-#ifndef __swap_vert
-#define __swap_vert(p)                          \
+#ifdef swap_vert
+# error swap_vert already defined !!!!
+#else
+#define swap_vert(p)                            \
   do {                                          \
-    __tmp = (p).v1;                             \
+    tmp = (p).v1;                               \
     (p).v1 = (p).v0;                            \
-    (p).v0 = __tmp;                             \
+    (p).v0 = tmp;                               \
   } while(0)
 #endif
 
   if (tree->left != NULL) {/* update prim_left */
       if ((tree->prim_left).v0 == v1 && (tree->prim_left).v1 == v0)  
 	/* prim_left = v1v0 */
-	__swap_vert(tree->prim_left);
+	swap_vert(tree->prim_left);
       else if ((tree->prim_left).v0 == v0 && (tree->prim_left).v1 == v2) 
 	/* prim_left = v0v2 */
-	__swap_vert(tree->prim_left);
+	swap_vert(tree->prim_left);
       else if ((tree->prim_left).v0 == v2 && (tree->prim_left).v1 == v1)
 	/* prim_left = v2v1 */
-	__swap_vert(tree->prim_left);    
+	swap_vert(tree->prim_left);    
   }
 
   if (tree->right != NULL) {/* update prim_right */
     if ((tree->prim_right).v0 == v1 && (tree->prim_right).v1 == v0)  
       /* prim_right = v1v0 */
-      __swap_vert(tree->prim_right);
+      swap_vert(tree->prim_right);
     else if ((tree->prim_right).v0 == v0 && (tree->prim_right).v1 == v2) 
       /* prim_right = v0v2 */
-      __swap_vert(tree->prim_right);
+      swap_vert(tree->prim_right);
     else if ((tree->prim_right).v0 == v2 && (tree->prim_right).v1 == v1)
       /* prim_right = v2v1 */
-      __swap_vert(tree->prim_right);
+      swap_vert(tree->prim_right);
   }
-#undef __swap_vert
+#undef swap_vert
 }
 
 
@@ -493,27 +498,30 @@ static void build_normals(const struct model *raw_model,
 	    &raw_model->vertices[v2], &normals[tree->face_idx]);
 #ifdef NORM_DEBUG
   if (tree->parent != NULL) {
-    printf("Parent=%d type=%d n=%f %f %f\n", tree->parent->face_idx, 
-	   tree->parent->node_type,
-	   normals[tree->parent->face_idx].x, 
-	   normals[tree->parent->face_idx].y, 
-	   normals[tree->parent->face_idx].z);
-    printf("Leaf=%d type=%d n=%f %f %f\n", tree->face_idx, tree->node_type,
-	   normals[tree->face_idx].x, 
-	   normals[tree->face_idx].y, 
-	   normals[tree->face_idx].z);
-    printf("test = %f\n", 
-	   scalprod(normals[tree->parent->face_idx],normals[tree->face_idx]));
-    printf("Parent: v0=%d v1=%d v2=%d\n", tree->parent->v0, tree->parent->v1, 
-	   tree->parent->v2);
-    printf("Leaf: v0=%d v1=%d v2=%d\n", tree->v0, tree->v1, tree->v2);
+    DEBUG_PRINT("Parent=%d type=%d n=%f %f %f\n", tree->parent->face_idx, 
+                tree->parent->node_type,
+                normals[tree->parent->face_idx].x, 
+                normals[tree->parent->face_idx].y, 
+                normals[tree->parent->face_idx].z);
+    DEBUG_PRINT("Leaf=%d type=%d n=%f %f %f\n", tree->face_idx, 
+                tree->node_type,
+                normals[tree->face_idx].x, 
+                normals[tree->face_idx].y, 
+                normals[tree->face_idx].z);
+    DEBUG_PRINT("test = %f\n", 
+                __scalprod_v(normals[tree->parent->face_idx],
+                             normals[tree->face_idx]));
+    DEBUG_PRINT("Parent: v0=%d v1=%d v2=%d\n", tree->parent->v0, 
+                tree->parent->v1, tree->parent->v2);
+    DEBUG_PRINT("Leaf: v0=%d v1=%d v2=%d\n", tree->v0, tree->v1, tree->v2);
     printf("*\n");
   } else {
-    printf("root=%d type=%d n=%f %f %f\n", tree->face_idx, tree->node_type,
-	   normals[tree->face_idx].x, 
-	   normals[tree->face_idx].y, 
-	   normals[tree->face_idx].z);
-    printf("Root: v0=%d v1=%d v2=%d\n", tree->v0, tree->v1, tree->v2);
+    DEBUG_PRINT("root=%d type=%d n=%f %f %f\n", tree->face_idx, 
+                tree->node_type,
+                normals[tree->face_idx].x, 
+                normals[tree->face_idx].y, 
+                normals[tree->face_idx].z);
+    DEBUG_PRINT("Root: v0=%d v1=%d v2=%d\n", tree->v0, tree->v1, tree->v2);
     printf("*\n");
   }
 #endif
@@ -564,10 +572,6 @@ vertex_t* compute_face_normals(const struct model* raw_model,
   printf("Face normals done !\n");
 #endif
   for (i=0; i<raw_model->num_faces; i++) {
-#if 0
-    printf("face_normals[%d] = %f %f %f\n", i, -normals[i].x, -normals[i].y,  
-	   -normals[i].z); 
-#endif
     free(tree[i]);
   }
 
@@ -612,10 +616,6 @@ void compute_vertex_normal(struct model* raw_model,
 
     __normalize_v(tmp);
     raw_model->normals[i] = tmp;
-#if 0
-    printf("vertex %d : %f %f %f\n",i, raw_model->normals[i].x, 
-	   raw_model->normals[i].y, raw_model->normals[i].z); 
-#endif
     
   }
 

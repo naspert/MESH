@@ -1,4 +1,4 @@
-/* $Id: ring.c,v 1.5 2002/11/07 07:52:41 aspert Exp $ */
+/* $Id: ring.c,v 1.6 2002/11/13 12:18:25 aspert Exp $ */
 
 
 /*
@@ -26,6 +26,9 @@
 
 #include <3dmodel.h>
 #include <ring.h>
+#if defined(DEBUG) || defined(RING_DEBUG) || defined(NORM_DEBUG)
+# include <debug_print.h>
+#endif
 
 void build_star_global(const struct model *raw_model, 
                        struct ring_info *ring) {
@@ -77,7 +80,7 @@ void build_star_global(const struct model *raw_model,
   for (i=0; i<raw_model->num_vert; i++) {
     if(num_edges[i] == 0) {
 #ifdef DEBUG
-      fprintf(stderr, "Vertex %d has no face...\n", i);
+      DEBUG_PRINT("Vertex %d has no face...\n", i);
 #endif
       continue;
     }
@@ -188,14 +191,14 @@ void build_star_global(const struct model *raw_model,
     ring[i].ord_vert = (int*)malloc(star_size*sizeof(int));
     memcpy(ring[i].ord_vert, final_star, star_size*sizeof(int));
 #ifdef DEBUG
-    printf("vertex %d: valence=%d\n", i, star_size);
+    DEBUG_PRINT("vertex %d: valence=%d\n", i, star_size);
 #endif
     ring[i].n_faces = n_faces;
     ring[i].ord_face = (int*)malloc(n_faces*sizeof(int));
     memcpy(ring[i].ord_face, face_star, n_faces*sizeof(int));
 
-#ifdef DEBUG
-    printf("vertex %d Tr: ", i);
+#ifdef RING_DEBUG
+    DEBUG_PRINT("vertex %d Tr: ", i);
     for (j=0; j<ring[i].n_faces; j++) {
       printf("%d ", ring[i].ord_face[j]);
     }
@@ -233,8 +236,8 @@ void build_star(const struct model *raw_model, int v, struct ring_info *ring) {
 	realloc(edge_list_primal, num_edges*sizeof(struct edge_v));
       
 #ifdef NORM_DEBUG
-      if (edge_list == NULL) {
-	printf("realloc failed %d\n", i);
+      if (edge_list_primal == NULL) {
+	DEBUG_PRINT("realloc failed %d\n", i);
 	exit(-1);
       }
 #endif
@@ -249,7 +252,7 @@ void build_star(const struct model *raw_model, int v, struct ring_info *ring) {
 
 #ifdef NORM_DEBUG
       if (edge_list_primal == NULL) {
-	printf("realloc failed %d\n", i);
+	DEBUG_PRINT("realloc failed %d\n", i);
 	exit(-1);
       }
 #endif
@@ -273,7 +276,7 @@ void build_star(const struct model *raw_model, int v, struct ring_info *ring) {
 
   if (num_edges == 0) {
 #ifdef DEBUG
-    fprintf(stderr, "Vertex %d has no face...\n", v);
+    DEBUG_PRINT("Vertex %d has no face...\n", v);
 #endif
     ring->type = 0;
     ring->size = 0;
@@ -388,9 +391,9 @@ void build_star(const struct model *raw_model, int v, struct ring_info *ring) {
   ring->ord_face = (int*)malloc(n_faces*sizeof(int));
   memcpy(ring->ord_face, face_star, n_faces*sizeof(int));
 
-#ifdef __RING_DEBUG
-  printf("Vertex %d : star_size=%d num_edges=%d n_faces=%d\n", v, star_size, 
-	 num_edges, n_faces);
+#ifdef RING_DEBUG
+  DEUBG_PRINT("Vertex %d : star_size=%d num_edges=%d n_faces=%d\n", v, 
+              star_size, num_edges, n_faces);
   for (i=0; i<star_size; i++)
     printf("vertex %d \n", final_star[i]);
   for (i=0; i<n_faces; i++)

@@ -1,4 +1,4 @@
-/* $Id: model_in_smf.c,v 1.6 2002/11/04 15:42:57 aspert Exp $ */
+/* $Id: model_in_smf.c,v 1.7 2002/11/13 12:18:23 aspert Exp $ */
 
 
 /*
@@ -46,6 +46,9 @@
 
 #include <model_in.h>
 #include <block_list.h>
+#ifdef DEBUG
+# include <debug_print.h>
+#endif
 
 /* Reads a _triangular_ mesh from a SMF file (used by M. Garland's QSlim).
  * Only the vertices and faces are read. All other possible fields in
@@ -116,7 +119,7 @@ int read_smf_tmesh(struct model **tmesh_ref, struct file_data *data) {
       }
 
 #ifdef DEBUG
-      printf("[read_smf_tmesh] %f %f %f\n", x, y, z);
+      DEBUG_PRINT("%f %f %f\n", x, y, z);
 #endif
 
       ((vertex_t*)cur_vert->data)[cur_vert->elem_filled].x = x;
@@ -156,7 +159,7 @@ int read_smf_tmesh(struct model **tmesh_ref, struct file_data *data) {
         break;
       }
 #ifdef DEBUG
-      printf("[read_smf_tmesh] %d %d %d\n", f0, f1, f2);
+      DEBUG_PRINT("%d %d %d\n", f0, f1, f2);
 #endif
       /* Do not forget that SMF vertex indices start at 1 !! */
       ((face_t*)cur_face->data)[cur_face->elem_filled].f0 = --f0;

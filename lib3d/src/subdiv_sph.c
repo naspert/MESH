@@ -1,11 +1,18 @@
-/* $Id: subdiv_sph.c,v 1.11 2002/11/05 13:35:36 aspert Exp $ */
+/* $Id: subdiv_sph.c,v 1.12 2002/11/13 12:18:25 aspert Exp $ */
+#include <3dutils.h>
 #include <3dmodel.h>
 #include <normals.h>
 #include <geomutils.h>
 #include <subdiv_methods.h>
 #include <assert.h>
+#if defined(SUBDIV_SPH_DEBUG) || defined(DEBUG)
+# include <debug_print.h>
+#endif
 
 #define EPS 1e-10
+#define DEG(x) ((x)*180.0/M_PI)
+
+
 
 /* ph -> h(ph) */
 static float h(const float x) 
@@ -53,8 +60,8 @@ static void half_sph(const vertex_t *p,
   if (__norm_v(v) < EPS) {
     add_v(p, q, &np);
     prod_v(0.5, &np, vout);
-#ifdef __SUBDIV_SPH_DEBUG
-    printf("Ouch !!\n");
+#ifdef SUBDIV_SPH_DEBUG
+    DEBUG_PRINT("Ouch");
 #endif
     return;
   }
@@ -77,13 +84,14 @@ static void half_sph(const vertex_t *p,
   add_prod_v(dz, n, &np, &np);
   add_v(&np, p, vout);
 
-#ifdef __SUBDIV_SPH_DEBUG
+#ifdef SUBDIV_SPH_DEBUG
   printf("p = %f %f %f\n", p->x, p->y, p->z);
   printf("n = %f %f %f\n", n->x, n->y, n->z);
   printf("q = %f %f %f\n", q->x, q->y, q->z);
   printf("pl_off = %f\n", pl_off);
   printf("r = %f\n", r);
-  printf("th = %f\n", th*180.0/M_PI);
+  printf("th = %f\n", DEG(th));
+  printf("nth = %f\n", DEG(nth));
   printf("u.n + d = %f\n", scalprod_v(&u,n)+pl_off);
   printf("test %f %f %f\n", norm_v(&v), r*cos(th), norm_v(&v)-r*cos(th));
 #endif
@@ -107,7 +115,9 @@ void compute_midpoint_sph(const struct ring_info *rings, const int center,
   p = raw_model->vertices[center];
   vj = raw_model->vertices[center2];
   
-
+#ifdef SUBDIV_SPH_DEBUG
+  DEBUG_PRINT("Edge %d %d\n", center, center2);
+#endif
   half_sph(&p, &n, &vj, &np1);
 
 
@@ -117,7 +127,10 @@ void compute_midpoint_sph(const struct ring_info *rings, const int center,
   n = raw_model->normals[center2];
   p = raw_model->vertices[center2];
   vj = raw_model->vertices[center];
-  
+
+#ifdef SUBDIV_SPH_DEBUG
+  DEBUG_PRINT("Edge %d %d\n", center2, center);
+#endif
   half_sph(&p, &n, &vj, &np2);
 
   __add_v(np1, np2, np);

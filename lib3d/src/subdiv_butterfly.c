@@ -1,10 +1,12 @@
-/* $Id: subdiv_butterfly.c,v 1.7 2002/11/06 09:33:55 aspert Exp $ */
+/* $Id: subdiv_butterfly.c,v 1.8 2002/11/13 12:18:25 aspert Exp $ */
 
 #include <3dmodel.h>
 #include <normals.h>
 #include <geomutils.h>
 #include <subdiv_methods.h>
-#include <assert.h>
+#if defined(DEBUG) || defined(BOUNDARY_SUBDIV_DEBUG) || defined(SUBDIV_BUTTERFLY_DEBUG)
+# include <debug_print.h>
+#endif
 
 /* These are parameters for Butterfly subdivision */
 # define _2W_    0.0           /* w = 0.0 gives better results
@@ -61,20 +63,22 @@ void compute_midpoint_butterfly(const struct ring_info *rings,
 
 
 
-#ifdef __BOUNDARY_SUBDIV_DEBUG
-  printf("Subdiv edge %d %d\n", center, center2);
-  printf("n=%d m=%d\n", n, m);
+#ifdef BOUNDARY_SUBDIV_DEBUG
+  DEBUG_PRINT("Subdiv edge %d %d\n", center, center2);
+  DEBUG_PRINT("n=%d m=%d\n", n, m);
 #endif
 
-#ifdef __SUBDIV_BUTTERFLY_DEBUG
-  printf("Subdiv edge %d %d\n", center, center2);
-  printf("n=%d m=%d\n", n, m);
-  printf("center %d = %f %f %f\n", center,  raw_model->vertices[center].x, 
-	 raw_model->vertices[center].y, 
-	 raw_model->vertices[center].z);
-  printf("center2 %d = %f %f %f\n", center2, raw_model->vertices[center2].x, 
-	 raw_model->vertices[center2].y, 
-	 raw_model->vertices[center2].z);
+#ifdef SUBDIV_BUTTERFLY_DEBUG
+  DEBUG_PRINT("Subdiv edge %d %d\n", center, center2);
+  DEBUG_PRINT("n=%d m=%d\n", n, m);
+  DEBUG_PRINT("center %d = %f %f %f\n", center,  
+              raw_model->vertices[center].x, 
+              raw_model->vertices[center].y, 
+              raw_model->vertices[center].z);
+  DEBUG_PRINT("center2 %d = %f %f %f\n", center2, 
+              raw_model->vertices[center2].x, 
+              raw_model->vertices[center2].y, 
+              raw_model->vertices[center2].z);
 #endif
 
   if (n != 6 && m != 6) {/* double irreg */    
@@ -97,13 +101,14 @@ void compute_midpoint_butterfly(const struct ring_info *rings,
       __add_prod_v(s[j], raw_model->vertices[ring.ord_vert[(v1+j)%n]], p, 
                    p);
 
-#ifdef __SUBDIV_BUTTERFLY_DEBUG
-      printf("s[%d]=%f\n",j, s[j]);
-      printf("v = %f %f %f\n", raw_model->vertices[ring.ord_vert[(v1+j)%n]].x,
-	     raw_model->vertices[ring.ord_vert[(v1+j)%n]].y,
-	     raw_model->vertices[ring.ord_vert[(v1+j)%n]].z);
-      printf("idx = %d\n", (v1+j)%n);
-      printf("%d: p = %f %f %f\n", j,p.x, p.y, p.z);
+#ifdef SUBDIV_BUTTERFLY_DEBUG
+      DEBUG_PRINT("s[%d]=%f\n",j, s[j]);
+      DEBUG_PRINT("v = %f %f %f\n", 
+                  raw_model->vertices[ring.ord_vert[(v1+j)%n]].x,
+                  raw_model->vertices[ring.ord_vert[(v1+j)%n]].y,
+                  raw_model->vertices[ring.ord_vert[(v1+j)%n]].z);
+      DEBUG_PRINT("idx = %d\n", (v1+j)%n);
+      DEBUG_PRINT("%d: p = %f %f %f\n", j,p.x, p.y, p.z);
 #endif
     }
 

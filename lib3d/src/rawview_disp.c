@@ -1,6 +1,9 @@
-/* $Id: rawview_disp.c,v 1.7 2002/11/07 09:51:44 aspert Exp $ */
+/* $Id: rawview_disp.c,v 1.8 2002/11/13 12:18:25 aspert Exp $ */
 
 #include <rawview_misc.h>
+#ifdef DEBUG
+# include <debug_print.h>
+#endif
 
 #define CMAP_LENGTH 256
 void setGlColor(int vidx, float **cmap, 
@@ -92,8 +95,8 @@ void rebuild_list(struct gl_render_context *gl_ctx,
   
 
 #ifdef DEBUG
-  printf("dn = %d lm = %d nf = %d\n", gl_ctx->draw_normals, light_mode, 
-	 r_m->num_faces); 
+  DEBUG_PRINT("dn = %d lm = %d nf = %d\n", gl_ctx->draw_normals, light_mode, 
+              r_m->num_faces); 
 #endif
 
   if (gl_ctx->draw_spanning_tree == 1) {

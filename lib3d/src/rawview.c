@@ -1,4 +1,4 @@
-/* $Id: rawview.c,v 1.26 2002/11/12 12:26:28 aspert Exp $ */
+/* $Id: rawview.c,v 1.27 2002/11/13 12:18:24 aspert Exp $ */
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -13,6 +13,9 @@
 #include <subdiv.h>
 #include <subdiv_methods.h>
 #include <assert.h>
+#ifdef DEBUG
+# include <debug_print.h>
+#endif
 #include <stdarg.h>
 
 /* ****************** */
@@ -544,7 +547,7 @@ int main(int argc, char **argv) {
 
   int i, rcode=0;
   char *title;
-  const char s_title[]="Raw Mesh Viewer $Revision: 1.26 $ - ";
+  const char s_title[]="Raw Mesh Viewer $Revision: 1.27 $ - ";
   vertex_t center;
   struct model* raw_model;
 
@@ -589,10 +592,10 @@ int main(int argc, char **argv) {
 
   
 #ifdef DEBUG
-  printf("bbox_min = %f %f %f\n", raw_model->bBox[0].x, 
-	 raw_model->bBox[0].y, raw_model->bBox[0].z);
-  printf("bbox_max = %f %f %f\n", raw_model->bBox[1].x, 
-	 raw_model->bBox[1].y, raw_model->bBox[1].z);
+  DEBUG_PRINT("bbox_min = %f %f %f\n", raw_model->bBox[0].x, 
+              raw_model->bBox[0].y, raw_model->bBox[0].z);
+  DEBUG_PRINT("bbox_max = %f %f %f\n", raw_model->bBox[1].x, 
+              raw_model->bBox[1].y, raw_model->bBox[1].z);
 #endif
 
   add_v(&(raw_model->bBox[0]), &(raw_model->bBox[1]), &center);

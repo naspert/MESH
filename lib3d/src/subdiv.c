@@ -1,8 +1,11 @@
-/* $Id: subdiv.c,v 1.26 2002/11/07 09:51:44 aspert Exp $ */
+/* $Id: subdiv.c,v 1.27 2002/11/13 12:18:25 aspert Exp $ */
 #include <3dutils.h>
 #include <subdiv_methods.h>
 #include <subdiv.h>
 #include <assert.h>
+#if defined(SUBDIV_DEBUG) || defined(DEBUG)
+# include <debug_print.h>
+#endif
 
 /* This is the function that performs the subdivision.
    The argument 'midpoint_func' is the pointer to the 
@@ -53,8 +56,8 @@ struct model* subdiv(struct model *raw_model,
     memset(mp_info[i].midpoint_idx, 0xff, mp_info[i].size*sizeof(int));
     mp_info[i].midpoint = (vertex_t*)malloc(mp_info[i].size*sizeof(vertex_t));
       
-#ifdef __SUBDIV_DEBUG
-    printf("Vertex %d : star_size = %d\n", i, rings[i].size);
+#ifdef SUBDIV_DEBUG
+    DEBUG_PRINT("Vertex %d : star_size = %d\n", i, rings[i].size);
     for (j=0; j<rings[i].size; j++)
       printf("number %d : %d\n", j, rings[i].ord_vert[j]);
 #endif
@@ -90,19 +93,19 @@ struct model* subdiv(struct model *raw_model,
       mp_info[v2].midpoint_idx[v0] = v_idx++;
       mp_info[v2].midpoint[v0] = p;
 
-#ifdef __SUBDIV_DEBUG
-        printf("i=%d j=%d  rings[%d].ord_vert[%d]=%d\n",i,j, 
+#ifdef SUBDIV_DEBUG
+        DEBUG_PRINT("i=%d j=%d  rings[%d].ord_vert[%d]=%d\n",i,j, 
                i, j, rings[i].ord_vert[j]);
-        printf("nedges-1=%d\n",nedges-1);
+        DEBUG_PRINT("nedges-1=%d\n",nedges-1);
 #endif
     }
 
   }
 
 
-#ifdef SUBDIV_VERB
-  printf("%d new vertices computed \n", nedges);
-  printf("subdiv_model->num_vert = %d\n", nedges+raw_model->num_vert);
+#ifdef SUBDIV_DEBUG
+  DEBUG_PRINT("%d new vertices computed \n", nedges);
+  DEBUG_PRINT("subdiv_model->num_vert = %d\n", nedges+raw_model->num_vert);
 #endif
   subdiv_model = (struct model*)malloc(sizeof(struct model));
   memset(subdiv_model, 0, sizeof(struct model));
@@ -173,8 +176,8 @@ struct model* subdiv(struct model *raw_model,
 
   }
 
-#ifdef SUBDIV_VERB
-  printf("face_idx = %d vert_idx = %d\n", face_idx, vert_idx);
+#ifdef SUBDIV_DEBUG
+  DEBUG_PRINT("face_idx = %d vert_idx = %d\n", face_idx, vert_idx);
 #endif
   temp_face = (face_t*)malloc(face_idx*sizeof(face_t));
   memcpy(temp_face, subdiv_model->faces, face_idx*sizeof(face_t));

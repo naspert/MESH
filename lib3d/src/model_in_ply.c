@@ -1,4 +1,4 @@
-/* $Id: model_in_ply.c,v 1.17 2002/10/17 14:51:29 aspert Exp $ */
+/* $Id: model_in_ply.c,v 1.18 2002/11/13 12:18:23 aspert Exp $ */
 
 
 /*
@@ -65,7 +65,9 @@
 #include <model_in.h>
 #include <types.h>
 #include <model_in_ply.h>
-
+#if defined(DEBUG) || defined(LL_DEBUG)
+# include <debug_print.h>
+#endif
 
 
 /* Just a small wrapper : skip all whitespace chars and read the
@@ -120,7 +122,7 @@ static int skip_bytes(struct file_data *data, const size_t nbytes)
     }
   }
 #ifdef DEBUG
-  printf("[skip_bytes] Skipped %d bytes\n", nbytes);
+  DEBUG_PRINT("Skipped %d bytes\n", nbytes);
 #endif
   return rcode;
 }
@@ -159,7 +161,7 @@ static int read_uint16(struct file_data *data, const int swap_bytes,
   if (rcode >= 0)
     *out = tmp.bo ;
 #ifdef DEBUG
-  printf("[read_uint16] read %d\n", tmp.bo);
+  DEBUG_PRINT("read %d\n", tmp.bo);
 #endif
   return rcode;
 }
@@ -195,7 +197,7 @@ static int read_int16(struct file_data *data, const int swap_bytes,
   if (rcode >= 0)
     *out = tmp.bo ;
 #ifdef DEBUG
-  printf("[read_int16] read %d\n", tmp.bo);
+  DEBUG_PRINT("read %d\n", tmp.bo);
 #endif
   return rcode;
 }
@@ -230,7 +232,7 @@ static int read_uint32(struct file_data *data, const int swap_bytes,
   if (rcode >= 0)
     *out = tmp.bo ;
 #ifdef DEBUG
-  printf("[read_uint32] read %d\n", tmp.bo);
+  DEBUG_PRINT("read %d\n", tmp.bo);
 #endif
   return rcode;
 }
@@ -265,7 +267,7 @@ static int read_int32(struct file_data *data, const int swap_bytes,
   if (rcode >= 0)
     *out = tmp.bo ;
 #ifdef DEBUG
-  printf("[read_int32] read %d\n", tmp.bo);
+  DEBUG_PRINT("read %d\n", tmp.bo);
 #endif
   return rcode;
 }
@@ -286,7 +288,7 @@ static int read_float32(struct file_data *data, const int swap_bytes,
         break;
       }
 #ifdef LL_DEBUG
-      printf("[read_float32] c[%d] = %d\n", i, c);
+      DEBUG_PRINT("c[%d] = %d\n", i, c);
 #endif
       tmp.bs[i] = (t_uint8)c;
     }
@@ -298,7 +300,7 @@ static int read_float32(struct file_data *data, const int swap_bytes,
         break;
       }
 #ifdef LL_DEBUG
-      printf("[read_float32] c[%d] = %d\n", i, c);
+      DEBUG_PRINT("c[%d] = %d\n", i, c);
 #endif
       tmp.bs[i] = (t_uint8)c;
     }
@@ -307,7 +309,7 @@ static int read_float32(struct file_data *data, const int swap_bytes,
   if (rcode >= 0)
     *out = tmp.bo ;
 #ifdef DEBUG
-  printf("[read_float32] read %f\n", tmp.bo);
+  DEBUG_PRINT("read %f\n", tmp.bo);
 #endif
 
   return rcode;
@@ -343,7 +345,7 @@ static int read_float64(struct file_data *data, const int swap_bytes,
   if (rcode >= 0)
     *out = tmp.bo ;
 #ifdef DEBUG
-  printf("[read_float64] read %f\n", tmp.bo);
+  DEBUG_PRINT("read %f\n", tmp.bo);
 #endif
   return rcode;
 }
@@ -554,7 +556,7 @@ static int read_ply_faces(face_t *faces, struct file_data *data,
 	  }
           if (nvert != 3) { /* Non triangular mesh -> bail out */
 #ifdef DEBUG
-            printf("[read_bin_ply_faces] found a %d face\n", nvert);
+            DEBUG_PRINT("found a %d face\n", nvert);
 #endif
             rcode = MESH_NOT_TRIAG;
             break;
@@ -749,10 +751,9 @@ int read_ply_tmesh(struct model **tmesh_ref, struct file_data *data)
               n_vert_prop = read_properties(data, &vertex_prop);
               if (n_vert_prop <= 0)
                 rcode = MESH_CORRUPTED;
-
+              
 #ifdef DEBUG
-              fprintf(stderr, "[read_ply_tmesh] num_vert = %d\n", 
-                      tmesh->num_vert);
+              DEBUG_PRINT("num_vert = %d\n", tmesh->num_vert);
 #endif
             }
           } else if (strcmp(stmp, "face") == 0) {
@@ -764,8 +765,7 @@ int read_ply_tmesh(struct model **tmesh_ref, struct file_data *data)
                 rcode = MESH_CORRUPTED;
 
 #ifdef DEBUG
-              fprintf(stderr, "[read_ply_tmesh] num_faces = %d\n", 
-                      tmesh->num_faces);
+              DEBUG_PRINT("num_faces = %d\n", tmesh->num_faces);
 #endif
             }
           } else if (strcmp(stmp, "edge") == 0) {

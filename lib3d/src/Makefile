@@ -1,7 +1,10 @@
-# $Id: Makefile,v 1.51 2002/11/07 07:53:23 aspert Exp $
+# $Id: Makefile,v 1.52 2002/11/13 12:18:22 aspert Exp $
 
 #Set PROFILE to something to enable profiling
 #PROFILE=1
+
+#Set DEBUG to something to enable debug prints
+#DEBUG=1
 
 OS := $(shell uname -s)
 ARCH := $(shell uname -m)
@@ -13,12 +16,11 @@ BASE_LIBFLAGS = -lm -lz
 TARGETS = torus cone dirac compare_curv
 GSL_TARGETS = maps_lsq
 ifeq ($(OS), Linux)
-CC = gcc3
+CC = gcc
 PROF_FLAGS = -pg
-XTRA_CFLAGS = -g -pipe -ansi -pedantic -Wall -DREAD_TIME  -W -Winline \
+XTRA_CFLAGS = -g -pipe -ansi -Wall -DREAD_TIME  -W -Winline \
 	-Wmissing-prototypes -Wstrict-prototypes -Wnested-externs \
-	-Wshadow -Waggregate-return  -Wno-unused  #-DDEBUG \
-	-D__BUTTERFLY_CREASE_DEBUG -DDONT_USE_ZLIB
+	-Wshadow -Waggregate-return  -Wno-unused 
 
 
 GL_VENDOR := $(shell $(GLXINFO)|grep "OpenGL vendor"|cut -d\: -f2|cut -d\  -f2)
@@ -65,6 +67,12 @@ XTRA_CFLAGS += -O2
 ifdef PROFILE
 XTRA_CFLAGS += $(PROF_FLAGS)
 BASE_LIBFLAGS += $(PROF_FLAGS)
+endif
+
+ifdef DEBUG
+XTRA_CFLAGS += -DDEBUG -DSUBDIV_DEBUG -DSUBDIV_SPH_DEBUG -DNORM_DEBUG -DNORM_DEBUG_BFS
+else
+XTRA_CFLAGS += -pedantic
 endif
 
 BASE_CFLAGS = $(INCLFLAGS) $(XTRA_CFLAGS) 
