@@ -183,7 +183,7 @@ void lsq_fit(struct model *raw_model, struct ring_info *rings,
 
 
 
-void compute_curvature(struct model *raw_model) {
+void compute_curvature_lsq(struct model *raw_model) {
   int i;
   struct info_vertex *curv;
   struct ring_info *rings;
@@ -240,7 +240,7 @@ int main(int argc, char **argv) {
   printf("Model read\n");
 
 
-  compute_curvature(raw_model); 
+  compute_curvature_lsq(raw_model); 
   
   
   __free_raw_model(raw_model);
