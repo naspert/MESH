@@ -1,4 +1,4 @@
-/* $Id: ScreenWidget.h,v 1.12 2001/10/10 12:57:55 aspert Exp $ */
+/* $Id: ScreenWidget.h,v 1.13 2001/11/06 10:15:38 dsanta Exp $ */
 #ifndef SCREENWIDGET_H
 #define SCREENWIDGET_H
 
@@ -16,11 +16,6 @@
 #include <qtoolbar.h>
 #include <qbuttongroup.h>
 #include <qradiobutton.h>
-
-
-#include <RawWidget.h>
-#include <ColorMapWidget.h>
-#include <compute_error.h>
 
 
 class ScreenWidget : public QWidget {

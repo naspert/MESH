@@ -1,6 +1,9 @@
-/* $Id: ScreenWidget.cpp,v 1.22 2001/10/25 12:30:45 aspert Exp $ */
+/* $Id: ScreenWidget.cpp,v 1.23 2001/11/06 10:15:37 dsanta Exp $ */
 #include <ScreenWidget.h>
 
+#include <RawWidget.h>
+#include <ColorMapWidget.h>
+#include <compute_error.h>
 
 
 ScreenWidget::ScreenWidget(struct model_error *model1,
@@ -99,7 +102,6 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
 
   // Build synchro and quit buttons
   syncBut = new QPushButton("Synchronize viewpoints", this);
-  syncBut->setMinimumSize(40, 30);
   syncBut->setToggleButton(TRUE);
 
   connect(syncBut, SIGNAL(toggled(bool)), 
@@ -110,7 +112,6 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   connect(glModel2, SIGNAL(toggleSync()),syncBut, SLOT(toggle()));
 
   quitBut = new QPushButton("Quit", this);
-  quitBut->setMinimumSize(20, 30);
   connect(quitBut, SIGNAL(clicked()), this, SLOT(close()));
 
 
