@@ -1,4 +1,4 @@
-/* $Id: ScreenWidget.cpp,v 1.33 2002/02/24 20:18:35 dsanta Exp $ */
+/* $Id: ScreenWidget.cpp,v 1.34 2002/02/25 07:12:30 dsanta Exp $ */
 #include <ScreenWidget.h>
 
 #include <qhbox.h>
@@ -28,7 +28,7 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   QButtonGroup *radGrp=NULL, *histoGrp=NULL;
   QSpinBox *qsbDownsampling;
   QLabel *qlabDownsampling;
-  const float p = 0.95; // max proportion of screen to use
+  const float p = 0.95f; // max proportion of screen to use
   int max_ds; // maximum downsampling value
   int i;
 
@@ -146,10 +146,10 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   qsbDownsampling->setValue(max_ds);
   
   // Build scale selection buttons
-  histoGrp = new QVButtonGroup("Histogram scale",this);
+  histoGrp = new QVButtonGroup("X axis",this);
   linBut = new QRadioButton("Linear", histoGrp);
   linBut->setChecked(TRUE);
-  logBut = new QRadioButton("Logarithmic", histoGrp);
+  logBut = new QRadioButton("Log", histoGrp);
   histoGrp->insert(linBut, ColorMapWidget::LIN_SCALE);
   histoGrp->insert(logBut, ColorMapWidget::LOG_SCALE);
   connect(histoGrp, SIGNAL(clicked(int)), 
