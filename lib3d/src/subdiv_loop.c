@@ -1,4 +1,4 @@
-/* $Id: subdiv_loop.c,v 1.6 2003/03/04 16:39:26 aspert Exp $ */
+/* $Id: subdiv_loop.c,v 1.7 2003/04/28 06:20:08 aspert Exp $ */
 #include <3dmodel.h>
 #include <normals.h>
 #include <geomutils.h>
@@ -7,7 +7,9 @@
 
 void compute_midpoint_loop(const struct ring_info *rings, const int center, 
                            const int v1, 
-			   const struct model *raw_model, vertex_t *vout) 
+			   const struct model *raw_model, 
+			   float (*h_func)(const float),
+			   vertex_t *vout) 
 {
 
   vertex_t np, tmp;
@@ -37,6 +39,7 @@ void compute_midpoint_loop(const struct ring_info *rings, const int center,
 void compute_midpoint_loop_crease(const struct ring_info *rings, 
                                   const int center,  
 				  const int v1, const struct model *raw_model, 
+				  float (*h_func)(const float),
 				  vertex_t *vout) {
   int n = rings[center].size, m;
   struct ring_info ring = rings[center];
@@ -55,7 +58,7 @@ void compute_midpoint_loop_crease(const struct ring_info *rings,
     return;
   } else if (ring.type == 1) { /* only one-half-boundary vertex */
     if (n < 7) {
-      compute_midpoint_loop(rings, center, v1, raw_model, &p);
+      compute_midpoint_loop(rings, center, v1, raw_model, h_func, &p);
       *vout = p;
       return;
     } else {
@@ -69,7 +72,7 @@ void compute_midpoint_loop_crease(const struct ring_info *rings,
      } 
   } else {/* ring_op.type == 1 */
     if (m < 7) {
-      compute_midpoint_loop(rings, center2, v2, raw_model, &p);
+      compute_midpoint_loop(rings, center2, v2, raw_model, h_func, &p);
       *vout = p;
       return;
     } else {

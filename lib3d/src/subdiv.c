@@ -1,4 +1,4 @@
-/* $Id: subdiv.c,v 1.37 2003/03/28 12:30:08 aspert Exp $ */
+/* $Id: subdiv.c,v 1.38 2003/04/28 06:20:08 aspert Exp $ */
 #include <3dutils.h>
 #include <subdiv_methods.h>
 #include <subdiv.h>
@@ -47,7 +47,8 @@ struct model* subdiv(struct model *raw_model,
   build_star_global(raw_model, rings);
 
   /* Spherical subdivision needs to have normals computed */
-  if (raw_model->normals == NULL && sf->id == SUBDIV_SPH) {
+  if (raw_model->normals == NULL && 
+      (sf->id == SUBDIV_SPH_OR || sf->id == SUBDIV_SPH_ALT)) {
       raw_model->area = (float*)malloc(raw_model->num_faces*sizeof(float));
       raw_model->face_normals = compute_face_normals(raw_model, rings);
       compute_vertex_normal(raw_model, rings, raw_model->face_normals);
@@ -112,10 +113,10 @@ struct model* subdiv(struct model *raw_model,
 
     /* edge v0v1 */
     if (!BITMAP_TEST_BIT(mp_info[v0].edge_subdiv_done, i0)) {
-      if (rings[v0].type == 1 || rings[v1].type == 1)
-        sf->midpoint_func_bound(rings, v0, i0, raw_model, &p);
+      if (rings[v0].type == 1 || rings[v1].type == 1) 
+        sf->midpoint_func_bound(rings, v0, i0, raw_model, sf->h_func,  &p);
       else
-        sf->midpoint_func(rings, v0, i0, raw_model, &p);
+        sf->midpoint_func(rings, v0, i0, raw_model, sf->h_func, &p);
       nedges++;
       BITMAP_SET_BIT(mp_info[v0].edge_subdiv_done, i0);
       BITMAP_SET_BIT(mp_info[v1].edge_subdiv_done, u0);
@@ -134,9 +135,9 @@ struct model* subdiv(struct model *raw_model,
     /* edge v1v2 */
     if (!BITMAP_TEST_BIT(mp_info[v1].edge_subdiv_done, i1)) {
       if (rings[v1].type == 1 || rings[v2].type == 1)
-        sf->midpoint_func_bound(rings, v1, i1, raw_model, &p);
+        sf->midpoint_func_bound(rings, v1, i1, raw_model, sf->h_func, &p);
       else
-        sf->midpoint_func(rings, v1, i1, raw_model, &p);
+        sf->midpoint_func(rings, v1, i1, raw_model, sf->h_func, &p);
       nedges++;
       BITMAP_SET_BIT(mp_info[v1].edge_subdiv_done, i1);
       BITMAP_SET_BIT(mp_info[v2].edge_subdiv_done, u1);
@@ -152,9 +153,9 @@ struct model* subdiv(struct model *raw_model,
     /* edge v2v0 */
     if (!BITMAP_TEST_BIT(mp_info[v2].edge_subdiv_done, i2)) {
       if (rings[v2].type == 1 || rings[v0].type == 1)
-        sf->midpoint_func_bound(rings, v2, i2, raw_model, &p);
+        sf->midpoint_func_bound(rings, v2, i2, raw_model, sf->h_func, &p);
       else
-        sf->midpoint_func(rings, v2, i2, raw_model, &p);
+        sf->midpoint_func(rings, v2, i2, raw_model, sf->h_func, &p);
       nedges++;
       BITMAP_SET_BIT(mp_info[v2].edge_subdiv_done, i2);
       BITMAP_SET_BIT(mp_info[v0].edge_subdiv_done, u2);

@@ -1,4 +1,4 @@
-/* $Id: subdiv_methods.h,v 1.18 2003/03/24 12:16:37 aspert Exp $ */
+/* $Id: subdiv_methods.h,v 1.19 2003/04/28 06:20:08 aspert Exp $ */
 #include <3dmodel.h>
 #include <ring.h>
 
@@ -8,8 +8,9 @@
 
 /* Identifier for subdivision method */
 # define SUBDIV_BUTTERFLY          0x01
-# define SUBDIV_SPH                0x02
-# define SUBDIV_LOOP               0x03
+# define SUBDIV_LOOP               0x02
+# define SUBDIV_SPH_OR             0x03
+# define SUBDIV_SPH_ALT            0x04
 # define SUBDIV_KOB_SQRT3          0x11
 
 # ifdef __cplusplus
@@ -17,29 +18,37 @@ extern "C" {
 # endif
 
   /* spherical subdivision */
+  float h_orig(const float);
+  float h_alt(const float);
   void compute_midpoint_sph(const struct ring_info*, const int, const int, 
-                            const struct model*, vertex_t*);
+                            const struct model*, 
+			    float (*h_func)(const float),
+			    vertex_t*);
   void compute_midpoint_sph_crease(const struct ring_info*, const int, 
                                    const int, const struct model*,
+				   float (*h_func)(const float),
                                    vertex_t*);
 
   /* Butterfly subdivision */
   void compute_midpoint_butterfly(const struct ring_info*, const int, 
                                   const int, const struct model*, 
+				  float (*h_func)(const float),
 				  vertex_t*);
   void compute_midpoint_butterfly_crease(const struct ring_info*, const int, 
-                                         const int, const struct model*, 
+                                         const int, const struct model*,
+					 float (*h_func)(const float),
                                          vertex_t*);
 
 
   /* Loop subdivision */
   void compute_midpoint_loop(const struct ring_info*, const int, const int, 
-                             const struct model*, vertex_t*);
+                             const struct model*, 
+			     float (*h_func)(const float), vertex_t*);
   void update_vertices_loop(const struct model*, struct model*, 
                             const struct ring_info*);
-
   void compute_midpoint_loop_crease(const struct ring_info*, const int, 
                                     const int, const struct model*,
+				    float (*h_func)(const float),
 				    vertex_t*);
 
   /* kobbelt-sqrt3 subdivision */

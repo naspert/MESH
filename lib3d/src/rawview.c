@@ -1,4 +1,4 @@
-/* $Id: rawview.c,v 1.40 2003/04/08 13:52:39 aspert Exp $ */
+/* $Id: rawview.c,v 1.41 2003/04/28 06:20:08 aspert Exp $ */
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -28,7 +28,8 @@ static struct gl_render_context gl_ctx;
 /* Subdiv functions structure */
 static struct subdiv_methods sm = { BUTTERFLY_SUBDIV_FUNCTIONS,
                                     LOOP_SUBDIV_FUNCTIONS,
-                                    SPHERICAL_SUBDIV_FUNCTIONS,
+                                    SPHERICAL_OR_SUBDIV_FUNCTIONS,
+				    SPHERICAL_ALT_SUBDIV_FUNCTIONS,
                                     KOBBELTSQRT3_SUBDIV_FUNCTIONS };
 
 /* storage for mouse stuff */
@@ -210,6 +211,33 @@ static void norm_key_pressed(unsigned char key, int x, int y)
 
 
   switch(key) {
+  case 'a':
+  case 'A':
+    verbose_printf(gl_ctx.verbose, "Spherical (h_alt) subdivision...\n");
+    if (!gl_ctx.normals_done) {
+      if (!do_normals(gl_ctx.raw_model, gl_ctx.verbose)) 
+        gl_ctx.normals_done = 1;
+      else {
+        fprintf(stderr, "Unable to compute normals ...\n");
+        break;
+      }
+    }
+    sub_model = subdiv(gl_ctx.raw_model, &(sm.spherical_alt));
+    if (sub_model != NULL) {
+      sub_model->bBox[0] = gl_ctx.raw_model->bBox[0];
+      sub_model->bBox[1] = gl_ctx.raw_model->bBox[1];
+      __free_raw_model(gl_ctx.raw_model);
+      gl_ctx.normals_done = 0;
+      gl_ctx.curv_done = 0;
+      gl_ctx.disp_curv = 0;
+      gl_ctx.draw_normals = 0;
+      set_light_off();
+      gl_ctx.raw_model = sub_model;
+      rebuild_list(&gl_ctx, &dl_idx);
+      glutPostRedisplay();
+    } else 
+      fprintf(stderr, "Spherical (h_alt) subdivision failed\n");
+    break;
   case 'b':
   case 'B':
     verbose_printf(gl_ctx.verbose, "Butterfly subdivision...\n");
@@ -339,7 +367,7 @@ static void norm_key_pressed(unsigned char key, int x, int y)
     break;
   case 's':
   case 'S':
-    verbose_printf(gl_ctx.verbose, "Spherical subdivision...\n");
+    verbose_printf(gl_ctx.verbose, "Spherical (h_or) subdivision...\n");
     if (!gl_ctx.normals_done) {
       if (!do_normals(gl_ctx.raw_model, gl_ctx.verbose)) 
         gl_ctx.normals_done = 1;
@@ -348,7 +376,7 @@ static void norm_key_pressed(unsigned char key, int x, int y)
         break;
       }
     }
-    sub_model = subdiv(gl_ctx.raw_model, &(sm.spherical));
+    sub_model = subdiv(gl_ctx.raw_model, &(sm.spherical_or));
     if (sub_model != NULL) {
       sub_model->bBox[0] = gl_ctx.raw_model->bBox[0];
       sub_model->bBox[1] = gl_ctx.raw_model->bBox[1];
@@ -362,7 +390,7 @@ static void norm_key_pressed(unsigned char key, int x, int y)
       rebuild_list(&gl_ctx, &dl_idx);
       glutPostRedisplay();
     } else 
-      fprintf(stderr, "Loop subdivision failed\n");
+      fprintf(stderr, "Spherical (h_or) subdivision failed\n");
     break;
   default:
     break;
@@ -386,6 +414,7 @@ static void sp_key_pressed(int key, int x, int y)
     fprintf(stderr, "\n***********************\n");
     fprintf(stderr, "* Rawview    -   Help *\n");
     fprintf(stderr, "***********************\n\n");
+    fprintf(stderr, "a/A      :\tPerforms Spherical (h_alt) subdivision\n\n");
     fprintf(stderr, "b/B      :\tPerforms Butterfly subdivision\n");
     fprintf(stderr, "d/D      :\tSaves the viewing coordinates in a file (coordxxx.mat)\n");
     fprintf(stderr, "g/G      :\tDisplay Gaussian curvature\n");
@@ -393,7 +422,7 @@ static void sp_key_pressed(int key, int x, int y)
     fprintf(stderr, "k/K      :\tPerforms Kobbelt-sqrt3 subdivision\n");
     fprintf(stderr, "l/L      :\tPerforms Loop subdivision\n");
     fprintf(stderr, "m/M      :\tDisplays mean curvature\n");
-    fprintf(stderr, "s/S      :\tPerforms Spherical subdivision\n\n");
+    fprintf(stderr, "s/S      :\tPerforms Spherical (h_or) subdivision\n\n");
     fprintf(stderr, "F1       :\tDisplays this help\n");
     fprintf(stderr, "F2       :\tToggles lighted/wireframe mode\n");
     fprintf(stderr, "F3       :\tInvert normals (if any)\n");
@@ -595,7 +624,7 @@ int main(int argc, char **argv)
 
   int i, rcode=0;
   char *title=NULL;
-  const char s_title[]="Raw Mesh Viewer $Revision: 1.40 $ - ";
+  const char s_title[]="Raw Mesh Viewer $Revision: 1.41 $ - ";
   vertex_t center;
   struct model* raw_model;
 

@@ -1,4 +1,4 @@
-/* $Id: subdiv_main.c,v 1.11 2003/03/27 09:52:10 aspert Exp $ */
+/* $Id: subdiv_main.c,v 1.12 2003/04/28 06:20:08 aspert Exp $ */
 #include <3dutils.h>
 #include <subdiv.h>
 #include <subdiv_methods.h>
@@ -9,8 +9,10 @@ int main(int argc, char **argv) {
   struct model *or_model, *sub_model=NULL;
   int lev, nlev=1, rcode, nonopt_argc=1;
   int sub_method=-1, use_binary=0;
-  struct subdiv_methods sm={BUTTERFLY_SUBDIV_FUNCTIONS, LOOP_SUBDIV_FUNCTIONS,
-                            SPHERICAL_SUBDIV_FUNCTIONS, 
+  struct subdiv_methods sm={BUTTERFLY_SUBDIV_FUNCTIONS, 
+			    LOOP_SUBDIV_FUNCTIONS,
+                            SPHERICAL_OR_SUBDIV_FUNCTIONS, 
+			    SPHERICAL_ALT_SUBDIV_FUNCTIONS,
                             KOBBELTSQRT3_SUBDIV_FUNCTIONS};
   
 
@@ -18,7 +20,7 @@ int main(int argc, char **argv) {
   
   if (argc < 4 || argc > 6) {
     fprintf(stderr, 
-	    "Usage: subdiv [-sph, -but, -loop, -ksqrt3][-bin]"
+	    "Usage: subdiv [-sph_or, -sph_alt, -but, -loop, -ksqrt3][-bin]"
             " infile outfile n_lev\n");
     exit(1);
   }
@@ -27,9 +29,13 @@ int main(int argc, char **argv) {
 #ifdef DEBUG
     printf("argv[%d] = %s\n", nonopt_argc, argv[nonopt_argc]);
 #endif
-    if (strcmp(argv[nonopt_argc], "-sph") == 0) {
-      tmp_func = &(sm.spherical);
-      sub_method = SUBDIV_SPH;
+    if (strcmp(argv[nonopt_argc], "-sph_or") == 0) {
+      tmp_func = &(sm.spherical_or);
+      sub_method = SUBDIV_SPH_OR;
+    }
+    else if (strcmp(argv[nonopt_argc], "-sph_alt") == 0) {
+      tmp_func = &(sm.spherical_alt);
+      sub_method = SUBDIV_SPH_ALT;
     }
     else if (strcmp(argv[nonopt_argc], "-but") == 0) {
       tmp_func = &(sm.butterfly);
