@@ -1,4 +1,4 @@
-/* $Id: rawview3.c,v 1.25 2001/11/12 13:31:31 aspert Exp $ */
+/* $Id: rawview3.c,v 1.26 2001/11/23 13:49:03 aspert Exp $ */
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -9,25 +9,30 @@
 #include <3dutils.h>
 #include <image.h>
 #include <gl2ps.h>
+#include <assert.h>
 
 /* display normals with length=5% of the bounding box */
-#define NORMALS_DISPLAY_FACTOR 0.05 
+#define NORMALS_DISPLAY_FACTOR 5.0e-2 
 /* step for rotation motion */
 #define ANGLE_STEP 0.5
 /* step for forward/backward motion */
-#define TRANSL_STEP 1e-2
+#define TRANSL_STEP 1.0e-2
+/* Field of view (in degrees) */
+#define FOV 40.0
 
 /* ****************** */
 /* Useful Global vars */
 /* ****************** */
-GLfloat FOV = 40.0; /* vertical field of view */
+
 GLfloat distance, dstep; /* distance and incremental distance step */
 GLdouble mvmatrix[16]; /* Buffer for GL_MODELVIEW_MATRIX */
+
+#ifdef __USE_DISPLAY_LISTS_
 GLuint model_list = 0; /* display lists idx storage */
 GLuint normal_list = 0;
-GLuint char_list = 0;
 GLuint tree_list = 0;
-
+#endif
+GLuint char_list = 0; /* those ones do not eat all the mem. with NV cards */
 
 int oldx, oldy;
 int left_button_state;
@@ -47,6 +52,7 @@ struct model *raw_model;
 char *in_filename;
 int grab_number = 0;
 int ps_number = 0;
+
 
 struct model *r_model;
 
@@ -199,34 +205,35 @@ void rebuild_list(struct model *raw_model) {
   vertex_t center1, center2;
   face_t *cur_face2;
   int j, face1=-1, face2=-1;
-
-
+  
+#ifdef __USE_DISPLAY_LISTS_
   /* delete all lists */
   if (glIsList(model_list) == GL_TRUE)
     glDeleteLists(model_list, 1);
-
+  
   if (glIsList(normal_list) == GL_TRUE)
     glDeleteLists(normal_list, 1);
-
+  
   if (glIsList(char_list) == GL_TRUE)
     glDeleteLists(char_list, 256);
-
+  
   if (glIsList(tree_list) == GL_TRUE)
     glDeleteLists(tree_list, 1);
-
+  
   /* create display lists indices */
   model_list = glGenLists(1);
   if (draw_spanning_tree)
     tree_list = glGenLists(1);
-
+  
   if (draw_normals)
     normal_list = glGenLists(1);
-
+#endif
+  
   if (draw_vtx_labels) {
     char_list = glGenLists(256);
     if (char_list == 0)
       printf("Unable to create char_list\n");
-
+    
     for (i=32; i<127; i++) { /* build display lists for labels */
       glNewList(char_list+i, GL_COMPILE);
       glutBitmapCharacter(GLUT_BITMAP_8_BY_13, i);
@@ -234,8 +241,18 @@ void rebuild_list(struct model *raw_model) {
     }
   }
 
+
   /* Get the state of the lighting */
   light_mode = glIsEnabled(GL_LIGHTING);
+  if (light_mode && !glIsEnabled(GL_NORMAL_ARRAY)) {
+    glEnableClientState(GL_NORMAL_ARRAY);
+    glNormalPointer(GL_FLOAT, 0, (float*)(raw_model->normals));
+  }
+  if (!glIsEnabled(GL_VERTEX_ARRAY)) {
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glVertexPointer(3, GL_FLOAT, 0, (float*)(raw_model->vertices));
+  }
+  
 
 #ifdef DEBUG
   printf("dn = %d lm = %d nf = %d\n", draw_normals, light_mode, 
@@ -244,140 +261,92 @@ void rebuild_list(struct model *raw_model) {
   
 
   if (draw_spanning_tree == 1) {
+#ifdef __USE_DISPLAY_LISTS_
     glNewList(tree_list, GL_COMPILE);
+#endif
     glColor3f(1.0, 1.0, 0.0);
     glBegin(GL_LINES);
     for (j=0; j<raw_model->num_faces; j++) {
       face1 = (raw_model->tree)[j]->face_idx;
       cur_face = &(raw_model->faces[face1]);
-      add3_sc_v(1.0/3.0, &(raw_model->vertices[cur_face->f0]), 
-		&(raw_model->vertices[cur_face->f0]), 
-		&(raw_model->vertices[cur_face->f0]), &center1);
+      add3_sc_v(0.333, &(raw_model->vertices[cur_face->f0]), 
+		&(raw_model->vertices[cur_face->f1]), 
+		&(raw_model->vertices[cur_face->f2]), &center1);
       if ((raw_model->tree)[j]->left != NULL) {
 	face2 = ((raw_model->tree)[j]->left)->face_idx;
 	cur_face2 = &(raw_model->faces[face2]);
-	add3_sc_v(1.0/3.0, &(raw_model->vertices[cur_face2->f0]), 
-		  &(raw_model->vertices[cur_face2->f0]), 
-		  &(raw_model->vertices[cur_face2->f0]), &center2);
-	glVertex3f(center1.x, center1.y, center1.z);
-	glVertex3f(center2.x, center2.y, center2.z);
+	add3_sc_v(0.333, &(raw_model->vertices[cur_face2->f0]), 
+		  &(raw_model->vertices[cur_face2->f1]), 
+		  &(raw_model->vertices[cur_face2->f2]), &center2);
+	glVertex3fv((float*)(&center1));
+	glVertex3fv((float*)(&center2));
 
       }
       if ((raw_model->tree)[j]->right != NULL) {
 	face2 = ((raw_model->tree)[j]->right)->face_idx;
 	cur_face2 = &(raw_model->faces[face2]);
-	add3_sc_v(1.0/3.0, &(raw_model->vertices[cur_face2->f0]), 
-		  &(raw_model->vertices[cur_face2->f0]), 
-		  &(raw_model->vertices[cur_face2->f0]), &center2);
-	glVertex3f(center1.x, center1.y, center1.z);
-	glVertex3f(center2.x, center2.y, center2.z);
+	add3_sc_v(0.333, &(raw_model->vertices[cur_face2->f0]), 
+		  &(raw_model->vertices[cur_face2->f1]), 
+		  &(raw_model->vertices[cur_face2->f2]), &center2);
+	glVertex3fv((float*)(&center1));
+	glVertex3fv((float*)(&center2));
 
       }
     }
     glEnd();
     glColor3f(1.0, 1.0, 1.0);
+#ifdef __USE_DISPLAY_LISTS_
     glEndList();
+#endif
 
   }
 
-  if (light_mode == GL_FALSE) { /* Store a wireframe model */
-    glNewList(model_list, GL_COMPILE);
-    if (tr_mode == 1)
-      glBegin(GL_TRIANGLES);
-    else 
-      glBegin(GL_POINTS);
-    for (i=0; i<raw_model->num_faces; i++) {
-      cur_face = &(raw_model->faces[i]);
-      glVertex3f(raw_model->vertices[cur_face->f0].x,
-		 raw_model->vertices[cur_face->f0].y,
-		 raw_model->vertices[cur_face->f0].z); 
-
-      glVertex3f(raw_model->vertices[cur_face->f1].x,
-		 raw_model->vertices[cur_face->f1].y,
-		 raw_model->vertices[cur_face->f1].z); 
-
-      glVertex3f(raw_model->vertices[cur_face->f2].x,
-		 raw_model->vertices[cur_face->f2].y,
-		 raw_model->vertices[cur_face->f2].z); 
-    }
-    glEnd();
-    glEndList();
-    if (draw_normals) {
-      scale_fact = NORMALS_DISPLAY_FACTOR*dist_v(&(raw_model->bBox[0]), 
-						 &(raw_model->bBox[1]));
-      glNewList(normal_list, GL_COMPILE);
-      glColor3f(1.0, 0.0, 0.0);
-      glBegin(GL_LINES);
 
 
-      for (i=0; i<raw_model->num_vert; i++) {
-	glVertex3f(raw_model->vertices[i].x, 
-		   raw_model->vertices[i].y,
-		   raw_model->vertices[i].z);
-
-	glVertex3f(raw_model->vertices[i].x + 
-		   scale_fact*raw_model->normals[i].x,
-		   raw_model->vertices[i].y + 
-		   scale_fact*raw_model->normals[i].y,
-		   raw_model->vertices[i].z + 
-		   scale_fact*raw_model->normals[i].z);
-      }
-
-      glEnd();
-      glColor3f(1.0, 1.0, 1.0);
-      glEndList();
-    }
-  } else {
-    glNewList(model_list, GL_COMPILE);
-    if (tr_mode == 1)
-      glBegin(GL_TRIANGLES);
-    else
-      glBegin(GL_POINTS);
-    for (i=0; i<raw_model->num_faces; i++) {
-      cur_face = &(raw_model->faces[i]);
-      glNormal3f(raw_model->normals[cur_face->f0].x,
-		 raw_model->normals[cur_face->f0].y,
-		 raw_model->normals[cur_face->f0].z);
-      glVertex3f(raw_model->vertices[cur_face->f0].x,
-		 raw_model->vertices[cur_face->f0].y,
-		 raw_model->vertices[cur_face->f0].z);
-      glNormal3f(raw_model->normals[cur_face->f1].x,
-		 raw_model->normals[cur_face->f1].y,
-		 raw_model->normals[cur_face->f1].z); 
-      glVertex3f(raw_model->vertices[cur_face->f1].x,
-		 raw_model->vertices[cur_face->f1].y,
-		 raw_model->vertices[cur_face->f1].z);
-      glNormal3f(raw_model->normals[cur_face->f2].x,
-		 raw_model->normals[cur_face->f2].y,
-		 raw_model->normals[cur_face->f2].z); 
-      glVertex3f(raw_model->vertices[cur_face->f2].x,
-		 raw_model->vertices[cur_face->f2].y,
-		 raw_model->vertices[cur_face->f2].z); 
-    }
-    glEnd();
-    glEndList();
-    if (draw_normals) {
-      scale_fact = NORMALS_DISPLAY_FACTOR*dist_v(&(raw_model->bBox[0]), 
-			       &(raw_model->bBox[1]));
-      glNewList(normal_list, GL_COMPILE);
-      glColor3f(1.0, 0.0, 0.0);
-      glBegin(GL_LINES);
-      for (i=0; i<raw_model->num_vert; i++) {
-	glVertex3f(raw_model->vertices[i].x, 
-		   raw_model->vertices[i].y,
-		   raw_model->vertices[i].z);
-	glVertex3f(raw_model->vertices[i].x + 
-		   scale_fact*raw_model->normals[i].x,
-		   raw_model->vertices[i].y + 
-		   scale_fact*raw_model->normals[i].y,
-		   raw_model->vertices[i].z + 
-		   scale_fact*raw_model->normals[i].z);
-      }
-      glEnd();
-      glColor3f(1.0, 1.0, 1.0);
-      glEndList();
-    }
+/* Model drawing (w. or wo. lighting) */ 
+#ifdef __USE_DISPLAY_LISTS_
+  glNewList(model_list, GL_COMPILE);
+#endif
+  if (tr_mode == 1)
+    glBegin(GL_TRIANGLES);
+  else 
+    glBegin(GL_POINTS);
+  for (i=0; i<raw_model->num_faces; i++) {
+    cur_face = &(raw_model->faces[i]);
+    glArrayElement(cur_face->f0);
+    glArrayElement(cur_face->f1);
+    glArrayElement(cur_face->f2);
   }
+  glEnd();
+#ifdef __USE_DISPLAY_LISTS_
+  glEndList();
+#endif
+
+
+  if (draw_normals) {
+    scale_fact = NORMALS_DISPLAY_FACTOR*dist_v(&(raw_model->bBox[0]), 
+					       &(raw_model->bBox[1]));
+#ifdef __USE_DISPLAY_LISTS_
+    glNewList(normal_list, GL_COMPILE);
+#endif
+    glColor3f(1.0, 0.0, 0.0);
+    glBegin(GL_LINES);
+    for (i=0; i<raw_model->num_vert; i++) {
+      glArrayElement(i);
+      glVertex3f(raw_model->vertices[i].x + 
+		 scale_fact*raw_model->normals[i].x,
+		 raw_model->vertices[i].y + 
+		 scale_fact*raw_model->normals[i].y,
+		 raw_model->vertices[i].z + 
+		 scale_fact*raw_model->normals[i].z);
+    }
+    glEnd();
+    glColor3f(1.0, 1.0, 1.0);
+#ifdef __USE_DISPLAY_LISTS_
+    glEndList();
+#endif
+  }
+  
 }
 
 /* ******************************************** */
@@ -400,9 +369,8 @@ void gfx_init(struct model *raw_model) {
   glFrontFace(GL_CCW);
   glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
+  rebuild_list(raw_model);    
 
-  rebuild_list(raw_model);
-    
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
   gluPerspective(FOV, 1.0, distance/10.0, 10.0*distance);
@@ -411,6 +379,7 @@ void gfx_init(struct model *raw_model) {
   glLoadIdentity();
   glGetDoublev(GL_MODELVIEW_MATRIX, mvmatrix); /* Initialize the temp matrix */
 }
+
 
 void display_vtx_labels() {
   int i, len;
@@ -440,6 +409,7 @@ void display_vtx_labels() {
 /* Display function : clear buffers, build correct MODELVIEW matrix, */
 /* call display list and swap the buffers                            */
 /* ***************************************************************** */
+#ifdef __USE_DISPLAY_LISTS_
 void display() {
   GLenum errorCode;
   GLboolean light_mode;
@@ -476,15 +446,19 @@ void display() {
 	}
 	break;
       }
+
       glCallList(model_list);
+  
       glDisable(GL_POLYGON_OFFSET_FILL);
       if (ps_rend)
 	gl2psDisable(GL2PS_POLYGON_OFFSET_FILL);
     }
   else
     glCallList(model_list);
+
   if (draw_normals)
     glCallList(normal_list);
+
 
   if (draw_vtx_labels)
     display_vtx_labels();
@@ -500,9 +474,64 @@ void display() {
   }
   glutSwapBuffers();
 
-
 }
+#else
+void display() {
+  GLenum errorCode;
+  GLboolean light_mode;
+  GLfloat lpos[] = {-1.0, 1.0, 1.0, 0.0};
+  int i;
+  
+  light_mode = glIsEnabled(GL_LIGHTING);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glLoadIdentity();
+  glLightfv(GL_LIGHT0, GL_POSITION, lpos);
+  glTranslated(0.0, 0.0, -distance); /* Translate the object along z */
+  glMultMatrixd(mvmatrix); /* Perform rotation */
+  if (!light_mode)
+    for (i=0; i<=wf_bc; i++) {
+      switch (i) {
+      case 0:
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	if (!ps_rend)
+	  glColor3f(1.0, 1.0, 1.0);
+	else
+	  glColor3f(0.0, 0.0, 0.0);
+	break;
+      case 1:
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	if (!ps_rend) {
+	  glEnable(GL_POLYGON_OFFSET_FILL);
+	  glPolygonOffset(1.0, 1.0);
+	  glColor4f(0.0, 0.0, 0.0, 0.0);
+	}
+	else {
+	  gl2psEnable(GL2PS_POLYGON_OFFSET_FILL);
+	  glPolygonOffset(1.0, 1.0);
+	  glColor4f(1.0, 1.0, 1.0, 0.0);
+	}
+	break;
+      }
+    
+      rebuild_list(raw_model);
+      
+      glDisable(GL_POLYGON_OFFSET_FILL);
+      if (ps_rend)
+	gl2psDisable(GL2PS_POLYGON_OFFSET_FILL);
+    }
+  else
+    rebuild_list(raw_model);
 
+  if (draw_vtx_labels)
+    display_vtx_labels();
+
+  /* Check for errors (leave at the end) */
+  while ((errorCode = glGetError()) != GL_NO_ERROR) {
+    fprintf(stderr,"GL error: %s\n",(const char *)gluErrorString(errorCode));
+  }
+  glutSwapBuffers();
+}
+#endif
 /* ***************************** */
 /* Writes the frame to a PS file */
 /* ***************************** */
@@ -865,12 +894,11 @@ int main(int argc, char **argv) {
 
   int i;
 
-
+  assert(sizeof(vertex_t) == 3*sizeof(float));
   if (argc != 2) {
-    printf("rawview file.raw\n");
-    exit(0);
+    printf("Usage:%s file.raw\n", argv[0]);
+    exit(-1);
   }
-  
 
   in_filename = argv[1]; 
   raw_model = read_raw_model(in_filename);
