@@ -1,4 +1,4 @@
-/* $Id: InitWidget.cpp,v 1.24 2002/03/05 07:59:34 aspert Exp $ */
+/* $Id: InitWidget.cpp,v 1.25 2002/03/06 14:55:34 aspert Exp $ */
 
 #include <InitWidget.h>
 #include <meshIcon.xpm>
@@ -7,6 +7,7 @@
 #include <qlayout.h>
 #include <qpushbutton.h>
 #include <qfiledialog.h>
+#include <qlistbox.h>
 #include <qhbox.h>
 #include <qmessagebox.h>
 #include <qvalidator.h>
@@ -135,31 +136,38 @@ void InitWidget::loadMesh1() {
   QStringList mfilters = QStringList() <<
     "3D Models (*.raw; *.wrl)" <<
     "All files (*.*)";
-  QFileDialog fd(QString::null,QString::null,this,"Model 1",TRUE);
-  fd.setMode(QFileDialog::ExistingFile);
-  fd.setFilters(mfilters);
-  fd.setIcon(*qpxMeshIcon);
-  fd.setCaption("Left model");
-  fd.show();
-  QString fn = fd.selectedFile();
-  if ( !fn.isEmpty() )
-    qledMesh1->setText(fn);
+  QFileDialog *fd=new QFileDialog (QString::null, QString::null, this, 
+                                   "model1", TRUE);
+
+  fd->setMode(QFileDialog::ExistingFile);
+  fd->setFilters(mfilters);
+  fd->setIcon(*qpxMeshIcon);
+  fd->setCaption("Left model");
+
+  if (fd->exec() == QDialog::Accepted) {
+    QString fn = fd->selectedFile();
+    if ( !fn.isEmpty() )
+      qledMesh1->setText(fn);
+  }
 }
   
 void InitWidget::loadMesh2() {
   QStringList mfilters = QStringList() <<
     "3D Models (*.raw; *.wrl)" <<
     "All files (*.*)";
-  QFileDialog fd(QString::null,QString::null,this,"Model 2",TRUE);
-  fd.setMode(QFileDialog::ExistingFile);
-  fd.setFilters(mfilters);
-  fd.setIcon(*qpxMeshIcon);
-  fd.setCaption("Right model");
-  fd.show();
-  QString fn = fd.selectedFile();
-  if ( !fn.isEmpty() )
-    qledMesh2->setText(fn);
+  QFileDialog *fd=new QFileDialog(QString::null, QString::null, this,
+                                  "Model2", TRUE);
+  
+  fd->setMode(QFileDialog::ExistingFile);
+  fd->setFilters(mfilters);
+  fd->setIcon(*qpxMeshIcon);
+  fd->setCaption("Right model");
 
+  if (fd->exec() == QDialog::Accepted) {
+    QString fn = fd->selectedFile();
+    if ( !fn.isEmpty() )
+      qledMesh2->setText(fn);
+  }
 }
 
 void InitWidget::getParameters() {
