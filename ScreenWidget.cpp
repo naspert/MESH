@@ -1,4 +1,4 @@
-/* $Id: ScreenWidget.cpp,v 1.12 2001/08/10 08:24:12 aspert Exp $ */
+/* $Id: ScreenWidget.cpp,v 1.13 2001/08/10 10:04:57 dsanta Exp $ */
 #include <ScreenWidget.h>
 
 ScreenWidget::ScreenWidget(model *raw_model1, model *raw_model2, 
@@ -105,7 +105,8 @@ void ScreenWidget::aboutKeys()
 			"F1: Toggle Wireframe/Fill\n"
 			"F2: Toggle Light/No light (2nd model only)\n"
 			"F3: Toggle viewpoint synchronization\n"
-			"F4: Invert normals (if applicable)" );
+			"F4: Invert normals (if applicable)\n"
+                        "F5: Force computed (vs. loaded) normals");
 }
 
 void ScreenWidget::aboutBugs()
