@@ -1,4 +1,7 @@
-/* $Id: 3dmodel.h,v 1.11 2001/08/17 08:54:19 dsanta Exp $ */
+/* $Id: 3dmodel.h,v 1.12 2001/09/03 11:14:45 aspert Exp $ */
+#ifdef MPATROL_TEST
+#include <mpatrol.h>
+#endif
 #ifdef MEM_DEBUG
 #include <purify.h>
 #endif
@@ -119,6 +122,11 @@ struct dual_graph_info {
   int num_edges_dual;
   edge_dual *edges;
   int *done;
+};
+
+struct dual_graph_index {
+  int ring[3]; 
+  int face_info; /* number of neighb. faces */
 };
 
 typedef struct dual_list *edge_list_ptr;
