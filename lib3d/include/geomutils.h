@@ -1,4 +1,4 @@
-/* $Id: geomutils.h,v 1.6 2001/04/27 13:51:36 aspert Exp $ */
+/* $Id: geomutils.h,v 1.7 2001/07/02 09:22:43 aspert Exp $ */
 #include <3dmodel.h>
 
 #ifndef _GEOMUTILS_PROTO
@@ -7,6 +7,22 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/* a few useful macros */
+#ifndef min
+#define min(__X, __Y) ((__X)<(__Y)?(__X):(__Y))
+#endif
+#ifndef max
+#define max(__X, __Y) ((__X)>(__Y)?(__X):(__Y))
+#endif
+#ifndef max3
+#define max3(__X,__Y,__Z) max((__X), max((__Y), (__Z)))
+#endif
+#ifndef min3
+#define min3(__X,__Y,__Z) min((__X), min((__Y),(__Z)))
+#endif
+
+
   double dist(vertex, vertex);
   vertex ncrossp(vertex, vertex, vertex);
   vertex crossprod(vertex, vertex);
