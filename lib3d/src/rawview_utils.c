@@ -1,4 +1,4 @@
-/* $Id: rawview_utils.c,v 1.4 2002/06/11 15:41:37 aspert Exp $ */
+/* $Id: rawview_utils.c,v 1.5 2002/06/11 16:02:39 aspert Exp $ */
 #include <3dutils.h>
 #include <rawview.h>
 #include <rawview_misc.h>
@@ -167,24 +167,14 @@ int do_spanning_tree(struct model *raw_model) {
 }
 
 /* tree destructor */
-void destroy_tree(struct face_tree *tree) {
-  
-  if (tree->left != NULL)
-    destroy_tree(tree->left);
-  if (tree->right != NULL)
-    destroy_tree(tree->right);
+void destroy_tree(struct face_tree **tree, int num_faces) {
+  int i;
 
-  if (tree->left == NULL && tree->right == NULL) {
-    if (tree->parent != NULL) {
-      if (tree->node_type == 0)
-	(tree->parent)->left = NULL;
-      else
-	(tree->parent)->right = NULL;
-    }
-    free(tree);
-
-  }
+  for (i=0; i<num_faces; i++)
+    free(tree[i]);
+  free(tree);
 }
+
 
 
 int do_curvature(struct gl_render_context *gl_ctx) {
