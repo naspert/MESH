@@ -10,7 +10,11 @@ topologies can be compared.
 * Requirements
 To compile the program the Qt libraries, version 2.3.0 or later with the
 support OpenGL compiled in, are required. 
-The Qt library source code can be downloaded for free at Trolltech's website (http://www.trolltech.com/developer/download ) for all the Unix-like systems. For Windows users, a precompiled Qt v2.3.0 is also available for free (provided it is used for non-commercial purposes). The MESH tool works identically with both *nix/Windows versions of Qt.
+The Qt library source code can be downloaded for free at Trolltech's website 
+(http://www.trolltech.com/developer/download ) for all the Unix-like systems. 
+For Windows users, a precompiled Qt v2.3.0 is also available for free 
+(provided it is used for non-commercial purposes). 
+The MESH tool works identically with both *nix/Windows versions of Qt.
 
 * Installation - Unix
 The QTDIR environment variable should point to the QT installation directory.
@@ -21,7 +25,10 @@ GNU make and supports Linux (with GCC) and IRIX (with the MIPSPro
 compilers). Other systems might require some (hopefully minor) modifications.
 
 * Installation - Windows
-You *MUST* install the Qt library prior to any other step. Please note that you have to install it in a path that does not contain a space (e.g. not in 'C:\Program Files\Qt', but for instance in 'C:\Qt'). We provide the Micro$oft Visual C++ 6 dsp and dsw files needed to build the program.
+You *MUST* install the Qt library prior to any other step. Please note that 
+you have to install it in a path that does not contain a space (e.g. not 
+in 'C:\Program Files\Qt', but for instance in 'C:\Qt'). We provide the 
+Micro$oft Visual C++ 6 dsp and dsw files needed to build the program.
 
 * Input data format 
 The input file format for the triangular meshes is a raw ASCII format, which
