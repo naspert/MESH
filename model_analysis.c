@@ -1,4 +1,4 @@
-/* $Id: model_analysis.c,v 1.12 2002/03/15 16:32:15 aspert Exp $ */
+/* $Id: model_analysis.c,v 1.13 2002/03/25 16:00:42 dsanta Exp $ */
 
 
 /*
@@ -105,6 +105,81 @@ static int vtx_in_list_or_add(struct vtx_list *list, int v)
   }
 }
 
+/* Returns one if face is degenerate and zero if not.*/
+static int is_degenerate(const face_t *face)
+{
+  return (face->f0 == face->f1 || face->f1 == face->f2 || face->f2 == face->f0);
+}
+
+/* Returns the indices of the vertices if face, that are not center_vidx, in
+ * *start_vidx and *edge_vidx. The order is so that center_vidx, *start_vidx
+ * and *edge_vidx are in the order f0,f1,f2, upto a cyclic permuation. Note
+ * that *face must be incident on the center_vidx vertex. This is used to
+ * obtain the starting vertices to do an oriented walk of the vertices around
+ * center_vidx. */
+static void get_ordered_vtcs(const face_t *face, int center_vidx,
+                             int *start_vidx, int *edge_vidx)
+{
+  if (center_vidx == face->f0) {
+    *start_vidx = face->f1;
+    *edge_vidx = face->f2;
+  } else if (center_vidx == face->f1) {
+    *start_vidx = face->f2;
+    *edge_vidx = face->f0;
+  } else { /* vidx == face->f2 */
+    assert(center_vidx == face->f2);
+    *start_vidx = face->f0;
+    *edge_vidx = face->f1;
+  }
+}
+
+/* Tests if *new_face is adjacent to the previous face at the edge defined by
+ * the vertices with index center_vidx and edge_vidx. Returns zero if
+ * non-adjacent and one if adjacent. The current correct face orientation (1
+ * or -1) is given by face_orientation. The flag rev_orient indicates if the
+ * orientation order has been reversed. If *new_face is non-adjacent no
+ * argument are modified. Otherwise, the non-adjacent vertex index of
+ * *new_face is returned in *edge_vidx. The orientation of the new face is
+ * returned in *newf_orientation. */
+static int is_adjacent_and_update(const face_t *new_face, int center_vidx,
+                                  int *edge_vidx, signed char face_orientation,
+                                  int rev_orient,
+                                  signed char *newf_orientation)
+{
+  int e_vidx;
+
+  /* Try to find adjacent edge and check orientation */
+  e_vidx = *edge_vidx;
+  if (e_vidx == new_face->f0) {
+    if (center_vidx == new_face->f2) { /* same orientation as first face */
+      *edge_vidx = new_face->f1;
+      *newf_orientation = (!rev_orient) ? face_orientation : -face_orientation;
+    } else { /* opposite orientation */
+      *edge_vidx = new_face->f2; /* do as if face orient was opposite */
+      *newf_orientation = (rev_orient) ? face_orientation : -face_orientation;
+    }
+  } else if (e_vidx == new_face->f1) {
+    if (center_vidx == new_face->f0) { /* same orientation as first face */
+      *edge_vidx = new_face->f2; /* do as if face orient was opposite */
+      *newf_orientation = (!rev_orient) ? face_orientation : -face_orientation;
+    } else { /* opposite orientation */
+      *edge_vidx = new_face->f0; /* do as if face orient was opposite */
+      *newf_orientation = (rev_orient) ? face_orientation : -face_orientation;
+    }
+  } else if (e_vidx == new_face->f2) {
+    if (center_vidx == new_face->f1) { /* same orientation as first face */
+      *edge_vidx = new_face->f0;
+      *newf_orientation = (!rev_orient) ? face_orientation : -face_orientation;
+    } else { /* opposite orientation */
+      *edge_vidx = new_face->f1; /* do as if face orient was opposite */
+      *newf_orientation = (rev_orient) ? face_orientation : -face_orientation;
+    }
+  } else {
+    return 0; /* not an adjacent face */
+  }
+  return 1; /* we did find the adjacent face */
+}
+
 /* Recursively analyze the faces incident on the on any of the vertices
  * connected to vertex vidx, and updates the information in st
  * accordingly. The face analysis starts at face pfidx, which should be
@@ -149,16 +224,7 @@ static void analyze_faces_rec(const face_t *mfaces, int vidx, int pfidx,
   assert(j<nf);
   /* Get first face vertices */
   fidx = pfidx;
-  if (vidx == mfaces[fidx].f0) {
-    vstart = mfaces[fidx].f1;
-    v2 = mfaces[fidx].f2;
-  } else if (vidx == mfaces[fidx].f1) {
-    vstart = mfaces[fidx].f2;
-    v2 = mfaces[fidx].f0;
-  } else { /* vidx == mfaces[fidx].f2 */
-    vstart = mfaces[fidx].f0;
-    v2 = mfaces[fidx].f1;
-  }
+  get_ordered_vtcs(&mfaces[fidx],vidx,&vstart,&v2);
   /* Get orientation of first face (which is already oriented) */
   fface_orient = st->face_orientation[fidx];
   assert(fface_orient != 0);
@@ -178,7 +244,7 @@ static void analyze_faces_rec(const face_t *mfaces, int vidx, int pfidx,
   vfaces[j] = -1;
   rev_orient = 0;
   ffidx = fidx;
-  cur_degen = (vidx == vstart || vidx == v2 || vstart == v2);
+  cur_degen = is_degenerate(&mfaces[fidx]);
   vstart_was_in_list = 0;
   vtx_in_list_or_add(&vlist,vstart); /* list empty, so always added */
   v2_was_in_list = vtx_in_list_or_add(&vlist,v2);
@@ -186,66 +252,14 @@ static void analyze_faces_rec(const face_t *mfaces, int vidx, int pfidx,
     for (j=0; j<nf; j++) { /* search for face that shares v2 */
       fidx = vfaces[j];
       if (fidx == -1) continue; /* face already counted */
-      new_degen = (mfaces[fidx].f0 == mfaces[fidx].f1 ||
-                   mfaces[fidx].f1 == mfaces[fidx].f2 ||
-                   mfaces[fidx].f2 == mfaces[fidx].f0);
-      if (v2 == mfaces[fidx].f0) {
-        if (vidx == mfaces[fidx].f2) { /* same orientation as first face */
-          v2 = mfaces[fidx].f1;
-          if (rev_orient) {
-            cface_orient = -fface_orient;
-            if (!(new_degen || cur_degen)) st->minfo.oriented = 0;
-          } else {
-            cface_orient = fface_orient;
-          }
-        } else { /* opposite orientation */
-          v2 = mfaces[fidx].f2; /* do as if face orient was opposite */
-          if (!rev_orient) {
-            cface_orient = -fface_orient;
-            if (!(new_degen || cur_degen)) st->minfo.oriented = 0;
-          } else {
-            cface_orient = fface_orient;
-          }
-        }
-      } else if (v2 == mfaces[fidx].f1) {
-        if (vidx == mfaces[fidx].f0) { /* same orientation as first face */
-          v2 = mfaces[fidx].f2; /* do as if face orient was opposite */
-          if (rev_orient) {
-            cface_orient = -fface_orient;
-            if (!(new_degen || cur_degen)) st->minfo.oriented = 0;
-          } else {
-            cface_orient = fface_orient;
-          }
-        } else { /* opposite orientation */
-          v2 = mfaces[fidx].f0; /* do as if face orient was opposite */
-          if (!rev_orient) {
-            cface_orient = -fface_orient;
-            if (!(new_degen || cur_degen)) st->minfo.oriented = 0;
-          } else {
-            cface_orient = fface_orient;
-          }
-        }
-      } else if (v2 == mfaces[fidx].f2) {
-        if (vidx == mfaces[fidx].f1) { /* same orientation as first face */
-          v2 = mfaces[fidx].f0;
-          if (rev_orient) {
-            cface_orient = -fface_orient;
-            if (!(new_degen || cur_degen)) st->minfo.oriented = 0;
-          } else {
-            cface_orient = fface_orient;
-          }
-        } else { /* opposite orientation */
-          v2 = mfaces[fidx].f1; /* do as if face orient was opposite */
-          if (!rev_orient) {
-            cface_orient = -fface_orient;
-            if (!(new_degen || cur_degen)) st->minfo.oriented = 0;
-          } else {
-            cface_orient = fface_orient;
-          }
-        }
-      } else { /* non-adjacent triangle */
-        continue; /* test next triangle */
+      if (!is_adjacent_and_update(&mfaces[fidx],vidx,&v2,fface_orient,
+                                  rev_orient,&cface_orient)) {
+        continue; /* non-adjacent face => test next */
       }
+      /* Update oriented state */
+      cur_degen = is_degenerate(&mfaces[fidx]);
+      if (cface_orient != fface_orient &&
+          !(new_degen || cur_degen)) st->minfo.oriented = 0;
       /* Check that we can orient face in a consistent manner */
       if (st->face_orientation[fidx] == 0) { /* not yet oriented */
         st->face_orientation[fidx] = cface_orient;
@@ -293,16 +307,7 @@ static void analyze_faces_rec(const face_t *mfaces, int vidx, int pfidx,
         assert(fidx >= 0);
         if (rev_orient) rev_orient = 0; /* restore original orientation */
         /* Get new first face vertices */
-        if (vidx == mfaces[fidx].f0) {
-          vstart = mfaces[fidx].f1;
-          v2 = mfaces[fidx].f2;
-        } else if (vidx == mfaces[fidx].f1) {
-          vstart = mfaces[fidx].f2;
-          v2 = mfaces[fidx].f0;
-        } else { /* vidx == mfaces[fidx].f2 */
-          vstart = mfaces[fidx].f0;
-          v2 = mfaces[fidx].f1;
-        }
+        get_ordered_vtcs(&mfaces[fidx],vidx,&vstart,&v2);
         /* Get and mark orientation of new first face */
         fface_orient = st->face_orientation[fidx];
         if (fface_orient == 0) {
