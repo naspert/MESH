@@ -1,4 +1,4 @@
-/* $Id: model_in.h,v 1.3 2002/03/15 16:32:20 aspert Exp $ */
+/* $Id: model_in.h,v 1.4 2002/04/03 09:04:36 aspert Exp $ */
 
 
 /*
@@ -76,6 +76,19 @@
 
 #include <3dmodel.h>
 
+/* 
+ * 'zlib' is not part of the Window$ platforms. Comment out this to use zlib
+ * under Windows.
+ */
+#ifdef WIN32
+#define DONT_USE_ZLIB
+#endif
+
+#ifndef DONT_USE_ZLIB
+# include <zlib.h>
+#endif
+
+
 #ifdef __cplusplus
 #define BEGIN_DECL extern "C" {
 #define END_DECL }
@@ -108,9 +121,62 @@ BEGIN_DECL
 #define MESH_BAD_FF    -5   /* not a recongnized file format */
 #define MESH_BAD_FNAME -6   /* Could not open file name */
 
-/* --------------------------------------------------------------------------
+/* -------------------------------------------------------------------------
    EXTERNAL FUNCTIONS
-   -------------------------------------------------------------------------- */
+   ------------------------------------------------------------------------- */
+
+
+
+struct file_data {
+#ifdef DONT_USE_ZLIB
+  FILE *f;
+#else
+  gzFile f;
+#endif
+  unsigned char *block; /* data block = 1KB */
+  int nbytes; /* actual number of bytes in block */
+  int pos; /* current position in block */
+  int eof_reached;
+};
+
+
+/* 
+ * common part - make the [un]getc function point to the custom
+ * versions that read from a buffer 
+ */
+# undef getc
+# define getc buf_getc
+# undef ungetc
+# define ungetc buf_ungetc
+
+
+/*
+ * Adapt all calls to the situation. If we use zlib, use the gz* functions. 
+ * If not, use the f* ones. 
+ */
+#ifdef DONT_USE_ZLIB
+# undef loc_fopen
+# define loc_fopen fopen
+# undef loc_fclose
+# define loc_fclose fclose
+# undef loc_fread
+# define loc_fread fread
+# undef loc_feof
+# define loc_feof feof
+# undef loc_getc
+# define loc_getc fgetc
+#else
+# undef loc_fopen
+# define loc_fopen gzopen
+# undef loc_fclose
+# define loc_fclose gzclose
+# undef loc_fread /* why the $%^ are they using different args ??? */
+# define loc_fread(ptr, size, nemb, stream) gzread(stream, ptr, (nemb)*(size))
+# undef loc_feof
+# define loc_feof gzeof
+# undef loc_getc
+# define loc_getc gzgetc
+#endif
 
 /* Reads the 3D triangular mesh models from the input '*data' stream, in the
  * file format specified by 'fformat'. The model meshes are returned in the
@@ -120,7 +186,8 @@ BEGIN_DECL
  * 'fformat' is MESH_FF_AUTO the file format is autodetected. If 'concat' is
  * non-zero only one mesh is returned, which is the concatenation of the the
  * ones read. */
-int read_model(struct model **models_ref, FILE *data, int fformat, int concat);
+int read_model(struct model **models_ref, struct file_data *data, 
+               int fformat, int concat);
 
 /* Reads the 3D triangular mesh models from the input file '*fname' file, in
  * the file format specified by 'fformat'. The model meshes are returned in

@@ -1,4 +1,4 @@
-/* $Id: model_in.c,v 1.8 2002/03/15 16:32:21 aspert Exp $ */
+/* $Id: model_in.c,v 1.9 2002/04/03 09:04:37 aspert Exp $ */
 
 
 /*
@@ -48,6 +48,9 @@
 
 #include <assert.h>
 #include <stdlib.h>
+#ifdef READ_TIME
+# include <time.h>
+#endif
 #include <string.h>
 #include <ctype.h>
 #include <model_in.h>
@@ -55,40 +58,6 @@
 /* --------------------------------------------------------------------------
    PLATFORM DEPENDENT THINGS
    -------------------------------------------------------------------------- */
-
-/* If the POSIX.1c-1996 getc_unlocked function is available we use it in place
- * of getc, since it is much faster (no locking required in each call). Note
- * that _POSIX_C_SOURCE must be defined in the compiler command line or by a
- * previous include. */
-#if defined(_POSIX_C_SOURCE) && (_POSIX_C_SOURCE >= 199506L)
-# undef  getc /* make sure we don't get a warning for redefinition */
-# define getc  getc_unlocked /* from stdio.h */
-#endif
-
-/* Macros to use fastest possible I/O stream access given that only one thread
- * accesses the input file. FLOCKFILE_LOCK will, if available, put a lock on
- * the given stream and disable I/O streams auto-locking
- * (slow). FLOCKFILE_AUTO will release the lock for the given stream and
- * re-enable auto-locking (default behaviour).
- *
- * NOTE: the "do { ... } while(0)" trick is so that macros behave as single
- * statements, even with tricky "if else" sequences. Taken from linux kernel.
- */
-#if defined(__GLIBC__) && (__GLIBC__ >= 2)
-/* Auto-locking and stream locking available */
-# include <stdio_ext.h>
-# define FLOCKFILE_LOCK(stream)                                         \
-    do {                                                                \
-      __fsetlocking((stream),FSETLOCKING_BYCALLER); flockfile(stream);  \
-    } while(0)
-# define FLOCKFILE_AUTO(stream)                                           \
-    do {                                                                  \
-      funlockfile(stream); __fsetlocking((stream),FSETLOCKING_INTERNAL);  \
-    } while (0)
-#else /* no support for disabling autolocking, no use in global lock */
-# define FLOCKFILE_LOCK(stream) do { } while(0)
-# define FLOCKFILE_AUTO(stream) do { } while(0)
-#endif
 
 /* --------------------------------------------------------------------------
    PARAMETERS
@@ -100,6 +69,11 @@
 #define SZ_INIT_DEF 240
 /* Maximum number of elements by which an array is grown */
 #define SZ_MAX_INCR 2048
+/* Buffer size (in bytes) for gzread  */
+#define GZ_BUF_SZ 16384
+/* Real number of bytes read by gzread = 0.9*GZ_BUF_SZ. Some supplementary 
+   bytes are read from the file until we reach a valid separator */
+#define GZ_RBYTES ((int)(0.9*GZ_BUF_SZ))
 
 /* Converts argument into string, without replacing defines in argument */
 #define STRING_Q(N) #N
@@ -120,6 +94,258 @@
 /* --------------------------------------------------------------------------
    LOCAL FUNCTIONS
    -------------------------------------------------------------------------- */
+
+/* 
+   In order to be able to use zlib to read gzipped files directly, we
+   have to use our own versions of most of the IO functions. The data
+   read from the file is buffered in the 'file_data' structure, and
+   accessed *only* using this method, except for the low-level stuff 
+   (refill_buffer). The 'scanf' has been torn apart into smaller
+   pieces because the use of sscanf on a buffer>512 bytes is _slow_ 
+   (probably because of a hidden memcpy ...).
+   
+   Summary : 
+   - '[un]getc' is redefined through a macro to 'buf_[un]getc'
+   - '*scanf' are specific parsers that are designed to avoid at all
+   cost the calls to 'sscanf'
+   - 'buf_fscanf_1arg' is a wrapper for 'sscanf' when called with 1
+   return value. It is only called when there is no alternate solution
+   - all the 'loc_*' functions point either to the 'gz*' calls or to
+   the 'f*' calls, depending whether DONT_USE_ZLIB is defined or not
+   (see model_in.h for more info)
+
+*/
+static int refill_buffer(struct file_data*);
+static int buf_getc_func(struct file_data*);
+static int string_scanf(struct file_data*, char*);
+static int int_scanf(struct file_data*, int*);
+static int float_scanf(struct file_data*, float*);
+static int buf_fscanf_1arg(struct file_data*, const char*, void*);
+
+#ifdef INLINE 
+# error Name clash for INLINE macro
+#endif
+
+#if defined (__GNUC__)
+#  define INLINE __inline__
+#elif defined (__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)
+#  define INLINE inline
+#elif defined (_MSC_VER)
+#  define INLINE __inline
+#else
+#  define INLINE
+#endif
+
+static INLINE int buf_getc_func(struct file_data* data) 
+{
+
+  if(!refill_buffer(data))
+    return EOF;
+
+  return ((int)data->block[data->pos++]);
+}
+
+#ifndef buf_getc
+#define buf_getc(stream)                                        \
+(((stream)->nbytes >0 && (stream)->pos < (stream)->nbytes-1)?   \
+ ((int)(stream)->block[((stream)->pos)++]):buf_getc_func(stream))
+#endif
+
+#ifndef buf_ungetc
+#define buf_ungetc(c, stream)                   \
+(((c) != EOF && (stream)->pos > 0) ?            \
+ ((stream)->block[--((stream)->pos)]):EOF)
+#endif
+
+static int refill_buffer(struct file_data* data) 
+{
+  int rbytes, tmp;
+
+  if (data->eof_reached) /* we cannot read anything from the buffer */
+    return 0;
+
+
+
+  /* backup last byte for silly ungetc's */
+  data->block[0] = data->block[data->pos-1];
+  data->pos = 1;
+
+  /* now fill da buffer w. at most GZ_RBYTES of data */
+  rbytes = loc_fread(&(data->block[1]), sizeof(unsigned char), GZ_RBYTES, 
+		     data->f);
+  data->nbytes = rbytes+1;
+  
+  if (rbytes < ((int)(GZ_RBYTES*sizeof(unsigned char)))) { 
+    /* if we read less, this means that an EOF has been encoutered */
+    data->eof_reached = 1;
+    memset(&(data->block[data->nbytes]), 0, 
+           (GZ_BUF_SZ-data->nbytes)*sizeof(unsigned char));
+#ifdef DEBUG
+    printf("refill_buffer %d bytes\n", data->nbytes);
+#endif
+    return 1;
+  }
+
+  
+  /* now let's fill the buffer s.t. a valid separator ends it */
+  while (strchr(VRML_WS_CHARS, data->block[data->nbytes-1]) == NULL) {
+    tmp = loc_getc(data->f);
+    if (tmp == EOF) {
+      data->eof_reached = 1;
+      memset(&(data->block[data->nbytes]), 0, 
+             (GZ_BUF_SZ-data->nbytes)*sizeof(unsigned char));
+
+#ifdef DEBUG
+      printf("refill_buffer %d bytes\n", data->nbytes);
+#endif
+      return 1; /* kinda OK... */
+    }
+    data->block[data->nbytes++] = (unsigned char)tmp;
+  }
+  memset(&(data->block[data->nbytes]), 0, 
+         (GZ_BUF_SZ-data->nbytes)*sizeof(unsigned char));
+
+#ifdef DEBUG
+  printf("refill_buffer %d bytes\n", data->nbytes);
+#endif
+  return 1;
+}
+
+static int int_scanf(struct file_data *data, int *out) {
+  char *endptr=NULL;
+  int tmp, c;
+
+  do {
+    c = getc(data);
+  } while ((c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '#' ||
+           c == '\"' || c ==',') && c != EOF);
+  if (c != EOF)
+    ungetc(c, data);
+  
+  tmp = (int)strtol((char*)&(data->block[data->pos]), &endptr, 10);
+  if (endptr == (char*)&(data->block[data->pos]) || endptr == NULL) {
+#ifdef DEBUG
+    printf("[int_scanf] pos=%d block= %s\n", data->pos, 
+	   &(data->block[data->pos]));
+#endif
+    return 0;
+  }  
+
+  data->pos += (endptr - (char*)&(data->block[data->pos]))*sizeof(char);
+
+  if (data->pos == data->nbytes-1) {
+#ifdef DEBUG
+    printf("[int_scanf] calling refill_buffer\n");
+#endif
+    refill_buffer(data);
+  }
+
+#ifdef DEBUG
+  printf("[int_scanf] %d\n", tmp);
+#endif
+
+  *out = tmp;
+  return 1;
+}
+
+static int float_scanf(struct file_data *data, float *out) {
+  char *endptr=NULL;
+  float tmp;
+  int c;
+
+  do {
+    c = getc(data);
+  } while ((c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '#' ||
+           c == '\"' || c ==',') && c != EOF);
+  if (c != EOF)
+    ungetc(c, data);
+
+
+  tmp = (float)strtod((char*)&(data->block[data->pos]), &endptr);
+  if (endptr == (char*)&(data->block[data->pos]) || endptr==NULL) {
+#ifdef DEBUG
+    printf("[float_scanf] pos=%d block= %s\n", data->pos, 
+	   &(data->block[data->pos]));
+#endif
+    return 0;
+  }  
+
+  data->pos += (endptr - (char*)&(data->block[data->pos]))*sizeof(char);
+
+  if (data->pos == data->nbytes-1) {
+#ifdef DEBUG
+    printf("[float_scanf] block = %s\n", &(data->block[data->pos]));
+    printf("[float_scanf] calling refill_buffer\n");
+#endif
+    refill_buffer(data);
+  }
+#ifdef DEBUG
+  printf("[float_scanf] %f\n", tmp);
+#endif
+  *out = tmp;
+  return 1;
+}
+
+/* Reads a word until a separator is encountered. This is the
+ * equivalent of doing a [sf]canf(data, "%60[^ \t,\n\r#\"]", out)
+ */
+static int string_scanf(struct file_data *data, char *out) {
+  int nb_read=0;
+  char stmp[MAX_WORD_LEN+1];
+  int c;
+
+  do {
+    c = getc(data);
+    stmp[nb_read++] = (char)c;
+  } while (c != ' ' && c != '\t' && c != '\n' && c != '\r' && c != '#' &&
+           c != '\"' && c!=',' && c != EOF && nb_read < MAX_WORD_LEN+1);
+  
+  if (nb_read > 1 && nb_read < MAX_WORD_LEN) {
+    if (c != EOF)
+      ungetc(c, data);
+    stmp[--nb_read] = '\0';
+#ifdef DEBUG
+    printf("[string_scanf] stmp=%s\n", stmp);
+#endif
+    strcpy(out, stmp);
+    return 1;
+  }
+  return 0;
+}
+
+
+/* sscanf wrapper. This is relatively slow (apperently due to a memcpy
+ * of the data block done by sscanf).  */
+static int 
+buf_fscanf_1arg(struct file_data *data, const char *fmt, void *out)
+{
+  int count, n;
+  char _fmt[64];
+
+
+  /* tweak the format */
+  strcpy(_fmt, fmt);
+  strcat(_fmt, "%n");
+
+  count = sscanf((char*)&(data->block[data->pos]), _fmt, out, &n);
+  if (count > 0) {
+    data->pos += n;
+    return count;
+  }
+
+  /* otherwise try to read another block and do sscanf once more...*/
+  if (refill_buffer(data)) {
+    count = sscanf((char*)&(data->block[data->pos]), _fmt, out, &n);
+    if (count > 0) {
+      data->pos += n;
+    }
+    return count;
+  } else /* fail shamelessly ... */
+    return count;
+
+}
+
+
 
 /* Grows the array pointed to by 'p'. The current array size (in elements) is
  * given by '*len'. The array is doubled in size, if the size increment is
@@ -176,7 +402,7 @@ static void free_model_pfields(struct model *m) {
  * each vertex index of each face (including the -1 terminating each face) are
  * given in 'nrml_idcs' and the faces of the model in 'faces'. The number of
  * normals is given by 'n_nrmls', of normal indices by 'n_nrml_idcs' and of
- * faces by 'n_faces'. The maximum normal index is given by 'max_nidx' and the
+ * faces by 'n_faces'. The maximum normal i-lXmundex is given by 'max_nidx' and the
  * maximum vertex index (of 'faces') in 'max_vidx'. If no error occurs the
  * number of normals in '*vnrmls_ref' is returned. Otherwise the negative
  * error code is returned and '*vnrmls_ref' is not modified. */
@@ -367,7 +593,7 @@ static int concat_models(struct model **outmesh_ref,
  * '*data' is returned. Comments and whitespace are interpreted as in VRML
  * (note that a comma is a whitespace in VRML!).
  */
-static int skip_ws_comm(FILE *data)
+static int skip_ws_comm(struct file_data *data)
 {
   int c;
 
@@ -392,7 +618,7 @@ static int skip_ws_comm(FILE *data)
 /* Like skip_ws_comm(), but also skips over VRML quoted strings. Returns the
  * next non-whitespace, non-comment and non-string character, or EOF if
  * end-of-file or I/O error is encountered. */
-static int skip_ws_comm_str(FILE *data)
+static int skip_ws_comm_str(struct file_data *data)
 {
   int c;
   int in_escape;
@@ -422,7 +648,7 @@ static int skip_ws_comm_str(FILE *data)
  * character or EOF if end-of-file or an I/O error is encountered. Characters
  * in quoted strings and comments (excluding line-termination character) of
  * the '*data' stream are never matched. */
-static int find_chars(FILE *data, const char *chars)
+static int find_chars(struct file_data *data, const char *chars)
 {
   int c;
   int in_escape;
@@ -459,10 +685,10 @@ static int find_chars(FILE *data, const char *chars)
  * end-of-file is reached or an I/O error occurs. Comments, quoted strings and
  * whitespace in the '*data' stream are ignored. The 'string' argument shall
  * not contain whitespace, comments or quoted strings. */
-static int find_string(FILE *data, const char *string)
+static int find_string(struct file_data *data, const char *string)
 {
   int c,i;
-
+  
   do {
     c = getc(data);
     if (strchr(VRML_WSCOMMSTR_CHARS,c)) { /* characters we need to skip */
@@ -475,8 +701,11 @@ static int find_string(FILE *data, const char *string)
       c = getc(data);
       i++;
     }
-    if (!ferror(data) && string[i] == '\0' &&
+    if (string[i] == '\0' &&
         (c == EOF || strchr(VRML_WSCOMMSTR_CHARS,c) != NULL)) {
+#ifdef DEBUG
+      printf("[find_string] %s matched\n", string);
+#endif
       break; /* string matched and is whole word */
     }
   } while (c != EOF);
@@ -487,7 +716,7 @@ static int find_string(FILE *data, const char *string)
 /* Advances the '*data' stream past the end of the VRML field (single, array
  * or node). Returns zero on success and an error code (MESH_CORRUPTED, etc.) 
  * on error. */
-static int skip_vrml_field(FILE *data)
+static int skip_vrml_field(struct file_data *data)
 {
   int c,n_brace;
 
@@ -522,23 +751,28 @@ static int skip_vrml_field(FILE *data)
  * null). Any DEF statement is skipped, along with the node name. Returns zero
  * on success or the negative error code on error. If an error occurs 's' is
  * not modified. */
-static int read_node_type(char *s, FILE *data, int slen)
+static int read_node_type(char *s, struct file_data *data, int slen)
 {
   char stmp[MAX_WORD_LEN+1];
-  const char sfmt[] = "%" STRING(MAX_WORD_LEN) "[^" VRML_WSCOMMSTR_CHARS "]";
   int rcode;
 
   rcode = 0;
   if (skip_ws_comm(data) == EOF) return MESH_CORRUPTED;
-  if (fscanf(data,sfmt,stmp) != 1) {
+  if (string_scanf(data,stmp) != 1) {
     rcode = MESH_CORRUPTED;
   } else {
+#ifdef DEBUG
+    printf("[read_node_type] stmp = %s\n", stmp);
+#endif
     if (strcmp("DEF",stmp) == 0) {
       /* DEF tag => skip node name and get node type */
       if (skip_ws_comm(data) == EOF || skip_vrml_field(data) == EOF ||
-          skip_ws_comm(data) == EOF || fscanf(data,sfmt,stmp) != 1) {
+          skip_ws_comm(data) == EOF || string_scanf(data,stmp) != 1) {
         rcode = MESH_CORRUPTED;
       }
+#ifdef DEBUG
+      printf("[read_node_type] stmp = %s\n", stmp);
+#endif
     }
   }
   if (rcode == 0) {
@@ -552,14 +786,13 @@ static int read_node_type(char *s, FILE *data, int slen)
  * one is returned in '*res', if it is "FALSE" zero is returned in '*res'. Any
  * other value is an error. If an error occurs '*res' is not modified and the
  * negative error value is returned. Otherwise zero is returned. */
-static int read_sfbool(int *res, FILE *data)
+static int read_sfbool(int *res, struct file_data *data)
 {
   char stmp[MAX_WORD_LEN+1];
-  const char sfmt[] = "%" STRING(MAX_WORD_LEN) "[^" VRML_WSCOMMSTR_CHARS "]";
   int rcode;
 
   rcode = 0;
-  if (skip_ws_comm(data) != EOF && fscanf(data,sfmt,stmp) == 1) {
+  if (skip_ws_comm(data) != EOF && string_scanf(data,stmp) == 1) {
     if (strcmp(stmp,"TRUE") == 0) {
       *res = 1;
     } else if (strcmp(stmp,"FALSE") == 0) {
@@ -568,6 +801,7 @@ static int read_sfbool(int *res, FILE *data)
       rcode = MESH_CORRUPTED;
     }
   } else {
+
     rcode = MESH_CORRUPTED;
   }
   return rcode;
@@ -582,10 +816,10 @@ static int read_sfbool(int *res, FILE *data)
  * arrays. The number of elements in the array is returned by the function. In
  * case of error the negative error code is returned (MESH_NO_MEM,
  * MESH_CORRUPTED, etc.)  and '*a_ref' is not modified. */
-static int read_mffloat(float **a_ref, FILE *data, int nelem)
+static int read_mffloat(float **a_ref, struct file_data *data, int nelem)
 {
-  int len,n;
-  int c,in_brackets;
+  int len, n;
+  int c, in_brackets;
   float *array;
   float tmpf;
 
@@ -603,6 +837,7 @@ static int read_mffloat(float **a_ref, FILE *data, int nelem)
   len = 0;
   n = 0;
   do {
+
     c = skip_ws_comm(data);
     if (c == ']') {
       if (!in_brackets) {
@@ -611,7 +846,7 @@ static int read_mffloat(float **a_ref, FILE *data, int nelem)
         getc(data); /* skip ] */
         break;
       }
-    } else if (c != EOF && fscanf(data,"%f",&tmpf) == 1) {
+    } else if (c != EOF && float_scanf(data,&tmpf) == 1) {
       if (n == len) { /* Need more storage */
         array = grow_array(array,sizeof(*array),&len,SZ_MAX_INCR);
         if (array == NULL) {
@@ -624,7 +859,9 @@ static int read_mffloat(float **a_ref, FILE *data, int nelem)
       n = MESH_CORRUPTED;
     }
   } while ((in_brackets || n < nelem) && c != EOF && n >= 0);
-
+#ifdef DEBUG
+  printf("[read_mffloat]in_brackets=%d n=%d c=%d \n", in_brackets, n, c);
+#endif
   if (n >= 0) { /* read OK */
     *a_ref = array;
   } else { /* An error occurred */
@@ -642,7 +879,7 @@ static int read_mffloat(float **a_ref, FILE *data, int nelem)
  * returned by the function. In case of error the negative error code is
  * returned (MESH_NO_MEM, MESH_CORRUPTED, etc.)  and '*a_ref' and '*max_val'
  * are not modified. */
-static int read_mfint32(int **a_ref, FILE *data, int *max_val)
+static int read_mfint32(int **a_ref, struct file_data *data, int *max_val)
 {
   int len,n;
   int c,in_brackets;
@@ -673,7 +910,7 @@ static int read_mfint32(int **a_ref, FILE *data, int *max_val)
         getc(data); /* skip ] */
         break;
       }
-    } else if (c != EOF && fscanf(data,"%i",&tmpi) == 1) {
+    } else if (c != EOF && int_scanf(data,&tmpi) == 1) {
       if (n == len) { /* Reallocate storage */
         array = grow_array(array,sizeof(*array),&len,SZ_MAX_INCR);
         if (array == NULL) {
@@ -705,7 +942,7 @@ static int read_mfint32(int **a_ref, FILE *data, int *max_val)
  * arrays. The number of elements in the array is returned by the function. In
  * case of error the negative error code is returned (MESH_NO_MEM,
  * MESH_CORRUPTED, etc.)  and '*a_ref' is not modified. */
-static int read_mfvec3f(vertex_t **a_ref, FILE *data)
+static int read_mfvec3f(vertex_t **a_ref, struct file_data *data)
 {
   float *vals;
   vertex_t *vtcs;
@@ -749,7 +986,7 @@ static int read_mfvec3f(vertex_t **a_ref, FILE *data)
  * by the function. In case of error the negative error code is returned
  * (MESH_NO_MEM, MESH_CORRUPTED, etc.)  and '*a_ref' '*bbox_min' and
  * '*bbox_max' are not modified. */
-static int read_mfvec3f_bbox(vertex_t **a_ref, FILE *data,
+static int read_mfvec3f_bbox(vertex_t **a_ref, struct file_data *data,
                              vertex_t *bbox_min, vertex_t *bbox_max)
 {
   float *vals;
@@ -761,7 +998,9 @@ static int read_mfvec3f_bbox(vertex_t **a_ref, FILE *data,
   vals = NULL;
   bbmin.x = bbmin.y = bbmin.z = FLT_MAX;
   bbmax.x = bbmax.y = bbmax.z = -FLT_MAX;
+
   n_vals = read_mffloat(&vals,data,3);
+
   if (n_vals < 0) {
     return n_vals; /* error */
   }
@@ -806,7 +1045,7 @@ static int read_mfvec3f_bbox(vertex_t **a_ref, FILE *data,
  * function. In case of error the negative error code is returned
  * (MESH_NO_MEM, MESH_CORRUPTED, MESH_NOT_TRIAG, etc.)  and '*a_ref' and
  * '*max_vidx' are not modified. */
-static int read_tcoordindex(face_t **a_ref, FILE *data, int *max_vidx)
+static int read_tcoordindex(face_t **a_ref, struct file_data *data, int *max_vidx)
 {
   int *fidxs;
   face_t *faces;
@@ -854,11 +1093,10 @@ static int read_tcoordindex(face_t **a_ref, FILE *data, int *max_vidx)
  * is NULL if there are zero points. In '*bbox_min' and '*bbox_max' the min
  * and max of the vertices bounding box is returned. If an error occurs
  * '*vtcs_ref' '*bbox_min' and '*bbox_max' are not modified. */
-static int read_vrml_coordinate(vertex_t **vtcs_ref, FILE *data,
+static int read_vrml_coordinate(vertex_t **vtcs_ref, struct file_data *data,
                                 vertex_t *bbox_min, vertex_t *bbox_max)
 {
   char stmp[MAX_WORD_LEN+1];
-  const char sfmt[] = "%" STRING(MAX_WORD_LEN) "[^" VRML_WSCOMMSTR_CHARS "]";
   int c;
   int rcode;
   vertex_t *vtcs;
@@ -875,9 +1113,15 @@ static int read_vrml_coordinate(vertex_t **vtcs_ref, FILE *data,
     c = skip_ws_comm(data);
     if (c == '}') { /* end of node */
       getc(data); /* skip } */
-    } else if (c != EOF && fscanf(data,sfmt,stmp) == 1) { /* field */
+    } else if (c != EOF && string_scanf(data,stmp) == 1) { /* field */
       if (strcmp(stmp,"point") == 0) {
+#ifdef DEBUG
+        printf("[read_vrml_coordinate]point found\n");
+#endif
         n_vtcs = read_mfvec3f_bbox(&vtcs,data,bbox_min,bbox_max);
+#ifdef DEBUG
+        printf("[read_vrml_coordinate]n_vtcs = %d\n", n_vtcs);
+#endif
         if (n_vtcs < 0) { /* error */
           rcode = n_vtcs;
         }
@@ -900,10 +1144,9 @@ static int read_vrml_coordinate(vertex_t **vtcs_ref, FILE *data,
  * The array of normal vectors is returned in '*nrmls_ref' (allocated via
  * malloc). It is NULL if there are zero points. If an error occurs
  * '*nrmls_ref' is not modified. */
-static int read_vrml_normal(vertex_t **nrmls_ref, FILE *data)
+static int read_vrml_normal(vertex_t **nrmls_ref, struct file_data *data)
 {
   char stmp[MAX_WORD_LEN+1];
-  const char sfmt[] = "%" STRING(MAX_WORD_LEN) "[^" VRML_WSCOMMSTR_CHARS "]";
   int c;
   int rcode;
   vertex_t *nrmls;
@@ -920,7 +1163,7 @@ static int read_vrml_normal(vertex_t **nrmls_ref, FILE *data)
     c = skip_ws_comm(data);
     if (c == '}') { /* end of node */
       getc(data); /* skip } */
-    } else if (c != EOF && fscanf(data,sfmt,stmp) == 1) { /* field */
+    } else if (c != EOF && string_scanf(data,stmp) == 1) { /* field */
       if (strcmp(stmp,"vector") == 0) {
         n_nrmls = read_mfvec3f(&nrmls,data);
         if (n_nrmls < 0) { /* error */
@@ -946,10 +1189,9 @@ static int read_vrml_normal(vertex_t **nrmls_ref, FILE *data)
  * (MESH_CORRUPTED, MESH_NO_MEM, MESH_NOT_TRIAG, etc.). Otherwise zero is
  * returned. If an error occurs '*tmesh' is not modified. Otherwise all its
  * values are discarded. */
-static int read_vrml_ifs(struct model *tmesh, FILE *data)
+static int read_vrml_ifs(struct model *tmesh, struct file_data *data)
 {
   char stmp[MAX_WORD_LEN+1];
-  const char sfmt[] = "%" STRING(MAX_WORD_LEN) "[^" VRML_WSCOMMSTR_CHARS "]";
   int c;
   vertex_t *vtcs;
   face_t *faces;
@@ -983,13 +1225,22 @@ static int read_vrml_ifs(struct model *tmesh, FILE *data)
     c = skip_ws_comm(data);
     if (c == '}') { /* end of node */
       getc(data); /* skip } */
-    } else if (c != EOF && fscanf(data,sfmt,stmp) == 1) { /* field */
+    } else if (c != EOF && string_scanf(data,stmp) == 1) { /* field */
       if (strcmp(stmp,"coord") == 0) { /* Coordinates */
+#ifdef DEBUG
+        printf("[read_vrml_ifs]coord found\n");
+#endif
         if (n_vtcs != -1) {
           rcode = MESH_CORRUPTED;
         } else if ((rcode = read_node_type(stmp,data,MAX_WORD_LEN+1)) == 0 &&
                    strcmp(stmp,"Coordinate") == 0) {
+#ifdef DEBUG
+          printf("[read_vrml_ifs]Coordinate found\n");
+#endif
           n_vtcs = read_vrml_coordinate(&vtcs,data,&bbmin,&bbmax);
+#ifdef DEBUG
+          printf("[read_vrml_ifs]read_vrml_coordinate done\n");
+#endif
           if (n_vtcs < 0) rcode = n_vtcs; /* error */
         }
       } else if (strcmp(stmp,"coordIndex") == 0) { /* faces */
@@ -1095,7 +1346,7 @@ static int read_vrml_ifs(struct model *tmesh, FILE *data)
  * '*tmeshes_ref' array (allocated via malloc). Otherwise '*tmeshes_ref' is
  * not modified. If 'concat' is non-zero all meshes are concatenated into one,
  * and only one is returned. */
-static int read_vrml_tmesh(struct model **tmeshes_ref, FILE *data,
+static int read_vrml_tmesh(struct model **tmeshes_ref, struct file_data *data,
                            int concat) {
   struct model *tmeshes;
   struct model *ctmesh;
@@ -1108,8 +1359,12 @@ static int read_vrml_tmesh(struct model **tmeshes_ref, FILE *data,
   ctmesh = NULL;
   n_tmeshes = 0;
   len = 0;
+
   do {
     c = find_string(data,"IndexedFaceSet");
+#ifdef DEBUG
+    printf("found IndexedFaceSet c=%d\n", c);
+#endif
     if (c != EOF) {
       if (n_tmeshes == len) {
         tmeshes = grow_array(tmeshes,sizeof(*tmeshes),&len,SZ_MAX_INCR);
@@ -1118,7 +1373,9 @@ static int read_vrml_tmesh(struct model **tmeshes_ref, FILE *data,
           break;
         }
       }
+
       rcode = read_vrml_ifs(&(tmeshes[n_tmeshes]),data);
+
       n_tmeshes++;
     }
   } while (c != EOF && rcode == 0);
@@ -1151,15 +1408,22 @@ static int read_vrml_tmesh(struct model **tmeshes_ref, FILE *data,
  * format and stores them in the 'faces' array. The face's vertex indices are
  * checked for consistency with the number of vertices 'n_vtcs'. Zero is
  * returned on success, or the negative error code otherwise. */
-static int read_raw_faces(face_t *faces, FILE *data, int n_faces, int n_vtcs)
+static int read_raw_faces(face_t *faces, struct file_data *data, 
+                          int n_faces, int n_vtcs)
 {
   int i;
-
+  
   for (i=0; i<n_faces; i++) {
-    if (fscanf(data,"%i %i %i",&(faces[i].f0),
-               &(faces[i].f1),&(faces[i].f2)) != 3) {
+    if (int_scanf(data, &(faces[i].f0)) != 1)
       return MESH_CORRUPTED;
-    }
+    if (int_scanf(data, &(faces[i].f1)) != 1)
+      return MESH_CORRUPTED;
+    if (int_scanf(data, &(faces[i].f2)) != 1)
+      return MESH_CORRUPTED;
+
+#ifdef DEBUG
+    printf("i=%d f0=%d f1=%d f2=%d\n", i, faces[i].f0, faces[i].f1, faces[i].f2);
+#endif
     if (faces[i].f0 < 0 || faces[i].f0 >= n_vtcs ||
         faces[i].f1 < 0 || faces[i].f1 >= n_vtcs ||
         faces[i].f2 < 0 || faces[i].f2 >= n_vtcs) {
@@ -1173,7 +1437,8 @@ static int read_raw_faces(face_t *faces, FILE *data, int n_faces, int n_vtcs)
  * and stores them in the 'vtcs' array. Zero is returned on success, or the
  * negative error code otherwise. If no error occurs the bounding box minium
  * and maximum are returned in 'bbox_min' and 'bbox_max'. */
-static int read_raw_vertices(vertex_t *vtcs, FILE *data, int n_vtcs,
+static int read_raw_vertices(vertex_t *vtcs, struct file_data *data, 
+                             int n_vtcs,
                              vertex_t *bbox_min, vertex_t *bbox_max)
 {
   int i;
@@ -1182,9 +1447,17 @@ static int read_raw_vertices(vertex_t *vtcs, FILE *data, int n_vtcs,
   bbmin.x = bbmin.y = bbmin.z = FLT_MAX;
   bbmax.x = bbmax.y = bbmax.z = -FLT_MAX;
   for (i=0; i<n_vtcs; i++) {
-    if (fscanf(data,"%f %f %f",&(vtcs[i].x),&(vtcs[i].y),&(vtcs[i].z)) != 3) {
+
+    if (float_scanf(data, &(vtcs[i].x)) != 1)
       return MESH_CORRUPTED;
-    }
+    if (float_scanf(data, &(vtcs[i].y)) != 1)
+      return MESH_CORRUPTED;
+    if (float_scanf(data, &(vtcs[i].z)) != 1)
+      return MESH_CORRUPTED;
+
+#ifdef DEBUG    
+    printf("i=%d x=%f y=%f z=%f\n", i, vtcs[i].x, vtcs[i].y, vtcs[i].z);
+#endif
     if (vtcs[i].x < bbmin.x) bbmin.x = vtcs[i].x;
     if (vtcs[i].x > bbmax.x) bbmax.x = vtcs[i].x;
     if (vtcs[i].y < bbmin.y) bbmin.y = vtcs[i].y;
@@ -1204,14 +1477,18 @@ static int read_raw_vertices(vertex_t *vtcs, FILE *data, int n_vtcs,
 /* Reads 'n' normal vectors from the '*data' stream in raw ascii format and
  * stores them in the 'nrmls' array. Zero is returned on success, or the
  * negative error code otherwise. */
-static int read_raw_normals(vertex_t *nrmls, FILE *data, int n)
+static int read_raw_normals(vertex_t *nrmls, struct file_data *data, int n)
 {
   int i;
   for (i=0; i<n; i++) {
-    if (fscanf(data,"%f %f %f",&(nrmls[i].x),
-               &(nrmls[i].y),&(nrmls[i].z)) != 3) {
+    if (float_scanf(data,  &(nrmls[i].x)) != 1)
       return MESH_CORRUPTED;
-    }
+    if (float_scanf(data,  &(nrmls[i].y)) != 1)
+      return MESH_CORRUPTED;
+    if (float_scanf(data,  &(nrmls[i].z)) != 1)
+      return MESH_CORRUPTED;
+
+  
   }
   return 0;
 }
@@ -1221,23 +1498,39 @@ static int read_raw_normals(vertex_t *nrmls, FILE *data, int n)
  * via malloc). It returns the number of meshes read (always one), if
  * succesful, or the negative error code (MESH_CORRUPTED, MESH_NO_MEM, etc.) 
  * otherwise. If an error occurs 'tmesh_ref' is not modified. */
-static int read_raw_tmesh(struct model **tmesh_ref, FILE *data)
+static int read_raw_tmesh(struct model **tmesh_ref, struct file_data *data)
 {
   int n_vtcs,n_faces,n_vnorms,n_fnorms;
-  int n;
+  int n, i;
   char line_buf[256];
+  int tmp;
   struct model *tmesh;
   int rcode;
 
   rcode = 0;
-  /* Read header line */
-  if (fgets(line_buf,sizeof(line_buf),data) != line_buf) {
+  /* Read 1st line */
+  i=0;
+  do {
+    tmp = getc(data);
+    line_buf[i] = (char)tmp;
+    i++;
+  } while (i < sizeof(line_buf) && tmp != '\r' && tmp != '\n' && 
+	   tmp != EOF);
+
+  if (tmp == EOF || i == sizeof(line_buf))
     return MESH_CORRUPTED;
-  }
+
+  if (tmp != EOF)
+    ungetc(tmp, data);
+
+  line_buf[--i]='\0';
+
   n = sscanf(line_buf,"%i %i %i %i",&n_vtcs,&n_faces,&n_vnorms,&n_fnorms);
+
   if (n < 2 || n > 4) {
     return MESH_CORRUPTED;
   }
+
   if (n_vtcs < 3 || n_faces <= 0) return MESH_CORRUPTED;
   if (n > 2 && n_vnorms != n_vtcs) return MESH_CORRUPTED;
   if (n > 3 && n_fnorms != n_faces) return MESH_CORRUPTED;
@@ -1293,7 +1586,7 @@ static int read_raw_tmesh(struct model **tmesh_ref, FILE *data)
  * MESH_CORRUPTED is returned. If the file format can not be detected
  * MESH_BAD_FF is returned. The detected file formats are: MESH_FF_RAW,
  * MESH_FF_VRML, MESH_FF_IV, MESH_FF_PLY. */
-static int detect_file_format(FILE *data)
+static int detect_file_format(struct file_data *data)
 {
   char stmp[MAX_WORD_LEN+1];
   const char swfmt[] = "%" STRING(MAX_WORD_LEN) "s";
@@ -1302,55 +1595,57 @@ static int detect_file_format(FILE *data)
   int rcode;
   char *eptr;
   double ver;
+  
 
   c = getc(data);
   if (c == '#') { /* Probably VRML or Inventor */
-    if (fscanf(data,swfmt,stmp) == 1) {
+    if (buf_fscanf_1arg(data,swfmt,stmp) == 1) {
       if (strcmp(stmp,"VRML") == 0) {
-        if (getc(data) == ' ' && fscanf(data,swfmt,stmp) == 1 &&
+        if (getc(data) == ' ' && buf_fscanf_1arg(data,swfmt,stmp) == 1 &&
             strcmp(stmp,"V2.0") == 0 && getc(data) == ' ' &&
-            fscanf(data,swfmt,stmp) == 1 && strcmp(stmp,"utf8") == 0 &&
-            ((c = getc(data)) == '\n' || c == '\r' || c == ' ' || c == '\t')) {
+            buf_fscanf_1arg(data,swfmt,stmp) == 1 && strcmp(stmp,"utf8") == 0 &&
+            ((c = getc(data)) == '\n' || c == '\r' || c == ' ' || 
+             c == '\t')) {
           while (c != EOF && c != '\n' && c != '\r') { /* skip rest of header */
             c = getc(data);
           }
           rcode = (c != EOF) ? MESH_FF_VRML : MESH_CORRUPTED;
         } else {
-          rcode = ferror(data) ? MESH_CORRUPTED : MESH_BAD_FF;
+          rcode = ferror((FILE*)data->f) ? MESH_CORRUPTED : MESH_BAD_FF;
         }
       } else if (strcmp(stmp,"Inventor") == 0) {
-        if (getc(data) == ' ' && fscanf(data,svfmt,stmp) == 1 &&
+        if (getc(data) == ' ' && buf_fscanf_1arg(data,svfmt,stmp) == 1 &&
             stmp[0] == 'V' && (ver = strtod(stmp+1,&eptr)) >= 2 &&
             ver < 3 && *eptr == '\0' && getc(data) == ' ' &&
-            fscanf(data,swfmt,stmp) == 1 && strcmp(stmp,"ascii") == 0 &&
+            buf_fscanf_1arg(data,swfmt,stmp) == 1 && strcmp(stmp,"ascii") == 0 &&
             ((c = getc(data)) == '\n' || c == '\r' || c == ' ' || c == '\t')) {
           while (c != EOF && c != '\n' && c != '\r') { /* skip rest of header */
             c = getc(data);
           }
           rcode = (c != EOF) ? MESH_FF_IV : MESH_CORRUPTED;
         } else {
-          rcode = ferror(data) ? MESH_CORRUPTED : MESH_BAD_FF;
+          rcode = ferror((FILE*)data->f) ? MESH_CORRUPTED : MESH_BAD_FF;
         }
       } else {
         rcode = MESH_BAD_FF;
       }
     } else {
-      rcode = ferror(data) ? MESH_CORRUPTED : MESH_BAD_FF;
+      rcode = ferror((FILE*)data->f) ? MESH_CORRUPTED : MESH_BAD_FF;
     }
   } else if (c == 'p') { /* Probably ply */
     c = ungetc(c,data);
     if (c != EOF) {
-      if (fscanf(data,swfmt,stmp) == 1 && strcmp(stmp,"ply") == 0) {
-        if (fscanf(data,swfmt,stmp) == 1 && strcmp(stmp,"format") == 0 &&
-            fscanf(data,swfmt,stmp) == 1 && strcmp(stmp,"ascii") == 0 &&
-            fscanf(data,swfmt,stmp) == 1 && strcmp(stmp,"1.0") == 0 &&
+      if (buf_fscanf_1arg(data,swfmt,stmp) == 1 && strcmp(stmp,"ply") == 0) {
+        if (buf_fscanf_1arg(data,swfmt,stmp) == 1 && strcmp(stmp,"format") == 0 &&
+            buf_fscanf_1arg(data,swfmt,stmp) == 1 && strcmp(stmp,"ascii") == 0 &&
+            buf_fscanf_1arg(data,swfmt,stmp) == 1 && strcmp(stmp,"1.0") == 0 &&
             ((c = getc(data)) == '\n' || getc(data) == '\r')) {
           rcode = MESH_FF_PLY;
         } else {
-          rcode = ferror(data) ? MESH_CORRUPTED : MESH_BAD_FF;
+          rcode = ferror((FILE*)data->f) ? MESH_CORRUPTED : MESH_BAD_FF;
         }
       } else {
-        rcode = ferror(data) ? MESH_CORRUPTED : MESH_BAD_FF;
+        rcode = ferror((FILE*)data->f) ? MESH_CORRUPTED : MESH_BAD_FF;
       }
     } else {
       rcode = MESH_CORRUPTED;
@@ -1359,13 +1654,14 @@ static int detect_file_format(FILE *data)
     c = ungetc(c,data);
     rcode = (c != EOF) ? MESH_FF_RAW : MESH_CORRUPTED;
   } else { /* error */
-    rcode = ferror(data) ? MESH_CORRUPTED : MESH_BAD_FF;
+    rcode = ferror((FILE*)data->f) ? MESH_CORRUPTED : MESH_BAD_FF;
   }
   return rcode;
 }
 
 /* see model_in.h */
-int read_model(struct model **models_ref, FILE *data, int fformat, int concat)
+int read_model(struct model **models_ref, struct file_data *data, 
+               int fformat, int concat)
 {
   int rcode;
   struct model *models;
@@ -1376,7 +1672,7 @@ int read_model(struct model **models_ref, FILE *data, int fformat, int concat)
   }
   rcode = 0;
   models = NULL;
-  FLOCKFILE_LOCK(data); /* disable stdio auto-locking, use global lock */
+
   switch (fformat) {
   case MESH_FF_RAW:
     rcode = read_raw_tmesh(&models,data);
@@ -1387,7 +1683,8 @@ int read_model(struct model **models_ref, FILE *data, int fformat, int concat)
   default:
     rcode = MESH_BAD_FF;
   }
-  FLOCKFILE_AUTO(data); /* enable stdio auto-locking, releases global lock */
+  
+
   if (rcode >= 0) {
     *models_ref = models;
   }
@@ -1398,12 +1695,35 @@ int read_model(struct model **models_ref, FILE *data, int fformat, int concat)
 int read_fmodel(struct model **models_ref, const char *fname,
                 int fformat, int concat)
 {
-  FILE *f;
   int rcode;
+  struct file_data *data;
+#ifdef READ_TIME
+  clock_t stime;
+#endif
 
-  f = fopen(fname,"rb");
-  if (f == NULL) return MESH_BAD_FNAME;
-  rcode = read_model(models_ref,f,fformat,concat);
-  fclose(f);
+  data = (struct file_data*)malloc(sizeof(struct file_data));
+
+  data->f = loc_fopen(fname, "rb");
+  data->block = (unsigned char*)malloc(GZ_BUF_SZ*sizeof(unsigned char));
+
+  if (data->f == NULL) return MESH_BAD_FNAME;
+  /* initialize file_data structure */
+  data->eof_reached = 0;
+  data->nbytes = 0;
+  data->pos = 0;
+
+#ifdef READ_TIME
+  stime = clock();
+#endif
+
+  rcode = read_model(models_ref, data, fformat, concat);
+
+#ifdef READ_TIME
+  printf("Model read in %f sec.\n", (double)(clock()-stime)/CLOCKS_PER_SEC);
+#endif
+
+  loc_fclose(data->f);
+  free(data->block);
+  free(data);
   return rcode;
 }

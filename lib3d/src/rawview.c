@@ -1,4 +1,4 @@
-/* $Id: rawview.c,v 1.8 2002/02/26 14:46:47 aspert Exp $ */
+/* $Id: rawview.c,v 1.9 2002/04/03 09:04:37 aspert Exp $ */
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -931,7 +931,7 @@ int main(int argc, char **argv) {
   int i, rcode=0;
   char *title;
   const char s_title[]="Raw Mesh Viewer v3.0 - ";
-  FILE *pf;
+
 
   assert(sizeof(vertex_t) == 3*sizeof(float));
   if (argc != 2) {
@@ -940,19 +940,14 @@ int main(int argc, char **argv) {
   }
 
   in_filename = argv[1]; 
-  pf = fopen(in_filename, "r");
-  if (pf == NULL) {
-    fprintf(stderr, "Unable to open file %s\n", in_filename);
-    exit(-1);
-  }
 
-  rcode = read_model(&raw_model, pf, MESH_FF_AUTO, 0);
-  if (rcode <= 0) {
+
+  rcode = read_fmodel(&raw_model, in_filename, MESH_FF_AUTO, 0);
+  if (rcode < 0) {
     fprintf(stderr, "Unable to read model - error code %d\n", rcode);
-    fclose(pf);
     exit(-1);
   }  
-  fclose(pf);
+
 
   if (raw_model->builtin_normals == 1) {
     normals_done = 1;
