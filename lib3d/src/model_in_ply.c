@@ -1,4 +1,4 @@
-/* $Id: model_in_ply.c,v 1.6 2002/08/26 12:11:28 aspert Exp $ */
+/* $Id: model_in_ply.c,v 1.7 2002/08/26 13:00:46 aspert Exp $ */
 
 /*
  *
@@ -99,7 +99,7 @@ static int read_uint16(struct file_data *data, int swap_bytes, t_uint16 *out )
   int c, i;
   int rcode = 0;
 
-  if (swap_bytes == 0) {
+  if (swap_bytes == 1) {
     for (i=1; i>=0; i--) {
       c = getc(data);
       if (c == EOF) {
@@ -134,7 +134,7 @@ static int read_int16(struct file_data *data, int swap_bytes, t_int16 *out )
   int c, i;
   int rcode = 0;
 
-  if (swap_bytes == 0) {
+  if (swap_bytes == 1) {
     for (i=1; i>=0; i--) {
       c = getc(data);
       if (c == EOF) {
@@ -168,7 +168,7 @@ static int read_uint32(struct file_data *data, int swap_bytes, t_uint32 *out )
   int i, c;
   int rcode = 0;
 
-  if (swap_bytes == 0) {
+  if (swap_bytes == 1) {
     for (i=3; i>=0; i--) {
       c = getc(data);
       if (c == EOF) {
@@ -202,7 +202,7 @@ static int read_int32(struct file_data *data, int swap_bytes, t_int32 *out )
   int i, c;
   int rcode = 0;
 
-  if (swap_bytes == 0) {
+  if (swap_bytes == 1) {
     for (i=3; i>=0; i--) {
       c = getc(data);
       if (c == EOF) {
@@ -237,7 +237,7 @@ static int read_float32(struct file_data *data, int swap_bytes, float *out )
   int rcode = 0;
 
 
-  if (swap_bytes == 0) {
+  if (swap_bytes == 1) {
     for (i=3; i>=0; i--) {
       c = getc(data);
       if (c == EOF) {
@@ -278,7 +278,7 @@ static int read_float64(struct file_data *data, int swap_bytes, double *out )
   int i, c;
   int rcode = 0;
 
-  if (swap_bytes == 0) {
+  if (swap_bytes == 1) {
     for (i=7; i>=0; i--) {
       c = getc(data);
       if (c == EOF) {
