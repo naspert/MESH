@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.31 2001/08/15 15:33:00 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.32 2001/08/16 13:04:05 dsanta Exp $ */
 
 #include <compute_error.h>
 
@@ -937,44 +937,6 @@ static double dist_pt_surf(vertex p, const struct triangle_list *tl,
  * --------------------------------------------------------------------------*/
 
 /* See compute_error.h */
-struct face_list *faces_of_vertex(model *m)
-{
-  int j,jmax;           /* indices and loop limits */
-  int v0,v1,v2;         /* current triangle's vertex indices */
-  struct face_list *fl; /* the face list to return */
-
-  fl = xcalloc(m->num_vert,sizeof(*fl));
-  for (j=0, jmax=m->num_faces; j<jmax; j++) {
-    v0 = m->faces[j].f0;
-    v1 = m->faces[j].f1;
-    v2 = m->faces[j].f2;
-    if (v0 == v1 || v0 == v2 || v1 == v2) {
-      fprintf(stderr,
-              "WARNING: face %d is degenerated, skipped from face list\n",j);
-      continue;
-    }
-    fl[v0].face = xrealloc(fl[v0].face,(fl[v0].n_faces+1)*sizeof(*(fl->face)));
-    fl[v0].face[fl[v0].n_faces++] = j;
-    fl[v1].face = xrealloc(fl[v1].face,(fl[v1].n_faces+1)*sizeof(*(fl->face)));
-    fl[v1].face[fl[v1].n_faces++] = j;
-    fl[v2].face = xrealloc(fl[v2].face,(fl[v2].n_faces+1)*sizeof(*(fl->face)));
-    fl[v2].face[fl[v2].n_faces++] = j;
-  }
-  return fl;
-}
-
-/* See compute_error.h */
-void free_face_lists(struct face_list *fl, int n)
-{
-  int i;
-  if (fl == NULL) return;
-  for (i=0; i<n; i++) {
-    free(fl[i].face);
-  }
-  free(fl);
-}
-
-/* See compute_error.h */
 void dist_surf_surf(const model *m1, model *m2, int n_spt,
                     struct face_error *fe_ptr[],
                     struct dist_surf_surf_stats *stats, int calc_normals,
@@ -1063,7 +1025,7 @@ void dist_surf_surf(const model *m1, model *m2, int n_spt,
     stats->mean_dist += fe[k].mean_error*fe[k].face_area;
     stats->rms_dist += fe[k].mean_sqr_error*fe[k].face_area;
   }
-  if (!quiet) printf("\n");
+  if (!quiet) printf("\r             \r"); /* Remove progress message */
 #ifdef DO_DIST_PT_SURF_STATS
   if (!quiet) {
     int n_tot_samples;
