@@ -1,4 +1,4 @@
-/* $Id: torus.c,v 1.3 2001/03/13 07:46:52 aspert Exp $ */
+/* $Id: torus.c,v 1.4 2001/09/27 11:44:47 aspert Exp $ */
 #include <3dmodel.h>
 #include <geomutils.h>
 #include <3dmodel_io.h>
@@ -6,7 +6,7 @@
 
 int main(int argc, char **argv) {
   int i,j,k;
-  model *torus;
+  struct model *torus;
   double theta, phi, dth, dph;
   double r,h, k1, k2;
   int nh, nr;
@@ -34,11 +34,11 @@ int main(int argc, char **argv) {
     exit(0);
   }
   
-  torus = (model*)malloc(sizeof(model));
+  torus = (struct model*)malloc(sizeof(struct model));
   torus->num_faces = nr*nh*2;
   torus->num_vert = nr*nh;
-  torus->vertices = (vertex*)malloc(torus->num_vert*sizeof(vertex));
-  torus->faces = (face*)malloc(torus->num_faces*sizeof(face));
+  torus->vertices = (vertex_t*)malloc(torus->num_vert*sizeof(vertex_t));
+  torus->faces = (face_t*)malloc(torus->num_faces*sizeof(face_t));
   dth = 2.0*M_PI/(double)nr;
   dph = 2.0*M_PI/(double)nh;
   k2 = 1.0/h;
@@ -53,7 +53,7 @@ int main(int argc, char **argv) {
       torus->vertices[j+nh*i].y = (r + h*cos(phi))*sin(theta);
       torus->vertices[j+nh*i].z = h*sin(phi);
       k1 = k2*(1.0 - r/(r+h*cos(phi)));
-      printf("Vertex %d : k1 = %f k2 = %f\n", j+nh*i, k2, k1);
+      printf("Vertex %d : k1=%f\tk2=%f\tkg=%f\n", j+nh*i, k2, k1, k1*k2);
       phi += dph;
     }
     theta += dth;

@@ -1,11 +1,11 @@
-/* $Id: geomutils.c,v 1.6 2001/08/02 09:59:19 aspert Exp $ */
+/* $Id: geomutils.c,v 1.7 2001/09/27 11:44:46 aspert Exp $ */
 #include <3dmodel.h>
 #define _GEOMUTILS_C_
 #include <geomutils.h> /* catch the inlined functions */
 
 /* Computes the normalized cross product between vectors p2p1 and p3p1 */
-vertex ncrossp(vertex p1, vertex p2, vertex p3) {
-  vertex v1, v2, tmp;
+vertex_t ncrossp(vertex_t p1, vertex_t p2, vertex_t p3) {
+  vertex_t v1, v2, tmp;
   double norm;
 
   v1.x = p2.x - p1.x;
@@ -33,8 +33,8 @@ vertex ncrossp(vertex p1, vertex p2, vertex p3) {
 }
 
 /* Computes the cross product between vectors p2p1 and p3p1 */
-vertex crossprod(vertex v1, vertex v2) {
-  vertex res;
+vertex_t crossprod(vertex_t v1, vertex_t v2) {
+  vertex_t res;
 
   res.x = v1.y*v2.z - v1.z*v2.y;
   res.y = v1.z*v2.x - v1.x*v2.z;
@@ -44,8 +44,8 @@ vertex crossprod(vertex v1, vertex v2) {
 }
 
 /*Used for 2D triangulation */
-double cross_product2d(vertex p1, vertex p2, vertex p3) {
-    vertex v1, v2;
+double cross_product2d(vertex_t p1, vertex_t p2, vertex_t p3) {
+    vertex_t v1, v2;
 
     v1.x = p2.x - p1.x;
     v1.y = p2.y - p1.y;
@@ -57,18 +57,18 @@ double cross_product2d(vertex p1, vertex p2, vertex p3) {
 }
 
 /* Computes the scalar product between 2 vectors */
-double scalprod(vertex v1, vertex v2) {
+double scalprod(vertex_t v1, vertex_t v2) {
   return (v1.x*v2.x + v1.y*v2.y + v1.z*v2.z);
 }
 
 /* Computes the norm of vector v */
-double norm(vertex v) {
+double norm(vertex_t v) {
   return (sqrt(v.x*v.x + v.y*v.y + v.z*v.z));
 }
 
 /* Computes the distance between v1 and v2 */
-double dist(vertex v1, vertex v2) {
-  vertex tmp;
+double dist(vertex_t v1, vertex_t v2) {
+  vertex_t tmp;
   
   tmp.x = v1.x - v2.x;
   tmp.y = v1.y - v2.y;
@@ -79,8 +79,8 @@ double dist(vertex v1, vertex v2) {
 }
 
 
-/* Normalizes vertex v */
-void normalize(vertex *v) {
+/* Normalizes vertex_t v */
+void normalize(vertex_t *v) {
   double n;
 
   n = norm(*v);
@@ -94,11 +94,11 @@ void normalize(vertex *v) {
 }
 
 /* Rotates the point 'p' around the axis 'u' */
-vertex rotate_3d(vertex p, vertex u, double theta) {
+vertex_t rotate_3d(vertex_t p, vertex_t u, double theta) {
   double cth=cos(theta);
   double sth=sin(theta);
   double a=1.0-cth;
-  vertex q;
+  vertex_t q;
 
   
   normalize(&u); /* useful ? */
@@ -120,7 +120,7 @@ vertex rotate_3d(vertex p, vertex u, double theta) {
 }
 
 /* Returns 1 if p is inside the circle defined by center & r */
-int inside(vertex p, vertex center, double r) {
+int inside(vertex_t p, vertex_t center, double r) {
  
     if (dist(center, p) < r)
 	return 1;
@@ -129,9 +129,9 @@ int inside(vertex p, vertex center, double r) {
 }
 
 /* Computes the radius and center of the 2D circle passing by p1 p2 and p3 */
-void compute_circle2d(vertex p1, vertex p2, vertex p3, 
-		      double *r, vertex *center) {
-    vertex v1, v2;
+void compute_circle2d(vertex_t p1, vertex_t p2, vertex_t p3, 
+		      double *r, vertex_t *center) {
+    vertex_t v1, v2;
     double cp; 
     double num, np1, np2, np3;
 
@@ -166,10 +166,10 @@ void compute_circle2d(vertex p1, vertex p2, vertex p3,
 
 /* Compute the center and radius of the circle passing
    by the points p1,p2 and p3 */
-void compute_circle3d(vertex p1, vertex p2, vertex p3, 
-		    double *r, vertex *center) {
-    vertex u,v,w;
-    vertex m1, m2, tmp;
+void compute_circle3d(vertex_t p1, vertex_t p2, vertex_t p3, 
+		    double *r, vertex_t *center) {
+    vertex_t u,v,w;
+    vertex_t m1, m2, tmp;
     int i;
     double det;
     double a[9], b[3];
@@ -243,8 +243,8 @@ void compute_circle3d(vertex p1, vertex p2, vertex p3,
 
 
 /* Computes the area of the triangle p1,p2, p3 */
-double tri_area(vertex p1, vertex p2, vertex p3) {
-    vertex u,v,h;
+double tri_area(vertex_t p1, vertex_t p2, vertex_t p3) {
+    vertex_t u,v,h;
     double nu2,uv;
     double tmp;
 

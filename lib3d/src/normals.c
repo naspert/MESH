@@ -1,14 +1,14 @@
-/* $Id: normals.c,v 1.10 2001/09/24 11:59:27 aspert Exp $ */
+/* $Id: normals.c,v 1.11 2001/09/27 11:44:46 aspert Exp $ */
 #include <3dmodel.h>
 #include <geomutils.h>
 
 
 /* find the 1-ring of vertex v */
-void build_star(model *raw_model, int v, ring_info *ring) {
+void build_star(struct model *raw_model, int v, struct ring_info *ring) {
 
   int i, j, k;
   int num_edges=0; /* number of edges in the 1-ring */
-  edge_v *edge_list_primal=NULL;
+  struct edge_v *edge_list_primal=NULL;
   int *final_star;
   int *done;
   int star_size;
@@ -19,9 +19,9 @@ void build_star(model *raw_model, int v, ring_info *ring) {
   for (i=0; i<raw_model->num_faces; i++) {
     if (raw_model->faces[i].f0 == v) {
       num_edges ++;
-      edge_list_primal = (edge_v*)realloc(edge_list_primal, 
-					  num_edges*sizeof(edge_v));
-
+      edge_list_primal = (struct edge_v*)
+	realloc(edge_list_primal, num_edges*sizeof(struct edge_v));
+      
 #ifdef NORM_DEBUG
       if (edge_list == NULL) {
 	printf("realloc failed %d\n", i);
@@ -33,8 +33,8 @@ void build_star(model *raw_model, int v, ring_info *ring) {
       edge_list_primal[num_edges-1].v1 = raw_model->faces[i].f2;      
     } else if (raw_model->faces[i].f1 == v) {
       num_edges ++;
-      edge_list_primal = (edge_v*)realloc(edge_list_primal, 
-					  num_edges*sizeof(edge_v));
+      edge_list_primal = (struct edge_v*)
+	realloc(edge_list_primal, num_edges*sizeof(struct edge_v));
 
 #ifdef NORM_DEBUG
       if (edge_list_primal == NULL) {
@@ -47,8 +47,8 @@ void build_star(model *raw_model, int v, ring_info *ring) {
       edge_list_primal[num_edges-1].v1 = raw_model->faces[i].f2;      
     }  else if (raw_model->faces[i].f2 == v) {
       num_edges ++;
-      edge_list_primal = (edge_v*)realloc(edge_list_primal, 
-					  num_edges*sizeof(edge_v));
+      edge_list_primal = (struct edge_v*)
+	realloc(edge_list_primal, num_edges*sizeof(struct edge_v));
 
 
       edge_list_primal[num_edges-1].v0 = raw_model->faces[i].f0;
@@ -168,7 +168,7 @@ void build_star(model *raw_model, int v, ring_info *ring) {
 
 
 /* tree destructor */
-void destroy_tree(face_tree_ptr tree) {
+void destroy_tree(struct face_tree *tree) {
   
   if (tree->left != NULL)
     destroy_tree(tree->left);
@@ -191,11 +191,11 @@ void destroy_tree(face_tree_ptr tree) {
 
 /* Compares two edges (s.t. they are in lexico. order after qsort) */
 int compar(const void* ed0, const void* ed1) {
-  edge_sort *e0, *e1;
+  struct edge_sort *e0, *e1;
   int tmp;
  
-  e0 = (edge_sort*)ed0;
-  e1 = (edge_sort*)ed1;
+  e0 = (struct edge_sort*)ed0;
+  e1 = (struct edge_sort*)ed1;
   
   tmp = e0->prim.v0 - e1->prim.v0;
   if (tmp)
@@ -208,11 +208,12 @@ int compar(const void* ed0, const void* ed1) {
 
 /* Adds an edge in the dual graph and returns the last elt. in the graph */
 void add_edge_dg(struct dual_graph_info *dual_graph, 
-		 const edge_sort* e0, const edge_sort* e1) {
+		 const struct edge_sort* e0, const struct edge_sort* e1) {
 
   int n = dual_graph->num_edges_dual;
 
-  dual_graph->edges = realloc(dual_graph->edges, (n+1)*sizeof(edge_dual));
+  dual_graph->edges = (struct edge_dual*)
+    realloc(dual_graph->edges, (n+1)*sizeof(struct edge_dual));
 
   dual_graph->edges[n].face0 = e0->face;
   dual_graph->edges[n].face1 = e1->face;
@@ -223,15 +224,18 @@ void add_edge_dg(struct dual_graph_info *dual_graph,
 /* Returns the number of edges from the dual graph or -1 if a non-manifold */
 /* edge is encoutered. The list of faces surrounding each vertex is done */
 /* at the same time */
-int build_edge_list(model *raw_model, struct dual_graph_info *dual_graph, 
-		    info_vertex *curv, struct dual_graph_index **dg_idx){
-  edge_sort *list;
+int build_edge_list(struct model *raw_model, 
+		    struct dual_graph_info *dual_graph, 
+		    struct info_vertex *curv, 
+		    struct dual_graph_index **dg_idx){
+  struct edge_sort *list;
   int i, f;
   int v0, v1, v2;
   int nedges=0;
 
   
-  list = (edge_sort*)malloc(3*raw_model->num_faces*sizeof(edge_sort));
+  list = (struct edge_sort*)
+    malloc(3*raw_model->num_faces*sizeof(struct edge_sort));
 
   
   for (i=0; i<raw_model->num_faces; i++) {
@@ -290,7 +294,7 @@ int build_edge_list(model *raw_model, struct dual_graph_info *dual_graph,
     
   }
   
-  qsort(list, nedges, sizeof(edge_sort), compar);
+  qsort(list, nedges, sizeof(struct edge_sort), compar);
 
   for (i=0; i<3*raw_model->num_faces-1; i++) {
     if (compar(&(list[i]), &(list[i+1])) == 0) {/*New entry in the dual graph*/
@@ -338,14 +342,14 @@ int build_edge_list(model *raw_model, struct dual_graph_info *dual_graph,
 /* into 'bot' and update 'ne_dual'*/
 /* we assume that 'bot' points on the last non-NULL elt of the and we return */
 /* the last elt. of this list afterwards */
-edge_list_ptr find_dual_edges(int cur_face,  int *nfound, 
-			      struct dual_graph_info *dual_graph, 
-			      edge_list_ptr bot, 
-			      struct dual_graph_index *dg_index) {
+struct edge_list* find_dual_edges(int cur_face,  int *nfound, 
+				  struct dual_graph_info *dual_graph, 
+				  struct edge_list *bot, 
+				  struct dual_graph_index *dg_index) {
 
 
-  int i;
-  int id;
+  int i, id;
+  
   
 
   for (i=0; i<dg_index[cur_face].face_info; i++) {
@@ -359,7 +363,7 @@ edge_list_ptr find_dual_edges(int cur_face,  int *nfound,
 	bot->edge.face0 = dual_graph->edges[id].face1;
 	bot->edge.common = dual_graph->edges[id].common;
       } 
-      bot->next = (edge_list_ptr)malloc(sizeof(edge_list));
+      bot->next = (struct edge_list*)malloc(sizeof(struct edge_list));
       bot = bot->next;
       bot->next = NULL;
       dual_graph->done[id] = 1;
@@ -373,17 +377,17 @@ edge_list_ptr find_dual_edges(int cur_face,  int *nfound,
 
 
 /* Builds the spanning tree of the dual graph */
-face_tree_ptr* bfs_build_spanning_tree(model *raw_model, info_vertex *curv) {
-  int faces_traversed = 0;
-
-  edge_list_ptr  cur_list, old;
-  edge_list_ptr  *list, bot;
+struct face_tree** bfs_build_spanning_tree(struct model *raw_model, 
+					   struct info_vertex *curv) {
+  int faces_traversed=0;
+  int list_size=0, i;
+  int ne_dual=0;
+  struct edge_list  *cur_list, *old;
+  struct edge_list  **list, *bot;
   struct dual_graph_info *dual_graph;
   struct dual_graph_index *dg_idx; 
-  
-  face_tree_ptr *tree, cur_node, new_node, top;
-  int list_size = 0, i;
-  int ne_dual = 0;
+  struct face_tree **tree, *cur_node, *new_node, *top;
+
 
   printf("Dual graph build.... ");fflush(stdout);
   dual_graph = (struct dual_graph_info*)malloc(sizeof(struct dual_graph_info));
@@ -413,14 +417,15 @@ face_tree_ptr* bfs_build_spanning_tree(model *raw_model, info_vertex *curv) {
   
 #endif
   printf("Building spanning tree...");fflush(stdout);
-  list = (edge_list_ptr*)malloc(sizeof(edge_list_ptr)); 
-  *list = (edge_list_ptr)malloc(sizeof(edge_list));
+  list = (struct edge_list**)malloc(sizeof(struct edge_list*)); 
+  *list = (struct edge_list*)malloc(sizeof(struct edge_list));
   (*list)->next = NULL;
   (*list)->prev = NULL;
-  tree = (face_tree_ptr*)malloc(raw_model->num_faces*sizeof(face_tree_ptr));
+  tree = (struct face_tree**)
+    malloc(raw_model->num_faces*sizeof(struct face_tree*));
   /* Initialize all cells */
   for (i=0; i<raw_model->num_faces; i++) {
-    tree[i] = (face_tree_ptr)malloc(sizeof(face_tree));
+    tree[i] = (struct face_tree*)malloc(sizeof(struct face_tree));
     tree[i]->parent = NULL;
     tree[i]->left = NULL;
     tree[i]->right = NULL;
@@ -547,7 +552,7 @@ face_tree_ptr* bfs_build_spanning_tree(model *raw_model, info_vertex *curv) {
 
 
 
-int find_center(face *cur,int v1, int v2) {
+int find_center(face_t *cur,int v1, int v2) {
   if (cur->f0==v1) {
     if (cur->f1==v2)
       return cur->f2;
@@ -568,7 +573,7 @@ int find_center(face *cur,int v1, int v2) {
   return -1;
 }
 
-void swap_vert(edge_v *p) {
+void swap_vert(struct edge_v *p) {
   int tmp;
 
   tmp = p->v0;
@@ -576,7 +581,7 @@ void swap_vert(edge_v *p) {
   p->v1 = tmp;
 }
 
-void update_child_edges(face_tree_ptr tree, int v0, int v1, int v2) {
+void update_child_edges(struct face_tree *tree, int v0, int v1, int v2) {
   
   if (tree->left != NULL) {
     if (tree->right == NULL) { /* update prim_left */
@@ -634,7 +639,8 @@ void update_child_edges(face_tree_ptr tree, int v0, int v1, int v2) {
 
 
 
-void build_normals(model *raw_model, face_tree_ptr tree, vertex* normals) {
+void build_normals(struct model *raw_model, struct face_tree *tree, 
+		   vertex_t* normals) {
 
   int v0=-1, v1=-1, v2=-1;
 /*  double tmp;*/
@@ -727,10 +733,11 @@ void build_normals(model *raw_model, face_tree_ptr tree, vertex* normals) {
 }
 
 /* Compute consistent normals for each face of the model */
-vertex* compute_face_normals(model* raw_model, info_vertex *curv) {
+vertex_t* compute_face_normals(struct model* raw_model, 
+			       struct info_vertex *curv) {
   
-  vertex *normals;
-  face_tree_ptr *tree, top;
+  vertex_t *normals;
+  struct face_tree **tree, *top;
   int i;
 
 
@@ -752,7 +759,7 @@ vertex* compute_face_normals(model* raw_model, info_vertex *curv) {
   /* Finally, compute the normals for each face */
   
   printf("The model is manifold.\n");
-  normals = (vertex*)malloc(raw_model->num_faces*sizeof(vertex));
+  normals = (vertex_t*)malloc(raw_model->num_faces*sizeof(vertex_t));
   build_normals(raw_model, top, normals);
   printf("Face normals done !\n");
   
@@ -774,39 +781,35 @@ vertex* compute_face_normals(model* raw_model, info_vertex *curv) {
 
 
 /* Compute a "normal" for each vertex */
-void compute_vertex_normal(model* raw_model, info_vertex* curv,  
-			   vertex *model_normals) {
+void compute_vertex_normal(struct model* raw_model, struct info_vertex* curv,  
+			   vertex_t *model_normals) {
   int i,j;
-  vertex tmp, p1, p2, p3;
+  vertex_t tmp, *p1, *p2, *p3;
 
 
 
   /* Compute area of each face */
   for (i=0; i<raw_model->num_faces; i++) {
-    p1 = raw_model->vertices[raw_model->faces[i].f0];
-    p2 = raw_model->vertices[raw_model->faces[i].f1];
-    p3 = raw_model->vertices[raw_model->faces[i].f2];
+    p1 = &(raw_model->vertices[raw_model->faces[i].f0]);
+    p2 = &(raw_model->vertices[raw_model->faces[i].f1]);
+    p3 = &(raw_model->vertices[raw_model->faces[i].f2]);
     
-    raw_model->area[i] = tri_area_v(&p1, &p2, &p3);
+    raw_model->area[i] = tri_area_v(p1, p2, p3);
   }
 
   /* Alloc array for normal of each vertex */
-  raw_model->normals = (vertex*)malloc(raw_model->num_vert*sizeof(vertex));
+  raw_model->normals = (vertex_t*)malloc(raw_model->num_vert*sizeof(vertex_t));
 
 
   for (i=0; i<raw_model->num_vert; i++) {
     tmp.x = 0.0;
     tmp.y = 0.0;
     tmp.z = 0.0;
-    for (j=0; j<curv[i].num_faces; j++) {
-      tmp.x += model_normals[curv[i].list_face[j]].x * 
-	raw_model->area[curv[i].list_face[j]];
-      tmp.y += model_normals[curv[i].list_face[j]].y * 
-	raw_model->area[curv[i].list_face[j]];
-      tmp.z += model_normals[curv[i].list_face[j]].z * 
-	raw_model->area[curv[i].list_face[j]];
-    }
-  
+    for (j=0; j<curv[i].num_faces; j++) 
+      add_prod_v(raw_model->area[curv[i].list_face[j]], 
+		 &(model_normals[curv[i].list_face[j]]), &tmp, &tmp);
+
+
     normalize_v(&tmp);
     raw_model->normals[i] = tmp;
 #ifdef NORM_DEBUG

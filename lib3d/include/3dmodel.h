@@ -1,4 +1,4 @@
-/* $Id: 3dmodel.h,v 1.16 2001/09/27 08:56:59 aspert Exp $ */
+/* $Id: 3dmodel.h,v 1.17 2001/09/27 11:44:42 aspert Exp $ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -37,98 +37,92 @@ typedef struct {
   double x;
   double y;
   double z;
-}vertex;
+}vertex_t;
 
 typedef struct {
   int f0;
   int f1;
   int f2;
-}face;
+}face_t;
 
 
 
-
-typedef struct {
-  int outdegree;
-  int *list;
-}star;
-
-typedef struct {
+struct info_vertex{
   int num_faces;
   int *list_face; /* Index of faces containing the vertex */
   int outdegree;
   int *list_vertex; /* Index of vertices neighbouring the current vertex */
   double mixed_area;
   double gauss_curv;
-  vertex mean_curv_normal;
+  vertex_t mean_curv_normal;
   double c[3];
   double k1, k2; /* principal curvature */
-  vertex t1,t2; /* principal directions (if any) */
-}info_vertex;
+  vertex_t t1,t2; /* principal directions (if any) */
+};
 
 
-typedef struct {
+struct edge_v {
   int v0;
   int v1;
-}edge_v;
+};
 
 
 
-typedef struct {
+struct edge_dual {
   int face0;
   int face1;
-  edge_v common;
-}edge_dual;
+  struct edge_v common;
+};
 
 
-typedef struct {
+struct edge_tr {
   int s,t; /* An edge contains 2 vertices */
   int l,r;/*left & right faces index*/
   /* l,r = -1 -> undefined face...*/
-}edge_tr;
+};
 
-typedef struct {
-  edge_v prim;
+struct edge_sort {
+  struct edge_v prim;
   int face;
-}edge_sort;
+};
 
 
-typedef struct fnode *face_tree_ptr;
 
-typedef struct fnode {
+
+struct face_tree {
   int face_idx;
   int visited;
   int node_type; /* 0 -> left_child 1 -> right_child */
-  edge_v prim_left;
-  edge_v prim_right;
-  face_tree_ptr left;
-  face_tree_ptr right;
-  face_tree_ptr parent;
+  struct edge_v prim_left;
+  struct edge_v prim_right;
+  struct face_tree *left;
+  struct face_tree *right;
+  struct face_tree *parent;
   int v0,v1,v2;
 }face_tree;
 
 
-typedef struct {
+struct model {
   int num_faces;
   int num_vert;
   int builtin_normals; /* 1 if normals are already in the file 0 otherwise */
-  vertex* vertices;
-  vertex* normals; /* Normals for each vertex of the model */
-  vertex *face_normals;
-  face* faces;
-  double* area; /* area of each face */
-  double total_area;
-  vertex bBox[2]; /* bBox[0] is the min  bBox[1] is the max */
-  face_tree_ptr *tree; /* spanning tree of the dual graph */
+  vertex_t *vertices;
+  vertex_t *normals; /* Normals for each vertex of the model */
+  vertex_t *face_normals;
+  face_t *faces;
+  double *area; /* area of each face */
+  double total_area; /* area of the whole model */
+  vertex_t bBox[2]; /* bBox[0] is the min  bBox[1] is the max */
+  struct face_tree **tree; /* spanning tree of the dual graph */
 #ifdef EST_NORMALS
-  vertex *est_normals;
+  vertex_t *est_normals;
 #endif
 }model;
 
 
 struct dual_graph_info {
   int num_edges_dual;
-  edge_dual *edges;
+  struct edge_dual *edges;
   int *done;
 };
 
@@ -137,28 +131,27 @@ struct dual_graph_index {
   int face_info; /* number of neighb. faces */
 };
 
-typedef struct dual_list *edge_list_ptr;
 
-typedef struct dual_list {
-  edge_dual edge;
-  edge_list_ptr next;
-  edge_list_ptr prev;
-}edge_list;
+struct edge_list {
+  struct edge_dual edge;
+  struct edge_list *next;
+  struct edge_list *prev;
+};
 
-typedef struct {
+struct ring_info {
   int *ord_vert; /* ordered list of vertex */
   int type; /* 0=regular 1=boundary 2=non-manifold */
   int size;
-}ring_info;
+};
 
 
-typedef struct {
-  edge_v edge;
-  vertex p;
+struct edge_sub {
+  struct edge_v edge;
+  vertex_t p;
 #ifdef EST_NORMALS
-  vertex n;
+  vertex_t n;
 #endif
-}edge_sub;
+};
 
 
 #endif

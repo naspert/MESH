@@ -1,4 +1,4 @@
-/* $Id: 3dmodel_io.c,v 1.15 2001/09/12 08:11:03 dsanta Exp $ */
+/* $Id: 3dmodel_io.c,v 1.16 2001/09/27 11:44:46 aspert Exp $ */
 #include <3dmodel.h>
 #include <normals.h>
 
@@ -54,19 +54,20 @@ int read_header(FILE *pf, int *nvert, int *nfaces, int *nnorms, int *nfnorms) {
   return 1;
 } 
 
-model* alloc_read_model(FILE *pf, int nvert, int nfaces, int nnorms, int nfnorms) {
-  model *raw_model;
+struct model* alloc_read_model(FILE *pf, int nvert, int nfaces, 
+			int nnorms, int nfnorms) {
+  struct model *raw_model;
   int i;
   double x,y,z;
   int v0, v1, v2;
 
 
   printf("num_faces = %d num_vert = %d\n", nfaces, nvert); 
-  raw_model = (model*)malloc(sizeof(model));
+  raw_model = (struct model*)malloc(sizeof(struct model));
   raw_model->num_faces = nfaces;
   raw_model->num_vert = nvert;
-  raw_model->faces = (face*)malloc(nfaces*sizeof(face));
-  raw_model->vertices = (vertex*)malloc(nvert*sizeof(vertex));
+  raw_model->faces = (face_t*)malloc(nfaces*sizeof(face_t));
+  raw_model->vertices = (vertex_t*)malloc(nvert*sizeof(vertex_t));
 
   raw_model->normals = NULL;
   raw_model->face_normals = NULL;
@@ -82,12 +83,12 @@ model* alloc_read_model(FILE *pf, int nvert, int nfaces, int nnorms, int nfnorms
   raw_model->bBox[1].z = -FLT_MAX;
 
   if (nfnorms > 0) {
-    raw_model->face_normals = (vertex*)malloc(nfnorms*sizeof(vertex));
-    raw_model->normals = (vertex*)malloc(nnorms*sizeof(vertex));
+    raw_model->face_normals = (vertex_t*)malloc(nfnorms*sizeof(vertex_t));
+    raw_model->normals = (vertex_t*)malloc(nnorms*sizeof(vertex_t));
     raw_model->builtin_normals = 1;
   }
   else if (nnorms > 0) {
-    raw_model->normals = (vertex*)malloc(nnorms*sizeof(vertex));
+    raw_model->normals = (vertex_t*)malloc(nnorms*sizeof(vertex_t));
     raw_model->builtin_normals = 1;
   }
   else 
@@ -96,9 +97,9 @@ model* alloc_read_model(FILE *pf, int nvert, int nfaces, int nnorms, int nfnorms
 
   for (i=0; i<nvert; i++) {
     fscanf(pf,"%lf %lf %lf",&x, &y, &z);
-    raw_model->vertices[i].x = 1.0*x;
-    raw_model->vertices[i].y = 1.0*y;
-    raw_model->vertices[i].z = 1.0*z;
+    raw_model->vertices[i].x = x;
+    raw_model->vertices[i].y = y;
+    raw_model->vertices[i].z = z;
      if (raw_model->vertices[i].x > raw_model->bBox[1].x) 
       raw_model->bBox[1].x = raw_model->vertices[i].x;
      if (raw_model->vertices[i].x < raw_model->bBox[0].x)
@@ -144,8 +145,8 @@ model* alloc_read_model(FILE *pf, int nvert, int nfaces, int nnorms, int nfnorms
 }
 
 
-model* read_raw_model(char *filename) {
-  model* raw_model;
+struct model* read_raw_model(char *filename) {
+  struct model* raw_model;
   FILE *pf;
   int nfaces = 0; 
   int nvert = 0;
@@ -159,7 +160,7 @@ model* read_raw_model(char *filename) {
   }
     
   if (!read_header(pf, &nvert, &nfaces, &nnorms, &nfnorms)) {
-    fprintf(stderr, "Exitting\n");
+    fprintf(stderr, "Exiting\n");
     fclose(pf);
     exit(-1);
   } 
@@ -173,8 +174,8 @@ model* read_raw_model(char *filename) {
 }
 
 
-model* read_raw_model_frame(char *filename,int frame) {
-  model* raw_model;
+struct model* read_raw_model_frame(char *filename,int frame) {
+  struct model* raw_model;
   FILE *pf;
   char *fullname;
   char *tmp;
@@ -220,7 +221,7 @@ model* read_raw_model_frame(char *filename,int frame) {
 
 
 
-void write_raw_model(model *raw_model, char *filename) {
+void write_raw_model(struct model *raw_model, char *filename) {
   FILE *pf;
   int i;
   char *rootname;
@@ -287,23 +288,23 @@ void write_raw_model(model *raw_model, char *filename) {
   fclose(pf);
 }
 
-void free_raw_model(model *raw_model) {
+void free_raw_model(struct model *raw_model) {
   free(raw_model->vertices);
   free(raw_model->faces);
   if (raw_model->normals != NULL)
     free(raw_model->normals);
   if (raw_model->face_normals != NULL)
     free(raw_model->face_normals);
-  if (raw_model->area != NULL)
-    free(raw_model->area);
+/*   if (raw_model->area != NULL) */
+/*     free(raw_model->area); */
   if (raw_model->tree != NULL)
     destroy_tree(*(raw_model->tree));
   free(raw_model);
 }
 
-void write_brep_file(model *raw_model, char *filename, int grid_size_x,
+void write_brep_file(struct model *raw_model, char *filename, int grid_size_x,
 		     int grid_size_y, int  grid_size_z,
-		     vertex bbox_min, vertex bbox_max) {
+		     vertex_t bbox_min, vertex_t bbox_max) {
 
   FILE *pf;
   int i;

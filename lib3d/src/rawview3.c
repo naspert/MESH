@@ -1,4 +1,4 @@
-/* $Id: rawview3.c,v 1.21 2001/09/20 08:01:44 aspert Exp $ */
+/* $Id: rawview3.c,v 1.22 2001/09/27 11:44:46 aspert Exp $ */
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -41,14 +41,14 @@ int draw_spanning_tree = 0;
 int wf_bc = 0; /* draw wireframe w. backface cull. */
 int ps_rend = 0; /* 1 if we render to a PS */
 
-vertex center;
+vertex_t center;
 int normals_done = 0;
-model *raw_model;
+struct model *raw_model;
 char *in_filename;
 int grab_number = 0;
 int ps_number = 0;
 
-model *r_model;
+struct model *r_model;
 
 
 /* *********************************************************** */
@@ -191,13 +191,13 @@ void reshape(int width, int height) {
 /* This functions rebuilds the display list of the current model */
 /* It is called when the viewing setting (light...) are changed  */
 /* ************************************************************* */
-void rebuild_list(model *raw_model) {
+void rebuild_list(struct model *raw_model) {
   int i;
   GLboolean light_mode;
   double scale_fact;
-  face *cur_face;
-  vertex center1, center2;
-  face *cur_face2;
+  face_t *cur_face;
+  vertex_t center1, center2;
+  face_t *cur_face2;
   int j, face1=-1, face2=-1;
 
 
@@ -401,7 +401,7 @@ void rebuild_list(model *raw_model) {
 /* ******************************************** */
 /* Initial settings of the rendering parameters */
 /* ******************************************** */
-void gfx_init(model *raw_model) {
+void gfx_init(struct model *raw_model) {
   const char *glverstr;
 
   glverstr = (const char*)glGetString(GL_VERSION);
@@ -584,8 +584,8 @@ void sp_key_pressed(int key, int x, int y) {
   static const GLfloat shine[] = {10.0};
 
   GLboolean light_mode;
-  info_vertex *curv;
-  face_tree_ptr top;
+  struct info_vertex *curv;
+  struct face_tree* top;
   int i;
 
 
@@ -606,7 +606,8 @@ void sp_key_pressed(int key, int x, int y) {
       if (normals_done != 1) {/* We have to build the normals */
 	printf("Computing normals...\n");
 	raw_model->area = (double*)malloc(raw_model->num_faces*sizeof(double));
-	curv = (info_vertex*)malloc(raw_model->num_vert*sizeof(info_vertex));
+	curv = (struct info_vertex*)
+	  malloc(raw_model->num_vert*sizeof(struct info_vertex));
 
 	raw_model->face_normals = compute_face_normals(raw_model, curv);
 
@@ -687,7 +688,8 @@ void sp_key_pressed(int key, int x, int y) {
 	printf("Computing normals...");
 	fflush(stdout);
 	raw_model->area = (double*)malloc(raw_model->num_faces*sizeof(double));
-	curv = (info_vertex*)malloc(raw_model->num_vert*sizeof(info_vertex));
+	curv = (struct info_vertex*)
+	  malloc(raw_model->num_vert*sizeof(struct info_vertex));
 	raw_model->face_normals = compute_face_normals(raw_model, curv);
 	if (raw_model->face_normals != NULL) {
 	  compute_vertex_normal(raw_model, curv, raw_model->face_normals);
@@ -754,7 +756,8 @@ void sp_key_pressed(int key, int x, int y) {
       draw_spanning_tree = 1;
       printf("Drawing spanning tree\n");
       if (raw_model->tree == NULL) { /* We need to build this ...*/
-	curv = (info_vertex*)malloc(raw_model->num_vert*sizeof(info_vertex));
+	curv = (struct info_vertex*)
+	  malloc(raw_model->num_vert*sizeof(struct info_vertex));
 	for(i=0; i<raw_model->num_vert; i++) {
 	  curv[i].list_face = (int*)malloc(sizeof(int));
 	  curv[i].num_faces = 0;
