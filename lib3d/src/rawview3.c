@@ -1,4 +1,4 @@
-/* $Id: rawview3.c,v 1.2 2001/03/12 16:48:49 aspert Exp $ */
+/* $Id: rawview3.c,v 1.3 2001/03/13 09:40:18 aspert Exp $ */
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <GL/glut.h>
@@ -382,10 +382,8 @@ void sp_key_pressed(int key, int x, int y) {
 
 	if (raw_model->face_normals != NULL){
 	  compute_vertex_normal(raw_model, curv, raw_model->face_normals);
-	  for (i=0; i<raw_model->num_vert; i++) {
+	  for (i=0; i<raw_model->num_vert; i++) 
 	    free(curv[i].list_face);
-	    free(curv[i].list_vertex);
-	  }
 	  free(curv);
 	  normals_done = 1;
 	  printf("done\n");
@@ -473,10 +471,8 @@ void sp_key_pressed(int key, int x, int y) {
 	raw_model->face_normals = compute_face_normals(raw_model);
 	if (raw_model->face_normals != NULL) {
 	  compute_vertex_normal(raw_model, curv, raw_model->face_normals);
-	  for (i=0; i<raw_model->num_vert; i++) {
+	  for (i=0; i<raw_model->num_vert; i++) 
 	    free(curv[i].list_face);
-	    free(curv[i].list_vertex);
-	  }
 	  free(curv);
 	  normals_done = 1;
 	  printf("done\n");	  
