@@ -1,3 +1,4 @@
+/* $Id: ColorMapWidget.h,v 1.4 2001/08/07 09:01:10 aspert Exp $ */
 #ifndef COLORMAPWIDGET_H
 #define COLORMAPWIDGET_H
 
