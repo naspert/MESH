@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.18 2001/08/09 08:00:33 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.19 2001/08/09 09:06:06 dsanta Exp $ */
 
 #include <compute_error.h>
 
@@ -164,27 +164,22 @@ static int intcmp(const void *i0, const void *i1)
 
 /* Reallocates the buffers of tse to store the sample errors for a triangle
  * sampling with n samples in each direction. If n is zero, the buffer is
- * freed. If tse->err is NULL a new buffer is allocated. If tse->n_samples
- * equals n nothing is done. The allocation never fails (if out of memory the
- * program is stopped, as with xrealloc()) */
+ * freed. If tse->err and tse->err_lin is NULL new buffers are allocated. If
+ * tse->n_samples equals n nothing is done. The allocation never fails (if out
+ * of memory the program is stopped, as with xrealloc()) */
 static void realloc_triag_sample_error(struct triag_sample_error *tse, int n)
 {
   int i;
   if (tse->n_samples == n) return;
   tse->n_samples = n;
   tse->n_samples_tot = n*(n+1)/2;
-  /* Allocate everything in one chunk (faster and allows for 1D and 2D
-   * addressing). */
-  tse->err = xrealloc(tse->err,tse->n_samples_tot*sizeof(**(tse->err))+
-                      n*sizeof(*(tse->err)));
+  tse->err = xrealloc(tse->err,n*sizeof(*(tse->err)));
+  tse->err_lin = xrealloc(tse->err_lin,tse->n_samples_tot*sizeof(**(tse->err)));
   if (n != 0) {
-    tse->err[0] = (double*) (tse->err+n);
+    tse->err[0] = tse->err_lin;
     for (i=1; i<n; i++) {
       tse->err[i] = tse->err[i-1]+(n-(i-1));
     }
-    tse->err_lin = tse->err[0];
-  } else {
-    tse->err_lin = NULL;
   }
 }
 
