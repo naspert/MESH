@@ -106,6 +106,10 @@ SOURCE=.\ColorMapWidget.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\compute_curvature.c
+# End Source File
+# Begin Source File
+
 SOURCE=.\compute_error.c
 # End Source File
 # Begin Source File
@@ -123,6 +127,10 @@ SOURCE=.\mesh.cpp
 # Begin Source File
 
 SOURCE=.\mesh_run.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\moc_ColorMapWidget.cpp
 # End Source File
 # Begin Source File
 
@@ -179,6 +187,39 @@ SOURCE=.\ColorMap.h
 # Begin Source File
 
 SOURCE=.\ColorMapWidget.h
+
+!IF  "$(CFG)" == "Mesh - Win32 Release"
+
+# PROP Ignore_Default_Tool 1
+# Begin Custom Build - Moc'ing $(InputName).h ...
+InputDir=.
+InputPath=.\ColorMapWidget.h
+InputName=ColorMapWidget
+
+"$(InputDir)\moc_$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	%qtdir%\bin\moc.exe $(InputDir)\$(InputName).h -o $(InputDir)\moc_$(InputName).cpp
+
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Mesh - Win32 Debug"
+
+# PROP Ignore_Default_Tool 1
+# Begin Custom Build - Moc'ing $(InputName).h ...
+InputDir=.
+InputPath=.\ColorMapWidget.h
+InputName=ColorMapWidget
+
+"$(InputDir)\moc_$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	%qtdir%\bin\moc.exe $(InputDir)\$(InputName).h -o $(InputDir)\moc_$(InputName).cpp
+
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\compute_curvature.h
 # End Source File
 # Begin Source File
 
