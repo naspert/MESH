@@ -1,4 +1,9 @@
-/* $Id: rawview3.c,v 1.12 2001/06/12 08:33:45 aspert Exp $ */
+/* $Id: rawview3.c,v 1.13 2001/06/14 08:39:38 aspert Exp $ */
+/* $Log: rawview3.c,v $
+ * Revision 1.13  2001/06/14 08:39:38  aspert
+ * - Removed incorrect lighting parameter (GL_LIGHT_MODEL_TWO_SIDE must be GL_FALSE)
+ * - Code cleanup
+ * */
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <GL/glut.h>
@@ -187,28 +192,26 @@ void rebuild_list(model *raw_model) {
   int j, face1=-1, face2=-1;
 
 
-
+  /* delete all lists */
   if (glIsList(model_list) == GL_TRUE)
     glDeleteLists(model_list, 1);
 
   if (glIsList(normal_list) == GL_TRUE)
     glDeleteLists(normal_list, 1);
-  model_list = glGenLists(1);
-
 
   if (glIsList(char_list) == GL_TRUE)
     glDeleteLists(char_list, 256);
 
-
-
   if (glIsList(tree_list) == GL_TRUE)
     glDeleteLists(tree_list, 1);
-  tree_list = glGenLists(1);
 
+  /* create display lists indices */
+  model_list = glGenLists(1);
+  if (draw_spanning_tree)
+    tree_list = glGenLists(1);
 
   if (draw_normals)
     normal_list = glGenLists(1);
-
 
   if (draw_vtx_labels) {
     char_list = glGenLists(256);
@@ -229,8 +232,6 @@ void rebuild_list(model *raw_model) {
 #endif
   
 
-/*   printf("[rebuild_list]: raw_model->tree = 0x%x\n",  */
-/* 	 (unsigned int)raw_model->tree); */
   if (draw_spanning_tree == 1) {
     glNewList(tree_list, GL_COMPILE);
     glColor3f(1.0, 1.0, 0.0);
@@ -542,7 +543,7 @@ void sp_key_pressed(int key, int x, int y) {
 	curv = (info_vertex*)malloc(raw_model->num_vert*sizeof(info_vertex));
 
 	raw_model->face_normals = compute_face_normals(raw_model, curv);
-	printf("raw_model->tree = 0x%x\n", (unsigned int)raw_model->tree);
+
 #ifdef FACE_NORM_DRAW_DEBUG	
 	for (i=0; i<raw_model->num_faces; i++)
 	  printf("%d: %f %f %f\n",i, model_normals[i].x, model_normals[i].y, 
@@ -563,7 +564,6 @@ void sp_key_pressed(int key, int x, int y) {
 	  glLightfv(GL_LIGHT0, GL_SPECULAR, spec);
   	  glLightfv(GL_LIGHT0, GL_POSITION, lpos);  
   	  glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, ldir);  
-	  glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
 	  glLightModelfv(GL_LIGHT_MODEL_AMBIENT,amb_light);
 	  glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, mat_spec);
 	  glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, shine);
