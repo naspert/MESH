@@ -1,24 +1,26 @@
-/* $Id: ColorMapWidget.cpp,v 1.14 2002/02/01 09:04:24 aspert Exp $ */
+/* $Id: ColorMapWidget.cpp,v 1.15 2002/02/20 18:24:11 dsanta Exp $ */
 #include <ColorMapWidget.h>
 #include <qapplication.h>
 #include <qpainter.h>
-#include <ColorMap.h>
+#include <colormap.h>
 #include <qfont.h>
 #include <math.h>
 
 /* Constructor of the ColorMapWidget class */
 /* Only initializes a few values and build a HSV colormap */
-ColorMapWidget::ColorMapWidget(double dmoymin, double dmoymax, 
+ColorMapWidget::ColorMapWidget(const struct model_error *model1_error,
 			       QWidget *parent, 
 			       const char *name):QWidget(parent,name) {
 
   setSizePolicy(QSizePolicy(QSizePolicy::Minimum,QSizePolicy::Expanding));
   setBackgroundColor(Qt::black);
 
-  colormap = HSVtoRGB();
-  dmax = dmoymax;
-  dmin = dmoymin;
-
+  me = model1_error;
+  colormap = NULL;
+  histogram = NULL;
+  dmax = me->max_error;
+  dmin = me->min_error;
+  cmap_len = -1;
 }
 
 QSize ColorMapWidget::sizeHint() const {
@@ -30,14 +32,39 @@ QSize ColorMapWidget::minimumSizeHint() const {
 }
 
 ColorMapWidget::~ColorMapWidget() {
+  delete [] histogram;
   free_colormap(colormap);
 }
 
-void ColorMapWidget::rescale(double dmoymin, double dmoymax) {
-  dmax = dmoymax;
-  dmin = dmoymin;
-  // This will call painEvent()
-  update();
+void ColorMapWidget::doHistogram(int len) {
+  double drange,off;
+  double *serror;
+  int bin_idx,max_cnt,n;
+
+  // This is a potentially slow operation
+  QApplication::setOverrideCursor(Qt::waitCursor);
+
+  delete [] histogram;
+  histogram = new int[len];
+  memset(histogram,0,sizeof(*histogram)*len);
+
+  n = me->n_samples;
+  drange = me->max_error-me->min_error;
+  off = me->min_error;
+  serror = me->fe[0].serror;
+  for (int i=0; i<n; i++) {
+    bin_idx = (int) floor((serror[i]-off)/drange*(len-1)+0.5);
+    histogram[bin_idx]++;
+  }
+  max_cnt = 0;
+  for (int i=0; i<len; i++) {
+    if (max_cnt < histogram[i]) max_cnt = histogram[i];
+  }
+  for (int i=0; i<len; i++) {
+    histogram[i] = (int)floor(histogram[i]/(double)max_cnt*CBAR_WIDTH+0.5);
+  }
+
+  QApplication::restoreOverrideCursor();
 }
 
 /* This function generates the bar graph that will be displayed aside */
@@ -49,13 +76,13 @@ void ColorMapWidget::paintEvent(QPaintEvent *) {
   double res;
   QPainter p;
   QString tmpDisplayedText;
-  int h,yoff,ysub;
+  int h,yoff,ysub,cidx;
   int lscale;
   double scale;
 
   lscale = (int) floor(log10(dmax));
   scale = pow(10,lscale);
-  f.setPointSize(9);
+  f.setPixelSize(9);
   p.begin(this);
   p.setFont(f);
   QFontMetrics fm(p.fontMetrics());
@@ -65,21 +92,27 @@ void ColorMapWidget::paintEvent(QPaintEvent *) {
   p.setPen(Qt::white);
   p.drawText(10,yoff,tmpDisplayedText);
   h = height()-3*yoff;
+  h = h/CBAR_STEP*CBAR_STEP;
   yoff *= 2;
+  if (cmap_len != h) {
+    free_colormap(colormap);
+    cmap_len = h;
+    doHistogram(h/CBAR_STEP);
+    colormap = colormap_hsv(cmap_len);
+  }
   tmpDisplayedText.sprintf( "%.3f",dmax/scale);
-  p.drawText(35, yoff+ysub, tmpDisplayedText);
-  for(int i=0; i<8; i++){
-    p.setBrush(QColor((int)(255*colormap[7-i][0]), 
-		      (int)(255*colormap[7-i][1]), 
-		      (int)(255*colormap[7-i][2])));
-    p.setPen(QColor((int)floor(255*colormap[7-i][0]), 
-		    (int)floor(255*colormap[7-i][1]),
-		    (int)floor(255*colormap[7-i][2])));
-    p.drawRect(10, yoff+i*(h/8), 20, (h+7)/8);
-    p.setPen(Qt::white);
-    res = dmax - (i+1)*(dmax - dmin)/8.0;
+  p.drawText(40, yoff+ysub, tmpDisplayedText);
+  for(int i=0; i<N_LABELS-1; i++) {
+    res = dmax - (i+1)*(dmax - dmin)/(double)(N_LABELS-1);
     tmpDisplayedText.sprintf( "%.3f",res/scale);
-    p.drawText(35, yoff+ysub+(i+1)*(h/8), tmpDisplayedText);
+    p.drawText(40, yoff+ysub+(int)((i+1)*(h/(double)(N_LABELS-1))),
+               tmpDisplayedText);
+  }
+  for(int i=0; i<cmap_len; i++){
+    cidx = cmap_len-1-i;
+    p.setPen(QColor((int)(255*colormap[cidx][0]), (int)(255*colormap[cidx][1]),
+		    (int)(255*colormap[cidx][2])));
+    p.drawLine(10, yoff+i, 10+histogram[cidx/CBAR_STEP], yoff+i);
   }
   p.end();
 }
