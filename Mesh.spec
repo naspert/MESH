@@ -1,8 +1,8 @@
 # Spec file for MESH
-# $Id: Mesh.spec,v 1.3 2002/06/06 12:00:18 aspert Exp $
+# $Id: Mesh.spec,v 1.4 2002/08/15 16:01:51 aspert Exp $
 Summary: Measuring Errors between Surfaces using the Hausdorff distance
 Name: Mesh
-Version: 1.5
+Version: 1.6
 Release: 1
 License: GPL
 Group: Applications/Scientific Visualization
@@ -15,8 +15,15 @@ AutoReqProv: no
 Prefix: %{_prefix}
 
 %description
-MESH is a tool that measures distortion between two discrete surfaces (triangular meshes). It uses the Hausdorff distance to compute a maximum, mean and root-mean-square errors between two given surfaces. Besides providing figures, MESH can also display the error values on the surface itself.
-The source code of MESH is available under the GNU General Public License. It requires the Qt library (available for free), and has been successfully tested on several platforms.
+MESH is a tool that measures distortion between two discrete surfaces
+(triangular meshes). It uses the Hausdorff distance to compute a
+maximum, mean and root-mean-square errors between two given
+surfaces. Besides providing figures, MESH can also display the error
+values on the surface itself.  The source code of MESH is available
+under the GNU General Public License. It requires the Qt library
+(available for free), and has been successfully tested on several
+platforms.
+
 
 %prep
 %setup

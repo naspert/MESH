@@ -57,20 +57,20 @@ in 'C:\Program Files\Qt', but for instance in 'C:\Qt'). We provide the
 Micro$oft Visual C++ 6 dsp and dsw files needed to build the program.
 
 * Input data format 
-The input file format for the triangular meshes is a raw ASCII format, VRML2, 
-Inventor 2.x and SMF format (used by  M. Garland's 'QSlim'). On systems having 
-zlib (>= 1.1) installed, MESH offers the possiblity of directly reading 
-gzipped files (gzipped VRML is in the standard). Please note that most of 
-Win32 systems do not have zlib installed. Therefore, on such systems, the
-program is build without this support for gzipped files.  However,
-it is possible to install zlib on Win32 systems. If you did so, and
-wish to build MESH with zlib on Win32 system, uncomment the relevant
-part in 'lib3d/include/model_in.h' (lines 83-85), tweak the project
-files, and please provide feedback to us about your successes/failures. 
-We have been able to make it work, but this has not been 'automated' in the 
-build process under VC++ (this is your chance to add your name in the author 
-list ;-).
-
+The input file format for the triangular meshes is a raw ASCII format,
+VRML2, Inventor 2.x, PLY ASCII format, and SMF format (used by
+M. Garland's 'QSlim'). On systems having zlib (>= 1.1) installed, MESH
+offers the possiblity of directly reading gzipped files (gzipped VRML
+is in the standard). Please note that most of Win32 systems do not
+have zlib installed. Therefore, on such systems, the program is build
+without this support for gzipped files.  However, it is possible to
+install zlib on Win32 systems. If you did so, and wish to build MESH
+with zlib on Win32 system, uncomment the relevant part in
+'lib3d/include/model_in.h' (lines 83-85), tweak the project files, and
+please provide feedback to us about your successes/failures. We have
+been able to make it work, but this has not been 'automated' in the
+build process under VC++ (this is your chance to add your name in the
+author list ;-).
 
 
 * The raw ASCII format describes the vertices, the vertex connectivity
@@ -89,9 +89,12 @@ triangular meshes are accepted.
 * The Inventor parser only reads the Coordinate3-point and 
 IndexedFaceSet-coordIndex nodes. It will ignore all other fields, 
 icluding Normal vectors.
-* The SMF parser will *only* read vertices and triangular faces. It will ignore 
-everything else in the SMF specification (bindings, colors, transforms, 
-begin/end ...).
+* The SMF parser will *only* read vertices and triangular faces. It
+will ignore everything else in the SMF specification (bindings, colors, 
+transforms, begin/end ...).
+* The PLY parser only reads vertices and triangular faces. It will not read 
+any 'property' field. Moreover, only the ASCII format is supported.
+
 
 Please report any bugs or comments to:
 
