@@ -1,4 +1,4 @@
-/* $Id: subdiv.c,v 1.17 2002/01/25 09:57:13 aspert Exp $ */
+/* $Id: subdiv.c,v 1.18 2002/02/26 14:46:47 aspert Exp $ */
 #include <3dutils.h>
 #include <subdiv_methods.h>
 #include <assert.h>
@@ -383,12 +383,12 @@ int main(int argc, char **argv) {
     }
 
     
-    free_raw_model(or_model);
+    __free_raw_model(or_model);
     
     or_model = sub_model;
   }
   write_raw_model(sub_model, outfile);
 
-  free_raw_model(sub_model);
+  __free_raw_model(sub_model);
   return 0;
 }

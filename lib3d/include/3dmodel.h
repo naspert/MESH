@@ -1,4 +1,4 @@
-/* $Id: 3dmodel.h,v 1.28 2002/02/26 13:18:14 aspert Exp $ */
+/* $Id: 3dmodel.h,v 1.29 2002/02/26 14:46:46 aspert Exp $ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -125,44 +125,20 @@ struct model {
   struct face_tree **tree; /* spanning tree of the dual graph */
 };
 
-#ifdef __cplusplus 
-extern "C" {
+#ifndef __free_raw_model
+#define __free_raw_model(raw_model)                             \
+do {                                                            \
+    free(((struct model*)raw_model)->vertices);                 \
+    free(((struct model*)raw_model)->faces);                    \
+    if (((struct model*)raw_model)->normals != NULL)            \
+      free(((struct model*)raw_model)->normals);                \
+    if (((struct model*)raw_model)->face_normals != NULL)       \
+      free(((struct model*)raw_model)->face_normals);           \
+    if (((struct model*)raw_model)->area != NULL)               \
+      free(((struct model*)raw_model)->area);                   \
+    free(((struct model*)raw_model));                           \
+} while (0)
 #endif
 
-  void free_raw_model(struct model*);
-
-
-/* inline definitions */
-# ifdef INLINE
-#  error Name clash with INLINE macro
-# endif
-
-# if defined (_MSC_VER)
-#  define INLINE __inline
-# elif defined (__INTEL_COMPILER) && (__INTEL_COMPILER >= 500)
-#  define INLINE __inline
-# elif defined (__GNUC__)
-#  define INLINE extern __inline__
-# elif defined (__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)
-#  define INLINE inline
-# endif
-
-  INLINE void free_raw_model(struct model *raw_model) {
-    free(raw_model->vertices);
-    free(raw_model->faces);
-    if (raw_model->normals != NULL)
-      free(raw_model->normals);
-    if (raw_model->face_normals != NULL)
-      free(raw_model->face_normals);
-    if (raw_model->area != NULL)
-      free(raw_model->area);
-    free(raw_model);
-  }
-
-#ifdef __cplusplus 
-}
-#endif
-
-#undef INLINE
 
 #endif

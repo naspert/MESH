@@ -1,4 +1,4 @@
-/* $Id: mesh.cpp,v 1.27 2002/02/26 13:36:11 aspert Exp $ */
+/* $Id: mesh.cpp,v 1.28 2002/02/26 14:46:45 aspert Exp $ */
 
 #include <time.h>
 #include <string.h>
@@ -312,11 +312,11 @@ int main( int argc, char **argv )
   delete c;
   delete a; // QApplication must be last QT thing to delete
   /* Free model data */
-  if (model1.mesh != NULL) free_raw_model(model1.mesh);
+  if (model1.mesh != NULL) __free_raw_model(model1.mesh);
   free(model1.verror);
   free(model1.info);
   free_face_error(model1.fe);
-  if (model2.mesh != NULL) free_raw_model(model2.mesh);
+  if (model2.mesh != NULL) __free_raw_model(model2.mesh);
   free(model2.verror);
   free(model2.info);
   /* Return exit code */

@@ -1,4 +1,4 @@
-/* $Id: rawview.c,v 1.7 2002/02/26 13:27:29 aspert Exp $ */
+/* $Id: rawview.c,v 1.8 2002/02/26 14:46:47 aspert Exp $ */
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -602,7 +602,7 @@ void norm_key_pressed(unsigned char key, int x, int y) {
   case 'Q':
     if (raw_model->tree != NULL)
       destroy_tree(*(raw_model->tree));
-    free_raw_model(raw_model);
+    __free_raw_model(raw_model);
     exit(0);
     break;
   }

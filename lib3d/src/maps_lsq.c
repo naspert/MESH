@@ -242,6 +242,6 @@ int main(int argc, char **argv) {
   compute_curvature(raw_model); 
   
   
-  free_raw_model(raw_model);
+  __free_raw_model(raw_model);
   return 0;
 }

@@ -1,4 +1,4 @@
-/* $Id: isoca.c,v 1.5 2002/01/11 12:56:49 aspert Exp $ */
+/* $Id: isoca.c,v 1.6 2002/02/26 14:46:46 aspert Exp $ */
 #include <3dutils.h>
 
 
@@ -235,6 +235,6 @@ int main(int argc, char **argv) {
   sub_mod->tree = NULL;
   write_raw_model(sub_mod, filename);
 
-  free_raw_model(sub_mod);
+  __free_raw_model(sub_mod);
   return 0;
 }

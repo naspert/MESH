@@ -1,4 +1,4 @@
-/* $Id: compare_curv.c,v 1.7 2002/01/25 08:50:24 aspert Exp $ */
+/* $Id: compare_curv.c,v 1.8 2002/02/26 14:46:46 aspert Exp $ */
 #include <3dutils.h>
 
 
@@ -222,8 +222,8 @@ int main(int argc, char **argv) {
 
   if (raw_model1->num_vert != raw_model2->num_vert) {
     fprintf(stderr, "Unable to compare models w. different sizes\n");
-    free_raw_model(raw_model1);
-    free_raw_model(raw_model2);
+    __free_raw_model(raw_model1);
+    __free_raw_model(raw_model2);
     exit(-2);
   }
 
@@ -327,7 +327,7 @@ int main(int argc, char **argv) {
   free(deltak1);
   free(deltak2);
   free(deltakg);
-  free_raw_model(raw_model1);
-  free_raw_model(raw_model2);
+  __free_raw_model(raw_model1);
+  __free_raw_model(raw_model2);
   return 0;
 }
