@@ -1,5 +1,5 @@
 # Spec file for MESH
-# $Id: Mesh.spec,v 1.1 2002/05/06 12:55:17 aspert Exp $
+# $Id: Mesh.spec,v 1.2 2002/05/27 07:37:17 aspert Exp $
 Summary: Measuring Errors between Surfaces using the Hausdorff distance
 Name: Mesh
 Version: 1.4
@@ -9,8 +9,8 @@ Group: Applications/Scientific Visualization
 Source: http://mesh.epfl.ch/Mesh-1.4.tar.gz
 URL: http://mesh.epfl.ch
 Packager: Nicolas Aspert <Nicolas.Aspert@epfl.ch>
-Requires: qt >= 2.3, zlib >= 1.1, libpng >= 1, libjpeg >= 6, Mesa >= 3.4, libstdc++ >= 2.95
-BuildRequires: qt-devel >= 2.3, zlib-devel >= 1.1
+Requires: qt = 2.3, zlib >= 1.1, libpng >= 1, libjpeg >= 6, Mesa >= 3.4, libstdc++ >= 2.95
+BuildRequires: qt-devel = 2.3, zlib-devel >= 1.1
 AutoReqProv: no
 Prefix: %{_prefix}
 
