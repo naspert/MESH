@@ -1,4 +1,4 @@
-/* $Id: compute_error.h,v 1.11 2001/08/16 12:56:23 dsanta Exp $ */
+/* $Id: compute_error.h,v 1.12 2001/08/16 15:02:49 dsanta Exp $ */
 #ifndef _COMPUTE_ERROR_PROTO
 #define _COMPUTE_ERROR_PROTO
 
@@ -66,11 +66,17 @@ struct dist_surf_surf_stats {
  * oriented, if it is not the case the resulting normals can be
  * incorrect. Information already used to calculate the distance is reused to
  * compute the normals, so it is very fast. If quiet is zero a progress meter
- * is displayed in stdout. */
+ * is displayed in stdout. The memory allocated at *fe_ptr should be freed by
+ * calling free_face_error(*fe_ptr). */
 void dist_surf_surf(const model *m1, model *m2, int n_spt,
                     struct face_error *fe_ptr[],
                     struct dist_surf_surf_stats *stats, int calc_normals,
                     int quiet);
+
+
+/* Frees the memory allocated by dist_surf_surf() for the per face error
+ * metrics. */
+void free_face_error(struct face_error *fe);
 
 END_DECL
 #undef END_DECL
