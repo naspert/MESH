@@ -1,6 +1,7 @@
-/* $Id: subdiv.c,v 1.6 2001/10/12 14:56:44 aspert Exp $ */
+/* $Id: subdiv.c,v 1.7 2001/10/14 12:32:10 aspert Exp $ */
 #include <3dutils.h>
 #include <subdiv_methods.h>
+#include <assert.h>
 
 /* This is the function that performs the subdivision.
    The argument 'midpoint_func' is the pointer to the 
@@ -30,9 +31,11 @@ struct model* subdiv(struct model *raw_model,
   int *midpoint_idx;
   face_t *temp_face;
 
+
   rings = (struct ring_info*)
     malloc(raw_model->num_vert*sizeof(struct ring_info));
   
+
   for (i=0; i<raw_model->num_vert; i++) {
     build_star(raw_model, i, &(rings[i]));
 #ifdef __SUBDIV_DEBUG
@@ -63,7 +66,7 @@ struct model* subdiv(struct model *raw_model,
 #ifdef __SUBDIV_DEBUG
       printf("i=%d j=%d  rings[%d].ord_vert[%d]=%d\n",i,j, 
 	      i, j, rings[i].ord_vert[j]);
-      printf("nedges-1=%d n_idx=%d\n",nedges-1, n_idx);
+      printf("nedges-1=%d\n",nedges-1);
 #endif
 
       edge_list[nedges-1].edge.v0 = i;
@@ -280,7 +283,7 @@ struct model* subdiv(struct model *raw_model,
 
 int main(int argc, char **argv) {
   char *infile, *outfile;
-  struct model *or_model, *sub_model;
+  struct model *or_model, *sub_model=NULL;
   struct info_vertex* tmp_vert;
   int i, lev, nlev=1;
   int sub_method=-1;
@@ -321,18 +324,20 @@ int main(int argc, char **argv) {
       or_model->area = (double*)malloc(or_model->num_faces*sizeof(double));
       or_model->face_normals = compute_face_normals(or_model, tmp_vert);
       compute_vertex_normal(or_model, tmp_vert, or_model->face_normals);
-      for (i=0; i<or_model->num_vert; i++)
-	free(tmp_vert->list_face);
+      for (i=0; i<or_model->num_vert; i++) 
+ 	free(tmp_vert[i].list_face); 
       free(tmp_vert);
     }
 
     /* performs the subdivision */
-    if (sub_method == SUBDIV_SPH) 
+    if (sub_method == SUBDIV_SPH) {
       sub_model = subdiv(or_model, compute_midpoint_sph, NULL);
+    }
     else if (sub_method == SUBDIV_BUTTERFLY) 
       sub_model = subdiv(or_model, compute_midpoint_butterfly, NULL);
     else if (sub_method == SUBDIV_LOOP)
-      sub_model = subdiv(or_model, compute_midpoint_loop, update_vertices_loop);
+      sub_model = subdiv(or_model, compute_midpoint_loop, 
+			 update_vertices_loop);
     else {
       fprintf(stderr, "ERROR : Invalid subdivision method found = %d\n", 
 	      sub_method);

@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.19 2001/10/12 13:42:15 aspert Exp $
+# $Id: Makefile,v 1.20 2001/10/14 12:32:10 aspert Exp $
 
 #CC = /home/sun1/aspert/gcc/bin/gcc
 CC = gcc
@@ -13,7 +13,7 @@ HPGLDIR = /usr/GL/hp
 
 INCLFLAGS = -I../include
 GLINCLFLAGS = -I$(HPGLDIR)/include -I$(GLDIR)/include
-XTRA_CFLAGS = -g  -Wall -O2  -ansi -pedantic 
+XTRA_CFLAGS = -g  -pipe -Wall -O2  -ansi -pedantic 
 
 BASE_CFLAGS = $(INCLFLAGS) $(XTRA_CFLAGS) 
 GL_CFLAGS = $(INCLFLAGS) $(GLINCLFLAGS) $(XTRA_CFLAGS) 
@@ -31,8 +31,7 @@ GL_LDFLAGS = -g $(GL_LIBFLAGS)
 
 default : rawview3
 
-all: dirs rawview3 torus cone isoca butterfly loop subdiv maps_lsq \
-	compare_curv
+all: dirs rawview3 torus cone isoca  subdiv dirac compare_curv
 
 clean : 
 	rm -f $(OBJDIR)/*.o $(BINDIR)/* $(LIBDIR)/*
@@ -50,6 +49,9 @@ isoca : $(OBJDIR)/isoca.o lib3d
 	$(CC) -o $(BINDIR)/$@ $< $(BASE_LDFLAGS) 
 
 cone: $(OBJDIR)/cone.o lib3d
+	$(CC) -g -o $(BINDIR)/$@ $< $(BASE_LDFLAGS) 
+
+dirac: $(OBJDIR)/dirac.o lib3d
 	$(CC) -g -o $(BINDIR)/$@ $< $(BASE_LDFLAGS) 
 
 maps_lsq : $(OBJDIR)/maps_lsq.o lib3d
