@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.12 2001/08/08 13:05:02 dsanta Exp $
+# $Id: Makefile,v 1.13 2001/08/08 16:25:38 dsanta Exp $
 
 #
 # If the make variable PROFILE is defined, profiling flags are automatically
@@ -9,10 +9,25 @@
 # your installation.
 #
 
+# Autodetect platform
+OS := $(shell uname -s)
+ARCH := $(shell uname -m)
+
 # Default compiler for C and C++ (CPP is normally the C preprocessor)
+ifeq ($(OS),Linux)
 CC = gcc
 CXX = g++
+endif
+ifeq ($(OS),IRIX)
+CC = cc
+CXX = CC
+endif
+ifeq ($(OS),IRIX64)
+CC = cc
+CXX = CC
+endif
 
+# Default directories
 BINDIR = ./bin
 LIBDIR = ./lib
 OBJDIR = ./obj
@@ -22,19 +37,47 @@ ifndef QTDIR
 $(error The QTDIR envirnoment variable is not defined. Define it as the path \
 	to the QT installation directory)
 endif
+
+# Auxiliary executables
 MOC = $(QTDIR)/bin/moc
 
+# Autodetect GCC
+CC_IS_GCC := $(findstring gcc,$(shell $(CC) -v 2>&1))
+CXX_IS_GCC := $(findstring gcc,$(shell $(CXX) -v 2>&1))
+
 # Extra compiler flags (optimization, profiling, debug, etc.)
-XTRA_CFLAGS = -g -O2 -ansi -march=i686
+XTRA_CFLAGS = -g -O2 -ansi
 XTRA_CXXFLAGS = -g -O2 -ansi
 XTRA_LDFLAGS = -g
 
+# Derive compiler specific flags
+ifeq ($(CC_IS_GCC),gcc)
+WARN_CFLAGS = -pedantic -Wall -W -Winline -Wmissing-prototypes \
+	-Wstrict-prototypes -Wnested-externs -Wshadow -Waggregate-return
+WARN_CXXFLAGS = -pedantic -Wall -W -Wmissing-prototypes
+endif
+ifeq ($(CC_IS_GCC)-$(OS)-$(ARCH),gcc-Linux-i686)
+XTRA_CFLAGS += -march=i686
+endif
+ifeq ($(CC_IS_GCC),gcc)
+C_PROF_OPT = -pg
+endif
+ifeq ($(CC_IS_GCC)$(OS),IRIX)
+C_PROF_OPT = -fbgen
+endif
+ifeq ($(CXX_IS_GCC),gcc)
+CXX_PROF_OPT = -pg
+endif
+ifeq ($(CXX_IS_GCC)$(OS),IRIX)
+CXX_PROF_OPT = -fbgen
+endif
+
 # Add profiling flags if requested
 ifdef PROFILE
-XTRA_CFLAGS += -pg
-XTRA_CXXFLAGS += -pg
-XTRA_LDFLAGS += -pg
-ifeq ($(PROFILE),full)
+XTRA_CFLAGS += $(C_PROF_OPT)
+XTRA_CXXFLAGS += $(CXX_PROF_OPT)
+XTRA_LDFLAGS += $(CXX_PROF_OPT)
+ifeq ($(PROFILE)-$(OS),full-Linux)
 XTRA_LDFLAGS += -static
 endif
 endif
@@ -52,7 +95,7 @@ QTINCFLAGS = -I$(QTDIR)/include
 GLINCFLAGS = -I/usr/X11R6/include
 
 # Libraries and search path for final linking
-ifeq ($(PROFILE),full)
+ifeq ($(PROFILE)-$(OS),full-Linux)
 LDLIBS = -lqt -lGL -lGLU -lXmu -lXext -lSM -lICE -lXft -lpng -ljpeg -lmng \
 	-lXi -ldl -lXt -lz -lfreetype -lXrender -lX11 -lm_p -lc_p
 else
@@ -60,11 +103,6 @@ LDLIBS = -lqt -lGL -lGLU -lXmu -lXext -lX11 -lm
 endif
 LOADLIBES = -L$(QTDIR)/lib -L/usr/X11R6/lib
 LDFLAGS =
-
-# C and C++ warning flags
-WARN_CFLAGS = -pedantic -Wall -W -Winline -Wmissing-prototypes \
-	-Wstrict-prototypes -Wnested-externs -Wshadow -Waggregate-return
-WARN_CXXFLAGS = -pedantic -Wall -W -Wmissing-prototypes
 
 # Preprocessor flags
 CPPFLAGS = $(INCFLAGS) -D_METRO
