@@ -1,10 +1,14 @@
-/* $Id: compute_error.c,v 1.14 2001/08/07 15:16:52 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.15 2001/08/08 13:22:56 dsanta Exp $ */
 
 #include <compute_error.h>
 
 #include <mutils.h>
 #include <math.h>
 #include <assert.h>
+
+/* Ratio used to derive the cell size. It is the ratio between the cubic cell
+ * side length and the side length of an average equilateral triangle. */
+#define CELL_TRIAG_RATIO 1
 
 /* Define inlining directive for C99 or as compiler specific C89 extension */
 #if defined(__GNUC__) /* GCC's interpretation is inverse of C99 */
@@ -43,6 +47,30 @@ static int intcmp(const void *i0, const void *i1)
     return -1;
   else
     return 1;
+}
+
+/* Reallocates the buffers of tse to store the sample errors for a triangle
+ * sampling with n samples in each direction. If n is zero, the buffer is
+ * freed. If tse->err is NULL a new buffer is allocated. If tse->n_samples
+ * equals n nothing is done. The allocation never fails (if out of memory the
+ * program is stopped, as with xrealloc()) */
+static void realloc_triag_sample_error(struct triag_sample_error *tse, int n)
+{
+  int i;
+  if (tse->n_samples == n) return;
+  tse->n_samples = n;
+  tse->n_samples_tot = n*(n+1)/2;
+  tse->err = xrealloc(tse->err,tse->n_samples_tot*sizeof(**(tse->err))+
+                      n*sizeof(*(tse->err)));
+  if (n != 0) {
+    tse->err[0] = (double*) (tse->err+n);
+    for (i=1; i<n; i++) {
+      tse->err[i] = tse->err[i-1]+(n-(i-1));
+    }
+    tse->err_lin = tse->err[0];
+  } else {
+    tse->err_lin = NULL;
+  }
 }
 
 /* --------------------------------------------------------------------------*
@@ -287,56 +315,76 @@ struct triangle_list* model_to_triangle_list(const model *m)
   tl->n_triangles = n;
   triags = xmalloc(sizeof(*tl->triangles)*n);
   tl->triangles = triags;
+  tl->area = 0;
 
   for (i=0; i<n; i++) {
     face_i = &(m->faces[i]);
     init_triangle(&(m->vertices[face_i->f0]),&(m->vertices[face_i->f1]),
                   &(m->vertices[face_i->f2]),&(triags[i]));
+    tl->area += sqrt(triags[i].ab_len_sqr*norm2_v(&(triags[i].dc)))/2;
   }
   return tl;
 }
 
-/* Calculates the statistics of the error samples in a triangle. The number of
- * samples in each direction is n. For each triangle formed by neighboring
- * samples the error at the vertices is averaged to obtain a single error for
- * the sample triangle. The overall mean error is obtained by calculating the
- * mean of the errors of the sample triangles. Note that all sample triangles
+/* Calculates the statistics of the error samples in tse. For each triangle
+ * formed by neighboring samples the error at the vertices is averaged to
+ * obtain a single error for the sample triangle. The overall mean error is
+ * obtained by calculating the mean of the errors of the sample triangles. The
+ * other statistics are obtained analogously. Note that all sample triangles
  * have exactly the same area, and thus the calculation is independent of the
- * triangle shape. The error for the sample point (i,j) is given by
- * s_err[i][j], where i varies between 0 and n-1 inclusive, and j between 0
- * and n-1-i inclusive. */
-double error_stat_triag(double **s_err, int n)
+ * triangle shape. */
+void error_stat_triag(const struct triag_sample_error *tse,
+                      struct face_error *fe)
 {
-  int i,j,imax,jmax;
+  int n,i,j,imax,jmax;
   double err_local;
-  double err_mean;
+  double err_min, err_max, err_tot, err_sqr_tot;
+  double **s_err;
 
-  err_mean = 0;
+  err_min = DBL_MAX;
+  err_max = 0;
+  err_tot = 0;
+  err_sqr_tot = 0;
+  n = tse->n_samples;
+  s_err = tse->err;
   /* Do sample triangles for which the point (i,j) is closer to the point
    * (0,0) than the side of the sample triangle opposite (i,j). There are
    * (n-1)*n/2 of these. */
   for (i=0, imax=n-1; i<imax; i++) {
     for (j=0, jmax=imax-i; j<jmax; j++) {
       err_local = s_err[i][j]+s_err[i][j+1]+s_err[i+1][j];
-      err_mean += err_local;
+      err_tot += err_local;
+      err_sqr_tot += err_local*err_local;
     }
   }
   /* Do the other triangles. There are (n-2)*(n-1)/2 of these. */
   for (i=1; i<n; i++) {
     for (j=1, jmax=n-i; j<jmax; j++) {
       err_local = s_err[i-1][j]+s_err[i][j-1]+s_err[i][j];
-      err_mean += err_local;
+      err_tot += err_local;
+      err_sqr_tot += err_local*err_local;
     }
   }
-  /* Get the mean */
-  err_mean /= ((n-1)*n/2+(n-2)*(n-1)/2)*3;
-  return err_mean;
+  /* Get min max */
+  for (i=0; i<tse->n_samples_tot; i++) {
+    err_local = tse->err_lin[i];
+    if (err_min > err_local) err_min = err_local;
+    if (err_max < err_local) err_max = err_local;
+  }
+  /* Finalize error measures */
+  fe->min_error = err_min;
+  fe->max_error = err_max;
+  fe->mean_error = err_tot/(((n-1)*n/2+(n-2)*(n-1)/2)*3);
+  fe->mean_sqr_error = err_sqr_tot/(((n-1)*n/2+(n-2)*(n-1)/2)*3);
 }
 
 /* Samples a triangle (a,b,c) using n samples in each direction. The sample
  * points are returned in the sample_list s. The dynamic array 's->sample' is
  * realloc'ed to the correct size (if no storage has been previously allocated
- * it should be NULL). The total number of samples is n*(n+1)/2. */
+ * it should be NULL). The total number of samples is n*(n+1)/2. The order for
+ * samples (i,j) in s->sample is all samples for i equal 0 and j from 0 to n-1,
+ * followed by all samples for i equal 1 and j from 0 to n-2, and so on, where
+ * i and j are the sampling indices along the ab and ac sides, respectively. */
 void sample_triangle(const vertex *a, const vertex *b, const vertex *c,
                      int n, struct sample_list* s)
 {
@@ -704,4 +752,112 @@ struct face_list *faces_of_vertex(model *m)
     }
   }
   return fl;
+}
+
+/* Calculates the distance from model m1 to model m2. The triangles of m1 are
+ * sampled using n_spt samples in each direction. The per face (of m1) error
+ * metrics are returned in a new array (of length m1->num_faces) allocated at
+ * *fe_ptr. The overall distance metrics and other statistics are returned in
+ * stats. If quiet is zero a progress meter is displayed in stdout. */
+void dist_surf_surf(const model *m1, const model *m2, int n_spt,
+                    struct face_error *fe_ptr[],
+                    struct dist_surf_surf_stats *stats, int quiet)
+{
+  vertex bbox2_min,bbox2_max;
+  struct triangle_list *tl2;
+  int **faces_in_cell_lst;
+  struct cell_list *cl;
+  struct sample_list ts;
+  struct triag_sample_error tse;
+  int i,k,kmax;
+  double cell_sz;
+  struct size3d grid_sz;
+  struct face_error *fe;
+  int report_step;
+
+  /* Initialize */
+  memset(&ts,0,sizeof(ts));
+  memset(&tse,0,sizeof(tse));
+  report_step = m1->num_faces/(100/2); /* report every 2 % */
+
+  /* Davy uses overall bounding box, instead of m2's */
+  bbox2_min = m2->bBox[0];
+  bbox2_max = m2->bBox[1];
+  
+  /* Get the triangle list from model 2 */
+  tl2 = model_to_triangle_list(m2);
+  
+  /* Derive the grid size. For that we derive the average triangle side length
+   * as the side of an equilateral triangle which's surface equals the average
+   * triangle surface of m2. The cubic cell side is then CELL_TRIAG_RATIO
+   * times that. */
+  cell_sz = CELL_TRIAG_RATIO*sqrt(tl2->area/tl2->n_triangles*2/sqrt(3));
+  /* Davy uses floor+1 instead of ceil */
+  grid_sz.x = (int) ceil((bbox2_max.x-bbox2_min.x)/cell_sz);
+  grid_sz.y = (int) ceil((bbox2_max.y-bbox2_min.y)/cell_sz);
+  grid_sz.z = (int) ceil((bbox2_max.z-bbox2_min.z)/cell_sz);
+
+  /* Get the list of triangles in each cell */
+  cl = cells_in_triangles(tl2,grid_sz,cell_sz,bbox2_min);
+  faces_in_cell_lst = triangles_in_cells(cl,tl2,grid_sz);
+  for (k=0, kmax=tl2->n_triangles; k<kmax; k++) {
+    free(cl[k].cell);
+  }
+  free(cl);
+  cl = NULL;
+
+  /* Allocate storage for errors */
+  *fe_ptr = xrealloc(*fe_ptr,m1->num_faces*sizeof(**fe_ptr));
+  fe = *fe_ptr;
+  realloc_triag_sample_error(&tse,n_spt);
+
+  /* Initialize overall statistics */
+  stats->m1_area = 0;
+  stats->m2_area = tl2->area;
+  stats->min_dist = DBL_MAX;
+  stats->max_dist = 0;
+  stats->mean_dist = 0;
+  stats->rms_dist = 0;
+  stats->cell_sz = cell_sz;
+  stats->grid_sz = grid_sz;
+  /* For each triangle in model 1, sample and calculate the error */
+  if (!quiet) printf("Progress %2d %%",0);
+  for (k=0, kmax=m1->num_faces; k<kmax; k++) {
+    if (!quiet && k!=0 && k%report_step) {
+      printf("\rProgress %2d %%",100*k/(kmax-1));
+      fflush(stdout);
+    }
+    fe[k].face_area = tri_area(m1->vertices[m1->faces[k].f0],
+                               m1->vertices[m1->faces[k].f1],
+                               m1->vertices[m1->faces[k].f2]);
+    sample_triangle(&(m1->vertices[m1->faces[k].f0]),
+                    &(m1->vertices[m1->faces[k].f1]),
+                    &(m1->vertices[m1->faces[k].f2]),n_spt,&ts);
+    for (i=0; i<tse.n_samples_tot; i++) {
+      tse.err_lin[i] = dist_pt_surf(ts.sample[i],tl2,faces_in_cell_lst,
+                                    grid_sz,cell_sz,bbox2_min);
+    }
+    error_stat_triag(&tse,&fe[k]);
+    /* Update overall statistics */
+    stats->m1_area += fe[k].face_area;
+    if (fe[k].min_error < stats->min_dist) stats->min_dist = fe[k].min_error;
+    if (fe[k].max_error > stats->max_dist) stats->max_dist = fe[k].max_error;
+    stats->mean_dist += fe[k].mean_error*fe[k].face_area;
+    stats->rms_dist += fe[k].mean_sqr_error*fe[k].face_area;
+  }
+  if (!quiet) printf("\n");
+
+  /* Finalize overall statistics */
+  stats->mean_dist /= stats->m1_area;
+  stats->rms_dist = sqrt(stats->rms_dist/stats->m1_area);
+
+  /* free temporary storage */
+  free(tl2->triangles);
+  free(tl2);
+  for (k=0, kmax=grid_sz.x*grid_sz.y*grid_sz.z; k<kmax; k++) {
+    free(faces_in_cell_lst[k]);
+  }
+  free(faces_in_cell_lst);
+  realloc_triag_sample_error(&tse,0);
+  free(ts.sample);
 }
