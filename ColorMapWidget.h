@@ -1,4 +1,4 @@
-/* $Id: ColorMapWidget.h,v 1.9 2002/02/20 18:24:11 dsanta Exp $ */
+/* $Id: ColorMapWidget.h,v 1.10 2002/02/21 09:28:35 dsanta Exp $ */
 #ifndef COLORMAPWIDGET_H
 #define COLORMAPWIDGET_H
 
@@ -22,9 +22,9 @@ protected:
   const struct model_error *me;
   void doHistogram(int len);
   int *histogram;
-  static const int CBAR_WIDTH = 25;
-  static const int CBAR_STEP = 5;
-  static const int N_LABELS = 9;
+  enum constIntHack1 { CBAR_WIDTH = 25 };
+  enum constIntHack2 { CBAR_STEP = 5 };
+  enum constIntHack3 { N_LABELS = 9 };
   float **colormap;
   int cmap_len;
   double dmax, dmin;

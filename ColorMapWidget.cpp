@@ -1,4 +1,4 @@
-/* $Id: ColorMapWidget.cpp,v 1.15 2002/02/20 18:24:11 dsanta Exp $ */
+/* $Id: ColorMapWidget.cpp,v 1.16 2002/02/21 09:28:34 dsanta Exp $ */
 #include <ColorMapWidget.h>
 #include <qapplication.h>
 #include <qpainter.h>
@@ -39,7 +39,7 @@ ColorMapWidget::~ColorMapWidget() {
 void ColorMapWidget::doHistogram(int len) {
   double drange,off;
   double *serror;
-  int bin_idx,max_cnt,n;
+  int i,bin_idx,max_cnt,n;
 
   // This is a potentially slow operation
   QApplication::setOverrideCursor(Qt::waitCursor);
@@ -52,15 +52,15 @@ void ColorMapWidget::doHistogram(int len) {
   drange = me->max_error-me->min_error;
   off = me->min_error;
   serror = me->fe[0].serror;
-  for (int i=0; i<n; i++) {
+  for (i=0; i<n; i++) {
     bin_idx = (int) floor((serror[i]-off)/drange*(len-1)+0.5);
     histogram[bin_idx]++;
   }
   max_cnt = 0;
-  for (int i=0; i<len; i++) {
+  for (i=0; i<len; i++) {
     if (max_cnt < histogram[i]) max_cnt = histogram[i];
   }
-  for (int i=0; i<len; i++) {
+  for (i=0; i<len; i++) {
     histogram[i] = (int)floor(histogram[i]/(double)max_cnt*CBAR_WIDTH+0.5);
   }
 
@@ -76,7 +76,7 @@ void ColorMapWidget::paintEvent(QPaintEvent *) {
   double res;
   QPainter p;
   QString tmpDisplayedText;
-  int h,yoff,ysub,cidx;
+  int i,h,yoff,ysub,cidx;
   int lscale;
   double scale;
 
@@ -102,13 +102,13 @@ void ColorMapWidget::paintEvent(QPaintEvent *) {
   }
   tmpDisplayedText.sprintf( "%.3f",dmax/scale);
   p.drawText(40, yoff+ysub, tmpDisplayedText);
-  for(int i=0; i<N_LABELS-1; i++) {
+  for(i=0; i<N_LABELS-1; i++) {
     res = dmax - (i+1)*(dmax - dmin)/(double)(N_LABELS-1);
     tmpDisplayedText.sprintf( "%.3f",res/scale);
     p.drawText(40, yoff+ysub+(int)((i+1)*(h/(double)(N_LABELS-1))),
                tmpDisplayedText);
   }
-  for(int i=0; i<cmap_len; i++){
+  for(i=0; i<cmap_len; i++){
     cidx = cmap_len-1-i;
     p.setPen(QColor((int)(255*colormap[cidx][0]), (int)(255*colormap[cidx][1]),
 		    (int)(255*colormap[cidx][2])));

@@ -1,4 +1,4 @@
-/* $Id: RawWidget.h,v 1.25 2002/02/20 18:27:38 dsanta Exp $ */
+/* $Id: RawWidget.h,v 1.26 2002/02/21 09:28:35 dsanta Exp $ */
 #ifndef RAWWIDGET_H
 #define RAWWIDGET_H
 
@@ -28,10 +28,10 @@ public:
   ~RawWidget(); // Destructor
   QSize sizeHint() const;
   QSize minimumSizeHint() const;
-  
-  static const int VERTEX_ERROR = 0;
-  static const int MEAN_FACE_ERROR = 1;
-  static const int SAMPLE_ERROR = 2;
+
+  enum ErrorMode { VERTEX_ERROR = 0,
+                   MEAN_FACE_ERROR = 1,
+                   SAMPLE_ERROR = 2 };
 
 public slots: 
   void setLine(bool state);
@@ -85,7 +85,7 @@ private:
   int two_sided_material;
   int error_mode;
 // constants
-  static const int CMAP_LENGTH = 256;
+  enum constIntHack { CMAP_LENGTH = 256 };
 };
 
 #endif
