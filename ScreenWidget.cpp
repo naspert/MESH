@@ -1,4 +1,4 @@
-/* $Id: ScreenWidget.cpp,v 1.25 2001/11/09 10:59:12 dsanta Exp $ */
+/* $Id: ScreenWidget.cpp,v 1.26 2002/01/15 17:02:04 aspert Exp $ */
 #include <ScreenWidget.h>
 
 #include <qhbox.h>
@@ -20,9 +20,7 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   RawWidget *glModel1, *glModel2;
   ColorMapWidget *errorColorBar;
   QPushButton *quitBut;
-  QRadioButton *erBut, *kmBut, *kgBut;
-  QButtonGroup *radGrp=NULL;
-  bool drawCurv=FALSE;
+
 
   setCaption("Mesh: visualization");
   model_data = model1;
@@ -59,17 +57,8 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   frameModel2->setFrameStyle(QFrame::Sunken | QFrame::Panel);
   frameModel2->setLineWidth(2);
 
-
-  // Create the colorbar and the 2 GL windows.
-  if (model1->kg_error != NULL) 
-    drawCurv = TRUE;
-
-  if (drawCurv)
-    glModel1 = new RawWidget(model1, RW_ERROR_AND_CURV | RW_COLOR_ERROR, 
-			     frameModel1, "glModel1");
-  else 
-    glModel1 = new RawWidget(model1, RW_ERROR_ONLY | RW_COLOR_ERROR, 
-			     frameModel1, "glModel1");
+  glModel1 = new RawWidget(model1, RW_ERROR_ONLY, 
+                           frameModel1, "glModel1");
 
   glModel1->setFocusPolicy(StrongFocus);
   glModel2 = new RawWidget(model2, RW_LIGHT_TOGGLE, frameModel2, "glModel2");
@@ -117,28 +106,6 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
 	  glModel2, SLOT(setLine(bool)));
   connect(glModel2, SIGNAL(toggleLine()),lineSwitch2, SLOT(toggle()));
 
-  if (drawCurv) {
-    radGrp = new QHButtonGroup(this);
-    radGrp->layout()->setMargin(3);
-    erBut = new QRadioButton("Haus. error", radGrp);
-    erBut->setChecked(TRUE);
-    kmBut = new QRadioButton("km error", radGrp);
-    kgBut = new QRadioButton("kg error", radGrp);
-    
-  // This is only needed to set the button ids to our RW_* values
-    radGrp->insert(erBut, RW_COLOR_ERROR);
-    radGrp->insert(kmBut, RW_COLOR_KM);
-    radGrp->insert(kgBut, RW_COLOR_KG);
-
-    connect(radGrp, SIGNAL(clicked(int)), 
-	    glModel1, SLOT(switchDisplayedInfo(int)));
-    connect(radGrp, SIGNAL(clicked(int)), 
-	    this, SLOT(updateColorBar(int)));
-    connect(this, SIGNAL(actualUpdate(double, double)),
-	    errorColorBar, SLOT(rescale(double, double)));
-	    
-  }
-
   // Build the topmost grid layout
   bigGrid = new QGridLayout (this, 3, 7, 5);
   bigGrid->setMenuBar(mainBar);
@@ -148,9 +115,7 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   bigGrid->addWidget(lineSwitch1, 1, 2, Qt::AlignCenter);
   bigGrid->addWidget(lineSwitch2, 1, 5, Qt::AlignCenter);
   bigGrid->addMultiCellWidget(syncBut, 1, 1, 3, 4, Qt::AlignCenter);
-  if (drawCurv) {
-    bigGrid->addWidget(radGrp, 2, 2, Qt::AlignCenter);
-  }
+
   bigGrid->addMultiCellWidget(quitBut, 2, 2, 3, 4, Qt::AlignCenter);
 
   // Now set a sensible default widget size
@@ -190,19 +155,4 @@ void ScreenWidget::quit()
   QApplication::exit(0);
 }
 
-void ScreenWidget::updateColorBar(int id) {
-  switch(id) {
-  case RW_COLOR_ERROR:
-    emit actualUpdate(model_data->min_verror, model_data->max_verror);
-    break;
-  case RW_COLOR_KM:
-    emit actualUpdate(model_data->min_km_error, model_data->max_km_error);
-    break;
-  case RW_COLOR_KG:
-    emit actualUpdate(model_data->min_kg_error, model_data->max_kg_error);
-    break;
-  default:
-    fprintf(stderr, "Invalid id=0x%x in updateColorBar\n", id);
-    break;
-  }
-}
+

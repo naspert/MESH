@@ -1,11 +1,10 @@
-/* $Id: mesh_run.c,v 1.4 2001/11/06 10:38:26 dsanta Exp $ */
+/* $Id: mesh_run.c,v 1.5 2002/01/15 17:02:06 aspert Exp $ */
 
 #include <time.h>
 #include <string.h>
 #include <xalloc.h>
 #include <model_analysis.h>
 #include <compute_error.h>
-#include <compute_curvature.h>
 #include <3dmodel_io.h>
 #include <geomutils.h>
 
@@ -182,17 +181,6 @@ void mesh_run(const struct args *args, struct model_error *model1,
                   stats_rev.grid_sz.x*stats_rev.grid_sz.y*stats_rev.grid_sz.z);
   }
   outbuf_printf(out,"\n");
-  
-  if (args->do_curvature) {
-    if (model1->mesh->num_vert == model2->mesh->num_vert) {
-      outbuf_flush(out);
-      compute_curvature_error(model1, model2, out);
-    }
-    else {
-      outbuf_printf(out, "Unable to compute curvature error for models having "
-                    "different topologies.\n");
-    }
-  }
   outbuf_printf(out,"Execution time (secs.):\t%.2f\n",
                 (double)(clock()-start_time)/CLOCKS_PER_SEC);
   outbuf_flush(out);

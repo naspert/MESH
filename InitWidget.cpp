@@ -1,4 +1,4 @@
-/* $Id: InitWidget.cpp,v 1.12 2001/11/06 10:35:27 dsanta Exp $ */
+/* $Id: InitWidget.cpp,v 1.13 2002/01/15 17:02:04 aspert Exp $ */
 
 #include <InitWidget.h>
 
@@ -24,7 +24,7 @@ InitWidget::InitWidget(struct args defArgs,
   QListBox *qlboxSplStep;
   QGridLayout *bigGrid;
   QHBoxLayout *smallGrid1, *smallGrid2, *smallGrid3, *smallGrid4, *smallGrid5;
-  QHBoxLayout *smallGrid6, *smallGrid7;
+  QHBoxLayout *smallGrid6;
 
   /* Initialize */
   pargs = defArgs;
@@ -64,10 +64,6 @@ InitWidget::InitWidget(struct args defArgs,
   chkSymDist = new QCheckBox("Calculate the symmetric distance (double run)",
                              this);
   chkSymDist->setChecked(pargs.do_symmetric);
-  
-  /* Curvature error checkbox */
-  chkCurv = new QCheckBox("Compute curvature error", this);
-  chkCurv->setChecked(pargs.do_curvature);
 
   /* Log window checkbox */
   chkLogWindow = new QCheckBox("Log output in external window", this);
@@ -102,13 +98,11 @@ InitWidget::InitWidget(struct args defArgs,
   smallGrid5 = new QHBoxLayout(bigGrid);
   smallGrid5->addWidget(chkSymDist);
 
-  /* Build grid layout for curvature checkbox */
-  smallGrid6 = new QHBoxLayout(bigGrid);
-  smallGrid6->addWidget(chkCurv);
+
   
   /* Build grid layout for external log window */
-  smallGrid7 = new QHBoxLayout(bigGrid);
-  smallGrid7->addWidget(chkLogWindow);
+  smallGrid6 = new QHBoxLayout(bigGrid);
+  smallGrid6->addWidget(chkLogWindow);
 
   /* Build grid layout for OK button */
   smallGrid4 = new QHBoxLayout(bigGrid);
@@ -164,7 +158,6 @@ void InitWidget::meshSetUp() {
   pargs.m2_fname = (char *) qledMesh2->text().latin1();
   pargs.sampling_step = atof((char*)qledSplStep->text().latin1())/100;
   pargs.do_symmetric = chkSymDist->isChecked() == TRUE;
-  pargs.do_curvature = chkCurv->isChecked() == TRUE;
   pargs.do_wlog = chkLogWindow->isChecked() == TRUE;
 
   if (!pargs.do_wlog) {

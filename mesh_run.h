@@ -1,4 +1,4 @@
-/* $Id: mesh_run.h,v 1.4 2001/11/06 10:38:26 dsanta Exp $ */
+/* $Id: mesh_run.h,v 1.5 2002/01/15 17:02:06 aspert Exp $ */
 
 #ifndef _MESH_RUN_PROTO
 #define _MESH_RUN_PROTO
@@ -26,8 +26,7 @@ struct args {
   double sampling_step; /* The sampling step, as fraction of the bounding box
                          * diagonal of model 2. */
   int do_symmetric; /* do symmetric error measure */
-  int do_curvature;
-  int do_wlog;
+  int do_wlog; /* log the output into an external window */
 };
 
 /* Runs the mesh program, given the parsed arguments in *args. The models and

@@ -1,4 +1,4 @@
-/* $Id: RawWidget.cpp,v 1.32 2001/11/12 15:25:03 dsanta Exp $ */
+/* $Id: RawWidget.cpp,v 1.33 2002/01/15 17:02:04 aspert Exp $ */
 
 #include <RawWidget.h>
 #include <qmessagebox.h>
@@ -150,19 +150,10 @@ void RawWidget::switchDisplayedInfo(int state) {
     fprintf(stderr, "Invalid call to switchDisplayedInfo\n");
     break;
   case RW_ERROR_ONLY:
-    if (state == RW_COLOR_KM || state == RW_COLOR_KG)
-      fprintf(stderr, "Invalid call to switchDisplayedInfo\n");
-    else
-      rebuild_list();
+    rebuild_list();
     break;
-  case RW_ERROR_AND_CURV:
-    if (state == RW_COLOR_KM || state == RW_COLOR_KG || 
-	state == RW_COLOR_ERROR) {
-      renderFlag = capa + state;
-      rebuild_list();
-    } else
-      fprintf(stderr, "Invalid parameter in switchDisplayedInfo 0x%x\n", 
-	      state);
+  default:
+    fprintf(stderr, "Invalid call to SwitchDisplayedInfo %d\n", capa);
     break;
   }
    
@@ -382,106 +373,11 @@ void RawWidget::rebuild_list() {
     glEnd();
     glEndList();
     break;
-  case RW_ERROR_AND_CURV:
-    switch (renderFlag & RW_DISPLAY_MASK) {
-    case RW_COLOR_ERROR:
-      drange = model->max_verror - model->min_verror;
-      if (drange < FLT_MIN*100) drange = 1;
-      glNewList(model_list, GL_COMPILE);
-      glBegin(GL_TRIANGLES);  
-      for (i=0; i<model->mesh->num_faces; i++) {
-	cur_face = &(model->mesh->faces[i]);
-	cidx = (int) floor(7*(model->verror[cur_face->f0]-
-			      model->min_verror)/drange);
-	glColor3dv(colormap[cidx]);
-	glVertex3d(model->mesh->vertices[cur_face->f0].x,
-		   model->mesh->vertices[cur_face->f0].y,
-		   model->mesh->vertices[cur_face->f0].z); 
-	
-	cidx = (int) floor(7*(model->verror[cur_face->f1]-
-			      model->min_verror)/drange);
-	glColor3dv(colormap[cidx]);
-	glVertex3d(model->mesh->vertices[cur_face->f1].x,
-		   model->mesh->vertices[cur_face->f1].y,
-		   model->mesh->vertices[cur_face->f1].z); 
-	
-	cidx = (int) floor(7*(model->verror[cur_face->f2]-
-			      model->min_verror)/drange);
-	glColor3dv(colormap[cidx]);
-	glVertex3d(model->mesh->vertices[cur_face->f2].x,
-		   model->mesh->vertices[cur_face->f2].y,
-		   model->mesh->vertices[cur_face->f2].z);       
-      }
-      glEnd();
-      glEndList();
-      break;
-    case RW_COLOR_KM:
-      drange = model->max_km_error - model->min_km_error;
-      if (drange < FLT_MIN*100) drange = 1;
-      glNewList(model_list, GL_COMPILE);
-      glBegin(GL_TRIANGLES);  
-      for (i=0; i<model->mesh->num_faces; i++) {
-	cur_face = &(model->mesh->faces[i]);
-	cidx = (int) floor(7*(model->km_error[cur_face->f0]-
-			      model->min_km_error)/drange);
-	glColor3dv(colormap[cidx]);
-	glVertex3d(model->mesh->vertices[cur_face->f0].x,
-		   model->mesh->vertices[cur_face->f0].y,
-		   model->mesh->vertices[cur_face->f0].z); 
-	
-	cidx = (int) floor(7*(model->km_error[cur_face->f1]-
-			      model->min_km_error)/drange);
-	glColor3dv(colormap[cidx]);
-	glVertex3d(model->mesh->vertices[cur_face->f1].x,
-		   model->mesh->vertices[cur_face->f1].y,
-		   model->mesh->vertices[cur_face->f1].z); 
-	
-	cidx = (int) floor(7*(model->km_error[cur_face->f2]-
-			      model->min_km_error)/drange);
-	glColor3dv(colormap[cidx]);
-	glVertex3d(model->mesh->vertices[cur_face->f2].x,
-		   model->mesh->vertices[cur_face->f2].y,
-		   model->mesh->vertices[cur_face->f2].z);       
-      }
-      glEnd();
-      glEndList();
-      break;
-  case RW_COLOR_KG:
-    drange = model->max_kg_error - model->min_kg_error;
-    if (drange < FLT_MIN*100) drange = 1;
-    glNewList(model_list, GL_COMPILE);
-    glBegin(GL_TRIANGLES);  
-    for (i=0; i<model->mesh->num_faces; i++) {
-      cur_face = &(model->mesh->faces[i]);
-      cidx = (int) floor(7*(model->kg_error[cur_face->f0]-
-                            model->min_kg_error)/drange);
-      glColor3dv(colormap[cidx]);
-      glVertex3d(model->mesh->vertices[cur_face->f0].x,
-		 model->mesh->vertices[cur_face->f0].y,
-		 model->mesh->vertices[cur_face->f0].z); 
-      
-      cidx = (int) floor(7*(model->kg_error[cur_face->f1]-
-                            model->min_kg_error)/drange);
-      glColor3dv(colormap[cidx]);
-      glVertex3d(model->mesh->vertices[cur_face->f1].x,
-		 model->mesh->vertices[cur_face->f1].y,
-		 model->mesh->vertices[cur_face->f1].z); 
-      
-      cidx = (int) floor(7*(model->kg_error[cur_face->f2]-
-                            model->min_kg_error)/drange);
-      glColor3dv(colormap[cidx]);
-      glVertex3d(model->mesh->vertices[cur_face->f2].x,
-		 model->mesh->vertices[cur_face->f2].y,
-		 model->mesh->vertices[cur_face->f2].z);       
-    }
-    glEnd();
-    glEndList();
-    break;
     default:
       fprintf(stderr, "Invalid render flag found !!\n");
       return;
     }
-  }
+
   // Check for errors in display list generation
   while ((glerr = glGetError()) != GL_NO_ERROR) {
     if (glerr == GL_OUT_OF_MEMORY) {
@@ -494,7 +390,7 @@ void RawWidget::rebuild_list() {
       fprintf(stderr,"ERROR: OpenGL error while generating display list:\n%s",
               gluErrorString(glerr));
     }
-  };
+  }
 }
 
 /* ************************************************************ */

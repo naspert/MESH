@@ -1,4 +1,4 @@
-/* $Id: ScreenWidget.h,v 1.14 2001/11/09 10:59:12 dsanta Exp $ */
+/* $Id: ScreenWidget.h,v 1.15 2002/01/15 17:02:05 aspert Exp $ */
 #ifndef SCREENWIDGET_H
 #define SCREENWIDGET_H
 
@@ -32,7 +32,7 @@ public slots:
   void aboutKeys();
   void aboutBugs();
   void quit();
-  void updateColorBar(int id);
+
 
 private:
   struct model_error *model_data;

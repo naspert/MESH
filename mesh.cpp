@@ -1,4 +1,4 @@
-/* $Id: mesh.cpp,v 1.11 2001/11/06 10:35:28 dsanta Exp $ */
+/* $Id: mesh.cpp,v 1.12 2002/01/15 17:02:06 aspert Exp $ */
 
 #include <time.h>
 #include <string.h>
@@ -47,10 +47,6 @@ static void print_usage(FILE *out)
   fprintf(out,"      \ttriangle is no more than s. Each triangle of the\n");
   fprintf(out,"      \tfirst model gets at least one sample, whatever the\n");
   fprintf(out,"      \tsampling step. The default is 0.5.\n\n");
-  fprintf(out,"  -c  \tEnables curvature comparison. Only works when the\n");
-  fprintf(out,"      \tmodels have the same number of vertices. The first\n");
-  fprintf(out,"      \tmodel should be the 'modified' one whereas the\n");
-  fprintf(out,"      \tsecond should be the 'reference' one\n");
   fprintf(out,"\n");
   fprintf(out,"  -wlog\tDisplay textual results in a window instead of on\n");
   fprintf(out,"standard output. Not compatible with the -t option.\n");
@@ -88,9 +84,6 @@ static void parse_args(int argc, char **argv, struct args *pargs)
           fprintf(stderr,"ERROR: invalid number for -l option\n");
           exit(1);
         }
-      } 
-      else if (strcmp(argv[i],"-c") == 0) { /* curvature */
-	pargs->do_curvature = 1;
       }
       else if (strcmp(argv[i], "-wlog") == 0) { /* log into window */
 	pargs->do_wlog = 1;
@@ -207,13 +200,9 @@ int main( int argc, char **argv )
   /* Free model data */
   if (model1.mesh != NULL) free_raw_model(model1.mesh);
   free(model1.verror);
-  free(model1.km_error);
-  free(model1.kg_error);
   free(model1.info);
   if (model2.mesh != NULL) free_raw_model(model2.mesh);
   free(model2.verror);
-  free(model2.km_error);
-  free(model2.kg_error);
   free(model2.info);
   /* Free widgets */
   outbuf_delete(log);

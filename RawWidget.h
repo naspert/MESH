@@ -1,4 +1,4 @@
-/* $Id: RawWidget.h,v 1.22 2001/11/06 17:13:42 dsanta Exp $ */
+/* $Id: RawWidget.h,v 1.23 2002/01/15 17:02:04 aspert Exp $ */
 #ifndef RAWWIDGET_H
 #define RAWWIDGET_H
 
@@ -7,24 +7,15 @@
 
 #define FOV 40.0 // Vertical field of view for the rendering
 
-// If set, the widget has the right to switch from non-lighted mode to the
-// lighted mode
-#define RW_LIGHT_TOGGLE 0x00
+// These two flags are exclusive. Either the widget can toggle from
+// 'light' to 'wireframe' mode or it displays the error on the model
+#define RW_LIGHT_TOGGLE 0x02
 #define RW_ERROR_ONLY 0x01
-#define RW_ERROR_AND_CURV 0x02
 
+// Bitmask to check the capacity of the widget
 #define RW_CAPA_MASK 0x03
 
-// These flags are used to define which kind of info is displayed on 
-// the 1st model : Hausdorff error, or curvature error (km or kg)
-#define RW_COLOR_ERROR 0x00
-#define RW_COLOR_KM 0x20
-#define RW_COLOR_KG 0x30
-
 #define RW_DISPLAY_MASK 0x30
-
-// These flags are exclusive (typically the 1st model has RW_COLOR set
-// while the 2nd one has RW_LIGHT_TOGGLE)
  
 class RawWidget : public QGLWidget 
 { 
