@@ -1,7 +1,7 @@
-# $Id: Makefile.sgi,v 1.4 2001/03/13 13:24:47 aspert Exp $
+# $Id: Makefile.sgi,v 1.5 2001/04/02 14:50:04 aspert Exp $
 
 CC = cc
-#CC = /tmpsg3j/aspert/gcc/bin/gcc 
+#CC = /usr/freeware/bin/gcc
 
 BINDIR = ../bin
 LIBDIR = ../lib
@@ -24,7 +24,7 @@ GL_LDFLAGS = -g -O2 $(GL_LIBFLAGS)
 
 default : rawview3
 
-all: rawview3 torus subdiv
+all: dirs rawview3 torus subdiv
 
 clean : 
 	rm $(OBJDIR)/*.o $(BINDIR)/* $(LIBDIR)/*
@@ -50,3 +50,14 @@ $(OBJDIR)/rawview3.o : rawview3.c
 
 $(OBJDIR)/%.o : %.c
 	$(CC) $(BASE_CFLAGS) -c $< -o $@	
+
+dirs : libdir bindir objdir
+
+libdir : 
+	-[ -d $(LIBDIR) ] || mkdir $(LIBDIR)
+
+bindir : 
+	-[ -d $(BINDIR) ] || mkdir $(BINDIR)
+
+objdir :
+	-[ -d $(OBJDIR) ] || mkdir $(OBJDIR)
