@@ -1,4 +1,4 @@
-/* $Id: viewer.cpp,v 1.5 2001/05/30 12:41:33 jacquet Exp $ */
+/* $Id: viewer.cpp,v 1.6 2001/05/30 15:17:05 jacquet Exp $ */
 
 #include <qapplication.h>
 #include <ScreenWidget.h>
@@ -48,8 +48,8 @@ int main( int argc, char **argv )
   raw_model1=read_raw_model(in_filename1);
   raw_model2=read_raw_model(in_filename2);
   
-  bbox0=raw_model1->bBox[0];
-  bbox1=raw_model1->bBox[1];
+  bbox0=raw_model2->bBox[0];
+  bbox1=raw_model2->bBox[1];
 
   ccube=min3(bbox1.x-bbox0.x,bbox1.y-bbox0.y,bbox1.z-bbox0.z)/20;
 
