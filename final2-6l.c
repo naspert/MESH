@@ -1,4 +1,4 @@
-/* $Id: final2-6l.c,v 1.1 2001/05/30 09:27:26 jacquet Exp $ */
+/* $Id: final2-6l.c,v 1.2 2001/07/09 09:42:22 jacquet Exp $ */
 
 #include <stdio.h>
 #include <math.h>
@@ -908,6 +908,7 @@ double **mem_err;
 double triarea,surfacetot=0;
 double ccube;
 vertex grille;
+int facteur;
 
  if (argc!=4) {
    printf("nbre d'arg incorrect\n");
@@ -962,28 +963,41 @@ printf("diagBBOX2: %lf\n",diag2);
 /* bbox1.y=max(raw_model1->BBOX[1].y,raw_model2->BBOX[1].y); */
 /* bbox1.z=max(raw_model1->BBOX[1].z,raw_model2->BBOX[1].z); */
 
-ccube=min3(bbox1.x-bbox0.x,bbox1.y-bbox0.y,bbox1.z-bbox0.z)/20;
-
-/*  if(((bbox1.x-bbox0.x)/20)==ccube){ */
-/*    grille.x=20; */
-/*    grille.y=floor((bbox1.y-bbox0.y)/ccube)+1; */
-/*    grille.z=floor((bbox1.z-bbox0.z)/ccube)+1; */
-/*  } */
-/*  else if(((bbox1.y-bbox0.y)/20)==ccube){ */
-/*    grille.x=floor((bbox1.x-bbox0.x)/ccube)+1; */
-/*    grille.y=20; */
-/*    grille.z=floor((bbox1.z-bbox0.z)/ccube)+1; */
-/*  }  */
-/*  else if(((bbox1.z-bbox0.z)/20)==ccube){ */
-/*    grille.x=floor((bbox1.x-bbox0.x)/ccube)+1; */
-/*    grille.z=20; */
-/*    grille.y=floor((bbox1.y-bbox0.y)/ccube)+1; */
-/*  }  */
+/* ccube=min3(bbox1.x-bbox0.x,bbox1.y-bbox0.y,bbox1.z-bbox0.z)/20; */
 
 
-grille.x=floor((bbox1.x-bbox0.x)/ccube)+1;
-grille.y=floor((bbox1.y-bbox0.y)/ccube)+1;
-grille.z=floor((bbox1.z-bbox0.z)/ccube)+1;
+
+
+  bbox0.x=min(raw_model1->BBOX[0].x,raw_model2->BBOX[0].x);
+  bbox0.y=min(raw_model1->BBOX[0].y,raw_model2->BBOX[0].y);
+  bbox0.z=min(raw_model1->BBOX[0].z,raw_model2->BBOX[0].z);
+ 
+  bbox1.x=max(raw_model1->BBOX[1].x,raw_model2->BBOX[1].x);
+  bbox1.y=max(raw_model1->BBOX[1].y,raw_model2->BBOX[1].y);
+  bbox1.z=max(raw_model1->BBOX[1].z,raw_model2->BBOX[1].z);
+  diag = dist(bbox0, bbox1);
+  printf("Bbox diag = %f\n", diag);
+
+  printf("mesh1: %d\n",raw_model1->nbfaces);
+  printf("mesh2: %d\n",raw_model2->nbfaces);
+  /* calcul de la taille de la grille */
+  if(raw_model2->nbfaces<100)
+    facteur=5;
+  else if(raw_model2->nbfaces<1000)
+    facteur=10;
+  else if(raw_model2->nbfaces<10000)
+    facteur=15;
+  else if(raw_model2->nbfaces<100000)
+    facteur=20;
+
+  if (raw_model2->nbfaces/raw_model1->nbfaces>50)
+    facteur/=2;
+
+  ccube=min3(bbox1.x-bbox0.x,bbox1.y-bbox0.y,bbox1.z-bbox0.z)/facteur;
+
+  grille.x=floor((bbox1.x-bbox0.x)/ccube)+1;
+  grille.y=floor((bbox1.y-bbox0.y)/ccube)+1;
+  grille.z=floor((bbox1.z-bbox0.z)/ccube)+1;
 
 
 printf("ccube: %lf grille: %lf %lf %lf\n",ccube,grille.x,grille.y,grille.z);
