@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.53 2002/11/13 13:44:26 aspert Exp $
+# $Id: Makefile,v 1.54 2002/11/14 12:51:42 aspert Exp $
 
 #Set PROFILE to something to enable profiling
 #PROFILE=1
@@ -40,14 +40,12 @@ endif #Linux
 ifeq ($(OS), IRIX64)
 CC = cc
 PROF_FLAGS = -fbgen
-XTRA_CFLAGS = -g3 -DDONT_USE_ZLIB -xansi
-STATIC_GLFLAGS =  -lglut -lGLU -lGL -lX11 -lXmu -lm
+XTRA_CFLAGS = -g3 -o32 -xansi -I/usr/freeware/include
+STATIC_GLFLAGS =  -o32 -lglut -lGLU -lGL -lX11 -lXmu -lm \
+	-L/usr/freeware/lib -lz
 ALL_TARGETS = $(TARGETS) rawview subdiv
 endif
 
-ifeq ($(ARCH), i686)
-XTRA_CFLAGS += -march=i686 -fstrict-aliasing -ffast-math #-fno-math-errno
-endif
 
 #
 # Output directories
@@ -61,7 +59,6 @@ OBJDIR = ../obj
 #
 INCLFLAGS = -I../include
 GLINCLFLAGS = -I$(GLDIR)/include
-XTRA_CFLAGS += -O2
 
 ifdef PROFILE
 XTRA_CFLAGS += $(PROF_FLAGS)
@@ -71,7 +68,10 @@ endif
 ifdef DEBUG
 XTRA_CFLAGS += -DDEBUG #-DSUBDIV_DEBUG -DSUBDIV_SPH_DEBUG -DNORM_DEBUG -DNORM_DEBUG_BFS
 else
-XTRA_CFLAGS += -pedantic
+XTRA_CFLAGS += -pedantic -O2
+ifeq ($(ARCH), i686)
+XTRA_CFLAGS += -march=i686 -fstrict-aliasing -ffast-math #-fno-math-errno
+endif
 endif
 
 BASE_CFLAGS = $(INCLFLAGS) $(XTRA_CFLAGS) 
