@@ -1,4 +1,4 @@
-/* $Id: mesh_run.c,v 1.10 2002/02/13 10:38:40 dsanta Exp $ */
+/* $Id: mesh_run.c,v 1.11 2002/02/20 18:21:58 dsanta Exp $ */
 
 #include <time.h>
 #include <string.h>
@@ -60,14 +60,12 @@ void mesh_run(const struct args *args, struct model_error *model1,
               struct prog_reporter *progress)
 {
   clock_t start_time;
-  struct face_list *vfl;
-  struct face_error *fe = NULL;
-  struct face_error *fe_rev = NULL;
   struct dist_surf_surf_stats stats;
   struct dist_surf_surf_stats stats_rev;
   double bbox1_diag,bbox2_diag;
   struct model_info *m1info,*m2info;
   double abs_sampling_step,abs_sampling_dens;
+  int nv_empty,nf_empty;
 
   /* Read models from input files */
   memset(model1,0,sizeof(*model1));
@@ -92,15 +90,10 @@ void mesh_run(const struct args *args, struct model_error *model1,
   start_time = clock();
   bbox1_diag = dist(model1->mesh->bBox[0], model1->mesh->bBox[1]);
   bbox2_diag = dist(model2->mesh->bBox[0], model2->mesh->bBox[1]);
-  vfl = faces_of_vertex(model1->mesh);
-  analyze_model(model1->mesh,vfl,m1info,0);
+  analyze_model(model1->mesh,NULL,m1info,0);
   model1->info = m1info;
   analyze_model(model2->mesh,NULL,m2info,1);
   model2->info = m2info;
-  if(args->no_gui){
-    free_face_lists(vfl,model1->mesh->num_vert);
-    vfl = NULL;
-  }
   /* Adjust sampling step size */
   abs_sampling_step = args->sampling_step*bbox2_diag;
   abs_sampling_dens = 1/(abs_sampling_step*abs_sampling_step);
@@ -130,9 +123,8 @@ void mesh_run(const struct args *args, struct model_error *model1,
   outbuf_flush(out);
 
   /* Compute the distance from one model to the other */
-  dist_surf_surf(model1->mesh,model2->mesh,abs_sampling_dens,
-                 args->force_sample_all,
-                 &fe,&stats,!args->no_gui,(args->quiet ? NULL : progress));
+  dist_surf_surf(model1,model2->mesh,abs_sampling_dens,args->force_sample_all,
+                 &stats,!args->no_gui,(args->quiet ? NULL : progress));
 
   /* Print results */
   outbuf_printf(out,"Surface area:           \t%11g\t%11g\n",
@@ -155,11 +147,10 @@ void mesh_run(const struct args *args, struct model_error *model1,
 
   if (args->do_symmetric) { /* Invert models and recompute distance */
     outbuf_printf(out,"       Distance from model 2 to model 1\n\n");
-    dist_surf_surf(model2->mesh,model1->mesh,abs_sampling_dens,
-                   args->force_sample_all,
-                   &fe_rev,&stats_rev,0,(args->quiet ? NULL : progress));
-    free_face_error(fe_rev);
-    fe_rev = NULL;
+    dist_surf_surf(model2,model1->mesh,abs_sampling_dens,args->force_sample_all,
+                   &stats_rev,0,(args->quiet ? NULL : progress));
+    free_face_error(model2->fe);
+    model2->fe = NULL;
     outbuf_printf(out,"        \t   Absolute\t%% BBox diag\n");
     outbuf_printf(out,"        \t           \t  (Model 2)\n");
     outbuf_printf(out,"Min:    \t%11g\t%11g\n",
@@ -272,15 +263,24 @@ void mesh_run(const struct args *args, struct model_error *model1,
   outbuf_flush(out);
 
   if(args->no_gui){
-    free_face_error(fe);
-    fe = NULL;
+    free_face_error(model1->fe);
+    model1->fe = NULL;
   } else {
     /* Get the per vertex error metric */
-    calc_vertex_error(model1,fe,vfl);
-    /* Free now useless data */
-    free_face_error(fe);
-    fe = NULL;
-    free_face_lists(vfl,model1->mesh->num_vert);
-    vfl = NULL;
+    nv_empty = nf_empty = 0; /* keep compiler happy */
+    calc_vertex_error(model1,&nv_empty,&nf_empty);
+    if (nv_empty>0) {
+      outbuf_printf(out,
+                    "WARNING: %.2f%% of vertices (%i out of %i) have no error "
+                    "samples\n",100.0*nv_empty/model1->mesh->num_vert,
+                    nv_empty,model1->mesh->num_vert);
+    }
+    if (nf_empty>0) {
+      outbuf_printf(out,
+                    "WARNING: %.2f%% of faces (%i out of %i) have no error "
+                    "samples\n",100.0*nf_empty/model1->mesh->num_faces,
+                    nf_empty,model1->mesh->num_faces);
+    }
+    outbuf_flush(out);
   }
 }
