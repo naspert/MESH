@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.24 2001/08/09 13:54:25 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.25 2001/08/09 15:44:47 dsanta Exp $ */
 
 #include <compute_error.h>
 
@@ -465,8 +465,13 @@ static void error_stat_triag(const struct triag_sample_error *tse,
   /* Finalize error measures */
   fe->min_error = err_min;
   fe->max_error = err_max;
-  fe->mean_error = err_tot/(((n-1)*n/2+(n-2)*(n-1)/2)*3);
-  fe->mean_sqr_error = err_sqr_tot/(((n-1)*n/2+(n-2)*(n-1)/2)*3);
+  if (n != 1) { /* normal case */
+    fe->mean_error = err_tot/(((n-1)*n/2+(n-2)*(n-1)/2)*3);
+    fe->mean_sqr_error = err_sqr_tot/(((n-1)*n/2+(n-2)*(n-1)/2)*3);
+  } else { /* special case */
+    fe->mean_error = tse->err_lin[0];
+    fe->mean_sqr_error = tse->err_lin[0]*tse->err_lin[0];
+  }
 }
 
 /* Samples a triangle (a,b,c) using n samples in each direction. The sample
@@ -475,7 +480,9 @@ static void error_stat_triag(const struct triag_sample_error *tse,
  * it should be NULL). The total number of samples is n*(n+1)/2. The order for
  * samples (i,j) in s->sample is all samples for i equal 0 and j from 0 to n-1,
  * followed by all samples for i equal 1 and j from 0 to n-2, and so on, where
- * i and j are the sampling indices along the ab and ac sides, respectively. */
+ * i and j are the sampling indices along the ab and ac sides,
+ * respectively. As a special case, if n equals 1, the triangle middle point
+ * is used as the sample. */
 static void sample_triangle(const vertex *a, const vertex *b, const vertex *c,
                             int n, struct sample_list* s)
 {
@@ -490,15 +497,21 @@ static void sample_triangle(const vertex *a, const vertex *b, const vertex *c,
   /* get basis vectors */
   substract_v(b,a,&u);
   substract_v(c,a,&v);
-  prod_v(1/(double)(n-1),&u,&u);
-  prod_v(1/(double)(n-1),&v,&v);
-  /* Sample triangle */
-  for (k = 0, i = 0; i < n; i++) {
-    for (j = 0, maxj = n-i; j < maxj; j++) {
-      s->sample[k].x = a_cache.x+i*u.x+j*v.x;
-      s->sample[k].y = a_cache.y+i*u.y+j*v.y;
-      s->sample[k++].z = a_cache.z+i*u.z+j*v.z;
+  if (n != 1) { /* normal case */
+    prod_v(1/(double)(n-1),&u,&u);
+    prod_v(1/(double)(n-1),&v,&v);
+    /* Sample triangle */
+    for (k = 0, i = 0; i < n; i++) {
+      for (j = 0, maxj = n-i; j < maxj; j++) {
+        s->sample[k].x = a_cache.x+i*u.x+j*v.x;
+        s->sample[k].y = a_cache.y+i*u.y+j*v.y;
+        s->sample[k++].z = a_cache.z+i*u.z+j*v.z;
+      }
     }
+  } else { /* special case, use triangle middle point */
+    s->sample[0].x = a_cache.x+0.5*u.x+0.5*v.x;
+    s->sample[0].y = a_cache.y+0.5*u.y+0.5*v.y;
+    s->sample[0].z = a_cache.z+0.5*u.z+0.5*v.z;
   }
 }
 
