@@ -1,4 +1,4 @@
-/* $Id: torus.c,v 1.5 2001/10/30 09:26:18 aspert Exp $ */
+/* $Id: torus.c,v 1.6 2002/03/25 11:50:41 aspert Exp $ */
 #include <3dmodel.h>
 #include <geomutils.h>
 #include <3dmodel_io.h>
@@ -10,29 +10,44 @@ int main(int argc, char **argv) {
   float theta, phi, dth, dph;
   float r,h;
   double k1, k2;
-  int nh, nr;
+  int nh, nr, do_curv=0;
   char *filename;
 
-  if (argc != 6) {
+  if (argc != 6 && argc != 7) {
     fprintf(stderr,
-	    "Usage : \n\ttorus r h n_points_th n_points_phi filename\n");
-    exit(0);
+	    "Usage : \n\ttorus [-curv] r h n_points_th n_points_phi"
+            " filename\n");
+    exit(-1);
   }
-
-  r = atof(argv[1]);
-  h = atof(argv[2]);
-  nr = atoi(argv[3]);
-  nh = atoi(argv[4]);
-  filename = argv[5];
+  
+  if (argc == 6){
+    r = atof(argv[1]);
+    h = atof(argv[2]);
+    nr = atoi(argv[3]);
+    nh = atoi(argv[4]);
+    filename = argv[5];
+  } else {
+    if (strcmp(argv[1], "-curv")==0)
+      do_curv = 1;
+    else {
+      fprintf(stderr, "Invalid option : %s\n", argv[1]);
+      exit(-1);
+    }
+    r = atof(argv[2]);
+    h = atof(argv[3]);
+    nr = atoi(argv[4]);
+    nh = atoi(argv[5]);
+    filename = argv[6];
+  }
 
   if (r <= h) {
     fprintf(stderr,"We need r > h !!\n");
-    exit(0);
+    exit(-1);
   }
 
   if (nr == 0 || nh == 0) {
     fprintf(stderr,"We need nr!=0 and nh!=0 !!\n");
-    exit(0);
+    exit(-1);
   }
   
   torus = (struct model*)malloc(sizeof(struct model));
@@ -53,8 +68,10 @@ int main(int argc, char **argv) {
       torus->vertices[j+nh*i].x = (r + h*cos(phi))*cos(theta);
       torus->vertices[j+nh*i].y = (r + h*cos(phi))*sin(theta);
       torus->vertices[j+nh*i].z = h*sin(phi);
-      k1 = k2*(1.0 - r/(r+h*cos(phi)));
-      printf("Vertex %d : k1=%f\tk2=%f\tkg=%f\n", j+nh*i, k2, k1, k1*k2);
+      if (do_curv) {
+        k1 = k2*(1.0 - r/(r+h*cos(phi)));
+        printf("Vertex %d : k1=%f\tk2=%f\tkg=%f\n", j+nh*i, k2, k1, k1*k2);
+      }
       phi += dph;
     }
     theta += dth;
