@@ -1,4 +1,4 @@
-/* $Id: compute_error.h,v 1.27 2002/03/15 16:32:11 aspert Exp $ */
+/* $Id: compute_error.h,v 1.28 2002/04/18 17:27:57 dsanta Exp $ */
 
 
 /*
@@ -101,15 +101,15 @@ struct face_error {
 
 /* Model and error, plus miscellaneous model properties */
 struct model_error {
+  double min_error;       /* The minimum error value (at sample) */
+  double max_error;       /* The maximum error value (at sample) */
+  double mean_error;      /* The mean error value */
   struct model *mesh;     /* The 3D model mesh */
   int n_samples;          /* Number of samples used to calculate the error */
   struct face_error *fe;  /* The per-face error metrics. NULL if not
                            * present. The fe[i].serror arrays are all parts of
                            * one array, starting at fe[0].serror and can thus
                            * be accessed linearly. */
-  double min_error;       /* The minimum error value (at sample) */
-  double max_error;       /* The maximum error value (at sample) */
-  double mean_error;      /* The mean error value */
   float *verror;          /* The per vertex error array. NULL if not
                            * present. */
   struct model_info *info;/* The model information. NULL if not present. */
@@ -117,7 +117,6 @@ struct model_error {
 
 /* Statistics from the dist_surf_surf function */
 struct dist_surf_surf_stats {
-  int m1_samples;   /* Total number of samples taken on model 1 */
   double st_m1_area;/* Total area of sampled triangles of model 1 */
   double m1_area;   /* Area of model 1 surface */
   double m2_area;   /* Area of model 2 surface */
@@ -126,10 +125,11 @@ struct dist_surf_surf_stats {
   double mean_dist; /* Mean distance from model 1 to model 2 */
   double rms_dist;  /* Root mean squared distance from model 1 to model 2 */
   double cell_sz;   /* The partitioning cubic cell side length */
+  double n_t_p_nec; /* Average number of triangles per non-empty cell */
+  int m1_samples;   /* Total number of samples taken on model 1 */
   struct size3d grid_sz; /* The number of cells in the partitioning grid in
                           * each direction X,Y,Z */
   int n_ne_cells;   /* Number of non-empty cells */
-  double n_t_p_nec; /* Average number of triangles per non-empty cell */
 };
 
 /* --------------------------------------------------------------------------*

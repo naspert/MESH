@@ -1,4 +1,4 @@
-/* $Id: mesh_run.h,v 1.11 2002/03/29 22:02:58 dsanta Exp $ */
+/* $Id: mesh_run.h,v 1.12 2002/04/18 17:27:45 dsanta Exp $ */
 
 
 /*
@@ -59,13 +59,13 @@ BEGIN_DECL
 
 /* To store the parsed arguments */
 struct args {
+  double sampling_step; /* The sampling step, as fraction of the bounding box
+                         * diagonal of model 2. */
   char *m1_fname; /* filename of model 1 */
   char *m2_fname; /* filename of model 2 */
   int  no_gui;    /* text only flag */
   int quiet;      /* do not display extra info flag*/
   int verb_analysis; /* verbose analysis */
-  double sampling_step; /* The sampling step, as fraction of the bounding box
-                         * diagonal of model 2. */
   int min_sample_freq;  /* Minimum sampling frequency to enfore on each
                          * triangle */
   int do_symmetric; /* do symmetric error measure */
