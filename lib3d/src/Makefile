@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.12 2001/09/03 15:36:48 aspert Exp $
+# $Id: Makefile,v 1.13 2001/09/12 13:42:45 aspert Exp $
 
 #CC = /home/sun1/aspert/gcc/bin/gcc
 CC = gcc
@@ -14,14 +14,14 @@ HPGLDIR = /usr/GL/hp
 INCLFLAGS = -I../include
 GLINCLFLAGS = -I$(HPGLDIR)/include -I$(GLDIR)/include
 DEBUGINCFLAGS = -I/home/sun1/aspert/debug
-XTRA_CFLAGS = -g  -Wall -O2  -ansi 
+XTRA_CFLAGS = -g  -Wall -O2  -ansi #-fbounds-checking
 
 BASE_CFLAGS = $(INCLFLAGS) $(XTRA_CFLAGS) 
 GL_CFLAGS = $(INCLFLAGS) $(GLINCLFLAGS) $(XTRA_CFLAGS) 
 
 BASE_LIBFLAGS = -L$(LIBDIR) -lm
 GL_LIBFLAGS = -L$(LIBDIR) -L$(HPGLDIR)/lib -L$(GLDIR)/lib -lglut -lGLU -lGL \
-	-lXmu -lXext -lX11 -lXi -l3d -limage -lm
+	-lXmu -lXext -lX11 -lXi -l3d -limage -lm -lmpatrol -lbfd -liberty
 
 STATIC_GLFLAGS =   -L$(LIBDIR) -L$(GLDIR)/lib -lglut -lGLU -lGL -lXmu -lXext \
 	-lX11 -lXi -lm 
@@ -72,6 +72,9 @@ process_dist: $(OBJDIR)/process_dist.o lib3d
 	$(CC) -g -o $(BINDIR)/$@ $< $(BASE_LDFLAGS) -l3d
 
 model_dist: $(OBJDIR)/model_dist.o lib3d
+	$(CC) -g -o $(BINDIR)/$@ $< $(BASE_LDFLAGS) -l3d
+
+cone: $(OBJDIR)/cone.o lib3d
 	$(CC) -g -o $(BINDIR)/$@ $< $(BASE_LDFLAGS) -l3d
 
 $(OBJDIR)/viewer.o :viewer.cpp
