@@ -1,4 +1,4 @@
-/* $Id: rawview.c,v 1.13 2002/06/04 13:10:55 aspert Exp $ */
+/* $Id: rawview.c,v 1.14 2002/06/04 13:53:17 aspert Exp $ */
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -18,13 +18,13 @@
 /* ****************** */
 
 /* GL renderer context */
-struct gl_render_context gl_ctx;
+static struct gl_render_context gl_ctx;
 
 /* storage for mouse stuff */
-struct mouse_state mouse;
+static struct mouse_state mouse;
 
 /* display lists indices */
-struct display_lists_indices dl_idx;
+static struct display_lists_indices dl_idx;
 
 
 
