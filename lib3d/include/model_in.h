@@ -1,4 +1,4 @@
-/* $Id: model_in.h,v 1.13 2002/08/15 15:39:01 aspert Exp $ */
+/* $Id: model_in.h,v 1.14 2002/08/16 07:59:55 aspert Exp $ */
 
 
 /*
@@ -76,7 +76,9 @@
  *     ignored. 
  *
  * - Ply ascii:
- *      Not yet implemented but detected
+ *     Only the vertices and triangular faces are read. The 'property'
+ *     fields are *not* read. The binary PLY file format is detected
+ *     but not read (yet?).
  *
  */
 
