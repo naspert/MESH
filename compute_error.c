@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.86 2002/04/08 15:34:34 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.87 2002/04/18 17:28:59 dsanta Exp $ */
 
 
 /*
@@ -77,6 +77,8 @@
 #elif defined(__GNUC__) /* GCC's interpretation is inverse of C99 */
 # define INLINE __inline__
 #elif defined(__INTEL_COMPILER) && (__INTEL_COMPILER >= 500)
+# define INLINE __inline
+#elif defined(__PGI)
 # define INLINE __inline
 #elif defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)
 # define INLINE inline
@@ -217,9 +219,9 @@ struct triangle_info {
   double chsbc;        /* constant of the plane equation: <p|npbc>=cpbc */
   double chsca;        /* constant of the plane equation: <p|npca>=cpca */
   double a_n;          /* scalar product of A with the unit length normal */
+  double s_area;       /* The surface area of the triangle */
   int obtuse_at_c;     /* Flag indicating if the angle at C is larger than 90
                         * degrees (i.e. obtuse) */
-  double s_area;       /* The surface area of the triangle */
 };
 
 /* Statistics of dist_pt_surf() function */
