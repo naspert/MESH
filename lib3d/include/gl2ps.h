@@ -1,10 +1,10 @@
 /*
  * GL2PS, an OpenGL to PostScript Printing Library
- * Copyright (C) 1999-2001  Christophe Geuzaine
+ * Copyright (C) 1999-2002  Christophe Geuzaine
  *
- * $Id: gl2ps.h,v 1.5 2001/11/26 07:52:51 aspert Exp $
+ * $Id: gl2ps.h,v 1.6 2002/04/16 06:51:09 aspert Exp $
  *
- * E-mail: Christophe.Geuzaine@AdValvas.be
+ * E-mail: geuz@geuz.org
  * URL: http://www.geuz.org/gl2ps/
  *
  * This library is free software; you can redistribute it and/or
@@ -29,12 +29,32 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+/* To generate a Windows dll, you have to define GL2PSDLL at compile
+   time */
+
 #ifdef WIN32
 #include <windows.h>
-#endif
-#include <GL/gl.h>
+#ifdef GL2PSDLL
+#ifdef GL2PSDLL_EXPORTS
+#define GL2PSDLL_API __declspec(dllexport)
+#else
+#define GL2PSDLL_API __declspec(dllimport)
+#endif /* GL2PSDLL_EXPORTS */
+#else
+#define GL2PSDLL_API
+#endif /* GL2PSDLL */
+#else
+#define GL2PSDLL_API
+#endif /* WIN32 */
 
-#define GL2PS_VERSION                    0.5
+#ifdef __APPLE__
+#include <OpenGL/gl.h>
+#else
+#include <GL/gl.h>
+#endif /* __APPLE__ */
+
+
+#define GL2PS_VERSION                    0.53
 #define GL2PS_NONE                       0
 
 /* Output file format */
@@ -56,6 +76,7 @@
 #define GL2PS_BEST_ROOT                  (1<<3)
 #define GL2PS_OCCLUSION_CULL             (1<<4)
 #define GL2PS_NO_TEXT                    (1<<5)
+#define GL2PS_LANDSCAPE                  (1<<6)
 
 /* Arguments for gl2psEnable/gl2psDisable */
 
@@ -161,15 +182,24 @@ typedef struct {
 
 /* public functions */
 
-GLvoid gl2psBeginPage(char *title, char *producer, 
-		      GLint format, GLint sort, GLint options, 
-		      GLint colormode, GLint colorsize, GL2PSrgba *colormap, 
-		      GLint buffersize, FILE *stream, char *filename);
-GLint  gl2psEndPage(GLvoid);
-GLvoid gl2psText(char *str, char *fontname, GLint size);
-GLvoid gl2psEnable(GLint mode);
-GLvoid gl2psDisable(GLint mode);
-GLvoid gl2psPointSize(GLfloat value);
-GLvoid gl2psLineWidth(GLfloat value);
-
+#ifdef __cplusplus
+extern "C" {
 #endif
+
+GL2PSDLL_API GLvoid gl2psBeginPage(char *title, char *producer, 
+				   GLint format, GLint sort, GLint options, 
+				   GLint colormode, GLint colorsize, 
+				   GL2PSrgba *colormap, GLint buffersize, 
+				   FILE *stream, char *filename);
+GL2PSDLL_API GLint  gl2psEndPage(GLvoid);
+GL2PSDLL_API GLvoid gl2psText(char *str, char *fontname, GLint size);
+GL2PSDLL_API GLvoid gl2psEnable(GLint mode);
+GL2PSDLL_API GLvoid gl2psDisable(GLint mode);
+GL2PSDLL_API GLvoid gl2psPointSize(GLfloat value);
+GL2PSDLL_API GLvoid gl2psLineWidth(GLfloat value);
+
+#ifdef __cplusplus
+};
+#endif
+
+#endif /* __GL2PS_H__ */
