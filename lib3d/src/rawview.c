@@ -1,4 +1,4 @@
-/* $Id: rawview.c,v 1.3 2002/01/31 16:02:38 aspert Exp $ */
+/* $Id: rawview.c,v 1.4 2002/02/01 08:32:11 aspert Exp $ */
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -953,6 +953,7 @@ int main(int argc, char **argv) {
   glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
   glutInitWindowSize(500, 500);
   glutCreateWindow(title);
+  free(title);
 
   /* Callback registration */
   glutDisplayFunc(display);
