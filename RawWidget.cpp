@@ -1,4 +1,4 @@
-/* $Id: RawWidget.cpp,v 1.15 2001/09/11 16:32:33 dsanta Exp $ */
+/* $Id: RawWidget.cpp,v 1.16 2001/09/12 14:34:22 dsanta Exp $ */
 #include <RawWidget.h>
 #include <qmessagebox.h>
 
@@ -74,21 +74,18 @@ void RawWidget::switchSync(bool state) {
 }
 
 void RawWidget::setLine() {
-  GLint line_state;
+  GLint line_state[2]; // front and back values
 
-  glGetIntegerv(GL_POLYGON_MODE,&line_state);
-  if (line_state==GL_FILL) {
+  glGetIntegerv(GL_POLYGON_MODE,line_state);
+  if (line_state[0]==GL_FILL && line_state[1]==GL_FILL) {
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    printf("FILL->LINE\n");
     glDraw();
-  }
-  else if (line_state==GL_LINE) {
+  } else if (line_state[0]==GL_LINE && line_state[1]==GL_LINE) {
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-    printf("LINE->FILL\n");
     glDraw(); 
-  } else 
+  } else {
     printf("Invalid state value found for GL_POLYGON_MODE: %d\n", line_state);
-  
+  }
 }
 
 void RawWidget::setLight() {
