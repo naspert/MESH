@@ -1,4 +1,4 @@
-/* $Id: mesh.cpp,v 1.37 2002/04/02 08:05:17 aspert Exp $ */
+/* $Id: mesh.cpp,v 1.38 2002/04/03 09:24:49 aspert Exp $ */
 
 
 /*
@@ -57,7 +57,7 @@
 #endif
 
 /* The version string, also parsed by Makefile */
-const char *version = "1.0";
+const char *version = "1.1-rc1";
 
 /* The Copyright */
 const char *copyright = "2001-2002 EPFL";
@@ -86,8 +86,9 @@ static void print_usage(FILE *out)
   fprintf(out,"\n");
   fprintf(out,"The program measures the distance from the 3D model in\n");
   fprintf(out,"file1 to the one in file2. The models must be given as\n");
-  fprintf(out,"triangular meshes in RAW or VRML2 formats, optionally with\n");
-  fprintf(out,"normals. The VRML parser reads IndexedFaceSets nodes only,\n");
+  fprintf(out,"triangular meshes in RAW or VRML2 formats,\n");
+  fprintf(out,"optionally with normals. It also reads gzipped files directly.\n");
+  fprintf(out,"The VRML parser reads IndexedFaceSets nodes only,\n");
   fprintf(out,"ignoring all transformations, and does not support USE tags\n");
   fprintf(out,"(DEF tags are ignored). The file type is autodetected.\n");
   fprintf(out,"After the distance is calculated the result is displayed\n");

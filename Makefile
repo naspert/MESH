@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.42 2002/03/18 09:12:59 aspert Exp $
+# $Id: Makefile,v 1.43 2002/04/03 09:24:48 aspert Exp $
 
 
 
@@ -127,8 +127,7 @@ DEPFLAG = -M
 endif
 XTRA_CPPFLAGS = -DNDEBUG
 XTRA_LDFLAGS =
-# Need POSIX.1c-1996 for unlocked stdio functions
-XTRA_CPPFLAGS +=  -D_POSIX_C_SOURCE=199506L
+
 
 # Derive compiler specific flags
 ifeq ($(CC_IS_GCC)-$(OS)-$(ARCH),gcc-Linux-i686)

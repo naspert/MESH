@@ -1,4 +1,4 @@
-/* $Id: InitWidget.cpp,v 1.29 2002/03/29 22:02:58 dsanta Exp $ */
+/* $Id: InitWidget.cpp,v 1.30 2002/04/03 09:24:48 aspert Exp $ */
 
 
 /*
@@ -185,6 +185,9 @@ InitWidget::~InitWidget() {
 void InitWidget::loadMesh1() {
   QStringList mfilters = QStringList() <<
     "3D Models (*.raw; *.wrl)" <<
+#ifndef DONT_USE_ZLIB
+    "Compressed 3D models (*.raw.gz; *.wrl.gz; *.wrz)" <<
+#endif
     "All files (*.*)";
   QFileDialog *fd=new QFileDialog (QString::null, QString::null, this, 
                                    "model1", TRUE);
@@ -204,6 +207,9 @@ void InitWidget::loadMesh1() {
 void InitWidget::loadMesh2() {
   QStringList mfilters = QStringList() <<
     "3D Models (*.raw; *.wrl)" <<
+#ifndef DONT_USE_ZLIB
+    "Compressed 3D models (*.raw.gz; *.wrl.gz; *.wrz)" <<
+#endif
     "All files (*.*)";
   QFileDialog *fd=new QFileDialog(QString::null, QString::null, this,
                                   "Model2", TRUE);

@@ -38,7 +38,14 @@ Micro$oft Visual C++ 6 dsp and dsw files needed to build the program.
 
 * Input data format 
 The input file format for the triangular meshes is a raw ASCII format or
-VRML2. The raw ASCII format describes the vertices, the vertex connectivity
+VRML2. On systems having zlib (>= 1.1) installed, MESH offers the possiblity
+of directly reading gzipped files (since gzipped VRML is in the standard). 
+Please note that most of Win32 systems do not have zlib installed. Therefore, 
+on such systems, the program is build without this support for gzipped files.
+However, it is possible to build zlib on Win32 systems. If you whish to do so,
+uncomment the relevant part in 'lib3d/include/model_in.h' (lines 83-85).
+
+The raw ASCII format describes the vertices, the vertex connectivity
 and optionally the vertex normals. The first line should contain two or three
 decimal numbers with the number of vertices, the number of triangles and the
 number of vertex normals (if they are present). If the vertex normals are

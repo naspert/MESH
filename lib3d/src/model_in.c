@@ -1,4 +1,4 @@
-/* $Id: model_in.c,v 1.9 2002/04/03 09:04:37 aspert Exp $ */
+/* $Id: model_in.c,v 1.10 2002/04/03 09:24:49 aspert Exp $ */
 
 
 /*
@@ -1514,7 +1514,7 @@ static int read_raw_tmesh(struct model **tmesh_ref, struct file_data *data)
     tmp = getc(data);
     line_buf[i] = (char)tmp;
     i++;
-  } while (i < sizeof(line_buf) && tmp != '\r' && tmp != '\n' && 
+  } while (i < (int)sizeof(line_buf) && tmp != '\r' && tmp != '\n' && 
 	   tmp != EOF);
 
   if (tmp == EOF || i == sizeof(line_buf))
