@@ -1,4 +1,4 @@
-/* $Id: RawWidget.cpp,v 1.39 2002/02/21 09:26:25 dsanta Exp $ */
+/* $Id: RawWidget.cpp,v 1.40 2002/02/21 13:07:28 dsanta Exp $ */
 
 #include <RawWidget.h>
 #include <qmessagebox.h>
@@ -188,28 +188,34 @@ int RawWidget::fillTexture(const struct face_error *fe,
       for (j2=-1; j2<=sz; j2++) {
         j = (j2 >= 0) ? ((j2 < sz) ? j2 : sz-1) : 0;
         if (i<n && j<(n-i)) { /* sample point */
-          cidx = (int) floor((CMAP_LENGTH-1)*(fe->serror[j+i*(2*n-i+1)/2]-
-                                              model->min_error)/drange+0.5);
+          cidx = (int) (CMAP_LENGTH*(fe->serror[j+i*(2*n-i+1)/2]-
+                                     model->min_error)/drange);
+          if (cidx >= CMAP_LENGTH) cidx = CMAP_LENGTH-1;
           r = (GLubyte) (255*colormap[cidx][0]);
           g = (GLubyte) (255*colormap[cidx][1]);
           b = (GLubyte) (255*colormap[cidx][2]);
+          fprintf(stderr,"i = %i, j = %i, cidx = %i (in) RGB= %i %i %i\n",
+                  i2,j2,cidx,r,g,b);
         } else if (j == n-i) {
           /* diagonal border texel, can be used in GL_LINEAR texture mode */
           e1 = (i>0&&j>0) ? fe->serror[(j-1)+(i-1)*(2*n-(i-1)+1)/2] : 0;
           e2 = (j>0) ? fe->serror[(j-1)+i*(2*n-i+1)/2] : 0;
           e3 = (i>0) ? fe->serror[j+(i-1)*(2*n-(i-1)+1)/2] : 0;
-          cidx = (int) floor((CMAP_LENGTH-1)*(e2+e3-e1-
-                                              model->min_error)/drange+0.5);\
+          cidx = (int) (CMAP_LENGTH*(e2+e3-e1-model->min_error)/drange);
           if (cidx < 0) {
             cidx = 0;
-          } else if (cidx > CMAP_LENGTH-1) {
+          } else if (cidx >= CMAP_LENGTH) {
             cidx = CMAP_LENGTH-1;
           }
           r = (GLubyte) (255*colormap[cidx][0]);
           g = (GLubyte) (255*colormap[cidx][1]);
           b = (GLubyte) (255*colormap[cidx][2]);
+          fprintf(stderr,"i = %i, j = %i, cidx = %i (diag) RGB= %i %i %i\n",
+                  i2,j2,cidx,r,g,b);
         } else { /* out of triangle point, this texel will never be used */
           r = g = b = 0; /* black */
+          fprintf(stderr,"i = %i, j = %i (out) RGB= %i %i %i\n",
+                  i2,j2,r,g,b);
         }
         texture[k++] = r;
         texture[k++] = g;
@@ -486,8 +492,9 @@ void RawWidget::rebuild_list() {
       for (i=0; i<model->mesh->num_faces; i++) {
         cur_face = &(model->mesh->faces[i]);
         if (model->verror[cur_face->f0] >= model->min_error) {
-          cidx = (int) floor((CMAP_LENGTH-1)*(model->verror[cur_face->f0]-
-                                              model->min_error)/drange+0.5);
+          cidx = (int) (CMAP_LENGTH*(model->verror[cur_face->f0]-
+                                     model->min_error)/drange);
+          if (cidx >= CMAP_LENGTH) cidx = CMAP_LENGTH-1;
           glColor3fv(colormap[cidx]);
         } else {
           glColor3f(no_err_value,no_err_value,no_err_value); /* gray */
@@ -496,8 +503,9 @@ void RawWidget::rebuild_list() {
                    model->mesh->vertices[cur_face->f0].y,
                    model->mesh->vertices[cur_face->f0].z);
         if (model->verror[cur_face->f1] >= model->min_error) {
-          cidx = (int) floor((CMAP_LENGTH-1)*(model->verror[cur_face->f1]-
-                                              model->min_error)/drange+0.5);
+          cidx = (int) (CMAP_LENGTH*(model->verror[cur_face->f1]-
+                                     model->min_error)/drange);
+          if (cidx >= CMAP_LENGTH) cidx = CMAP_LENGTH-1;
           glColor3fv(colormap[cidx]);
         } else {
           glColor3f(no_err_value,no_err_value,no_err_value); /* gray */
@@ -507,16 +515,18 @@ void RawWidget::rebuild_list() {
                    model->mesh->vertices[cur_face->f1].z); 
         if (error_mode == VERTEX_ERROR) {
           if (model->verror[cur_face->f2] >= model->min_error) {
-            cidx = (int) floor((CMAP_LENGTH-1)*(model->verror[cur_face->f2]-
-                                                model->min_error)/drange+0.5);
+            cidx = (int) (CMAP_LENGTH*(model->verror[cur_face->f2]-
+                                       model->min_error)/drange);
+            if (cidx >= CMAP_LENGTH) cidx = CMAP_LENGTH-1;
             glColor3fv(colormap[cidx]);
           } else {
             glColor3f(no_err_value,no_err_value,no_err_value); /* gray */
           }
         } else {
           if (model->fe[i].sample_freq > 0) {
-            cidx = (int) floor((CMAP_LENGTH-1)*(model->fe[i].mean_error-
-                                                model->min_error)/drange+0.5);
+            cidx = (int) (CMAP_LENGTH*(model->fe[i].mean_error-
+                                       model->min_error)/drange);
+            if (cidx >= CMAP_LENGTH) cidx = CMAP_LENGTH-1;
             glColor3fv(colormap[cidx]);
           } else { /* no samples in this triangle => mean error meaningless */
             glColor3f(no_err_value,no_err_value,no_err_value); /* gray */

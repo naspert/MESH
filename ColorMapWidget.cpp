@@ -1,4 +1,4 @@
-/* $Id: ColorMapWidget.cpp,v 1.17 2002/02/21 12:44:59 aspert Exp $ */
+/* $Id: ColorMapWidget.cpp,v 1.18 2002/02/21 13:07:28 dsanta Exp $ */
 #include <ColorMapWidget.h>
 #include <qapplication.h>
 #include <qpainter.h>
@@ -54,7 +54,8 @@ void ColorMapWidget::doHistogram(int scaleType) {
   off = me->min_error;
   serror = me->fe[0].serror;
   for (i=0; i<n; i++) {
-    bin_idx = (int) floor((serror[i]-off)/drange*(len-1)+0.5);
+    bin_idx = (int) ((serror[i]-off)/drange*len);
+    if (bin_idx >= len) bin_idx = len-1;
     histogram[bin_idx]++;
   }
 
