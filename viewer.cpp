@@ -1,4 +1,4 @@
-/* $Id: viewer.cpp,v 1.2 2001/05/01 08:26:04 jacquet Exp $ */
+/* $Id: viewer.cpp,v 1.3 2001/05/03 08:00:22 jacquet Exp $ */
 #include <qpainter.h>
 #include <qpushbutton.h>
 #include <qfont.h>
@@ -41,11 +41,9 @@ void HSVtoRGB(double *r, double *g, double *b,double h)
   case 5:*r=1; *g=p; *b=q;break;
     
   }
-  printf("%lf %lf %lf\n",*r,*g,*b);
-
 }
 
-/* creaion d'un Widget Colormap */
+/* creation d'un Widget Colormap */
 class ColorMapWidget : public QWidget
 {
 public:
@@ -72,15 +70,7 @@ void ColorMapWidget::paintEvent(QPaintEvent *)
     p.setPen(QColor(floor(255*colormap[15-i][0]),floor(255*colormap[15-i][1]),floor(255*colormap[15-i][2])));
     p.drawRect(0,i*32,20,32);
   }
-
-//   for(int j=0; j<78;j++){
-//     QColor c;
-//     c.setHsv( j*5, 255, 255 );		// rainbow effect
-//     p.setBrush( c );
-//     p.setPen(c);
-//     p.drawRect(25,j*2,20,2);
-//   }
-    p.end();
+  p.end();
 }
 
 /* creation d'un widget pour la fenetre graphique*/
@@ -99,17 +89,17 @@ ScreenWidget::ScreenWidget( model *raw_model1,model *raw_model2,QWidget *parent,
   
 
   
-  QPushButton *h1 = new QPushButton( "line",this);
+  QPushButton *h1 = new QPushButton( "line/fill",this);
   QPushButton *f1 = new QPushButton( "fill",this);  
-  QPushButton *h2 = new QPushButton( "line",this);
+  QPushButton *h2 = new QPushButton( "line/fill",this);
   QPushButton *f2 = new QPushButton( "Fill",this);  
   RawWidget *w = new RawWidget(raw_model1,this,"w");
   RawWidget *y = new RawWidget(raw_model2,this,"y");
 
   connect(h1, SIGNAL(clicked()), w, SLOT(setLine()) );
-  connect(f1, SIGNAL(clicked()), w, SLOT(setFill()) );
+  connect(f1, SIGNAL(clicked()), w, SLOT(aslot()) );
   connect(h2, SIGNAL(clicked()), y, SLOT(setLine()) );
-  connect(f2, SIGNAL(clicked()), y, SLOT(setFill()) );
+  connect(w, SIGNAL(transfervalue(double,double*)), y, SLOT(transfer(double,double*)) );
 
 
   QHBoxLayout *hlayout2 = new QHBoxLayout(20,"hlayout");
@@ -151,8 +141,12 @@ int main( int argc, char **argv )
   model *raw_model1, *raw_model2;
   int grid;
   cellules *cell;
-  double samplethin,dcourant,dmax=0,superdmax=0,dmin=200,superdmin=200;;
+  double samplethin,dcourant,dmax=0,superdmax=0,dmin=200,superdmin=200;
+  double dmoy,dmoymax=0,dmoymin=200;
   int **repface;
+  int **list_face;
+  int *nbfaces;
+  double *moyfacerror;
   int i,j,h=0;
   sample *sample2;
   double r,g,b,hue;
@@ -195,55 +189,71 @@ f=fopen("dida","w");
 
   cell=liste(grid,raw_model2);
   repface=cublist(cell,grid,raw_model2);
+
+  moyfacerror=(double *)malloc(raw_model1->num_faces*sizeof(double));
+  list_face=(int **)malloc(raw_model1->num_vert*sizeof(int *));
+  nbfaces=(int *)calloc(raw_model1->num_vert,sizeof(int));
+
+  listoffaces(raw_model1,nbfaces,list_face);
   
-//   for(i=0;i<raw_model1->num_faces;i++) {
-//     sample2=echantillon(raw_model1->vertices[raw_model1->faces[i].f0],
-// 			raw_model1->vertices[raw_model1->faces[i].f1],
-// 			raw_model1->vertices[raw_model1->faces[i].f2],
-// 			samplethin); 
-//     for(j=0;j<sample2->nbsamples;j++){
-//       dcourant=pcd(sample2->sample[j],raw_model2,repface,grid,f);
-//      if(dcourant>dmax)
-//        dmax=dcourant;
-//      if(dcourant<dmin)
-//        dmin=dcourant;
-//      h++;
-//     }
-//     printf("face numero %d: dmax= %lf\n",i+1,dmax);
-//     if(dmax>superdmax)
-//       superdmax=dmax;
-//     dmax=0;
-//    if(dmin<superdmin)
-//      superdmin=dmin;
-//    dmin=200;
+  for(i=0;i<raw_model1->num_faces;i++) {
+    sample2=echantillon(raw_model1->vertices[raw_model1->faces[i].f0],
+			raw_model1->vertices[raw_model1->faces[i].f1],
+			raw_model1->vertices[raw_model1->faces[i].f2],
+			samplethin);
+    dmoy=0;
+    for(j=0;j<sample2->nbsamples;j++){
+      dcourant=pcd(sample2->sample[j],raw_model2,repface,grid,f);
+      dmoy+=dcourant;
+      if(dcourant>dmax)
+       dmax=dcourant;
+     if(dcourant<dmin)
+       dmin=dcourant;
+     h++;
+    }
     
-//    free(sample2->sample);
-   
-//    free(sample2);
-   
-//   }
-//   printf("distance maximale: %lf\n",superdmax);
-//   printf("distance minimale: %lf\n",superdmin); 
-//   printf("nbsampleteste: %d\n",h);
+    dmoy/=sample2->nbsamples;
+    moyfacerror[i]=dmoy;
+    if(dmoy>dmoymax)
+      dmoymax=dmoy;
+    if(dmoy<dmoymin)
+      dmoymin=dmoy;
+
+    printf("face numero %d: dmax= %lf dmoy= %lf\n",i+1,dmax,dmoy);
+    if(dmax>superdmax)
+      superdmax=dmax;
+    dmax=0;
+    if(dmin<superdmin)
+      superdmin=dmin;
+    dmin=200;
+    
+    free(sample2->sample);
+    
+    free(sample2);
+    
+  }
+  printf("distance maximale: %lf dist moy max: %lf\n",superdmax,dmoymax);
+  printf("distance minimale: %lf dist moy min: %lf\n",superdmin,dmoymin); 
+  printf("nbsampleteste: %d\n",h);
 //   fprintf(f,"\n\n\n");
 
   
   raw_model1->error=(int *)malloc(raw_model1->num_vert*sizeof(int));
   raw_model2->error=(int *)calloc(raw_model2->num_vert,sizeof(int));
  
-  for(i=0;i<raw_model1->num_vert;i++) {
-    dcourant=pcd(raw_model1->vertices[i],raw_model2,repface,grid,f);
-    if(dcourant>dmax)
-      dmax=dcourant;
-    if(dcourant<dmin)
-      dmin=dcourant;
-    
-    raw_model1->error[i]=(dcourant-superdmin)/(superdmax-superdmin)*15;
-  }
 
   for(i=0;i<raw_model1->num_vert;i++) {
-    dcourant=pcd(raw_model1->vertices[i],raw_model2,repface,grid,f);
-    raw_model1->error[i]=(dcourant-dmin)/(dmax-dmin)*15;
+    dcourant=0;  
+    for(j=0;j<nbfaces[i];j++){ 
+      dcourant+=(moyfacerror[list_face[i][j]]-dmoymin)/(dmoymax-dmoymin);
+    }
+    dcourant/=nbfaces[i];
+    raw_model1->error[i]=dcourant*15;
+    if(raw_model1->error[i]>15)
+      raw_model1->error[i]=15;
+    //raw_model1->error[i]=(int)floor(dcourant); 
+    fprintf(f,"%d ",raw_model1->error[i]); 
+    //fprintf(f,"%lf ",dcourant);
   }
 
   QApplication::setColorSpec( QApplication::CustomColor );

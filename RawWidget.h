@@ -29,10 +29,17 @@ public:
   RawWidget(model *raw_model,QWidget *parent=0, const char *name=0 );
   void display(double distance);
   void rebuild_list(model *raw_model);
-
-  public slots:
-    void setLine();
-    void setFill();
+  
+public slots: 
+    void aslot();
+  void setLine();
+  void transfer(double dist,double *rawmat);
+  /*     void setFill(); */
+  
+signals:
+  void transfervalue(double,double*);
+    
+    
 
 protected:
   void initializeGL();
@@ -41,7 +48,8 @@ protected:
   void mousePressEvent(QMouseEvent*);
   void keyPressEvent(QKeyEvent*);
   void paintGL();
-private:
+private:  
+  GLdouble dth, dph, dpsi;
   model *raw_model2;
   GLdouble distance,dstep;
   GLuint list;
@@ -56,7 +64,8 @@ private:
   int left_button_state;
   int middle_button_state;
   int right_button_state;
-
+  int line_fill_state; /* 0->FILL 1->LINE */
+  int move_state;
 
 };
 

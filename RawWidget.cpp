@@ -12,10 +12,13 @@ RawWidget::RawWidget( model *raw_model, QWidget *parent, const char *name)
   
   
   setMinimumSize( 500, 500 );
+  setMaximumSize( 500, 500 );
   
   FOV = 40;
   model_list=0;
   raw_model2=raw_model;
+  line_fill_state=0;
+  move_state=0;
  
   center.x = 0.5*(raw_model2->bBox[1].x + raw_model2->bBox[0].x);
   center.y = 0.5*(raw_model2->bBox[1].y + raw_model2->bBox[0].y);
@@ -35,20 +38,49 @@ RawWidget::RawWidget( model *raw_model, QWidget *parent, const char *name)
 
 }
 
-void RawWidget::setLine()
+void RawWidget::aslot()
 {
-//   printf("tu puexs");
-  glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-  //  rebuild_list(raw_model); 
+  if(move_state==0)
+    move_state=1;
+  else
+    move_state=0;
+  emit transfervalue(distance,mvmatrix);
+}
+
+void RawWidget::transfer(double dist,double *mvmat)
+{
+int i;
+
+distance=dist;
+
+for(i=0;i<16;i++)
+  mvmatrix[i]=mvmat[i];
+//   glMatrixMode(GL_MODELVIEW);
+//   glLoadIdentity();
+//   glMultMatrixd(mvmatrix);
+ 
   updateGL();
 }
 
-void RawWidget::setFill()
+void RawWidget::setLine()
 {
-  glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-  //  rebuild_list(raw_model); 
+  if(line_fill_state==0){
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    line_fill_state=1;
+  }
+  else {
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    line_fill_state=0;
+  }
   updateGL();
 }
+
+// void RawWidget::setFill()
+// {
+//   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+//   rebuild_list(raw_model); 
+//   updateGL();
+// }
 
 void RawWidget::paintGL()
 {
@@ -192,7 +224,7 @@ void RawWidget::mouseMoveEvent(QMouseEvent *event)
   dx= event->x() - oldx;
   dy= event->y() - oldy;
 
-  GLdouble dth, dph, dpsi;
+
 
   if(left_button_state==1){  
     dth = dx*0.5; 
@@ -220,6 +252,9 @@ void RawWidget::mouseMoveEvent(QMouseEvent *event)
     glPopMatrix(); /* Reload previous transform context */
     updateGL(); 
   }
+
+  if(move_state==1)
+    emit transfervalue(distance,mvmatrix);
   oldx = event->x();
   oldy = event->y();
 
