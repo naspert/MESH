@@ -1,4 +1,4 @@
-/* $Id: model_analysis.c,v 1.21 2002/03/28 17:34:29 dsanta Exp $ */
+/* $Id: model_analysis.c,v 1.22 2002/03/29 08:45:10 dsanta Exp $ */
 
 
 /*
@@ -59,6 +59,8 @@
 # define INLINE inline
 #endif
 
+/* Type for bitmaps */
+typedef unsigned int bmap_t;
 
 /* A stack for arbitrary objects */
 struct stack {
@@ -97,8 +99,34 @@ struct adj_faces {
 };
 
 /* --------------------------------------------------------------------------*
+ *                                  Macros                                   *
+ * --------------------------------------------------------------------------*/
+
+/* We need a power of two bits in char (well, that would a very weird machine
+ * but better to check that to see the program fail with no messages). */
+#if (CHAR_BIT != 8 && CHAR_BIT != 16 && CHAR_BIT != 32 && CHAR_BIT != 64)
+#error CHAR_BIT is not a power of two
+#endif
+/* The number of bits in bitmap_t */
+#define BMAP_T_BITS (sizeof(bmap_t)*CHAR_BIT)
+/* The bitmask to obtain the bit position within bmap_t */
+#define BMAP_T_MASK (BMAP_T_BITS-1)
+/* Gets the value (0 or 1) of the nth bit in the bmap bitmap */
+#define BMAP_ISSET(bmap,n) (((bmap)[n/BMAP_T_BITS] >> ((n)&BMAP_T_MASK)) & 1)
+/* Sets (to 1) the nth bit in the bmap bitmap */
+#define BMAP_SET(bmap,n) ((bmap)[n/BMAP_T_BITS] |= 1 << ((n)&BMAP_T_MASK))
+
+/* --------------------------------------------------------------------------*
  *                            Utility functions                              *
  * --------------------------------------------------------------------------*/
+
+/* Allocates a bitmap of size sz bits, initialized to zero (i.e. all bits
+ * cleared). The storage can be freed by calling free on the returned
+ * pointer. */
+static bmap_t * bmap_calloc(size_t sz)
+{
+  return xa_calloc((sz+BMAP_T_BITS-1)/BMAP_T_BITS,sizeof(bmap_t));
+}
 
 /* Initializes the stack s for storing elements of elem_sz bytes. */
 static void stack_init(struct stack *s, size_t elem_sz)
@@ -171,14 +199,16 @@ static INLINE int is_degenerate(face_t face)
  *                         Model analysis functions                          *
  * --------------------------------------------------------------------------*/
 
-/* Given the face orientation map face_orientation, orients the model m. */
-static void orient_model(struct model *m, signed char *face_orientation)
+/* Given the face orientation map face_rev_orientation, orients the model
+ * m. The map face_rev_orientation indicates which faces should have their
+ * orientation reversed. */
+static void orient_model(struct model *m, const bmap_t *face_rev_orientation)
 {
   int i,imax;
   int tmpi;
 
   for (i=0, imax=m->num_faces; i<imax; i++) {
-    if (face_orientation[i] < 0) { /* revert orientation */
+    if (BMAP_ISSET(face_rev_orientation,i)) { /* revert orientation */
       tmpi = m->faces[i].f0;
       m->faces[i].f0 = m->faces[i].f1;
       m->faces[i].f1 = tmpi;
@@ -420,7 +450,7 @@ static void free_adj_face_list(struct adj_faces *aflist, int n_faces)
  * skipped. The returned array is of length n_faces. */
 static struct adj_faces * find_adjacent_faces(const face_t *mfaces, int n_faces,
                                               const struct face_list *flist,
-                                              const char *manifold_vtcs)
+                                              const bmap_t *manifold_vtcs)
 {
   struct adj_faces *aflist;
   int k,i;
@@ -446,7 +476,7 @@ static struct adj_faces * find_adjacent_faces(const face_t *mfaces, int n_faces,
       if (mfaces[adj_fidx].f0 == f1 || mfaces[adj_fidx].f1 == f1 ||
           mfaces[adj_fidx].f2 == f1) { /* adjacent on f0-f1 */
         add_adj_face(&aflist[k],0,adj_fidx);
-        if (manifold_vtcs[f0]) break; /* can have only one adjacent face */
+        if (BMAP_ISSET(manifold_vtcs,f0)) break; /* only one adjacent face */
       }
     }
     /* Find faces adjacent on the f1-f2 edge */
@@ -457,7 +487,7 @@ static struct adj_faces * find_adjacent_faces(const face_t *mfaces, int n_faces,
       if (mfaces[adj_fidx].f0 == f2 || mfaces[adj_fidx].f1 == f2 ||
           mfaces[adj_fidx].f2 == f2) { /* adjacent on f1-f2 */
         add_adj_face(&aflist[k],1,adj_fidx);
-        if (manifold_vtcs[f1]) break; /* can have only one adjacent face */
+        if (BMAP_ISSET(manifold_vtcs,f1)) break; /* only one adjacent face */
       }
     }
     /* Find faces adjacent on the f2-f0 edge */
@@ -468,7 +498,7 @@ static struct adj_faces * find_adjacent_faces(const face_t *mfaces, int n_faces,
       if (mfaces[adj_fidx].f0 == f0 || mfaces[adj_fidx].f1 == f0 ||
           mfaces[adj_fidx].f2 == f0) { /* adjacent on f2-f0 */
         add_adj_face(&aflist[k],2,adj_fidx);
-        if (manifold_vtcs[f2]) break; /* can have only one adjacent face */
+        if (BMAP_ISSET(manifold_vtcs,f2)) break; /* only one adjacent face */
       }
     }
   }
@@ -543,39 +573,36 @@ static INLINE int get_next_adj_face_rm(struct adj_faces *aflist, int fidx,
   return next_fidx;
 }
 
-/* Returns the orientation (1 or -1) of *new_face that is compatible with that
- * of the already oriented face and adjacent face *oriented_face. The
- * orientation of the oriented face is orientation. The index of the edge of
- * *oriented_face where *new_face is adjacent is of join_eidx. */
-static INLINE signed char get_orientation(const face_t *new_face,
-                                          const face_t *oriented_face,
-                                          signed char orientation,
-                                          int of_join_eidx)
+/* Compare the orientation of *face1 and *face2, where f2_join_eidx is the
+ * index of *face2 that is shared with *face1. Returns zero if both faces have
+ * the same orientation and one otherwise. */
+static INLINE int get_orientation(const face_t *face1, const face_t *face2,
+                                  int f2_join_eidx)
 {
   int v0,v1; /* ordered vertices of the joining edge */
 
-  switch (of_join_eidx) {
+  switch (f2_join_eidx) {
   case 0:
-    v0 = oriented_face->f0;
-    v1 = oriented_face->f1;
+    v0 = face2->f0;
+    v1 = face2->f1;
     break;
   case 1:
-    v0 = oriented_face->f1;
-    v1 = oriented_face->f2;
+    v0 = face2->f1;
+    v1 = face2->f2;
     break;
   default: /* must always be 2 */
-    assert(of_join_eidx == 2);
-    v0 = oriented_face->f2;
-    v1 = oriented_face->f0;
+    assert(f2_join_eidx == 2);
+    v0 = face2->f2;
+    v1 = face2->f0;
   }
 
-  if (new_face->f0 == v0) {
-    return (new_face->f2 == v1) ? orientation : -orientation;
-  } else if (new_face->f1 == v0) {
-    return (new_face->f0 == v1) ? orientation : -orientation;
-  } else { /* new_face->f2 == v0 */
-    assert(new_face->f2 == v0);
-    return (new_face->f1 == v1) ? orientation : -orientation;
+  if (face1->f0 == v0) {
+    return (face1->f2 != v1);
+  } else if (face1->f1 == v0) {
+    return (face1->f0 != v1);
+  } else { /* face1->f2 == v0 */
+    assert(face1->f2 == v0);
+    return (face1->f1 != v1);
   }
 }
 
@@ -583,42 +610,52 @@ static INLINE signed char get_orientation(const face_t *new_face,
  * number of faces n_faces and the list of incident faces for each vertex
  * flist. manifold_vtcs flags, for each vertex, if it is manifold or not. The
  * results is returned in the following fields of minfo: oriented and
- * orientable. The orientation of each face is returned as a malloc'ed array
- * of length n_faces. A negative entry means that the orientation of the
- * corresponding face needs to be reversed. */
-static signed char * model_orientation(const face_t *mfaces, int n_faces,
-                                       const struct face_list *flist,
-                                       const char *manifold_vtcs,
-                                       struct model_info *minfo)
+ * orientable. The orientation of each face is returned as a malloc'ed bitmap
+ * array of length n_faces (in bits). If the corresponding bit is set the
+ * orientation of the corresponding face needs to be reversed to obtain an
+ * oriented model (if orientable). If the model is not orientable, the model
+ * would be mostly oriented if the returned orientation map is applied. */
+static bmap_t * model_orientation(const face_t *mfaces, int n_faces,
+                                  const struct face_list *flist,
+                                  const bmap_t *manifold_vtcs,
+                                  struct model_info *minfo)
 {
-  struct adj_faces *aflist;
-  signed char *face_orientation;
-  int n_oriented_faces;
-  int next_fidx;
-  signed char next_orientation;
-  int join_eidx;
-  struct stack stack;
+  struct adj_faces *aflist; /* for each face, the list of adjacent faces */
+  bmap_t *face_oriented;    /* flag for each face: already tested orient. */
+  bmap_t *face_revo;        /* flag for each face: orient. should be reversed */
+  int n_oriented_faces;     /* number of faces whose orient. has been tested */
+  int next_fidx;            /* index of next face to test for orientation */
+  unsigned int next_rev_of_fidx; /* flag: orientation of next_rev_of_fidx is
+                                  * the reverse of that of fidx. */
+  int join_eidx;            /* shared edge index between adjacent faces */
+  struct stack stack;       /* stack to walk face tree */
   struct {
-    int fidx;
-    int eidx;
-    int epos;
-  } cur;
+    int fidx;  /* current face index in aflist */
+    int eidx;  /* current edge index in within face */
+    int epos;  /* current position index within edge */
+  } cur;                    /* the indices to the current entry in aflist */
 
   /* Initialize */
   aflist = find_adjacent_faces(mfaces,n_faces,flist,manifold_vtcs);
-  face_orientation = xa_calloc(n_faces,sizeof(*face_orientation));
+  face_oriented = bmap_calloc(n_faces);
+  face_revo = bmap_calloc(n_faces);
   stack_init(&stack,sizeof(cur));
   minfo->orientable = 1;
   minfo->oriented = 1;
   n_oriented_faces = 0;
   cur.fidx = 0;
   while (n_oriented_faces < n_faces) {
-    /* find next not yet oriented face */
+    /* find next not yet oriented face. Use fast skip by testing BMAP_T_BITS
+     * entries in the bitmap at once, and then find the individual entry. */
+    for (cur.fidx &= (~BMAP_T_MASK); cur.fidx<n_faces; cur.fidx+=BMAP_T_BITS) {
+      if (face_oriented[cur.fidx/BMAP_T_BITS] != ~0U) break;
+    }
     for (; cur.fidx<n_faces; cur.fidx++) {
-      if (face_orientation[cur.fidx] == 0) break;
+      if (!BMAP_ISSET(face_oriented,cur.fidx)) break;
     }
     assert(cur.fidx < n_faces);
-    face_orientation[cur.fidx] = 1;
+    assert(!BMAP_ISSET(face_revo,cur.fidx));
+    BMAP_SET(face_oriented,cur.fidx);
     n_oriented_faces++;
     if (is_degenerate(mfaces[cur.fidx])) continue;
     cur.eidx = 0;
@@ -630,23 +667,24 @@ static signed char * model_orientation(const face_t *mfaces, int n_faces,
           (next_fidx = get_next_adj_face_rm(aflist,cur.fidx,&cur.eidx,
                                             &cur.epos,&join_eidx)) >= 0) {
         /* still an adjacent face */
-        assert(face_orientation[cur.fidx] != 0);
-        next_orientation =
-          get_orientation(&mfaces[next_fidx],&mfaces[cur.fidx],
-                          face_orientation[cur.fidx],join_eidx);
-        if (next_orientation != face_orientation[cur.fidx]) {
-          minfo->oriented = 0;
-        }
-        if (face_orientation[next_fidx] == 0) {
+        assert(BMAP_ISSET(face_oriented,cur.fidx));
+        next_rev_of_fidx = get_orientation(&mfaces[next_fidx],
+                                           &mfaces[cur.fidx],join_eidx);
+        if (next_rev_of_fidx) minfo->oriented = 0;
+        if (!BMAP_ISSET(face_oriented,next_fidx)) {
           /* not yet oriented face => orient and continue from new */
-          face_orientation[next_fidx] = next_orientation;
+          if ((next_rev_of_fidx^BMAP_ISSET(face_revo,cur.fidx)) != 0) {
+            BMAP_SET(face_revo,next_fidx);
+          }
+          BMAP_SET(face_oriented,next_fidx);
           n_oriented_faces++;
           stack_push(&stack,&cur);
           cur.fidx = next_fidx;
           cur.eidx = 0;
           cur.epos = 0;
         } else { /* face already oriented, check consistency */
-          if (face_orientation[next_fidx] != next_orientation) {
+          if ((next_rev_of_fidx^BMAP_ISSET(face_revo,cur.fidx)) !=
+              BMAP_ISSET(face_revo,next_fidx)) {
             minfo->orientable = 0;
           }
         }
@@ -658,24 +696,25 @@ static signed char * model_orientation(const face_t *mfaces, int n_faces,
     } while (1);
   }
   free_adj_face_list(aflist,n_faces);
+  free(face_oriented);
   stack_fini(&stack);
-  return face_orientation;
+  return face_revo;
 }
 
 /* Evaluates the topology of the model given by the faces in mfaces, the list
  * of incident faces for each vertex flist and the number of vertices
  * n_vtcs. The result is returned in the following fields of minfo: manifold,
- * closed and n_disjoint_parts. It returns a malloc'ed array indicating which
- * vertices are manifold. */
-static char * model_topology(int n_vtcs, const face_t *mfaces,
-                             const struct face_list *flist,
-                             struct model_info *minfo)
+ * closed and n_disjoint_parts. It returns a malloc'ed bitmap array (of length
+ * n_vtcs bits) indicating which vertices are manifold. */
+static bmap_t * model_topology(int n_vtcs, const face_t *mfaces,
+                               const struct face_list *flist,
+                               struct model_info *minfo)
 {
   struct vtx_list *vlist; /* for each vertex, the list of vertices sharing an
                            * edge with them. */
   struct stack stack;     /* stack to walk vertex tree */
-  char *visited_vtcs;     /* array to mark visited vertices */
-  char *manifold_vtcs;    /* array flagging manifold vertices */
+  bmap_t *visited_vtcs;   /* array to mark visited vertices */
+  bmap_t *manifold_vtcs;  /* array flagging manifold vertices */
   int n_visited_vertices; /* number of already visited vertices */
   int next_vidx;          /* the index of the next vertex to visit */
   struct topology vtx_top;/* local vertex toppology */
@@ -690,44 +729,49 @@ static char * model_topology(int n_vtcs, const face_t *mfaces,
   minfo->n_disjoint_parts = 0;
   stack_init(&stack,sizeof(cur));
   vlist = xa_calloc(n_vtcs,sizeof(*vlist));
-  visited_vtcs = xa_calloc(n_vtcs,sizeof(*visited_vtcs));
-  manifold_vtcs = xa_malloc(n_vtcs*sizeof(*manifold_vtcs));
+  visited_vtcs = bmap_calloc(n_vtcs);
+  manifold_vtcs = bmap_calloc(n_vtcs);
   next_vidx = 0; /* keep compiler happy */
 
   n_visited_vertices = 0;
   cur.vidx = 0;
   while (n_visited_vertices < n_vtcs) {
-    /* Find next unvisited vertex (always one) */
+    /* Find next unvisited vertex (always one). Use fast skip by testing
+     * BMAP_T_BITS entries in the bitmap at once, and then find the individual
+     * entry. */
+    for (cur.vidx &= (~BMAP_T_MASK); cur.vidx<n_vtcs; cur.vidx+=BMAP_T_BITS) {
+      if (visited_vtcs[cur.vidx/BMAP_T_BITS] != ~0U) break;
+    }
     for (; cur.vidx<n_vtcs; cur.vidx++) {
-      if (!visited_vtcs[cur.vidx]) break;
+      if (!BMAP_ISSET(visited_vtcs,cur.vidx)) break;
     }
     assert(cur.vidx<n_vtcs);
     /* mark all the connected vertices as visited and count one part */
-    assert(visited_vtcs[cur.vidx] == 0);
-    visited_vtcs[cur.vidx] = 1;
+    assert(!BMAP_ISSET(visited_vtcs,cur.vidx));
+    BMAP_SET(visited_vtcs,cur.vidx);
     n_visited_vertices++;
     get_vertex_topology(mfaces,cur.vidx,&flist[cur.vidx],
                         &vtx_top,&vlist[cur.vidx]);
     minfo->manifold = minfo->manifold && vtx_top.manifold;
     minfo->closed = minfo->closed && vtx_top.closed;
-    manifold_vtcs[cur.vidx] = minfo->manifold;
+    if (minfo->manifold) BMAP_SET(manifold_vtcs,cur.vidx);
     if (vlist[cur.vidx].n_elems != 0) { /* vertex is not alone */
       minfo->n_disjoint_parts++;
       cur.lpos = 0;
       do {
         for (; cur.lpos < vlist[cur.vidx].n_elems; cur.lpos++) {
           next_vidx = vlist[cur.vidx].vtcs[cur.lpos];
-          if (!visited_vtcs[next_vidx]) break;
+          if (!BMAP_ISSET(visited_vtcs,next_vidx)) break;
         }
         if (cur.lpos < vlist[cur.vidx].n_elems) {
           /* found connected and not yet visited vertex => continue from new */
-          visited_vtcs[next_vidx] = 1;
+          BMAP_SET(visited_vtcs,next_vidx);
           n_visited_vertices++;
           get_vertex_topology(mfaces,next_vidx,&flist[next_vidx],
                               &vtx_top,&vlist[next_vidx]);
           minfo->manifold = minfo->manifold && vtx_top.manifold;
           minfo->closed = minfo->closed && vtx_top.closed;
-          manifold_vtcs[next_vidx] = minfo->manifold;
+          if (minfo->manifold) BMAP_SET(manifold_vtcs,cur.vidx);
           cur.lpos++;
           stack_push(&stack,&cur);
           cur.vidx = next_vidx;
@@ -758,9 +802,10 @@ static char * model_topology(int n_vtcs, const face_t *mfaces,
 void analyze_model(struct model *m, const struct face_list *flist,
                    struct model_info *info, int do_orient)
 {
-  signed char *face_orientation; /* the face orientation map */
   struct face_list *flist_local; /* the locally generated flist, if any */
-  char *manifold_vtcs;           /* array flagging manifold vertices */
+  bmap_t *face_revo;             /* flag for each face: if its orientation
+                                  * should be reversed. */
+  bmap_t *manifold_vtcs;         /* array flagging manifold vertices */
 
   /* Initialize */
   memset(info,0,sizeof(*info));
@@ -773,19 +818,18 @@ void analyze_model(struct model *m, const struct face_list *flist,
 
   /* Make topology and orientation analysis */
   manifold_vtcs = model_topology(m->num_vert,m->faces,flist,info);
-  face_orientation = model_orientation(m->faces,m->num_faces,flist,
-                                       manifold_vtcs,info);
+  face_revo = model_orientation(m->faces,m->num_faces,flist,manifold_vtcs,info);
 
   /* Save original oriented state */
   info->orig_oriented = info->oriented;
 
   /* Orient model if requested and  possible */
   if (do_orient && info->orientable && !info->oriented) {
-    orient_model(m,face_orientation);
+    orient_model(m,face_revo);
   }
 
   /* Free memory */
-  free(face_orientation);
+  free(face_revo);
   free(manifold_vtcs);
   free_face_lists(flist_local,m->num_vert);
 }
