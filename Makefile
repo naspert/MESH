@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.39 2002/03/05 09:43:27 aspert Exp $
+# $Id: Makefile,v 1.40 2002/03/05 14:14:20 dsanta Exp $
 
 #
 # If the make variable PROFILE is defined to a non-empty value, profiling
@@ -89,11 +89,8 @@ DEPFLAG = -M
 endif
 XTRA_CPPFLAGS = -DNDEBUG
 XTRA_LDFLAGS =
-
-ifeq ($(OS),Linux)
-# Need -D_GNU_SOURCE for getting non-standard unlocked stdio functions
-XTRA_CPPFLAGS +=  -D_GNU_SOURCE
-endif
+# Need POSIX.1c-1996 for unlocked stdio functions
+XTRA_CPPFLAGS +=  -D_POSIX_C_SOURCE=199506L
 
 # Derive compiler specific flags
 ifeq ($(CC_IS_GCC)-$(OS)-$(ARCH),gcc-Linux-i686)
