@@ -1,5 +1,6 @@
-# $Id: Makefile,v 1.11 2001/07/13 06:55:52 aspert Exp $
+# $Id: Makefile,v 1.12 2001/09/03 15:36:48 aspert Exp $
 
+#CC = /home/sun1/aspert/gcc/bin/gcc
 CC = gcc
 CPP = g++
 BINDIR = ../bin
@@ -23,14 +24,14 @@ GL_LIBFLAGS = -L$(LIBDIR) -L$(HPGLDIR)/lib -L$(GLDIR)/lib -lglut -lGLU -lGL \
 	-lXmu -lXext -lX11 -lXi -l3d -limage -lm
 
 STATIC_GLFLAGS =   -L$(LIBDIR) -L$(GLDIR)/lib -lglut -lGLU -lGL -lXmu -lXext \
-	-lX11 -lXi -lm  -pg
+	-lX11 -lXi -lm 
 
-BASE_LDFLAGS = -g $(BASE_LIBFLAGS) -O2
-GL_LDFLAGS = -g $(GL_LIBFLAGS) -O2
+BASE_LDFLAGS = -g $(BASE_LIBFLAGS) #-fbounds-checking
+GL_LDFLAGS = -g $(GL_LIBFLAGS) #-fbounds-checking
 
 default : rawview3
 
-all: dirs rawview3 torus subdiv subdiv_sph
+all: dirs rawview3 torus butterfly subdiv_sph
 
 clean : 
 	rm -f $(OBJDIR)/*.o $(BINDIR)/* $(LIBDIR)/*
@@ -47,7 +48,10 @@ viewer : $(OBJDIR)/viewer.o lib3d libimage
 torus : $(OBJDIR)/torus.o lib3d 
 	$(CC) -o $(BINDIR)/$@ $< $(BASE_LDFLAGS) -l3d
 
-subdiv : $(OBJDIR)/subdiv.o lib3d
+butterfly : $(OBJDIR)/butterfly.o lib3d
+	$(CC) -o $(BINDIR)/$@ $< $(BASE_LDFLAGS) -l3d
+
+loop : $(OBJDIR)/loop.o lib3d
 	$(CC) -o $(BINDIR)/$@ $< $(BASE_LDFLAGS) -l3d
 
 subdiv_sph : $(OBJDIR)/subdiv_sph.o lib3d
@@ -62,6 +66,17 @@ lib3d : $(OBJDIR)/geomutils.o $(OBJDIR)/3dmodel_io.o $(OBJDIR)/normals.o
 
 make_brep: $(OBJDIR)/make_brep.o lib3d
 	$(CC) -g -o $(BINDIR)/$@ $< $(BASE_LDFLAGS) -l3d
+
+
+process_dist: $(OBJDIR)/process_dist.o lib3d
+	$(CC) -g -o $(BINDIR)/$@ $< $(BASE_LDFLAGS) -l3d
+
+model_dist: $(OBJDIR)/model_dist.o lib3d
+	$(CC) -g -o $(BINDIR)/$@ $< $(BASE_LDFLAGS) -l3d
+
+$(OBJDIR)/viewer.o :viewer.cpp
+	$(CPP) $(QTINCL) $(BASE_CFLAGS) -c $< -o $@
+
 
 $(OBJDIR)/rawview3.o : rawview3.c
 	$(CC) $(GL_CFLAGS) -c $< -o $@
