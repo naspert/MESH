@@ -1,4 +1,4 @@
-# $Id: Makefile2.sgi,v 1.1 2001/04/27 07:22:38 jacquet Exp $
+# $Id: Makefile2.sgi,v 1.2 2001/04/27 12:48:06 jacquet Exp $
 
 CC = cc
 CPP = CC
@@ -34,8 +34,7 @@ all: dirs viewer rawview3
 clean : 
 	rm $(OBJDIR)/*.o $(BINDIR)/* $(LIBDIR)/*
 
-final2 : $(OBJDIR)/final2.o lib3d	
-	$(CC) $(OBJDIR)/final2.o -o $(BINDIR)/final2 $(BASE_LIBFLAGS) -l3d
+
 
 test : 
 	$(CPP) $(QTINCFLAGS) test.cpp -o $(BINDIR)/test $(QT_LIBFLAGS)
