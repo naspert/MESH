@@ -1,4 +1,4 @@
-/* $Id: rawview.c,v 1.28 2002/11/13 13:43:51 aspert Exp $ */
+/* $Id: rawview.c,v 1.29 2002/11/14 16:45:02 aspert Exp $ */
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -367,6 +367,7 @@ static void sp_key_pressed(int key, int x, int y) {
       else { /* We have to build the normals */
 	if (!do_normals(gl_ctx.raw_model, gl_ctx.verbose)) { /* success */
           gl_ctx.normals_done = 1;
+          gl_ctx.disp_curv = 0;
           set_light_on();
           rebuild_list(&gl_ctx, &dl_idx);
         } else 
@@ -546,7 +547,7 @@ int main(int argc, char **argv) {
 
   int i, rcode=0;
   char *title;
-  const char s_title[]="Raw Mesh Viewer $Revision: 1.28 $ - ";
+  const char s_title[]="Raw Mesh Viewer $Revision: 1.29 $ - ";
   vertex_t center;
   struct model* raw_model;
 

@@ -1,4 +1,4 @@
-/* $Id: rawview_disp.c,v 1.8 2002/11/13 12:18:25 aspert Exp $ */
+/* $Id: rawview_disp.c,v 1.9 2002/11/14 16:45:02 aspert Exp $ */
 
 #include <rawview_misc.h>
 #ifdef DEBUG
@@ -265,12 +265,18 @@ void display_wrapper(struct gl_render_context *gl_ctx,
   glLightfv(GL_LIGHT0, GL_POSITION, lpos);
   glTranslated(0.0, 0.0, -gl_ctx->distance); /* Translate the object along z */
   glMultMatrixd(gl_ctx->mvmatrix); /* Perform rotation */
-  if (!light_mode)
+  if (!light_mode) {
     for (i=0; i<=gl_ctx->wf_bc; i++) {
       switch (i) {
       case 0:
-        if (gl_ctx->wf_bc)
-          glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); 
+        if (gl_ctx->disp_curv > 0)
+          glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        else if (gl_ctx->wf_bc)
+          glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        
+/*         else  */
+/*           glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); */
+
 	if (gl_ctx->ps_rend%2 == 0) /* rendering to buffer or to a PS
                                        file in negative */
 	  glColor3f(1.0, 1.0, 1.0);
@@ -300,9 +306,9 @@ void display_wrapper(struct gl_render_context *gl_ctx,
       if (gl_ctx->ps_rend)
 	gl2psDisable(GL2PS_POLYGON_OFFSET_FILL);
     }
-  else
+  } else
     glCallList(dl_idx->model_list);
-
+  
   if (gl_ctx->draw_normals)
     glCallList(dl_idx->normal_list);
 
