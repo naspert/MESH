@@ -1,8 +1,9 @@
-/* $Id: RawWidget.cpp,v 1.31 2001/11/06 17:13:42 dsanta Exp $ */
+/* $Id: RawWidget.cpp,v 1.32 2001/11/12 15:25:03 dsanta Exp $ */
 
 #include <RawWidget.h>
 #include <qmessagebox.h>
 #include <ColorMap.h>
+#include <geomutils.h>
 
 // 
 // This is a derived class from QGLWidget used to render models

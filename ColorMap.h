@@ -1,8 +1,6 @@
-/* $Id: ColorMap.h,v 1.3 2001/10/01 16:46:42 dsanta Exp $ */
+/* $Id: ColorMap.h,v 1.4 2001/11/12 15:25:02 dsanta Exp $ */
 #ifndef COLORMAP_H
 #define COLORMAP_H
-
-#include <3dutils.h>
 
 #ifdef __cplusplus
 extern "C" {

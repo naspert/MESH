@@ -1,6 +1,7 @@
-/* $Id: ColorMap.c,v 1.8 2001/10/01 16:46:53 dsanta Exp $ */
+/* $Id: ColorMap.c,v 1.9 2001/11/12 15:25:02 dsanta Exp $ */
 #include <ColorMap.h>
 #include <xalloc.h>
+#include <3dutils.h>
 
 /* This function generates a colormap for the HSV colorspace using */
 /* normalized RGB values. */
