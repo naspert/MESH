@@ -1,4 +1,4 @@
-/* $Id: maps_lsq.c,v 1.9 2002/09/27 08:38:38 aspert Exp $ */
+/* $Id: maps_lsq.c,v 1.10 2003/03/04 16:29:05 aspert Exp $ */
 #include <3dutils.h>
 #include <ring.h>
 #include <gsl/gsl_multifit.h>
@@ -197,16 +197,16 @@ static void compute_curvature_lsq(struct model *raw_model) {
   rings= (struct ring_info*)
     malloc(raw_model->num_vert*sizeof(struct ring_info));
   /* Compute normals of each face of the model */
-  raw_model->face_normals = compute_face_normals(raw_model, curv);
+  raw_model->face_normals = compute_face_normals(raw_model, rings);
 
   
   /*Compute normals for each vertex */
   printf("Computing vertex normals ... ");fflush(stdout);
-  compute_vertex_normal(raw_model, curv, raw_model->face_normals);
+  compute_vertex_normal(raw_model, rings, raw_model->face_normals);
   printf("done\n");
   printf("Building 1-rings .... ");fflush(stdout);
   for (i=0; i<raw_model->num_vert; i++) {
-    build_star(raw_model, i, &(rings[i]));
+/*     build_star(raw_model, i, &(rings[i])); */
     prod_v(-1.0, &(raw_model->normals[i]), &(raw_model->normals[i]));
   }
   printf("done\n");
@@ -217,10 +217,12 @@ static void compute_curvature_lsq(struct model *raw_model) {
   
   lsq_fit(raw_model, rings, curv);
 
-   for(i=0; i<raw_model->num_vert; i++) 
-     free(curv[i].list_face); 
-   
-   free(curv); 
+  for(i=0; i<raw_model->num_vert; i++) {
+     free(rings[i].ord_face); 
+     free(rings[i].ord_vert); 
+  }
+  free(curv); 
+  free(rings);
 
 }
 

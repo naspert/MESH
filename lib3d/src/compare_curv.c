@@ -1,4 +1,4 @@
-/* $Id: compare_curv.c,v 1.12 2002/06/04 14:39:11 aspert Exp $ */
+/* $Id: compare_curv.c,v 1.13 2003/03/04 16:29:05 aspert Exp $ */
 #include <3dutils.h>
 #include <ring.h>
 #include <curvature.h>
@@ -7,6 +7,7 @@
 int main(int argc, char **argv) {
   struct model *raw_model1, *raw_model2;
   struct info_vertex *info1, *info2;
+  struct ring_info *ring1, *ring2;
   int i;
   char *filename1, *filename2;
   double *deltak1, *deltak2, *deltakg;
@@ -35,24 +36,29 @@ int main(int argc, char **argv) {
   printf("Computing face normals...\n");
   info1 = (struct info_vertex*)
     malloc(raw_model1->num_vert*sizeof(struct info_vertex));
-  raw_model1->face_normals = compute_face_normals(raw_model1, info1);
+  ring1 = (struct ring_info*)
+    malloc(raw_model1->num_vert*sizeof(struct ring_info));
+  
+  raw_model1->face_normals = compute_face_normals(raw_model1, ring1);
 
   info2 = (struct info_vertex*)
     malloc(raw_model2->num_vert*sizeof(struct info_vertex));
-  raw_model2->face_normals = compute_face_normals(raw_model2, info2);
+  ring2 = (struct ring_info*)
+    malloc(raw_model2->num_vert*sizeof(struct ring_info));
+  raw_model2->face_normals = compute_face_normals(raw_model2, ring2);
 
   printf("Computing vertex normals...\n");
   raw_model1->area = (float*)malloc(raw_model1->num_faces*sizeof(float));
   raw_model2->area = (float*)malloc(raw_model2->num_faces*sizeof(float));
-  compute_vertex_normal(raw_model1, info1, raw_model1->face_normals); 
-  compute_vertex_normal(raw_model2, info2, raw_model2->face_normals);
+  compute_vertex_normal(raw_model1, ring1, raw_model1->face_normals); 
+  compute_vertex_normal(raw_model2, ring2, raw_model2->face_normals);
 
   
   printf("Computing curvature of model 1.... ");fflush(stdout);
-  compute_curvature(raw_model1, info1);
+  compute_curvature_with_rings(raw_model1, info1, ring1);
   printf("done\n");  
   printf("Computing curvature of model 2.... ");fflush(stdout);
-  compute_curvature(raw_model2, info2);
+  compute_curvature_with_rings(raw_model2, info2, ring2);
   printf("done\n");  
 
   deltak1 = (double*)malloc(raw_model2->num_vert*sizeof(double));
@@ -111,11 +117,17 @@ int main(int argc, char **argv) {
   printf("mean_dkg = %f\n", mean_dkg);
 
   for (i=0; i<raw_model1->num_vert; i++) {
-    free(info1[i].list_face);
-    free(info2[i].list_face);
+    free(ring1[i].ord_face);
+    free(ring1[i].ord_vert);
+  }
+  for (i=0; i<raw_model2->num_vert; i++) {
+    free(ring2[i].ord_face);
+    free(ring2[i].ord_vert);
   }
   free(info1);
   free(info2);
+  free(ring1);
+  free(ring2);
   free(deltak1);
   free(deltak2);
   free(deltakg);

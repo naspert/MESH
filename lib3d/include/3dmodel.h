@@ -1,4 +1,4 @@
-/* $Id: 3dmodel.h,v 1.36 2003/03/04 14:44:00 aspert Exp $ */
+/* $Id: 3dmodel.h,v 1.37 2003/03/04 16:29:05 aspert Exp $ */
 
 
 /*
@@ -125,10 +125,6 @@ typedef struct {
 
 
 struct info_vertex{
-  int num_faces;
-  int *list_face; /* Index of faces containing the vertex */
-  int outdegree;
-  int *list_vertex; /* Index of vertices neighbouring the current vertex */
   double mixed_area;
   double gauss_curv, mean_curv;
   vertex_t mean_curv_normal;
