@@ -1,4 +1,4 @@
-/* $Id: ring.c,v 1.9 2003/03/04 14:44:02 aspert Exp $ */
+/* $Id: ring.c,v 1.10 2003/06/16 12:35:30 aspert Exp $ */
 
 
 /*
@@ -31,20 +31,48 @@
 # include <debug_print.h>
 #endif
 
+#ifndef REMOVE_ELT_FROM_LIST
+#define REMOVE_ELT_FROM_LIST(elt)               \
+do {                                            \
+  struct edge_v *__tmp;                         \
+  __tmp = elt->prev;                            \
+  elt = elt->next;                              \
+  if (elt->prev != NULL)                        \
+    free(elt->prev);                            \
+                                                \
+  elt->prev = __tmp;                            \
+  if (__tmp != NULL)                            \
+    __tmp->next = elt;                          \
+} while(0)
+#endif
+
+#ifndef ALLOC_NEXT_SLOT
+#define ALLOC_NEXT_SLOT(list_tail, id)                                      \
+do {                                                                        \
+    list_tail[id]->next = (struct edge_v*)calloc(1, sizeof(struct edge_v)); \
+    list_tail[id]->next->prev = list_tail[id];                              \
+    list_tail[id] = list_tail[id]->next;                                    \
+} while(0)
+#endif
+
 void build_star_global(const struct model *raw_model, 
                        struct ring_info *ring) {
-  int i, j, l;
+  int i, l;
   int *num_edges=NULL; /* number of edges in the 1-ring */
-  struct edge_v **edge_list_primal=NULL;
+  struct edge_v **edge_list_primal, **cur_list_tail, *list_tail=NULL, *tmp;
   int *final_star;
   int *face_star;
-  int vid; 
-  unsigned char *done;
+  int vid;
   int star_size, n_faces, edge_added;
   
   edge_list_primal = (struct edge_v**)
-    calloc(raw_model->num_vert, sizeof(struct edge_v*));
-
+    malloc(raw_model->num_vert*sizeof(struct edge_v*));
+  cur_list_tail = (struct edge_v**)
+    malloc(raw_model->num_vert*sizeof(struct edge_v*));
+  for (i=0; i<raw_model->num_vert; i++) {
+    edge_list_primal[i] = (struct edge_v*)calloc(1, sizeof(struct edge_v));
+    cur_list_tail[i] = edge_list_primal[i];
+  }
   memset(ring, 0, raw_model->num_vert*sizeof(struct ring_info));
 
   num_edges = (int*)calloc(raw_model->num_vert, sizeof(int));
@@ -55,29 +83,28 @@ void build_star_global(const struct model *raw_model,
 
     vid = raw_model->faces[i].f0; /* current vertex */
     num_edges[vid]++;
-    edge_list_primal[vid] = (struct edge_v*)
-      realloc(edge_list_primal[vid], num_edges[vid]*sizeof(struct edge_v));
-    edge_list_primal[vid][num_edges[vid]-1].v0 = raw_model->faces[i].f1;
-    edge_list_primal[vid][num_edges[vid]-1].v1 = raw_model->faces[i].f2;
-    edge_list_primal[vid][num_edges[vid]-1].face = i;
+    cur_list_tail[vid]->v0 = raw_model->faces[i].f1;
+    cur_list_tail[vid]->v1 = raw_model->faces[i].f2;
+    cur_list_tail[vid]->face = i;
+    ALLOC_NEXT_SLOT(cur_list_tail, vid);
+
     
     vid = raw_model->faces[i].f1;
     num_edges[vid]++;
-    edge_list_primal[vid] = (struct edge_v*)
-      realloc(edge_list_primal[vid], num_edges[vid]*sizeof(struct edge_v));
-    edge_list_primal[vid][num_edges[vid]-1].v0 = raw_model->faces[i].f0;
-    edge_list_primal[vid][num_edges[vid]-1].v1 = raw_model->faces[i].f2;
-    edge_list_primal[vid][num_edges[vid]-1].face = i;
+    cur_list_tail[vid]->v0 = raw_model->faces[i].f0;
+    cur_list_tail[vid]->v1 = raw_model->faces[i].f2;
+    cur_list_tail[vid]->face = i;
+    ALLOC_NEXT_SLOT(cur_list_tail, vid);
     
     vid = raw_model->faces[i].f2;
     num_edges[vid]++;
-    edge_list_primal[vid] = (struct edge_v*)
-      realloc(edge_list_primal[vid], num_edges[vid]*sizeof(struct edge_v));
-    edge_list_primal[vid][num_edges[vid]-1].v0 = raw_model->faces[i].f0;
-    edge_list_primal[vid][num_edges[vid]-1].v1 = raw_model->faces[i].f1;
-    edge_list_primal[vid][num_edges[vid]-1].face = i;
+    cur_list_tail[vid]->v0 = raw_model->faces[i].f0;
+    cur_list_tail[vid]->v1 = raw_model->faces[i].f1;
+    cur_list_tail[vid]->face = i;
+    ALLOC_NEXT_SLOT(cur_list_tail, vid);
   }
-  
+  free(cur_list_tail);
+
   for (i=0; i<raw_model->num_vert; i++) {
     if(num_edges[i] == 0) {
       ring[i].type = -1; 
@@ -87,83 +114,97 @@ void build_star_global(const struct model *raw_model,
 #endif
       goto singularity_encountered; 
     }
-    /* build ring of each vertex */
-    done = (unsigned char*)calloc(num_edges[i], 
-                                  sizeof(unsigned char));
+
     /* worst case allocation */
     final_star = (int*)malloc(2*num_edges[i]*sizeof(int));
     face_star = (int*)malloc(2*num_edges[i]*sizeof(int));
     
-    /* Put 1st two elts in the star */
-    final_star[0] = edge_list_primal[i][0].v0;
-    final_star[1] = edge_list_primal[i][0].v1;
-    face_star[0] = edge_list_primal[i][0].face;
-    
+    /* Put 1st elts in the star */
+    final_star[0] = edge_list_primal[i]->v0;
+    final_star[1] = edge_list_primal[i]->v1;
+    face_star[0] = edge_list_primal[i]->face;
+
+    /* de-queue 1st elt */
+    tmp = edge_list_primal[i];
+    edge_list_primal[i] = edge_list_primal[i]->next;
+    edge_list_primal[i]->prev=NULL;
+    free(tmp);
+    list_tail = edge_list_primal[i];
+
     star_size = 2;
     n_faces = 1;
-    done[0] = 1;
+
     l = 1;
+
     
     while (l < num_edges[i]) {
       edge_added = 0;
-      for (j=0; j<num_edges[i]; j++) {
-        if (done[j])
-          continue;
-        if (edge_list_primal[i][j].v0 == final_star[0]) {
+      while (list_tail->prev != NULL)
+        list_tail = list_tail->prev;
+
+      while (list_tail != NULL && edge_added == 0) {
+        if (list_tail->v0 == final_star[0]) {
           /* add v1 on top */
           memmove(&(final_star[1]), final_star, star_size*sizeof(int));
           memmove(&(face_star[1]), face_star, n_faces*sizeof(int));
           
-          final_star[0] = edge_list_primal[i][j].v1;
-          face_star[0] = edge_list_primal[i][j].face;
+          final_star[0] = list_tail->v1;
+          face_star[0] = list_tail->face;
 	
-          done[j] = 1;
+
           l++;
           star_size++;
           n_faces++;
           edge_added = 1;
-          break;
+          REMOVE_ELT_FROM_LIST(list_tail);
+
         }
-        else if (edge_list_primal[i][j].v1 == final_star[0]) {
+        else if (list_tail->v1 == final_star[0]) {
           /* add v0 on top */
           memmove(&(final_star[1]), final_star, star_size*sizeof(int));
           memmove(&(face_star[1]), face_star, n_faces*sizeof(int));
        
-          final_star[0] = edge_list_primal[i][j].v0;
-          face_star[0] = edge_list_primal[i][j].face;
-          done[j] = 1;
+          final_star[0] = list_tail->v0;
+          face_star[0] = list_tail->face;
+
           l++;
           star_size++;
           n_faces++;
           edge_added = 1;
-          break;
+          REMOVE_ELT_FROM_LIST(list_tail);
+
+
         }
-        else if (edge_list_primal[i][j].v0 == final_star[star_size-1]) {
+        else if (list_tail->v0 == final_star[star_size-1]) {
           /* add v1 on bottom */
-          final_star[star_size] = edge_list_primal[i][j].v1;
-          face_star[n_faces] = edge_list_primal[i][j].face;
-          done[j] = 1;
+          final_star[star_size] = list_tail->v1;
+          face_star[n_faces] = list_tail->face;
+
           l++;
           star_size++;
           n_faces++;
           edge_added = 1;
-          break;
+          REMOVE_ELT_FROM_LIST(list_tail);
+
         }
-        else if (edge_list_primal[i][j].v1 == final_star[star_size-1]) {
+        else if (list_tail->v1 == final_star[star_size-1]) {
           /* add v0 on bottom */
-          final_star[star_size] = edge_list_primal[i][j].v0;
-          face_star[n_faces] = edge_list_primal[i][j].face;
-          done[j] = 1;
+          final_star[star_size] = list_tail->v0;
+          face_star[n_faces] = list_tail->face;
+
           l++;
           star_size++;
           n_faces++;
           edge_added = 1;
-          break;
-        }
+          REMOVE_ELT_FROM_LIST(list_tail);
+
+        } else
+          list_tail = list_tail->next;
       }
+
       if (edge_added == 0) {
         printf("Vertex %d is non-manifold\n", i);
-        free(done);
+      /*   free(done); */
         free(final_star);
         free(face_star);
         ring[i].type = 2;
@@ -207,10 +248,14 @@ void build_star_global(const struct model *raw_model,
 
     free(final_star);
     free(face_star);
-    free(done);
 
-  singularity_encountered: /* still, we need to free this one */
-    free(edge_list_primal[i]);
+  /* Make sure everything is correctly freed */
+  singularity_encountered:
+    while (list_tail != NULL) {
+      tmp = list_tail;
+      list_tail = list_tail->next;
+      free(tmp);
+    }
   }
   free(edge_list_primal);
   free(num_edges);

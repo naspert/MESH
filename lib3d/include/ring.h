@@ -1,4 +1,4 @@
-/* $Id: ring.h,v 1.4 2003/03/04 14:44:00 aspert Exp $ */
+/* $Id: ring.h,v 1.5 2003/06/16 12:35:29 aspert Exp $ */
 
 
 /*
@@ -38,9 +38,10 @@ struct ring_info {
 };
 
 struct edge_v { 
-   int v0; 
-   int v1; 
+  int v0; 
+  int v1; 
   int face;
+  struct edge_v *prev, *next;
 }; 
 
 #ifdef __cplusplus
