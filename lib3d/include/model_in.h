@@ -1,4 +1,4 @@
-/* $Id: model_in.h,v 1.15 2002/08/26 12:11:27 aspert Exp $ */
+/* $Id: model_in.h,v 1.16 2002/08/26 12:27:27 aspert Exp $ */
 
 
 /*
@@ -77,8 +77,9 @@
  *
  * - Ply ascii:
  *     Only the vertices and triangular faces are read. The 'property'
- *     fields are *not* read. The binary PLY file format is detected
- *     but not read (yet?).
+ *     fields are *not* read. Binary PLY should be OK. However,
+ *     changing the 'binary_big_endian' into a 'binary_big_endian' (or
+ *     the contrary) in the header can improve things sometimes...
  *
  */
 
