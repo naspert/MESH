@@ -1,4 +1,4 @@
-/* $Id: viewer.cpp,v 1.35 2001/08/10 14:24:15 dsanta Exp $ */
+/* $Id: viewer.cpp,v 1.36 2001/08/16 13:11:16 dsanta Exp $ */
 
 #include <time.h>
 #include <string.h>
@@ -8,6 +8,7 @@
 #include <qkeycode.h>
 
 #include <compute_error.h>
+#include <model_analysis.h>
 #include <ScreenWidget.h>
 #include <InitWidget.h>
 
@@ -20,7 +21,6 @@ struct args {
   int  no_gui;    /* text only flag */
   int quiet;      /* do not display extra info flag*/
   int sampling_freq; /* sampling frequency */
-  int oriented_m2; /* Flag indicating that model 2 is oriented */
 };
 
 /* Prints usage information to the out stream */
@@ -55,18 +55,6 @@ static void print_usage(FILE *out)
   fprintf(out,"      \thigher the sampling frequency, the more accurate the\n");
   fprintf(out,"      \tapproximation, but the longer the execution time.\n");
   fprintf(out,"      \tIt is 10 by default.\n");
-  fprintf(out,"\n");
-  fprintf(out,"  -om2\tConsiders the model 2 as propely oriented for\n");
-  fprintf(out,"      \tcomputing normals. If the results are displayed in\n");
-  fprintf(out,"      \tthe GUI and the model file does not have vertex\n");
-  fprintf(out,"      \tnormals nor face normals, a very fast algorithm\n");
-  fprintf(out,"      \tis used to compute the normals. If this option is\n");
-  fprintf(out,"      \tspecified and the model is not properly oriented\n");
-  fprintf(out,"      \tan incorrect display will result, but a full\n");
-  fprintf(out,"      \tcomputation of the normals can be forced in\n");
-  fprintf(out,"      \tthe GUI to correct the display. The face orientation\n");
-  fprintf(out,"      \tis taken to be counter-clockwise, but can be\n");
-  fprintf(out,"      \treversed in the GUI.\n");
 }
 
 /* Initializes *pargs to default values and parses the command line arguments
@@ -94,8 +82,6 @@ static void parse_args(int argc, char **argv, struct args *pargs)
           fprintf(stderr,"ERROR: invalid number for -f option\n");
           exit(1);
         }
-      } else if (strcmp(argv[i],"-om2") == 0) { /* model 2 is oriented */
-        pargs->oriented_m2 = 1;
       } else { /* unrecognized option */
         fprintf(stderr,
                 "ERROR: unknown option in command line, use -h for help\n");
@@ -137,7 +123,7 @@ int main( int argc, char **argv )
   struct args pargs;
   ScreenWidget *c;
   QApplication *a;
-
+  struct model_info m1info,m2info;
 
   /* Initialize application */
   i = 0;
@@ -175,23 +161,40 @@ int main( int argc, char **argv )
   raw_model1 = read_raw_model(pargs.m1_fname);
   raw_model2 = read_raw_model(pargs.m2_fname);
 
+  /* Analyze models */
+  bbox1_diag = dist(raw_model1->bBox[0], raw_model1->bBox[1]);
+  bbox2_diag = dist(raw_model2->bBox[0], raw_model2->bBox[1]);
+  vfl = faces_of_vertex(raw_model1);
+  analyze_model(raw_model1,vfl,&m1info);
+  analyze_model(raw_model2,NULL,&m2info);
+  if(pargs.no_gui){
+    free_face_lists(vfl,raw_model1->num_vert);
+    vfl = NULL;
+  }
+
+  /* Print available model information */
+  printf("\n                      Model information\n\n");
+  printf("Number of vertices:     \t%11d\t%11d\n",
+         raw_model1->num_vert,raw_model2->num_vert);
+  printf("Number of triangles:    \t%11d\t%11d\n",
+         raw_model1->num_faces,raw_model2->num_faces);
+  printf("BoundingBox diagonal:   \t%11g\t%11g\n",
+         bbox1_diag,bbox2_diag);
+  printf("Number of disjoint parts:\t%11d\t%11d\n",
+         m1info.n_disjoint_parts,m2info.n_disjoint_parts);
+  printf("Manifold:               \t%11s\t%11s\n",
+         (m1info.manifold ? "yes" : "no"), (m2info.manifold ? "yes" : "no"));
+  printf("Oriented:               \t%11s\t%11s\n",
+         (m1info.oriented ? "yes" : "no"), (m2info.oriented ? "yes" : "no"));
+  fflush(stdout);
+
   /* Compute the distance from one model to the other */
   start_time = clock();
   dist_surf_surf(raw_model1,raw_model2,pargs.sampling_freq,&fe,&stats,
-                 pargs.oriented_m2&&(!pargs.no_gui),pargs.quiet);
+                 m2info.oriented&&(!pargs.no_gui),pargs.quiet);
 
   /* Print results */
-  bbox1_diag = dist(raw_model1->bBox[0], raw_model1->bBox[1]);
-  bbox2_diag = dist(raw_model2->bBox[0], raw_model2->bBox[1]);
-  printf("\n              Model information\n\n");
-  printf("                \t    Model 1\t    Model 2\n");
-  printf("Number of vertices:\t%11d\t%11d\n",
-         raw_model1->num_vert,raw_model2->num_vert);
-  printf("Number of triangles:\t%11d\t%11d\n",
-         raw_model1->num_faces,raw_model2->num_faces);
-  printf("BoundingBox diagonal:\t%11g\t%11g\n",
-         bbox1_diag,bbox2_diag);
-  printf("Surface area:   \t%11g\t%11g\n",
+  printf("Surface area:           \t%11g\t%11g\n",
          stats.m1_area,stats.m2_area);
   printf("\n       Distance from model 1 to model 2\n\n");
   printf("        \t   Absolute\t%% BBox diag\n");
@@ -219,10 +222,6 @@ int main( int argc, char **argv )
     free(fe);
     fe = NULL;
   } else {
-    /* Get the faces incident on each vertex to assign error values to each
-     * vertex for display. */
-    vfl = faces_of_vertex(raw_model1);
-
    /* on assigne une couleur a chaque vertex qui est proportionnelle */
    /* a la moyenne de l'erreur sur les faces incidentes */
    raw_model1->error=(int *)malloc(raw_model1->num_vert*sizeof(int));
