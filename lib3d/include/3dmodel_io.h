@@ -1,14 +1,17 @@
-/* $Id: 3dmodel_io.h,v 1.7 2001/10/23 09:29:36 aspert Exp $ */
+/* $Id: 3dmodel_io.h,v 1.8 2001/10/25 15:00:40 aspert Exp $ */
 #include <3dmodel.h>
 
 #ifndef _3DMODEL_IO_PROTO
 #define _3DMODEL_IO_PROTO
 
+#define EINVAL_HEADER 0x10
+#define EINVAL_NORMAL 0x20
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-  int read_header(FILE*, int*, int*, int*, int*);
-  struct model* alloc_read_model(FILE*, int, int, int, int);
+  int read_header(FILE*, int*);
+  struct model* alloc_read_model(FILE*, int*);
   struct model* read_raw_model(char*);
   struct model* read_raw_model_frame(char*, int);
   void write_raw_model(struct model*, char*);

@@ -1,67 +1,51 @@
-/* $Id: 3dmodel_io.c,v 1.18 2001/10/23 09:29:35 aspert Exp $ */
+/* $Id: 3dmodel_io.c,v 1.19 2001/10/25 15:00:40 aspert Exp $ */
 #include <3dmodel.h>
 #include <3dmodel_io.h>
 #include <normals.h>
 
-int read_header(FILE *pf, int *nvert, int *nfaces, int *nnorms, int *nfnorms) {
+/* int nitems[4] = {nvert, nfaces, nvnorms, nfnorms}; */
+int read_header(FILE *pf, int *nitems) {
   char buffer[300];
-  char *tok1, *tok2, *tok3, *tok4, *delim;
+  int fcount=-1;
 
-    
-  *nfaces = 0;
-  *nvert = 0;
-  *nnorms = 0;
-  /* These are delimiters for the header */
-  delim = (char*)malloc(2*sizeof(char));
-  delim[0] = ' ';
-  delim[1] = '\0';
+  /* set everything to 0 */
+  memset(nitems, 0, 4*sizeof(int));
+
   /* Scan 1st line */
-  fgets(buffer, 200, pf);
+  fgets(buffer, 300, pf);
+  
   /* Extract tokens */
-  tok1 = strtok(buffer, delim);
-  tok2 = strtok(NULL, delim);
-  tok3 = strtok(NULL, delim);
-  tok4 = strtok(NULL, delim);
-  free(delim);
-  /* Check validity */
-  if (tok4 != NULL) {
-    *nfnorms = atoi(tok4);
-    *nnorms = atoi(tok3);
-    *nfaces = atoi(tok2);
-    *nvert = atoi(tok1);
-    if (*nfaces != *nfnorms) {
-      fprintf(stderr, "Incorrect number of face normals\n");
-      return 0;
-    }
-    if (*nvert != *nnorms) {
-      fprintf(stderr, "Incorrect number of vertex normals\n");
-      return 0;
-    }
-  } else if (tok3 != NULL) {
-    *nnorms = atoi(tok3);
-    *nfaces = atoi(tok2);
-    *nvert = atoi(tok1);
-    if (*nvert != *nnorms) {
-      fprintf(stderr, "Incorrect number of normals\n");
-      return 0;
-    }
-  } else if (tok1 != NULL && tok2 != NULL) {
-    *nfaces = atoi(tok2);
-    *nvert = atoi(tok1);
-  } else {
+  fcount = sscanf(buffer, "%d %d %d %d", &(nitems[0]), &(nitems[1]), 
+		  &(nitems[2]), &(nitems[3]));
+
+  /* check consistency of extracted header fields */
+  if (fcount < 2 || fcount >4 || nitems[0] == 0 || nitems[1] == 0 ) {
     fprintf(stderr, "Invalid header\n");
-    return 0;
+    return -EINVAL_HEADER;
   }
-  return 1;
+
+  if (nitems[3]>0 && nitems[3]!=nitems[1]) {
+    fprintf(stderr, "Incorrect number of face normals\n");
+      return -EINVAL_NORMAL;
+  }
+
+  if (nitems[2]>0 && nitems[0]!=nitems[2]) {
+    fprintf(stderr, "Incorrect number of vertex normals\n");
+    return -EINVAL_NORMAL;
+  }
+
+  return 0;
+/* #else */
 } 
 
-struct model* alloc_read_model(FILE *pf, int nvert, int nfaces, 
-			int nnorms, int nfnorms) {
+struct model* alloc_read_model(FILE *pf, int* header_fields) {
+
   struct model *raw_model;
   int i;
   double x,y,z;
   int v0, v1, v2;
-
+  int nvert=header_fields[0], nfaces=header_fields[1];
+  int nnorms=header_fields[2], nfnorms=header_fields[3];
 
   printf("num_faces = %d num_vert = %d\n", nfaces, nvert); 
   raw_model = (struct model*)malloc(sizeof(struct model));
@@ -145,10 +129,8 @@ struct model* alloc_read_model(FILE *pf, int nvert, int nfaces,
 struct model* read_raw_model(char *filename) {
   struct model* raw_model;
   FILE *pf;
-  int nfaces = 0; 
-  int nvert = 0;
-  int nnorms = 0;
-  int nfnorms = 0;
+  int header_fields[4];
+
 
   pf = fopen(filename, "r");
   if (pf==NULL) {
@@ -156,13 +138,13 @@ struct model* read_raw_model(char *filename) {
     exit(-1);
   }
     
-  if (!read_header(pf, &nvert, &nfaces, &nnorms, &nfnorms)) {
+  if (read_header(pf, header_fields)) {
     fprintf(stderr, "Exiting\n");
     fclose(pf);
     exit(-1);
   } 
 
-  raw_model = alloc_read_model(pf, nvert, nfaces, nnorms, nfnorms);
+  raw_model = alloc_read_model(pf, header_fields);
 
   fclose(pf);
   return raw_model;
@@ -176,7 +158,7 @@ struct model* read_raw_model_frame(char *filename,int frame) {
   FILE *pf;
   char *fullname;
   char *tmp;
-  int nfaces=0, nvert=0, len, nnorms=0, nfnorms=0;
+  int len, header_fields[4];
 
   if (frame == -1) {
     len = strlen(filename)+20;
@@ -205,12 +187,12 @@ struct model* read_raw_model_frame(char *filename,int frame) {
     exit(-1);
   }
   
-  if (!read_header(pf, &nvert, &nfaces, &nnorms, &nfnorms)) {
+  if (read_header(pf, header_fields)) {
     fclose(pf);
     exit(-1);
   }
 
-  raw_model = alloc_read_model(pf, nvert, nfaces, nnorms, nfnorms);
+  raw_model = alloc_read_model(pf, header_fields);
 
   fclose(pf);
   return raw_model;
