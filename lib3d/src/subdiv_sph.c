@@ -1,6 +1,7 @@
-/* $Id: subdiv_sph.c,v 1.2 2001/05/01 14:07:37 aspert Exp $ */
+/* $Id: subdiv_sph.c,v 1.3 2001/08/15 15:00:07 aspert Exp $ */
 #include <3dutils.h>
 
+#undef EST_NORMALS
 #ifdef EST_NORMALS
 vertex *est_normals;
 int n_idx = 0;
@@ -14,7 +15,7 @@ vertex compute_midpoint(ring_info *rings, int center, int v1,
   ring_info ring_op = rings[center2];
   int v2 = 0;
   vertex n,p, vj, dir, m, u, v, np1, np2, np;
-  double r, ph, lambda, pl_off, nr, nph, dz, rp;
+  double r, ph, lambda, pl_off, nr, nph, dz, rp, g;
 
 #ifdef EST_NORMALS
   double th0, th1, tmp, est_p_offset;
@@ -27,32 +28,25 @@ vertex compute_midpoint(ring_info *rings, int center, int v1,
   p = raw_model->vertices[center];
   vj = raw_model->vertices[rings[center].ord_vert[v1]];
   
-  pl_off = -scalprod(p,n);
+  pl_off = -scalprod_v(&p, &n);
 
-  dir.x = vj.x - p.x;
-  dir.y = vj.y - p.y;
-  dir.z = vj.z - p.z;
+  substract_v(&vj, &p, &dir);
   
-  r = norm(dir);
+  r = norm_v(&dir);
   
-  lambda = -(pl_off + scalprod(vj, n));
+  lambda = -(pl_off + scalprod_v(&vj, &n));
   
-  m.x = lambda*n.x;
-  m.y = lambda*n.y;
-  m.z = lambda*n.z;
+  prod_v(lambda, &n, &m);
 
-  u.x = vj.x + m.x;
-  u.y = vj.y + m.y;
-  u.z = vj.z + m.z;
+  add_v(&vj, &m, &u);
 
-  v.x = u.x - p.x;
-  v.y = u.y - p.y;
-  v.z = u.z - p.z;
+  substract_v(&u, &p, &v);
+
 
   if (lambda >= 0.0)
-    ph = -atan(norm(m)/norm(v));
+    ph = -atan(norm_v(&m)/norm_v(&v));
   else
-    ph = atan(norm(m)/norm(v));
+    ph = atan(norm_v(&m)/norm_v(&v));
 
 #ifdef EST_NORMALS
   th0 = ph; /* should be useful */
@@ -71,16 +65,24 @@ vertex compute_midpoint(ring_info *rings, int center, int v1,
   printf("test %f %f %f\n", norm(v), r*cos(ph), norm(v)-r*cos(ph));
 #endif
 
+  /* Compute the new position */
   nr = 0.5*r;
-  nph = 0.5*ph;
+  if (ph < -M_PI_4) {
+    g = 0.5*(1.0 + (ph/M_PI_4 + 1.0)*(ph/M_PI_4 + 1.0));
+    nph = g*ph;
+  } else if (ph > M_PI_4) {
+    g = 0.5*(1.0 + (ph/M_PI_4 - 1.0)*(ph/M_PI_4 - 1.0));
+    nph = g*ph;
+  } else {
+    nph = 0.5*ph; 
+  }
 
   dz = nr*sin(nph);
   rp = nr*cos(nph);
 
-  normalize(&v);
-  np1.x = v.x*rp;
-  np1.y = v.y*rp;
-  np1.z = v.z*rp;
+  normalize_v(&v);
+  
+  prod_v(rp, &v, &np1);
 
   np1.x += dz*n.x + p.x;
   np1.y += dz*n.y + p.y;
@@ -93,32 +95,27 @@ vertex compute_midpoint(ring_info *rings, int center, int v1,
   p = raw_model->vertices[center2];
   vj = raw_model->vertices[ring_op.ord_vert[v2]];
   
-  pl_off = -scalprod(p,n);
-
-  dir.x = vj.x - p.x;
-  dir.y = vj.y - p.y;
-  dir.z = vj.z - p.z;
+  pl_off = -scalprod_v(&p, &n);
   
-  r = norm(dir);
+  substract_v(&vj, &p, &dir);
   
-  lambda = -(pl_off + scalprod(vj, n));
+
   
-  m.x = lambda*n.x;
-  m.y = lambda*n.y;
-  m.z = lambda*n.z;
+  r = norm_v(&dir);
+  
+  lambda = -(pl_off + scalprod_v(&vj, &n));
+  
+  prod_v(lambda, &n, &m);
 
-  u.x = vj.x + m.x;
-  u.y = vj.y + m.y;
-  u.z = vj.z + m.z;
+  add_v(&vj, &m, &u);
 
-  v.x = u.x - p.x;
-  v.y = u.y - p.y;
-  v.z = u.z - p.z;
+  substract_v(&u, &p, &v);
+
 
   if (lambda >= 0.0)
-    ph = -atan(norm(m)/norm(v));
+    ph = -atan(norm_v(&m)/norm_v(&v));
   else
-    ph = atan(norm(m)/norm(v));
+    ph = atan(norm_v(&m)/norm_v(&v));
 
 #ifdef EST_NORMALS
   th1 = ph;
@@ -138,24 +135,34 @@ vertex compute_midpoint(ring_info *rings, int center, int v1,
 #endif
 
   nr = 0.5*r;
-  nph = 0.5*ph;
+  if (ph < -M_PI_4) {
+    g = 0.5*(1.0 + (ph/M_PI_4 + 1.0)*(ph/M_PI_4 + 1.0));
+    nph = g*ph;
+  } else if (ph > M_PI_4) {
+    g = 0.5*(1.0 + (ph/M_PI_4 - 1.0)*(ph/M_PI_4 - 1.0));
+    nph = g*ph;
+  } else {
+    nph = 0.5*ph; 
+  }
+
+
 
   dz = nr*sin(nph);
   rp = nr*cos(nph);
 
-  normalize(&v);
-  np2.x = v.x*rp;
-  np2.y = v.y*rp;
-  np2.z = v.z*rp;
+  normalize_v(&v);
+  prod_v(rp, &v, &np2);
 
   np2.x += dz*n.x + p.x;
   np2.y += dz*n.y + p.y;
   np2.z += dz*n.z + p.z;
 
 /*   printf("np2 = %f %f %f\n", np2.x, np2.y, np2.z); */
-  np.x = 0.5*(np1.x + np2.x);
-  np.y = 0.5*(np1.y + np2.y);
-  np.z = 0.5*(np1.z + np2.z);
+  add_v(&np1, &np2, &np);
+  prod_v(0.5, &np, &np);
+/*   np.x = 0.5*(np1.x + np2.x); */
+/*   np.y = 0.5*(np1.y + np2.y); */
+/*   np.z = 0.5*(np1.z + np2.z); */
 
 #ifdef EST_NORMALS
   p0p1.x = p1.x - p0.x;
