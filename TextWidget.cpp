@@ -1,4 +1,4 @@
-/* $Id: TextWidget.cpp,v 1.9 2002/04/05 08:44:58 aspert Exp $ */
+/* $Id: TextWidget.cpp,v 1.10 2002/04/05 11:06:22 aspert Exp $ */
 
 
 /*
@@ -50,6 +50,7 @@ TextWidget::TextWidget(QWidget *parent, const char *name)
 
   layout = new QGridLayout(this,2,1);
   view = new QTextView(this);
+  view->setWordWrap(QTextEdit::NoWrap);
   view->setTextFormat(Qt::PlainText);
   font.setFamily("courier");
   font.setStyleHint(QFont::TypeWriter,QFont::PreferQuality);
@@ -73,7 +74,7 @@ TextWidget::~TextWidget()
 }
 
 QSize TextWidget::sizeHint() const {
-  return QSize(550,500);
+  return QSize(600,500);
 }
 
 void TextWidget::append(const QString &str) {
