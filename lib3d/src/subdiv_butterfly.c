@@ -1,4 +1,4 @@
-/* $Id: subdiv_butterfly.c,v 1.1 2002/05/27 15:17:17 aspert Exp $ */
+/* $Id: subdiv_butterfly.c,v 1.2 2002/05/27 15:52:48 aspert Exp $ */
 
 #include <3dmodel.h>
 #include <normals.h>
@@ -184,7 +184,7 @@ void compute_midpoint_butterfly_crease(struct ring_info *rings, int center,
   struct ring_info ring_op = rings[center2]; /* center of opp ring */
   int m = ring_op.size;
   int v2 = 0; /* index of center vertex_t in opp. ring */
-  int i;
+  int i, tmp;
   vertex_t p={0.0, 0.0, 0.0}, r={0.0, 0.0, 0.0};
   float *s, *t, thk, q;
 
@@ -194,11 +194,13 @@ void compute_midpoint_butterfly_crease(struct ring_info *rings, int center,
   printf("ring.type = %d\tring_op.type = %d\n", ring.type, ring_op.type);
   printf("n = %d\tm = %d\n", n, m);
   if (ring.type == 1 && ring_op.type == 1) {
+
+    add_v(&raw_model->vertices[center], &raw_model->vertices[center2], &p);
+
     if ((v1 != 0 && v1 != n-1) ||
         (v2 != 0 && v2 != m-1)) { /* not real crease -> bail out in a
                                      graceful way by taking the true
                                      midpoint of the edge */
-      add_v(&raw_model->vertices[center], &raw_model->vertices[center2], &p);
       prod_v(0.5, &p, vout);
 #ifdef __BUTTERFLY_CREASE_DEBUG
       fprintf(stderr, "crease-crease rule : midpoint %d %d\n", center, 
@@ -206,8 +208,8 @@ void compute_midpoint_butterfly_crease(struct ring_info *rings, int center,
 #endif
       return;
     }
+
     /* otherwise we have a 'classical' boundary edge */
-    add_v(&raw_model->vertices[center], &raw_model->vertices[center2], &p);
     prod_v(0.5625, &p, &p);
 #ifdef __BUTTERFLY_CREASE_DEBUG
     fprintf(stderr, "9/16 * (v[%d] + v[%d])\n", center, center2);
@@ -215,33 +217,33 @@ void compute_midpoint_butterfly_crease(struct ring_info *rings, int center,
 
     assert(v1 == 0 || v1 == n-1);
     if (v1 == 0) {
+      tmp = n-1;
       add_prod_v(-0.0625, &raw_model->vertices[ring.ord_vert[n-1]], &p, &p);
-#ifdef __BUTTERFLY_CREASE_DEBUG
-    fprintf(stderr, "-1/16 * v[%d]\n", ring.ord_vert[n-1]);
-#endif
     }
     else {
+      tmp = 0;
       add_prod_v(-0.0625, &raw_model->vertices[ring.ord_vert[0]], &p, &p);
-#ifdef __BUTTERFLY_CREASE_DEBUG
-    fprintf(stderr, "-1/16 * v[%d]\n", ring.ord_vert[0]);
-#endif
     }
+
+#ifdef __BUTTERFLY_CREASE_DEBUG
+    fprintf(stderr, "-1/16 * v[%d]\n", ring.ord_vert[tmp;
+#endif
 
     assert(v2 == 0 || v2 == m-1);
     if (v2 == 0) {
+      tmp = 0;
       add_prod_v(-0.0625, &raw_model->vertices[ring_op.ord_vert[m-1]], &p, 
                  vout);
-#ifdef __BUTTERFLY_CREASE_DEBUG
-    fprintf(stderr, "-1/16 * v[%d]\n", ring_op.ord_vert[m-1]);
-#endif
     }
     else {
+      tmp = m-1;
       add_prod_v(-0.0625, &raw_model->vertices[ring_op.ord_vert[0]], &p, 
                  vout);
-#ifdef __BUTTERFLY_CREASE_DEBUG
-    fprintf(stderr, "-1/16 * v[%d]\n", ring_op.ord_vert[0]);
-#endif
     }
+
+#ifdef __BUTTERFLY_CREASE_DEBUG
+    fprintf(stderr, "-1/16 * v[%d]\n", ring_op.ord_vert[tmp]);
+#endif
 
     return;
   
