@@ -1,4 +1,4 @@
-/* $Id: RawWidget.cpp,v 1.10 2001/08/09 10:02:55 aspert Exp $ */
+/* $Id: RawWidget.cpp,v 1.11 2001/08/10 08:24:13 aspert Exp $ */
 #include <RawWidget.h>
 
 // 
@@ -54,15 +54,6 @@ RawWidget::RawWidget(model *raw_model, int renderType,
 
 }
 
-void RawWidget::aslot() {
-  if(move_state==0){
-    move_state = 1;
-    emit(transfervalue(distance,mvmatrix));
-  }
-  else
-    move_state = 0;
-}
-
 
 void RawWidget::transfer(double dist,double *mvmat) {
 
@@ -71,6 +62,14 @@ void RawWidget::transfer(double dist,double *mvmat) {
   memcpy(mvmatrix, mvmat, 16*sizeof(double)); 
   // update display
   glDraw();
+}
+
+void RawWidget::switchSync(bool state) {
+  if (state) {
+    move_state = 1;
+    emit(transfervalue(distance, mvmatrix));
+  } else
+    move_state = 0;
 }
 
 void RawWidget::setLine() {

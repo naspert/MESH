@@ -1,4 +1,4 @@
-/* $Id: ScreenWidget.h,v 1.7 2001/08/07 09:21:54 aspert Exp $ */
+/* $Id: ScreenWidget.h,v 1.8 2001/08/10 08:24:12 aspert Exp $ */
 #ifndef SCREENWIDGET_H
 #define SCREENWIDGET_H
 
@@ -27,13 +27,13 @@ class ScreenWidget : public QWidget {
 public:
   ScreenWidget(model *raw_model1, model *raw_model2, double dmoymin, 
 	       double dmoymax, QWidget *parent=0, const char *name=0 );
+  QPushButton *quitBut;// Needed to get the 'clicked' signal in the viewer
 
-  public slots:
-    void aboutKeys();
-    void aboutBugs();
-
- private:
-  QString filename;  
+public slots:
+  void aboutKeys();
+  void aboutBugs();
+ 
+    
 };
 
 #endif

@@ -1,9 +1,10 @@
-/* $Id: viewer.cpp,v 1.30 2001/08/09 15:23:07 dsanta Exp $ */
+/* $Id: viewer.cpp,v 1.31 2001/08/10 08:24:11 aspert Exp $ */
 
 #include <time.h>
 #include <string.h>
 #include <qapplication.h>
 #include <qevent.h>
+#include <qobject.h>
 #include <qkeycode.h>
 
 #include <compute_error.h>
@@ -119,10 +120,12 @@ int main( int argc, char **argv )
   double bbox1_diag,bbox2_diag;
   double *tmp_error;
   struct args pargs;
-
-  /* affichage de la fenetre graphique */
-  QApplication::setColorSpec( QApplication::CustomColor );
+  ScreenWidget *c;
   QApplication a( argc, argv ); 
+
+
+
+
 
   /* Parse arguments */
   parse_args(argc,argv,&pargs);
@@ -135,27 +138,27 @@ int main( int argc, char **argv )
   } else {
     InitWidget *b;
     b = new InitWidget() ;
-    a.setMainWidget( b );
+    a.setMainWidget(b);
     b->show(); 
     a.exec();
     
     pargs.m1_fname = b->mesh1;
     pargs.m2_fname = b->mesh2;
-    pargs.sampling_freq = (int)ceil(1.0/atof(b->step));
+    pargs.sampling_freq = (int)ceil(atof(b->freq));
   }
   
   /* Read models from input files */
-  raw_model1=read_raw_model(pargs.m1_fname);
-  raw_model2=read_raw_model(pargs.m2_fname);
+  raw_model1 = read_raw_model(pargs.m1_fname);
+  raw_model2 = read_raw_model(pargs.m2_fname);
 
   /* Compute the distance from one model to the other */
   start_time = clock();
-  dist_surf_surf(raw_model1,raw_model2,pargs.sampling_freq,&fe,&stats,
+  dist_surf_surf(raw_model1, raw_model2, pargs.sampling_freq, &fe,&stats,
                  pargs.quiet);
 
   /* Print results */
-  bbox1_diag = dist(raw_model1->bBox[0],raw_model1->bBox[1]);
-  bbox2_diag = dist(raw_model2->bBox[0],raw_model2->bBox[1]);
+  bbox1_diag = dist(raw_model1->bBox[0], raw_model1->bBox[1]);
+  bbox2_diag = dist(raw_model2->bBox[0], raw_model2->bBox[1]);
   printf("\n              Model information\n\n");
   printf("                \t    Model 1\t    Model 2\n");
   printf("Number of vertices:\t%11d\t%11d\n",
@@ -196,9 +199,6 @@ int main( int argc, char **argv )
    /* on assigne une couleur a chaque vertex qui est proportionnelle */
    /* a la moyenne de l'erreur sur les faces incidentes */
    raw_model1->error=(int *)malloc(raw_model1->num_vert*sizeof(int));
-   raw_model2->error=(int *)calloc(raw_model2->num_vert,sizeof(int));
-
-
 
    tmp_error = (double*)malloc(raw_model1->num_vert*sizeof(double));
 
@@ -229,11 +229,13 @@ int main( int argc, char **argv )
    free(tmp_error);
 
    
-   ScreenWidget c(raw_model1, raw_model2, dmoymin, dmoymax);
-   a.setMainWidget( &c );
-   c.show(); 
-   a.exec();
+   c = new ScreenWidget(raw_model1, raw_model2, dmoymin, dmoymax);
+   QObject::connect(c->quitBut, SIGNAL(clicked()), 
+	    &a, SLOT(quit()));
+   a.setMainWidget( c );
+   c->show(); 
+   return a.exec();
 
- }
+  }
  
 }

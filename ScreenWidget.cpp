@@ -1,10 +1,11 @@
-/* $Id: ScreenWidget.cpp,v 1.11 2001/08/09 12:43:56 aspert Exp $ */
+/* $Id: ScreenWidget.cpp,v 1.12 2001/08/10 08:24:12 aspert Exp $ */
 #include <ScreenWidget.h>
 
 ScreenWidget::ScreenWidget(model *raw_model1, model *raw_model2, 
 			   double dmoymin, double dmoymax, QWidget *parent, 
 			   const char *name ):QWidget(parent,name) {
   QAction *fileQuitAction;
+  QPushButton *syncBut;
   QMenuBar *mainBar;
   QPopupMenu *fileMenu, *helpMenu;
   QFrame *frameModel1, *frameModel2;
@@ -18,8 +19,8 @@ ScreenWidget::ScreenWidget(model *raw_model1, model *raw_model2,
   
 
   fileQuitAction = new QAction( "Quit", "Quit", CTRL+Key_Q, this, "quit" );
-  connect( fileQuitAction, SIGNAL( activated() ) , 
-	   qApp, SLOT( closeAllWindows() ) );
+  connect(fileQuitAction, SIGNAL(activated()) , 
+	  qApp, SLOT(closeAllWindows()));
 
 
   // Create the 'File' menu
@@ -73,11 +74,28 @@ ScreenWidget::ScreenWidget(model *raw_model1, model *raw_model2,
   connect(glModel1, SIGNAL(transfervalue(double,double*)), 
 	  glModel1, SLOT(transfer(double,double*)));
 
+
+  // Build two buttons
+  syncBut = new QPushButton("Synchronize viewpoints", this);
+  syncBut->setMinimumSize(40, 30);
+  syncBut->setToggleButton(TRUE);
+  
+  quitBut = new QPushButton("Quit", this);
+  quitBut->setMinimumSize(20, 30);
+  
+  connect(syncBut, SIGNAL(toggled(bool)), 
+	  glModel1, SLOT(switchSync(bool))); 
+  
+  
+
   // Build the topmost grid layout
-  bigGrid = new QGridLayout (this, 2, 3, 5);
+  bigGrid = new QGridLayout (this, 4, 3, 5);
   bigGrid->addWidget(colorBar, 1, 0);
   bigGrid->addWidget(frameModel1, 1, 1);
   bigGrid->addWidget(frameModel2, 1, 2);
+  bigGrid->addWidget(syncBut, 2, 1, Qt::AlignCenter);
+  bigGrid->addWidget(quitBut, 3, 1, Qt::AlignCenter);
+  
 
 }
 
@@ -85,7 +103,7 @@ void ScreenWidget::aboutKeys()
 {
     QMessageBox::about( this, "Key bindings",
 			"F1: Toggle Wireframe/Fill\n"
-			"F2: Toggle Light/No light\n"
+			"F2: Toggle Light/No light (2nd model only)\n"
 			"F3: Toggle viewpoint synchronization\n"
 			"F4: Invert normals (if applicable)" );
 }

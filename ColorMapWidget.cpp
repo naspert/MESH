@@ -1,4 +1,4 @@
-/* $Id: ColorMapWidget.cpp,v 1.6 2001/08/09 12:43:55 aspert Exp $ */
+/* $Id: ColorMapWidget.cpp,v 1.7 2001/08/10 08:24:13 aspert Exp $ */
 #include <ColorMapWidget.h>
 
 
@@ -38,7 +38,7 @@ void ColorMapWidget::paintEvent(QPaintEvent *) {
     p.setPen(Qt::white);
     p.setFont(QFont("courier", 8));
     res = dmax - i*(dmax - dmin)/7.0;
-    tmpDisplayedText.sprintf( "%5f",res);
+    tmpDisplayedText.sprintf( "%.3f",res);
     p.drawText(35, (i+1)*64, tmpDisplayedText);
   }
   p.end();

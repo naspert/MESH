@@ -1,12 +1,12 @@
-/* $Id: InitWidget.cpp,v 1.1 2001/08/07 08:32:38 aspert Exp $ */
+/* $Id: InitWidget.cpp,v 1.2 2001/08/10 08:24:12 aspert Exp $ */
 #include <InitWidget.h>
 
 InitWidget::InitWidget(QWidget *parent, const char *name):
   QWidget( parent, name) {
 
-  QLabel *qlabMesh1, *qlabMesh2, *qlabSplSt;
+  QLabel *qlabMesh1, *qlabMesh2, *qlabSplFreq;
   QPushButton *B1, *B2, *OK;
-  QListBox *qlboxSplSt;
+  QListBox *qlboxSplFreq;
   QGridLayout *bigGrid;
   QHBoxLayout *smallGrid1, *smallGrid2, *smallGrid3, *smallGrid4;
 
@@ -22,17 +22,17 @@ InitWidget::InitWidget(QWidget *parent, const char *name):
   connect(B2, SIGNAL(clicked()), this, SLOT(loadMesh2()));
   
   /* Sampling step */
-  qledSplSt = new QLineEdit("sampling step", this);
-  qlboxSplSt = new QListBox(this);
-  qlabSplSt = new QLabel(qlboxSplSt, "Sampling step", this);
-  qlboxSplSt->insertItem("0.5");
-  qlboxSplSt->insertItem("0.2");
-  qlboxSplSt->insertItem("0.1"); 
-  qlboxSplSt->insertItem("0.05");
-  qlboxSplSt->insertItem("0.02");
-  qlboxSplSt->insertItem("0.01");
-  connect(qlboxSplSt, SIGNAL(highlighted(const QString&)), 
-	  qledSplSt, SLOT(setText(const QString&)));
+  qledSplFreq = new QLineEdit("sampling freq", this);
+  qlboxSplFreq = new QListBox(this);
+  qlabSplFreq = new QLabel(qlboxSplFreq, "Sampling frequency", this);
+  qlboxSplFreq->insertItem("2");
+  qlboxSplFreq->insertItem("5");
+  qlboxSplFreq->insertItem("10"); 
+  qlboxSplFreq->insertItem("20");
+  qlboxSplFreq->insertItem("50");
+  qlboxSplFreq->insertItem("100");
+  connect(qlboxSplFreq, SIGNAL(highlighted(const QString&)), 
+	  qledSplFreq, SLOT(setText(const QString&)));
 
   /* OK button */
   OK = new QPushButton("OK",this);
@@ -54,11 +54,11 @@ InitWidget::InitWidget(QWidget *parent, const char *name):
   smallGrid2->addWidget(qledMesh2, 0, 1);
   smallGrid2->addWidget(B2, 0, 2);
 
-  /* Build the grid layout for sampling step */
+  /* Build the grid layout for sampling freq */
   smallGrid3 = new QHBoxLayout();
-  smallGrid3->addWidget(qlabSplSt, 0, 0);
-  smallGrid3->addWidget(qledSplSt, 0, 1);
-  smallGrid3->addWidget(qlboxSplSt, 0, 2);
+  smallGrid3->addWidget(qlabSplFreq, 0, 0);
+  smallGrid3->addWidget(qledSplFreq, 0, 1);
+  smallGrid3->addWidget(qlboxSplFreq, 0, 2);
 
   /* Build grid layout fir OK button */
   smallGrid4 = new QHBoxLayout();
@@ -87,7 +87,7 @@ void InitWidget::loadMesh2() {
 }
 
 void InitWidget::getParameters() {
-  QString tmpMesh1, tmpMesh2, tmpSplSt;
+  QString tmpMesh1, tmpMesh2, tmpSplFreq;
 
   tmpMesh1 = qledMesh1->text();
   mesh1 = (char *)tmpMesh1.latin1();
@@ -95,11 +95,11 @@ void InitWidget::getParameters() {
   tmpMesh2 = qledMesh2->text();
   mesh2 = (char*)tmpMesh2.latin1();
 
-  tmpSplSt = qledSplSt->text();
-  step = (char*)tmpSplSt.latin1();
+  tmpSplFreq = qledSplFreq->text();
+  freq = (char*)tmpSplFreq.latin1();
 
   if(tmpMesh1=="mesh1.raw" || tmpMesh2=="mesh2.raw" || 
-     tmpSplSt=="sampling step")
+     tmpSplFreq=="sampling freq")
     incompleteFields();
   else
     emit(exit());
