@@ -1,4 +1,4 @@
-/* $Id: rawview.c,v 1.22 2002/09/12 12:04:45 aspert Exp $ */
+/* $Id: rawview.c,v 1.23 2002/09/17 08:36:31 aspert Exp $ */
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -470,7 +470,7 @@ int main(int argc, char **argv) {
   struct model* raw_model;
 
 
-  assert(sizeof(vertex_t) == 3*sizeof(float));
+
   if (argc != 2) {
 #ifdef DONT_USE_ZLIB
     fprintf(stderr, "Usage:%s file.[raw, wrl, smf, ply, iv]\n", argv[0]);
