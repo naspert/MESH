@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.51 2002/08/26 14:38:56 aspert Exp $
+# $Id: Makefile,v 1.52 2002/08/30 07:59:30 aspert Exp $
 
 
 
@@ -36,7 +36,8 @@
 #
 #  Reference :
 #   "MESH : Measuring Errors between Surfaces using the Hausdorff distance"
-#   Accepted for publication, ICME 2002, available on http://mesh.epfl.ch
+#   in Proceedings of IEEE Intl. Conf. on Multimedia and Expo (ICME) 2002,
+#   pp. 705-708, available on http://mesh.epfl.ch
 #
 #
 
