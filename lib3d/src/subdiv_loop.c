@@ -1,4 +1,4 @@
-/* $Id: subdiv_loop.c,v 1.4 2002/11/05 13:35:20 aspert Exp $ */
+/* $Id: subdiv_loop.c,v 1.5 2002/11/06 07:58:41 aspert Exp $ */
 #include <3dmodel.h>
 #include <normals.h>
 #include <geomutils.h>
@@ -59,26 +59,28 @@ void compute_midpoint_loop_crease(const struct ring_info *rings,
       *vout = p;
       return;
     } else {
-      __prod_v(0.5, raw_model->vertices[center], p);
-      __add_prod_v(0.25, raw_model->vertices[center2], p, p);
+      __prod_v(0.25 + 0.25*cos(2*M_PI/(n-1)), raw_model->vertices[center], p);
+      __add_prod_v(0.5 - 0.25*cos(2*M_PI/(n-1)), 
+                   raw_model->vertices[center2], p, p);
       __add_prod_v(0.125, raw_model->vertices[ring.ord_vert[0]], p, p);
       __add_prod_v(0.125, raw_model->vertices[ring.ord_vert[n-1]], p, p);
       *vout = p;
       return;
-    }
+     } 
   } else {/* ring_op.type == 1 */
-    if (n < 7) {
+    if (m < 7) {
       compute_midpoint_loop(rings, center2, v2, raw_model, &p);
       *vout = p;
       return;
     } else {
-      __prod_v(0.5, raw_model->vertices[center2], p);
-      __add_prod_v(0.25, raw_model->vertices[center], p, p);
+      __prod_v(0.25 + 0.25*cos(2*M_PI/(m-1)), raw_model->vertices[center2], p);
+      __add_prod_v(0.5 - 0.25*cos(2*M_PI/(m-1)), 
+                   raw_model->vertices[center], p, p);
       __add_prod_v(0.125, raw_model->vertices[ring_op.ord_vert[0]], p, p);
       __add_prod_v(0.125, raw_model->vertices[ring_op.ord_vert[m-1]], p, p);
       *vout = p;
       return;
-    }
+    } 
   }
 }
 
@@ -88,13 +90,14 @@ void update_vertices_loop(const struct model *or_model,
   int i, j, v, n;
   float beta;
   vertex_t tmp;
+
   for (i=0; i<or_model->num_vert; i++) {
     n = rings[i].size;
     if (rings[i].type == 0) {
       if (n == 3)
-	beta = 3.0/16.0;
+	beta = 0.1875; /* 3/16 */
       else
-	beta = 3.0/(8.0*n);
+	beta = 0.375/n;
       
       __prod_v(1.0-n*beta, or_model->vertices[i], tmp);
       
