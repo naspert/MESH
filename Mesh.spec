@@ -1,5 +1,5 @@
 # Spec file for MESH
-# $Id: Mesh.spec,v 1.12 2004/08/17 15:24:01 aspert Exp $
+# $Id: Mesh.spec,v 1.13 2004/08/31 20:37:26 aspert Exp $
 Summary: Measuring Errors between Surfaces using the Hausdorff distance
 Name: Mesh
 Version: 1.12
@@ -24,6 +24,8 @@ under the GNU General Public License. It requires the Qt library
 (available for free), and has been successfully tested on several
 platforms.
 
+# disable debug package generation (troubles with moc files)
+%define debug_package %{nil}
 
 %prep
 %setup
