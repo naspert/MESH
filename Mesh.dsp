@@ -158,6 +158,10 @@ SOURCE=.\RawWidget.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\report.c
+# End Source File
+# Begin Source File
+
 SOURCE=.\ScreenWidget.cpp
 # End Source File
 # Begin Source File
@@ -310,6 +314,10 @@ InputName=RawWidget
 
 !ENDIF 
 
+# End Source File
+# Begin Source File
+
+SOURCE=.\report.h
 # End Source File
 # Begin Source File
 
