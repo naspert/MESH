@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.36 2001/08/18 15:50:46 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.37 2001/08/20 09:46:21 dsanta Exp $ */
 
 #include <compute_error.h>
 
@@ -6,6 +6,12 @@
 #include <xalloc.h>
 #include <math.h>
 #include <assert.h>
+
+/* Use a bitmap for marking empty cells. Otherwise use array of a simple
+ * type. Using a bitmap uses less memory and can be faster than a simple type
+ * depending on the cache system and number of cells in the grid (number of
+ * cache misses). */
+/* #define USE_EC_BITMAP */
 
 /* Ratio used to derive the cell size. It is the ratio between the cubic cell
  * side length and the side length of an average equilateral triangle. */
@@ -35,18 +41,38 @@
  *                       Local data types                                    *
  * --------------------------------------------------------------------------*/
 
-/* Type for storing empty cell bitmap */
-typedef int ec_bitmap_t;
-/* The number of bytes used by ec_bitmap_t */
-#define EC_BITMAP_T_SZ (sizeof(ec_bitmap_t))
-/* The number of bits used by ec_bitmap_t, and also the divisor to obtain the
- * bitmap element index from a cell index */
-#define EC_BITMAP_T_BITS (EC_BITMAP_T_SZ*8)
-/* Bitmask to obtain the bitmap bit index from the cell index. */
-#define EC_BITMAP_T_MASK (EC_BITMAP_T_BITS-1)
-/* Macro to test the bit corresponding to element i in the bitmap bm. */
-#define EC_BITMAP_TEST_BIT(bm,i) \
-  (bm[i/EC_BITMAP_T_BITS]&(0x01<<(i&EC_BITMAP_T_MASK)))
+#ifdef USE_EC_BITMAP /* Use a bitmap */
+  /* Type for storing empty cell bitmap */
+  typedef int ec_bitmap_t;
+  /* The number of bytes used by ec_bitmap_t */
+# define EC_BITMAP_T_SZ (sizeof(ec_bitmap_t))
+  /* The number of bits used by ec_bitmap_t, and also the divisor to obtain the
+   * bitmap element index from a cell index */
+# define EC_BITMAP_T_BITS (EC_BITMAP_T_SZ*8)
+  /* Bitmask to obtain the bitmap bit index from the cell index. */
+# define EC_BITMAP_T_MASK (EC_BITMAP_T_BITS-1)
+  /* Macro to test the bit corresponding to element i in the bitmap bm. */
+# define EC_BITMAP_TEST_BIT(bm,i) \
+   (bm[i/EC_BITMAP_T_BITS]&(0x01<<(i&EC_BITMAP_T_MASK)))
+  /* Macro to set the bit corresponding to element i in the bitmap bm. */
+# define EC_BITMAP_SET_BIT(bm,i) \
+   (bm[i/EC_BITMAP_T_BITS] |= 0x01<<(i&EC_BITMAP_T_MASK))
+#else /* Fake bitmap macros to access simple type */
+  /* Type for marking empty cells. Small type uses less memory, but access to
+   * aligned type can be faster (but more memory can cause more cache misses) */
+  typedef char ec_bitmap_t;
+  /* The number of bytes used by ec_bitmap_t */
+# define EC_BITMAP_T_SZ sizeof(ec_bitmap_t)
+  /* The number of bits used by ec_bitmap_t. Since here we don't use the
+   * individual bits it is 1. */
+# define EC_BITMAP_T_BITS 1
+  /* Bitmask to obtain the bitmap bit index from the cell index. */
+# define EC_BITMAP_T_MASK (EC_BITMAP_T_BITS-1)
+  /* Macro to test the element i in the map bm. */
+# define EC_BITMAP_TEST_BIT(bm,i) bm[i]
+  /* Macro to set the element i in the map bm. */
+# define EC_BITMAP_SET_BIT(bm,i) (bm[i] = 1)
+#endif
 
 /* List of triangles intersecting each cell */
 struct t_in_cell_list {
@@ -768,7 +794,7 @@ static struct t_in_cell_list *triangles_in_cells(const struct triangle_list *tl,
   /* Terminate lists with -1 and set empty cell bitmap */
   for(i=0, imax=grid_sz.x*grid_sz.y*grid_sz.z; i<imax; i++){
     if (nt[i] == 0) { /* mark empty cell in bitmap */
-      ecb[i/EC_BITMAP_T_BITS] |= 0x01<<(i&EC_BITMAP_T_MASK);
+      EC_BITMAP_SET_BIT(ecb,i);
     } else {
       tab[i][nt[i]] = -1;
     }
