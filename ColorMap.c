@@ -1,20 +1,20 @@
-/* $Id: ColorMap.c,v 1.4 2001/08/07 08:31:40 aspert Exp $ */
+/* $Id: ColorMap.c,v 1.5 2001/08/07 14:11:44 dsanta Exp $ */
 #include <ColorMap.h>
-
+#include <mutils.h>
 
 /* This function generates a colormap for the HSV colorspace using */
 /* normalized RGB values. */
-double** HSVtoRGB()
+double** HSVtoRGB(void)
 {
   double **colormap;
   double f, p, q, t;
   double r=-1, g=-1, b=-1, hue;
   int i, j=0, h;
 
-  colormap = (double **)malloc(8*sizeof(double*));
+  colormap = (double **)xmalloc(8*sizeof(double*));
   
   for(i=0;i<8;i++)
-    colormap[i] = (double *)malloc(3*sizeof(double));
+    colormap[i] = (double *)xmalloc(3*sizeof(double));
   
 
   for(h=0; h<240; h+=30){
@@ -57,7 +57,7 @@ double** HSVtoRGB()
       b = q;
       break;
     default:
-      printf("Out of range value for hue\n");
+      fprintf(stderr,"HSVtoRGB: out of range value for hue!\n");
       break;
     }
 
