@@ -1,4 +1,4 @@
-/* $Id: model_analysis.c,v 1.9 2002/02/22 23:44:48 dsanta Exp $ */
+/* $Id: model_analysis.c,v 1.10 2002/03/11 14:25:49 dsanta Exp $ */
 
 #include <model_analysis.h>
 
@@ -85,8 +85,8 @@ static void analyze_faces_rec(const face_t *mfaces, int vidx, int pfidx,
   int vstart;      /* starting vertex, to check for closed surface */
   char rev_orient; /* reversed processing orientation flag */
   int tmpi;        /* temporary integer */
-  char fface_orient;/* orientation of first face */
-  char cface_orient;/* orientation of current face */
+  signed char fface_orient;/* orientation of first face */
+  signed char cface_orient;/* orientation of current face */
   int *vfaces;     /* list of faces incident on current vertex */
   int ffidx;       /* first face index */
   struct vtx_list vlist; /* list of found vertices  */
