@@ -160,11 +160,11 @@ void lsq_fit(struct model *raw_model, struct ring_info *rings,
     curv[i].t2.x = t2l.x*b0.x + t2l.y*b1.x;
     curv[i].t2.y = t2l.y*b0.y + t2l.y*b1.y;
     curv[i].t2.z = 0.0;
-    normalize(&(curv[i].t1));
-    normalize(&(curv[i].t2));
+    normalize_v(&(curv[i].t1));
+    normalize_v(&(curv[i].t2));
     printf("T1 = (%f, %f, 0.0)\t T2 = (%f, %f, 0.0)\n", curv[i].t1.x, 
 	   curv[i].t1.y, curv[i].t2.x, curv[i].t2.y);
-    printf("discr = %f\n",norm(crossprod(curv[i].t1,curv[i].t2)));
+    printf("discr = %f\n",norm(crossprod(curv[i].t1, curv[i].t2)));
     free(u);
   }/* End for i */
 
