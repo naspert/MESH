@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.41 2002/06/05 09:29:25 aspert Exp $
+# $Id: Makefile,v 1.42 2002/06/05 14:01:24 aspert Exp $
 
 
 OS := $(shell uname -s)
@@ -74,7 +74,7 @@ GSL_OBJECTS = $(OBJDIR)/maps_lsq.o
 GSL_LDFLAGS =  -g $(BASE_LIBFLAGS) -lgsl -lgslcblas
 
 #
-# Linkign (only for the dynamic stuff)
+# Linking (only for the dynamic stuff)
 #
 GL_LIBFLAGS = -L$(LIBDIR) -L$(GLDIR)/lib -lglut -lGLU -lGL \
 	-lXmu -lXext -lX11 -lXi -l3d -limage -lm 
