@@ -1,4 +1,4 @@
-/* $Id: InitWidget.cpp,v 1.35 2002/08/09 15:26:39 aspert Exp $ */
+/* $Id: InitWidget.cpp,v 1.36 2002/08/15 15:51:30 aspert Exp $ */
 
 
 /*
@@ -187,9 +187,10 @@ InitWidget::~InitWidget() {
 
 void InitWidget::loadMesh1() {
   QStringList mfilters = QStringList() <<
-    "3D Models (*.raw; *.wrl; *.iv; *.smf)" <<
+    "3D Models (*.raw; *.wrl; *.iv; *.smf; *.ply)" <<
 #ifndef DONT_USE_ZLIB
-    "Compressed 3D models (*.raw.gz; *.wrl.gz; *.wrz; *.iv.gz; *.smf.gz)" <<
+    "Compressed 3D models (*.raw.gz; *.wrl.gz; *.wrz; *.iv.gz;"
+    " *.smf.gz; *.ply.gz)" <<
 #endif
     "All files (*.*)";
   QFileDialog *fd=new QFileDialog (QString::null, QString::null, this, 
@@ -209,9 +210,10 @@ void InitWidget::loadMesh1() {
   
 void InitWidget::loadMesh2() {
   QStringList mfilters = QStringList() <<
-    "3D Models (*.raw; *.wrl; *.iv; *.smf)" <<
+    "3D Models (*.raw; *.wrl; *.iv; *.smf; *.ply)" <<
 #ifndef DONT_USE_ZLIB
-    "Compressed 3D models (*.raw.gz; *.wrl.gz; *.wrz; *.iv.gz; *.smf.gz)" <<
+    "Compressed 3D models (*.raw.gz; *.wrl.gz; *.wrz; *.iv.gz;"
+    " *.smf.gz; *.ply.gz)" <<
 #endif
     "All files (*.*)";
   QFileDialog *fd=new QFileDialog(QString::null, QString::null, this,

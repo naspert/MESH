@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.49 2002/08/09 15:26:39 aspert Exp $
+# $Id: Makefile,v 1.50 2002/08/15 15:51:30 aspert Exp $
 
 
 
@@ -326,7 +326,8 @@ MESH_EXE := $(BINDIR)/mesh
 MESH_C_SRCS := $(wildcard *.c)
 MESH_CXX_SRCS := $(filter-out moc_%.cpp,$(wildcard *.cpp))
 MESH_MOC_SRCS := RawWidget.h ScreenWidget.h InitWidget.h ColorMapWidget.h
-LIB3D_C_SRCS = geomutils.c model_in.c
+LIB3D_C_SRCS = geomutils.c model_in.c model_in_raw.c model_in_smf.c \
+	model_in_ply.c model_in_vrml_iv.c
 
 # Files for distribution
 MISC_FILES = Makefile Mesh.dsp Mesh.dsw meshIcon.xpm README COPYING AUTHORS \
