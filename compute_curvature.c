@@ -1,4 +1,4 @@
-/* $Id: compute_curvature.c,v 1.2 2001/09/27 13:19:13 aspert Exp $ */
+/* $Id: compute_curvature.c,v 1.3 2001/10/02 08:47:47 aspert Exp $ */
 #include <3dutils.h>
 #include <compute_error.h>
 #include <compute_curvature.h>
@@ -247,7 +247,7 @@ void compute_curvature_error(struct model_error *model1,
   printf("done\n");  
   printf("Computing curvature of model 2.... ");fflush(stdout);
   compute_curvature(model2->mesh, info2, rings2);
-  printf("done\n");  
+  printf("done\n\n");  
   
 
   /* The model 1 displays the curvature error when RawWidget is constructed */
@@ -291,13 +291,26 @@ void compute_curvature_error(struct model_error *model1,
     model1->mean_kg_error += info1[i].mixed_area*model1->kg_error[i];
   }
 
-  model1->mesh->total_area = 0.0;
-  for (i=0; i<model1->mesh->num_faces; i++) 
-    model1->mesh->total_area += model1->mesh->area[i];
   
   model1->mean_k1_error /= model1->mesh->total_area;
   model1->mean_k2_error /= model1->mesh->total_area;
-  model1->mean_k2_error /= model1->mesh->total_area;
+  model1->mean_kg_error /= model1->mesh->total_area;
+
+  /* Print the results */
+  printf("       Curvature difference between model 1 to model 2\n\n");
+  printf("        \t   Absolute\n");
+  printf("Min_K1 :\t%11g\n", model1->min_k1_error);
+  printf("Max_K1 :\t%11g\n", model1->max_k1_error);
+  printf("Min_K2 :\t%11g\n", model1->min_k2_error);
+  printf("Max_K2 :\t%11g\n", model1->max_k2_error);
+  printf("Min_KG :\t%11g\n", model1->min_kg_error);
+  printf("Max_KG :\t%11g\n", model1->max_kg_error);
+  printf("\n\n");
+  
+  printf("       \t   Mean\n");
+  printf("K1    :\t%11g\n", model1->mean_k1_error);
+  printf("K2    :\t%11g\n", model1->mean_k2_error);
+  printf("KG    :\t%11g\n", model1->mean_kg_error);
   
 }
 

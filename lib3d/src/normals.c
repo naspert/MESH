@@ -1,4 +1,4 @@
-/* $Id: normals.c,v 1.11 2001/09/27 11:44:46 aspert Exp $ */
+/* $Id: normals.c,v 1.12 2001/10/02 08:47:48 aspert Exp $ */
 #include <3dmodel.h>
 #include <geomutils.h>
 
@@ -786,7 +786,7 @@ void compute_vertex_normal(struct model* raw_model, struct info_vertex* curv,
   int i,j;
   vertex_t tmp, *p1, *p2, *p3;
 
-
+  raw_model->total_area = 0.0;
 
   /* Compute area of each face */
   for (i=0; i<raw_model->num_faces; i++) {
@@ -795,11 +795,12 @@ void compute_vertex_normal(struct model* raw_model, struct info_vertex* curv,
     p3 = &(raw_model->vertices[raw_model->faces[i].f2]);
     
     raw_model->area[i] = tri_area_v(p1, p2, p3);
+    raw_model->total_area += raw_model->area[i];
   }
 
   /* Alloc array for normal of each vertex */
   raw_model->normals = (vertex_t*)malloc(raw_model->num_vert*sizeof(vertex_t));
-
+  
 
   for (i=0; i<raw_model->num_vert; i++) {
     tmp.x = 0.0;
@@ -808,7 +809,8 @@ void compute_vertex_normal(struct model* raw_model, struct info_vertex* curv,
     for (j=0; j<curv[i].num_faces; j++) 
       add_prod_v(raw_model->area[curv[i].list_face[j]], 
 		 &(model_normals[curv[i].list_face[j]]), &tmp, &tmp);
-
+    
+    
 
     normalize_v(&tmp);
     raw_model->normals[i] = tmp;
