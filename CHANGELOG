@@ -1,4 +1,6 @@
 * Changes from v1.2 to v1.3 :
+	- Fixed memory allocation bug for non-manifold models in
+	  add_adj_face_extra() (mis-sized realloc leading to memory corruption)
 	- Added support for compiling with PGCC (Portland Group) compiler
 	- Optimization: align doubles at 8 byte boundaries on x86
 	- Default to Penitum IV only builds with PGCC and ICC compilers
