@@ -1,8 +1,9 @@
-/* $Id: ScreenWidget.cpp,v 1.27 2002/02/20 18:28:37 dsanta Exp $ */
+/* $Id: ScreenWidget.cpp,v 1.28 2002/02/20 23:35:59 dsanta Exp $ */
 #include <ScreenWidget.h>
 
 #include <qhbox.h>
 #include <qhbuttongroup.h>
+#include <qlabel.h>
 #include <RawWidget.h>
 #include <ColorMapWidget.h>
 
@@ -127,8 +128,8 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   bigGrid->addWidget(lineSwitch1, 1, 2, Qt::AlignCenter);
   bigGrid->addWidget(lineSwitch2, 1, 5, Qt::AlignCenter);
   bigGrid->addMultiCellWidget(syncBut, 1, 1, 3, 4, Qt::AlignCenter);
-  bigGrid->addWidget(radGrp, 2, 2, Qt::AlignCenter);
-  bigGrid->addMultiCellWidget(quitBut, 2, 2, 3, 4, Qt::AlignCenter);
+  bigGrid->addMultiCellWidget(radGrp, 2, 2, 2, 5, Qt::AlignCenter);
+  bigGrid->addWidget(quitBut, 2, 0, Qt::AlignCenter);
 
   // Now set a sensible default widget size
   QSize prefSize = layout()->sizeHint();
