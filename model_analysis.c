@@ -1,4 +1,4 @@
-/* $Id: model_analysis.c,v 1.22 2002/03/29 08:45:10 dsanta Exp $ */
+/* $Id: model_analysis.c,v 1.23 2002/03/29 09:55:54 dsanta Exp $ */
 
 
 /*
@@ -301,11 +301,29 @@ static INLINE int find_face_with_edge(const face_t *mfaces, int *vfaces,
   return -1; /* no adjacent face found */
 }
 
+/* Reverses the order of the elements of list, of length len. */
+static INLINE void reverse_list(int *list, int len)
+{
+  int j,l2,tmpi;
+
+  l2 = len/2;
+  for (j=0; j<l2; j++) {
+    tmpi = list[j];
+    list[j] = list[len-1-j];
+    list[len-1-j] = tmpi;
+  }
+}
+
 /* Performs local analysis of the faces incident on vertex vidx. The faces of
  * the model are given in the mfaces array. The list of faces incident on vidx
- * is given by flist. The local topology information is returned in *ltop. In
- * addition it constructs the list of vertices, different from vidx and
- * without repetition, that belong to the faces incident on vidx in *vlist. */
+ * is given by *flist. The local topology information is returned in
+ * *ltop. The list of incident faces in *flist is reordered, so that for
+ * manfifold vertices two consecutive entries are adjacent faces (in addition
+ * the last anf first ones are adjacent if the vertex is closed). For
+ * non-manifold vertices no special guarantees can be made on the resulting
+ * order. In addition it constructs the list of vertices, different from vidx
+ * and without repetition, that belong to the faces incident on vidx in
+ * *vlist. */
 static void get_vertex_topology(const face_t *mfaces, int vidx,
                                 const struct face_list *flist,
                                 struct topology *ltop,
@@ -349,6 +367,7 @@ static void get_vertex_topology(const face_t *mfaces, int vidx,
   while (n_vfaces > 0) { /* process the remaining faces */
     fidx = find_face_with_edge(mfaces,vfaces,&n_vfaces,vidx,&v2);
     if (fidx >= 0) { /* found an adjacent face */
+      flist->face[n_vfaces] = fidx;
       v2_was_in_list = vtx_in_list_or_add(vlist,v2,&vtx_buf_sz);
       if (v2_was_in_list) {
         if (v2 == vstart) vstart_was_in_list = 1;
@@ -372,6 +391,7 @@ static void get_vertex_topology(const face_t *mfaces, int vidx,
         /* Restart with first not yet counted triangle (always one) */
         assert(n_vfaces > 0);
         fidx = vfaces[--n_vfaces];
+        flist->face[n_vfaces] = fidx;
         assert(fidx >= 0);
         rev_orient = 0; /* restore original orientation */
         /* Get new first face vertices */
@@ -382,6 +402,9 @@ static void get_vertex_topology(const face_t *mfaces, int vidx,
         /* we reverse scanning orientation and continue from the other side */
         int tmpi;
         rev_orient = 1;
+        if (ltop->manifold) { /* if non-manifold order becomes useless */
+          reverse_list(flist->face+n_vfaces,flist->n_faces-n_vfaces);
+        }
         tmpi = v2;
         v2 = vstart;
         vstart = tmpi;
@@ -705,7 +728,9 @@ static bmap_t * model_orientation(const face_t *mfaces, int n_faces,
  * of incident faces for each vertex flist and the number of vertices
  * n_vtcs. The result is returned in the following fields of minfo: manifold,
  * closed and n_disjoint_parts. It returns a malloc'ed bitmap array (of length
- * n_vtcs bits) indicating which vertices are manifold. */
+ * n_vtcs bits) indicating which vertices are manifold. The entries for each
+ * vertex in flist are reordered (as explained in get_vertex_topology()), but
+ * the contents are the same. */
 static bmap_t * model_topology(int n_vtcs, const face_t *mfaces,
                                const struct face_list *flist,
                                struct model_info *minfo)
