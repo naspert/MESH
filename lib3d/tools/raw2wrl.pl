@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-# $Id: raw2wrl.pl,v 1.1 2001/03/12 14:50:32 aspert Exp $
+# $Id: raw2wrl.pl,v 1.2 2001/03/13 10:22:33 aspert Exp $
 
 use VRML::VRML2::Standard;
 
@@ -90,6 +90,7 @@ sub read_raw_file {
 #------------ MAIN ----------------
 my @facearr = ();
 my @vertarr = ();
+my $j = 0;
 
 if ($#ARGV != 1) {
   die("raw2wrl infile[.raw] outfile[.wrl]\n");
@@ -97,7 +98,7 @@ if ($#ARGV != 1) {
 
 $fname  = $ARGV[0];
 $outfile = $ARGV[1];
-#read_raw_file($infile, \@facearr, \@vertarr);
+
 if ($fname !~ /\.raw/) {
   $fname .= ".raw";
 }
