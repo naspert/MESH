@@ -1,4 +1,4 @@
-/* $Id: mesh_run.c,v 1.6 2002/02/04 16:11:05 dsanta Exp $ */
+/* $Id: mesh_run.c,v 1.7 2002/02/06 15:31:23 dsanta Exp $ */
 
 #include <time.h>
 #include <string.h>
@@ -74,8 +74,18 @@ void mesh_run(const struct args *args, struct model_error *model1,
   memset(model2,0,sizeof(*model2));
   m1info = (struct model_info*) xa_malloc(sizeof(*m1info));
   m2info = (struct model_info*) xa_malloc(sizeof(*m2info));
+  outbuf_printf(out,"Reading %s ... ",args->m1_fname);
+  outbuf_flush(out);
+  start_time = clock();
   model1->mesh = read_model_file(args->m1_fname);
+  outbuf_printf(out,"Done (%.2f secs)\n",
+                (double)(clock()-start_time)/CLOCKS_PER_SEC);
+  outbuf_printf(out,"Reading %s ... ",args->m2_fname);
+  outbuf_flush(out);
+  start_time = clock();
   model2->mesh = read_model_file(args->m2_fname);
+  outbuf_printf(out,"Done (%.2f secs)\n",
+                (double)(clock()-start_time)/CLOCKS_PER_SEC);
 
   /* Analyze models (we don't need normals for model 1, so we don't request
    * for it to be oriented). */

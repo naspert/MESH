@@ -1,4 +1,4 @@
-/* $Id: model_in.c,v 1.3 2002/02/06 14:56:42 dsanta Exp $ */
+/* $Id: model_in.c,v 1.4 2002/02/06 15:31:24 dsanta Exp $ */
 
 /*
  * Functions to read 3D model data from files
@@ -11,6 +11,33 @@
 #include <string.h>
 #include <ctype.h>
 #include <model_in.h>
+
+/* --------------------------------------------------------------------------
+   PLATFORM DEPENDENT THINGS
+   -------------------------------------------------------------------------- */
+
+/* If available use the fgetc_unlocked function which is much faster than
+ * fgetc (does not require locking of the stream on each call). */
+#if defined(__GLIBC__) && (__GLIBC__ >= 2)
+# define fgetc  fgetc_unlocked /* from stdio.h */
+#endif
+
+/* Macros to use fastest possible I/O stream access given that only one thread
+ * accesses the input file. FLOCKFILE_LOCK will, if available, put a lock on
+ * the given stream and disable I/O streams auto-locking
+ * (slow). FLOCKFILE_AUTO will release the lock for the given stream and
+ * re-enable auto-locking (default behaviour). */
+#if defined(__GLIBC__) && (__GLIBC__ >= 2)
+/* Auto-locking and stream locking available */
+# include <stdio_ext.h>
+# define FLOCKFILE_LOCK(stream) \
+    { __fsetlocking((stream),FSETLOCKING_BYCALLER); flockfile(stream); }
+# define FLOCKFILE_AUTO(stream) \
+    { funlockfile(stream); __fsetlocking((stream),FSETLOCKING_INTERNAL); }
+#else /* no support for disabling autolocking, no use in global lock */
+# define FLOCKFILE_LOCK(stream)
+# define FLOCKFILE_AUTO(stream)
+#endif
 
 /* --------------------------------------------------------------------------
    PARAMETERS
@@ -1298,6 +1325,7 @@ int read_model(struct model **models_ref, FILE *data, int fformat, int concat)
   }
   rcode = 0;
   models = NULL;
+  FLOCKFILE_LOCK(data); /* disable stdio auto-locking, use global lock */
   switch (fformat) {
   case MESH_FF_RAW:
     rcode = read_raw_tmesh(&models,data);
@@ -1308,6 +1336,7 @@ int read_model(struct model **models_ref, FILE *data, int fformat, int concat)
   default:
     rcode = MESH_BAD_FF;
   }
+  FLOCKFILE_AUTO(data); /* enable stdio auto-locking, releases global lock */
   if (rcode >= 0) {
     *models_ref = models;
   }
