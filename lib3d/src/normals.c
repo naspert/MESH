@@ -1,4 +1,4 @@
-/* $Id: normals.c,v 1.41 2003/07/02 14:29:42 aspert Exp $ */
+/* $Id: normals.c,v 1.42 2003/07/08 17:23:47 aspert Exp $ */
 #include <3dmodel.h>
 #include <geomutils.h>
 #include <normals.h>
@@ -461,7 +461,7 @@ static void build_normals(const struct model *raw_model,
       } else if ((tree->prim_right).v1 == v0) { /* prim_right = v2v0 */
 	v2 = (tree->prim_right).v0;
       } else {
-	fprintf(stderr, "Oh no...[%s]:%d\n", __FILE__, __LINE__);
+        abort();
       }
     }
 
