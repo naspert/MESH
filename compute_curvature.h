@@ -1,6 +1,8 @@
-/* $Id: compute_curvature.h,v 1.4 2001/10/25 12:30:45 aspert Exp $ */
+/* $Id: compute_curvature.h,v 1.5 2001/11/06 10:37:55 dsanta Exp $ */
 #ifndef _COMPUTE_CURVATURE_PROTO
 #define _COMPUTE_CURVATURE_PROTO
+
+#include <reporting.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -16,7 +18,7 @@ extern "C" {
   void compute_curvature(const struct model*, struct info_vertex*, 
 			 const struct ring_info*);
   void compute_curvature_error(struct model_error*, struct model_error*, 
-			       FILE*);
+			       struct outbuf*);
 #ifdef __cplusplus
 }
 #endif

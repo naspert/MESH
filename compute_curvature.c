@@ -1,4 +1,4 @@
-/* $Id: compute_curvature.c,v 1.6 2001/10/30 09:50:35 aspert Exp $ */
+/* $Id: compute_curvature.c,v 1.7 2001/11/06 10:37:55 dsanta Exp $ */
 #include <3dutils.h>
 #include <compute_error.h>
 #include <compute_curvature.h>
@@ -196,7 +196,8 @@ void compute_curvature(const struct model *raw_model,
    for the original model 
 */
 void compute_curvature_error(struct model_error *model1, 
-			     struct model_error *model2, FILE *out) {
+			     struct model_error *model2,
+                             struct outbuf *out) {
 
   int i;
   struct info_vertex *info1, *info2;
@@ -277,18 +278,19 @@ void compute_curvature_error(struct model_error *model1,
   model1->mean_kg_error /= model1->mesh->total_area;
 
   /* Print the results */
-  fprintf(out, "       Curvature difference between model 1 to model 2\n\n");
-  fprintf(out, "        \t   Absolute\n");
-  fprintf(out, "Min_KM :\t%11g\n", model1->min_km_error);
-  fprintf(out, "Max_KM :\t%11g\n", model1->max_km_error);
-  fprintf(out, "Min_KG :\t%11g\n", model1->min_kg_error);
-  fprintf(out, "Max_KG :\t%11g\n", model1->max_kg_error);
-  fprintf(out, "\n\n");
+  outbuf_printf(out,
+                "       Curvature difference between model 1 to model 2\n\n");
+  outbuf_printf(out, "        \t   Absolute\n");
+  outbuf_printf(out, "Min_KM :\t%11g\n", model1->min_km_error);
+  outbuf_printf(out, "Max_KM :\t%11g\n", model1->max_km_error);
+  outbuf_printf(out, "Min_KG :\t%11g\n", model1->min_kg_error);
+  outbuf_printf(out, "Max_KG :\t%11g\n", model1->max_kg_error);
+  outbuf_printf(out, "\n\n");
   
-  fprintf(out, "       \t   Mean\n");
-  fprintf(out, "KM    :\t%11g\n", model1->mean_km_error);
-  fprintf(out, "KG    :\t%11g\n", model1->mean_kg_error);
-  
+  outbuf_printf(out, "       \t   Mean\n");
+  outbuf_printf(out, "KM    :\t%11g\n", model1->mean_km_error);
+  outbuf_printf(out, "KG    :\t%11g\n", model1->mean_kg_error);
+  outbuf_flush(out);
 }
 
 
