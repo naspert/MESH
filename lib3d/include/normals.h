@@ -1,4 +1,4 @@
-/* $Id: normals.h,v 1.19 2003/03/04 14:44:00 aspert Exp $ */
+/* $Id: normals.h,v 1.20 2003/03/04 15:26:55 aspert Exp $ */
 #include <3dmodel.h>
 #include <ring.h>
 
@@ -28,7 +28,8 @@ struct dual_graph_info {
 };
 
 struct dual_graph_index {
-  int *ring; 
+  int ring[6]; /* each tr. has 3 dual edges, and we can hit them no
+                  more than twice (othewise non-manifold face) */ 
   int face_info; /* number of neighb. faces */
 };
 

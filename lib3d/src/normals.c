@@ -1,4 +1,4 @@
-/* $Id: normals.c,v 1.37 2003/03/04 14:44:01 aspert Exp $ */
+/* $Id: normals.c,v 1.38 2003/03/04 15:26:56 aspert Exp $ */
 #include <3dmodel.h>
 #include <geomutils.h>
 #include <normals.h>
@@ -59,13 +59,16 @@ static int build_edge_list(const struct model *raw_model,
 
       /* update index */
       f = ring[i].ord_face[j];
-      dg_idx[f].ring = realloc(dg_idx[f].ring, 
-                               (dg_idx[f].face_info+1)*sizeof(int));
+      /* if the test below is true, the face is non-manifold, so bail
+         out */
+      if (dg_idx[f].face_info > 5)
+        return -1;
+
       dg_idx[f].ring[dg_idx[f].face_info++] = dual_graph->num_edges_dual;
 
       f = ring[i].ord_face[j+1];
-      dg_idx[f].ring = realloc(dg_idx[f].ring, 
-                               (dg_idx[f].face_info+1)*sizeof(int));
+      if (dg_idx[f].face_info > 5) 
+        return -1;
       dg_idx[f].ring[dg_idx[f].face_info++] = dual_graph->num_edges_dual++;
 
 
@@ -77,13 +80,15 @@ static int build_edge_list(const struct model *raw_model,
       f = ring[i].ord_face[ring[i].n_faces-1];
       add_edge_dg(dual_graph, f, 
                   ring[i].ord_face[0], i, ring[i].ord_vert[0]);
-      dg_idx[f].ring = realloc(dg_idx[f].ring, 
-                               (dg_idx[f].face_info+1)*sizeof(int));
+      if (dg_idx[f].face_info > 5)
+        return -1;
+
       dg_idx[f].ring[dg_idx[f].face_info++] = dual_graph->num_edges_dual;
 
       f = ring[i].ord_face[0];
-      dg_idx[f].ring = realloc(dg_idx[f].ring, 
-                               (dg_idx[f].face_info+1)*sizeof(int));
+      if (dg_idx[f].face_info > 5)
+        return -1;
+
       dg_idx[f].ring[dg_idx[f].face_info++] = dual_graph->num_edges_dual++;
 
     }
@@ -323,8 +328,6 @@ struct face_tree** bfs_build_spanning_tree(const struct model *raw_model,
   free(dual_graph->done);
   free(dual_graph);
   free(list);
-  for (i=0; i<raw_model->num_faces; i++)
-    free(dg_idx[i].ring);
   free(dg_idx);
 #ifdef NORM_VERB
   printf(" done\n");
