@@ -1,4 +1,4 @@
-/* $Id: geomutils.h,v 1.35 2002/09/26 12:23:56 aspert Exp $ */
+/* $Id: geomutils.h,v 1.36 2002/09/26 12:39:39 dsanta Exp $ */
 
 
 /*
@@ -71,16 +71,9 @@ extern "C" {
 #endif
 
   /* exported functions */
-  float dist(vertex_t, vertex_t);
-  float cross_product2d(vertex_t, vertex_t, vertex_t);
-  float scalprod(vertex_t, vertex_t);
-  float norm(vertex_t);
-  void normalize(vertex_t*);
   void rotate_3d(vertex_t, vertex_t, double, vertex_t*);
-  int inside(vertex_t, vertex_t, float);
   void compute_circle2d(vertex_t, vertex_t, vertex_t, float*, vertex_t*);
   void compute_circle3d(vertex_t, vertex_t, vertex_t, float*, vertex_t*);
-  float tri_area(vertex_t, vertex_t, vertex_t);
 
   /* Inlined faster functions */
   float scalprod_v(const vertex_t*, const vertex_t*);

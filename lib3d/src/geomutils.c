@@ -1,4 +1,4 @@
-/* $Id: geomutils.c,v 1.14 2002/08/30 09:18:46 aspert Exp $ */
+/* $Id: geomutils.c,v 1.15 2002/09/26 12:39:40 dsanta Exp $ */
 
 
 /*
@@ -52,63 +52,6 @@
 #include <geomutils.h> /* catch the inlined functions */
 
 
-/*Used for 2D triangulation */
-float cross_product2d(vertex_t p1, vertex_t p2, vertex_t p3) {
-    vertex_t v1, v2;
-
-    v1.x = p2.x - p1.x;
-    v1.y = p2.y - p1.y;
-
-    v2.x = p3.x - p1.x;
-    v2.y = p3.y - p1.y;
-
-    return (v1.x*v2.y - v1.y*v2.x);
-}
-
-/* Computes the scalar product between 2 vectors */
-float scalprod(vertex_t v1, vertex_t v2) {
-  return (v1.x*v2.x + v1.y*v2.y + v1.z*v2.z);
-}
-
-/* Computes the norm of vector v */
-float norm(vertex_t v) {
-#if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)  /* C99 */
-  return sqrtf(v.x*v.x + v.y*v.y + v.z*v.z);
-#else /* pre-C99 */
-  return (float)sqrt(v.x*v.x + v.y*v.y + v.z*v.z);
-#endif
-}
-
-/* Computes the distance between v1 and v2 */
-float dist(vertex_t v1, vertex_t v2) {
-  vertex_t tmp;
-  
-  tmp.x = v1.x - v2.x;
-  tmp.y = v1.y - v2.y;
-  tmp.z = v1.z - v2.z;
-
-  return norm(tmp);
-  
-}
-
-
-/* Normalizes vertex_t v */
-void normalize(vertex_t *v) {
-  float n;
-
-  n = norm(*v);
-  
-#if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)  /* C99 */
-  if (fabsf(n) < 1e-10f) return; /* Do nothing if vector is too small */
-#else /* pre-C99 */
-  if (fabs(n) < 1e-10) return; /* Do nothing if vector is too small */
-#endif
-  
-  v->x /= n;
-  v->y /= n;
-  v->z /= n;
-}
-
 /* Rotates the point 'p' around the axis 'u' */
 void rotate_3d(vertex_t p, vertex_t u, double theta, vertex_t *vout) {
   double cth=cos(theta);
@@ -134,15 +77,6 @@ void rotate_3d(vertex_t p, vertex_t u, double theta, vertex_t *vout) {
   tmp += (u.z*u.z*a + cth)*p.z;
   vout->z = (float) tmp;
   
-}
-
-/* Returns 1 if p is inside the circle defined by center & r */
-int inside(vertex_t p, vertex_t center, float r) {
- 
-    if (dist(center, p) < r)
-	return 1;
-    else 
-	return 0;
 }
 
 /* Computes the radius and center of the 2D circle passing by p1 p2 and p3 */
@@ -252,40 +186,4 @@ void compute_circle3d(vertex_t p1, vertex_t p2, vertex_t p3,
 
     *r = norm_v(&tmp);
     
-}
-
-
-/* Computes the area of the triangle p1,p2, p3 */
-float tri_area(vertex_t p1, vertex_t p2, vertex_t p3) {
-    vertex_t u,v,h;
-    float nu2,uv;
-    float tmp;
-
-    u.x = p1.x - p3.x;
-    u.y = p1.y - p3.y;
-    u.z = p1.z - p3.z;
-    
-    v.x = p2.x - p3.x;
-    v.y = p2.y - p3.y;
-    v.z = p2.z - p3.z;
-    
-
-    uv = scalprod(u,v);
-
-
-    nu2 = scalprod(u,u);
-
-    tmp = uv/nu2;
-    h.x = v.x - u.x*tmp;
-    h.y = v.y - u.y*tmp;
-    h.z = v.z - u.z*tmp;
-
-
-
-#if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)  /* C99 */
-    return (norm(h)*sqrtf(nu2)*0.5f);
-#else /* pre-C99 */
-    return (norm(h)*(float)sqrt(nu2)*0.5f);
-#endif
-
 }

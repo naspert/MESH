@@ -1,4 +1,4 @@
-/* $Id: mesh_run.c,v 1.25 2002/08/30 09:18:43 aspert Exp $ */
+/* $Id: mesh_run.c,v 1.26 2002/09/26 12:39:39 dsanta Exp $ */
 
 
 /*
@@ -137,8 +137,8 @@ void mesh_run(const struct args *args, struct model_error *model1,
   /* Analyze models (we don't need normals for model 1, so we don't request
    * for it to be oriented). */
   start_time = clock();
-  bbox1_diag = dist(model1->mesh->bBox[0], model1->mesh->bBox[1]);
-  bbox2_diag = dist(model2->mesh->bBox[0], model2->mesh->bBox[1]);
+  bbox1_diag = dist_v(&model1->mesh->bBox[0], &model1->mesh->bBox[1]);
+  bbox2_diag = dist_v(&model2->mesh->bBox[0], &model2->mesh->bBox[1]);
   analyze_model(model1->mesh,m1info,0,args->verb_analysis,out,"model 1");
   model1->info = m1info;
   analyze_model(model2->mesh,m2info,1,args->verb_analysis,out,"model 2");
