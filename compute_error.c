@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.43 2001/08/21 16:28:28 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.44 2001/08/22 09:26:08 dsanta Exp $ */
 
 #include <compute_error.h>
 
@@ -351,8 +351,6 @@ static void get_cells_at_distance(struct dist_cell_lists *dlists,
   max_m = min(cell_gr_coord.x+k,grid_sz.x-1);
   min_n = max(cell_gr_coord.y-k,0);
   max_n = min(cell_gr_coord.y+k,grid_sz.y-1);
-  min_o = max(cell_gr_coord.z-k,0);
-  max_o = min(cell_gr_coord.z+k,grid_sz.z-1);
   if ((o = cell_gr_coord.z-k) >= 0) { /* bottom layer */
     for (n = min_n; n <= max_n; n++) {
       for (m = min_m; m <= max_m; m++) {
@@ -363,8 +361,8 @@ static void get_cells_at_distance(struct dist_cell_lists *dlists,
       }
     }
   }
-  if ((n = cell_gr_coord.y-k) >= 0) { /* back layer */
-    for (o = min_o+1; o < max_o; o++) {
+  if ((o = cell_gr_coord.z+k) < grid_sz.z) { /* top layer */
+    for (n = min_n; n <= max_n; n++) {
       for (m = min_m; m <= max_m; m++) {
         cell_idx = m+n*grid_sz.x+o*cell_stride_z;
         if (!EC_BITMAP_TEST_BIT(fic_empty_cell,cell_idx)) {
@@ -373,19 +371,11 @@ static void get_cells_at_distance(struct dist_cell_lists *dlists,
       }
     }
   }
-  if ((m = cell_gr_coord.x-k) >= 0) { /* left layer */
-    for (o = min_o+1; o < max_o; o++) {
-      for (n = min_n+1; n <= max_n; n++) {
-        cell_idx = m+n*grid_sz.x+o*cell_stride_z;
-        if (!EC_BITMAP_TEST_BIT(fic_empty_cell,cell_idx)) {
-          cell_list[cll++] = cell_idx;
-        }
-      }
-    }
-  }
-  if ((m = cell_gr_coord.x+k) < grid_sz.x) { /* right layer */
-    for (o = min_o+1; o < max_o; o++) {
-      for (n = min_n+1; n <= max_n; n++) {
+  min_o = max(cell_gr_coord.z-k+1,0);
+  max_o = min(cell_gr_coord.z+k-1,grid_sz.z-1);
+  if ((n = cell_gr_coord.y-k) >= 0) { /* back layer */
+    for (o = min_o; o <= max_o; o++) {
+      for (m = min_m; m <= max_m; m++) {
         cell_idx = m+n*grid_sz.x+o*cell_stride_z;
         if (!EC_BITMAP_TEST_BIT(fic_empty_cell,cell_idx)) {
           cell_list[cll++] = cell_idx;
@@ -394,18 +384,30 @@ static void get_cells_at_distance(struct dist_cell_lists *dlists,
     }
   }
   if ((n = cell_gr_coord.y+k) < grid_sz.y) { /* front layer */
-    for (o = min_o+1; o < max_o; o++) {
+    for (o = min_o; o <= max_o; o++) {
       for (m = min_m; m <= max_m; m++) {
         cell_idx = m+n*grid_sz.x+o*cell_stride_z;
         if (!EC_BITMAP_TEST_BIT(fic_empty_cell,cell_idx)) {
           cell_list[cll++] = cell_idx;
         }
-        }
+      }
     }
   }
-  if ((o = cell_gr_coord.z+k) < grid_sz.z) { /* top layer */
-    for (n = min_n; n <= max_n; n++) {
-      for (m = min_m; m <= max_m; m++) {
+  min_n = max(cell_gr_coord.y-k+1,0);
+  max_n = min(cell_gr_coord.y+k-1,grid_sz.y-1);
+  if ((m = cell_gr_coord.x-k) >= 0) { /* left layer */
+    for (o = min_o; o <= max_o; o++) {
+      for (n = min_n; n <= max_n; n++) {
+        cell_idx = m+n*grid_sz.x+o*cell_stride_z;
+        if (!EC_BITMAP_TEST_BIT(fic_empty_cell,cell_idx)) {
+          cell_list[cll++] = cell_idx;
+        }
+      }
+    }
+  }
+  if ((m = cell_gr_coord.x+k) < grid_sz.x) { /* right layer */
+    for (o = min_o; o <= max_o; o++) {
+      for (n = min_n; n <= max_n; n++) {
         cell_idx = m+n*grid_sz.x+o*cell_stride_z;
         if (!EC_BITMAP_TEST_BIT(fic_empty_cell,cell_idx)) {
           cell_list[cll++] = cell_idx;
