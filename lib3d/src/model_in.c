@@ -1,4 +1,4 @@
-/* $Id: model_in.c,v 1.23 2002/04/22 06:17:03 aspert Exp $ */
+/* $Id: model_in.c,v 1.24 2002/04/22 06:18:11 aspert Exp $ */
 
 
 /*
@@ -1800,7 +1800,7 @@ static int read_smf_tmesh(struct model **tmesh_ref, struct file_data *data) {
 #ifdef DEBUG
       printf("[read_smf_tmesh] %d %d %d\n", f0, f1, f2);
 #endif
-      /* Do not forget that SMF vertex indices start at 1 !! */
+
       tmesh->faces[nfaces].f0 = f0;
       tmesh->faces[nfaces].f1 = f1;
       tmesh->faces[nfaces++].f2 = f2;
@@ -1843,6 +1843,8 @@ static int read_smf_tmesh(struct model **tmesh_ref, struct file_data *data) {
     tmesh->bBox[1] = bbmax;
     tmesh->num_vert = nvtcs;
     tmesh->num_faces = nfaces;
+    /* The indices sometimes start at 0 and sometimes at 1. Handle
+     * these two cases. */
     if (min_vidx == 1) {
       for (i=0; i<nfaces; i++) {
 	tmesh->faces[i].f0--;
