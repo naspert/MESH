@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.21 2001/08/09 11:31:56 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.22 2001/08/09 11:48:56 dsanta Exp $ */
 
 #include <compute_error.h>
 
@@ -706,8 +706,11 @@ static struct t_in_cell_list *triangles_in_cells(const struct cell_list *cl,
  * the counters are increased). */
 static double dist_pt_surf(vertex p, const struct triangle_list *tl,
                            const struct t_in_cell_list *fic,
+#ifdef DO_DIST_PT_SURF_STATS
+                           struct dist_pt_surf_stats *stats,
+#endif
                            struct size3d grid_sz, double cell_sz,
-                           vertex bbox_min, struct dist_pt_surf_stats *stats)
+                           vertex bbox_min)
 {
   vertex p_rel;         /* coordinates of p relative to bbox_min */
   struct size3d grid_coord; /* coordinates of cell in which p is */
@@ -944,7 +947,9 @@ void dist_surf_surf(const model *m1, const model *m2, int n_spt,
   struct size3d grid_sz;      /* number of cells in the X, Y and Z directions */
   struct face_error *fe;      /* The error metrics for each face of m1 */
   int report_step;            /* The step to update the progress report */
+#ifdef DO_DIST_PT_SURF_STATS
   struct dist_pt_surf_stats dps_stats; /* Statistics */
+#endif
 
   /* Initialize */
   memset(&ts,0,sizeof(ts));
@@ -1007,7 +1012,10 @@ void dist_surf_surf(const model *m1, const model *m2, int n_spt,
                     &(m1->vertices[m1->faces[k].f2]),n_spt,&ts);
     for (i=0; i<tse.n_samples_tot; i++) {
       tse.err_lin[i] = dist_pt_surf(ts.sample[i],tl2,fic,
-                                    grid_sz,cell_sz,bbox2_min,&dps_stats);
+#ifdef DO_DIST_PT_SURF_STATS
+                                    &dps_stats,
+#endif
+                                    grid_sz,cell_sz,bbox2_min);
     }
     error_stat_triag(&tse,&fe[k]);
     /* Update overall statistics */
