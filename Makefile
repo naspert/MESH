@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.18 2001/09/11 16:35:56 dsanta Exp $
+# $Id: Makefile,v 1.19 2001/09/12 09:53:47 dsanta Exp $
 
 #
 # If the make variable PROFILE is defined to a non-empty value, profiling
@@ -130,7 +130,7 @@ VIEWER_EXE := $(BINDIR)/viewer
 VIEWER_C_SRCS := $(wildcard *.c)
 VIEWER_CXX_SRCS := $(filter-out moc_%.cpp,$(wildcard *.cpp))
 VIEWER_MOC_SRCS := RawWidget.h ScreenWidget.h InitWidget.h
-LIB3D_C_SRCS = 3dmodel_io.c geomutils.c
+LIB3D_C_SRCS = 3dmodel_io.c normals.c geomutils.c
 
 # Compiler and linker flags
 INCFLAGS = -I$(LIB3DDIR)/include -I.
