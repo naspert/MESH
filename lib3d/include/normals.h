@@ -1,8 +1,17 @@
-/* $Id: normals.h,v 1.12 2002/02/26 13:18:15 aspert Exp $ */
+/* $Id: normals.h,v 1.13 2002/03/01 11:58:58 aspert Exp $ */
 #include <3dmodel.h>
 
 #ifndef _NORMALS_PROTO
 #define _NORMALS_PROTO
+
+typedef int bitmap_t;
+#define BITMAP_T_SZ (sizeof(bitmap_t))
+#define BITMAP_T_BITS (8*BITMAP_T_SZ)
+#define BITMAP_T_MASK (BITMAP_T_BITS-1)
+#define BITMAP_TEST_BIT(bm, i) \
+        ((bm)[(i)/BITMAP_T_BITS] & (1 << ((i)&BITMAP_T_MASK)))
+#define BITMAP_SET_BIT(bm, i) \
+        ((bm)[(i)/BITMAP_T_BITS] |= 1 << ((i)&BITMAP_T_MASK))
 
 struct ring_info {
   int *ord_vert; /* ordered list of vertex */
@@ -26,7 +35,7 @@ struct edge_dual {
 struct dual_graph_info {
   int num_edges_dual;
   struct edge_dual *edges;
-  unsigned char *done;
+  bitmap_t *done;
 };
 
 struct dual_graph_index {

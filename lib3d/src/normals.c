@@ -1,7 +1,8 @@
-/* $Id: normals.c,v 1.25 2002/02/26 13:18:17 aspert Exp $ */
+/* $Id: normals.c,v 1.26 2002/03/01 11:58:58 aspert Exp $ */
 #include <3dmodel.h>
 #include <geomutils.h>
 #include <normals.h>
+
 
 
 void build_star_global(struct model *raw_model, struct ring_info **ring) {
@@ -519,7 +520,8 @@ struct edge_list* find_dual_edges(int cur_face,  int *nfound,
 
   for (i=0; i<dg_index[cur_face].face_info; i++) {
     id = dg_index[cur_face].ring[i];
-    if (!dual_graph->done[id]) { /* if this edge has not been visited */
+    if (!BITMAP_TEST_BIT(dual_graph->done, id)) { 
+/* if this edge has not been visited */
       /* add it to the list */
       if (dual_graph->edges[id].face0 == cur_face) 
 	bot->edge = dual_graph->edges[id];
@@ -531,7 +533,7 @@ struct edge_list* find_dual_edges(int cur_face,  int *nfound,
       bot->next = (struct edge_list*)malloc(sizeof(struct edge_list));
       bot = bot->next;
       bot->next = NULL;
-      dual_graph->done[id] = 1;
+      BITMAP_SET_BIT(dual_graph->done, id);
       (*nfound)++;
     }
 
@@ -567,8 +569,8 @@ struct face_tree** bfs_build_spanning_tree(struct model *raw_model,
 
 
   ne_dual = build_edge_list(raw_model, dual_graph, curv, &dg_idx);
-  dual_graph->done = (unsigned char*)calloc(dual_graph->num_edges_dual, 
-					    sizeof(unsigned char));
+  dual_graph->done = (bitmap_t*)calloc(
+    (dual_graph->num_edges_dual+BITMAP_T_BITS-1)/BITMAP_T_BITS, BITMAP_T_SZ);
   printf("done\n");
   if (ne_dual == -1) {
     printf("No edges in dual graph ??\n");
