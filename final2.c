@@ -1,3 +1,5 @@
+/* $Id */
+
 #include <stdio.h>
 #include <math.h>
 
@@ -288,11 +290,14 @@ double pcd(vertex point,model *raw_model2, double k, cellules *cell,int **list)
 {
 double d,dmin;
 sample *sample1;
-int i,j=0,h=0;
+int i,j=0,h=0,l=0;
 int m,n,o;
 int a,b,c;
-int cellule,area;
+int memoire[2000];
+int cellule,area,state=0;
 vertex bbox0,bbox1;
+
+memoire[0]='\0';
 
 bbox0=raw_model2->BBOX[0];
 bbox1=raw_model2->BBOX[1];
@@ -309,41 +314,76 @@ if(o==10)
   o=9; 
 
 cellule=m+n*10+o*100;
-if(cellule>1000)
-  printf("cellule %d\n",cellule);
-
 /*printf("point dans cellule %d ",cellule);*/
 
- for(a=m-1;a<=m+1;a++){
-   for(b=n-1;b<=n+1;b++){
-     for(c=o-1;c<=o+1;c++){
+/*echantillonnage des faces appartenant a la cellule*/
+/*et calcul de la distance de ce point a cette face */ 
+/* while(list[cellule][j]!='\0'){
+   sample1=echantillon(raw_model2->vertices[raw_model2->faces[area].f0],raw_model2->vertices[raw_model2->faces[area].f1],raw_model2->vertices[raw_model2->faces[area].f2],k);
+   for(i=0;i<sample1->nbsamples;i++) {
+
+     d=dist(point,sample1->sample[i]);
+	     
+     if (h==0){
+       dmin=d;
+     }
+     else if(d<dmin)
+       dmin=d;
+   }
+   free(sample1->sample);
+ }
+*/
+
+
+ /*on echantillonne les faces qui se trouvent dans les cellules adjacentes*/
+ for(a=m-2;a<=m+2;a++){
+   for(b=n-2;b<=n+2;b++){
+     for(c=o-2;c<=o+2;c++){
+
        cellule=a+b*10+c*100;
        if(cellule>=0 && cellule<1000){
          j=0;
 	 while(list[cellule][j]!='\0'){
-	   area=list[cellule][j];
-   
-	   sample1=echantillon(raw_model2->vertices[raw_model2->faces[area].f0],raw_model2->vertices[raw_model2->faces[area].f1],raw_model2->vertices[raw_model2->faces[area].f2],k);
-
-	   for(i=0;i<sample1->nbsamples;i++) {
-
-	     d=dist(point,sample1->sample[i]);
-	     
-	     if (h==0){
-	       dmin=d;
+           state=0;
+           for(l=0;l<=h;l++){
+	     if(list[cellule][j]==memoire[l]){
+	       state=1;
+	       break;
 	     }
-	     else if(d<dmin)
-	       dmin=d;
 	   }
-	   free(sample1->sample);
-	   j++; 
-           h++;
+	   if(state==0){
+	     memoire[h]=list[cellule][j];
+	     h++;
+	   }
+	   j++;
 	 }
        }
      }
    }
  }
- /* printf("nb face test: %d;dmin: %lf\n",h,dmin);*/    
+
+ /* for(l=0;l<h;l++){
+printf("%d ",memoire[l]);
+}
+printf("\n");
+ */
+ for(l=0;l<h;l++){
+
+   sample1=echantillon(raw_model2->vertices[raw_model2->faces[memoire[l]].f0],raw_model2->vertices[raw_model2->faces[memoire[l]].f1],raw_model2->vertices[raw_model2->faces[memoire[l]].f2],k);
+   for(i=0;i<sample1->nbsamples;i++) {
+
+     d=dist(point,sample1->sample[i]);
+
+     if (l==0){
+       dmin=d;
+     }
+     else if(d<dmin)
+       dmin=d;
+   }
+   free(sample1->sample);
+ }
+
+ /*printf("nb face test: %d;dmin: %lf\n",h,dmin);*/    
  /*printf("%lf ",dmin);*/
 return(dmin);  
 }
@@ -399,12 +439,12 @@ list=cublist(cell,raw_model2);
 
 diag=dist(raw_model1->BBOX[0],raw_model1->BBOX[1]);
 diag2=dist(raw_model2->BBOX[0],raw_model2->BBOX[1]);
-printf("%d",raw_model1->nbfaces);
+
 printf("diagBBOX: %lf\n",diag);
 printf("diagBBOX2: %lf\n",diag2);
  
- for(i=0;i<raw_model1->nbfaces;i++) {
-   printf("coccccc");  
+
+ for(i=0;i<raw_model1->nbfaces;i++) {  
    sample2=echantillon(raw_model1->vertices[raw_model1->faces[i].f0],raw_model1->vertices[raw_model1->faces[i].f1],raw_model1->vertices[raw_model1->faces[i].f2],samplethin);
  
    for(j=0;j<sample2->nbsamples;j++){
@@ -417,7 +457,6 @@ printf("diagBBOX2: %lf\n",diag2);
    free(sample2->sample);
    free(sample2);
 }
-
 }
 
 
