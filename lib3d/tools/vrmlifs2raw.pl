@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# $Id: vrmlifs2raw.pl,v 1.1 2001/05/07 09:27:22 dsanta Exp $
+# $Id: vrmlifs2raw.pl,v 1.2 2002/01/18 18:02:36 dsanta Exp $
 
 #
 # Converts an IndexedFaceSet from a VRML file to a raw mesh
@@ -13,6 +13,9 @@
 # CVS log:
 #
 # $Log: vrmlifs2raw.pl,v $
+# Revision 1.2  2002/01/18 18:02:36  dsanta
+# - Added support for files with multiple IndexedFaceSet nodes.
+#
 # Revision 1.1  2001/05/07 09:27:22  dsanta
 # Initial revision. Working.
 #
@@ -78,10 +81,18 @@ sub read_Coordinate {
 
 # Reads the coordIndex field of an IndexedFaceSet node and stores them
 # in the @faces global variable. The -1 face terminating index is also stored.
+# If defined $vtx_off is added to each vertex index.
 sub read_coordIndex {
   my @indices;
   my $l;
+  my $off;
+  my $start;
+  my $i;
 
+  # Get vertex offset indices
+  $off = defined($vtx_off) ? $vtx_off : 0;
+  $start = $#faces+1;
+  # Look for start of field
   while (defined ($line) && $line !~ /\[/) { # look for "["
     ($line =~ /^\s*$/) || die "corrupted data in coordIndex field\n";
     next_line();
@@ -108,6 +119,14 @@ sub read_coordIndex {
   if ($faces[$#faces] ne "-1") { # last -1 is not mandatory
     push @faces, "-1";
   }
+  # Add vertex index offset
+  if ($off != 0) {
+    for ($i = $start; $i <= $#faces; $i++) {
+      if ($faces[$i] ne "-1") {
+	$faces[$i] += $off;
+      }
+    }
+  }
 }
 
 #
@@ -120,7 +139,8 @@ if ($#ARGV == 0) {
 }
 else {
   print STDERR "Converts an IndexedFaceSet in a VRML file to a raw mesh\n",
-  "usage: $0 <VRML file>\n";
+    "Multiple IndexedFaceSet nodes are appended one after the other\n",
+      "usage: $0 <VRML file>\n";
   exit 1;
 }
 
@@ -128,37 +148,49 @@ else {
 $header = <IN> || die "Empty file\n";
 $header =~ /^\#VRML +V2\.0 +utf8/ || die "Input file is not VRML 2";
 
-# Look for IndexedFaceSet
+# Look for IndexedFaceSet fields
+$n_ifs = 0;
 next_line();
-while (defined($line) &&
-       $line !~ /(^|\s)IndexedFaceSet(\s|$\)/ ) { # IndexedFaceSet starts here
-  next_line();
-}
-defined ($line) || die "No IndexedFaceSet in input file";
-$line =~ s/^.*IndexedFaceSet//; # erase data already read
-
-# Look for Coordinate or coordIndex
-while (defined($line) && ($#vtcs == -1 || $#faces == -1)) {
-  if ($line =~ /(^|\s)Coordinate(\s|$\)/) {
-    $line =~ s/^.*Coordinate//; # erase data already read
-    if ($#vtcs == -1 ) {
-      read_Coordinate();
-    } else {
-      die "Two Coordinate nodes before a coordIndex one\n";
-    }
+while (defined($line)) {
+  # Look for start of next IndexedFaceSet
+  while (defined($line) &&
+	 $line !~ /(^|\s)IndexedFaceSet(\s|$\)/ ) { # IndexedFaceSet starts here
+    next_line();
   }
-  if ($line =~ /(^|\s)coordIndex(\s|$\)/) {
-    $line =~ s/^.*coordIndex//; # erase data already read
-    if ($#faces == -1) {
-      read_coordIndex();
-    } else {
-      die "Two coordIndex nodes before a Coordinate one\n";
+  defined($line) || last; # Reached EOF
+  $line =~ s/^.*IndexedFaceSet//; # erase data already read
+  $n_ifs++;
+
+  # Look for Coordinate or coordIndex in this IFS
+  $n_vtcs = $#vtcs+1;
+  $n_faces = $#faces+1;
+  $vtx_off = $n_vtcs/3;
+  while (defined($line) && ($#vtcs == $n_vtcs-1 || $#faces == $n_faces-1)) {
+    if ($line =~ /(^|\s)Coordinate(\s|$\)/) {
+      $line =~ s/^.*Coordinate//; # erase data already read
+      if ($#vtcs == $n_vtcs-1 ) {
+	read_Coordinate();
+      } else {
+	die "Two Coordinate nodes before a coordIndex one\n";
+      }
     }
+    if ($line =~ /(^|\s)coordIndex(\s|$\)/) {
+      $line =~ s/^.*coordIndex//; # erase data already read
+      if ($#faces == $n_faces-1) {
+	read_coordIndex();
+      } else {
+	die "Two coordIndex nodes before a Coordinate one\n";
+      }
+    }
+    next_line();
   }
-  next_line();
 }
 
-# Check number of vertices and faces
+# Check number of ifs, vertices and faces
+if ($n_ifs == 0) {
+  die "No IndexedFaceSet in input file";
+}
+
 if (($#vtcs+1)%3 != 0) {
   die "Number of vertex coordinates is not multiple of 3!\n";
 }
