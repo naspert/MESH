@@ -318,7 +318,7 @@ static char *meshIcon[] = {
 "................................................................................................................................................................",
 "................................................................................................................................................................"
 };
-/* $Id: meshIcon.xpm,v 1.5 2002/03/15 16:04:02 aspert Exp $ */
+/* $Id: meshIcon.xpm,v 1.6 2002/08/09 15:28:39 aspert Exp $ */
 
 
 /*
@@ -356,7 +356,7 @@ static char *meshIcon[] = {
  *
  *  Reference :
  *   "MESH : Measuring Errors between Surfaces using the Hausdorff distance"
- *   Submitted to ICME 2002, available on http://mesh.epfl.ch
+ *   Accepted for publication, ICME 2002, available on http://mesh.epfl.ch
  *
  */
 

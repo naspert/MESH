@@ -1,4 +1,4 @@
-/* $Id: colormap.c,v 1.6 2002/06/06 11:56:45 aspert Exp $ */
+/* $Id: colormap.c,v 1.7 2002/08/09 15:26:41 aspert Exp $ */
 
 
 /*
@@ -36,9 +36,11 @@
  *
  *  Reference :
  *   "MESH : Measuring Errors between Surfaces using the Hausdorff distance"
- *   Submitted to ICME 2002, available on http://mesh.epfl.ch
+ *   Accepted for publication, ICME 2002, available on http://mesh.epfl.ch
  *
  */
+
+
 
 #include <colormap.h>
 #include <stdlib.h>

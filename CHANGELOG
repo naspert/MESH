@@ -1,3 +1,6 @@
+* Chnages from v1.5 to v1.6 :
+	- Updated the paper status (no longer 'submitted to' but 'accepted')
+
 * Changes from v1.4 to v1.5 :
 	- Added the possibility to display the error in grayscale (useful
 	  for making screenshots that *have* to be in grayscale...)

@@ -1,4 +1,4 @@
-/* $Id: compute_error.h,v 1.28 2002/04/18 17:27:57 dsanta Exp $ */
+/* $Id: compute_error.h,v 1.29 2002/08/09 15:26:42 aspert Exp $ */
 
 
 /*
@@ -36,9 +36,11 @@
  *
  *  Reference :
  *   "MESH : Measuring Errors between Surfaces using the Hausdorff distance"
- *   Submitted to ICME 2002, available on http://mesh.epfl.ch
+ *   Accepted for publication, ICME 2002, available on http://mesh.epfl.ch
  *
  */
+
+
 
 
 #ifndef _COMPUTE_ERROR_PROTO

@@ -1,4 +1,4 @@
-/* $Id: model_in.c,v 1.29 2002/06/11 15:41:36 aspert Exp $ */
+/* $Id: model_in.c,v 1.30 2002/08/09 15:26:45 aspert Exp $ */
 
 
 /*
@@ -36,9 +36,11 @@
  *
  *  Reference :
  *   "MESH : Measuring Errors between Surfaces using the Hausdorff distance"
- *   Submitted to ICME 2002, available on http://mesh.epfl.ch
+ *   Accepted for publication, ICME 2002, available on http://mesh.epfl.ch
  *
  */
+
+
 
 /*
  * Functions to read 3D model data from files

@@ -1,4 +1,4 @@
-/* $Id: mesh_run.c,v 1.22 2002/05/01 09:13:09 aspert Exp $ */
+/* $Id: mesh_run.c,v 1.23 2002/08/09 15:26:42 aspert Exp $ */
 
 
 /*
@@ -36,9 +36,11 @@
  *
  *  Reference :
  *   "MESH : Measuring Errors between Surfaces using the Hausdorff distance"
- *   Submitted to ICME 2002, available on http://mesh.epfl.ch
+ *   Accepted for publication, ICME 2002, available on http://mesh.epfl.ch
  *
  */
+
+
 
 #include <time.h>
 #include <string.h>

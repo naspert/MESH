@@ -1,4 +1,4 @@
-/* $Id: TextWidget.h,v 1.7 2002/03/15 16:32:09 aspert Exp $ */
+/* $Id: TextWidget.h,v 1.8 2002/08/09 15:26:41 aspert Exp $ */
 
 
 /*
@@ -36,9 +36,11 @@
  *
  *  Reference :
  *   "MESH : Measuring Errors between Surfaces using the Hausdorff distance"
- *   Submitted to ICME 2002, available on http://mesh.epfl.ch
+ *   Accepted for publication, ICME 2002, available on http://mesh.epfl.ch
  *
  */
+
+
 
 #include <qpushbutton.h>
 #include <qtextview.h>

@@ -1,4 +1,4 @@
-/* $Id: model_analysis.h,v 1.11 2002/03/29 22:12:55 dsanta Exp $ */
+/* $Id: model_analysis.h,v 1.12 2002/08/09 15:26:43 aspert Exp $ */
 
 
 /*
@@ -36,9 +36,11 @@
  *
  *  Reference :
  *   "MESH : Measuring Errors between Surfaces using the Hausdorff distance"
- *   Submitted to ICME 2002, available on http://mesh.epfl.ch
+ *   Accepted for publication, ICME 2002, available on http://mesh.epfl.ch
  *
  */
+
+
 
 #ifndef _MODEL_ANALYSIS_PROTO
 #define _MODEL_ANALYSIS_PROTO

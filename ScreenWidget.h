@@ -1,4 +1,4 @@
-/* $Id: ScreenWidget.h,v 1.25 2002/04/24 12:49:23 aspert Exp $ */
+/* $Id: ScreenWidget.h,v 1.26 2002/08/09 15:26:40 aspert Exp $ */
 
 
 /*
@@ -36,9 +36,11 @@
  *
  *  Reference :
  *   "MESH : Measuring Errors between Surfaces using the Hausdorff distance"
- *   Submitted to ICME 2002, available on http://mesh.epfl.ch
+ *   Accepted for publication, ICME 2002, available on http://mesh.epfl.ch
  *
  */
+
+
 
 #ifndef SCREENWIDGET_H
 #define SCREENWIDGET_H
