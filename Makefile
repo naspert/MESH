@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.44 2002/04/11 11:36:24 aspert Exp $
+# $Id: Makefile,v 1.45 2002/04/18 17:59:54 dsanta Exp $
 
 
 
@@ -101,9 +101,16 @@ endif
 # Auxiliary executables
 MOC = $(QTDIR)/bin/moc
 
-# Autodetect GCC and/or ICC
+# Autodetect PGCC (Portland Group compiler)
+CC_IS_PGCC := $(findstring pgcc,$(shell $(CC) -V 2>&1))
+
+# Autodetect GCC
+ifneq ($(CC_IS_PGCC),pgcc)
 CC_IS_GCC := $(findstring gcc,$(shell $(CC) -v 2>&1))
+endif
 CXX_IS_GCC := $(findstring gcc,$(shell $(CXX) -v 2>&1))
+
+# Autodetect ICC
 CC_IS_ICC := $(findstring Intel,$(shell $(CC) -V 2>&1))
 
 # Autodetect MipsPro compilers
@@ -114,15 +121,14 @@ CXX_IS_MP := $(findstring MIPSpro,$(shell $(CXX) -version 2>&1))
 CC_IS_WS := $(findstring WorkShop,$(shell $(CC) -V 2>&1))
 CXX_IS_WS := $(findstring WorkShop,$(shell $(CXX) -V 2>&1))
 
-
 # Extra compiler flags (optimization, profiling, debug, etc.)
 ifeq ($(CC_IS_WS)-$(OS),WorkShop-SunOS)
-XTRA_CFLAGS = -xO2 -Xc # equivalent to '-O2 -ansi' with gcc
+XTRA_CFLAGS = -xO2 # equivalent to '-O2'
 XTRA_CXXFLAGS = -xO2
 DEPFLAG = -xM 
 else
-XTRA_CFLAGS = -O2 -ansi
-XTRA_CXXFLAGS = -O2 -ansi
+XTRA_CFLAGS = -O2
+XTRA_CXXFLAGS = -O2
 DEPFLAG = -M
 endif
 XTRA_CPPFLAGS = -DNDEBUG
@@ -131,43 +137,65 @@ XTRA_LDFLAGS =
 
 # Derive compiler specific flags
 ifeq ($(CC_IS_GCC)-$(OS)-$(ARCH),gcc-Linux-i686)
-XTRA_CFLAGS += -march=i686 -fno-math-errno
+XTRA_CFLAGS += -march=i686 -malign-double
+endif
+ifeq ($(CXX_IS_GCC)-$(OS)-$(ARCH),gcc-Linux-i686)
+XTRA_CXXFLAGS += -malign-double
 endif
 ifeq ($(CC_IS_GCC),gcc)
 C_PROF_OPT = -pg
-XTRA_CFLAGS += -g -pipe
+XTRA_CFLAGS += -ansi -g -pipe
 WARN_CFLAGS = -pedantic -Wall -W -Winline -Wmissing-prototypes \
         -Wstrict-prototypes -Wnested-externs -Wshadow -Waggregate-return
 # Following options might produce incorrect behaviour if code
 # is modified (only ANSI C aliasing allowed, and no math error checking)
-XTRA_CFLAGS += -fstrict-aliasing 
+XTRA_CFLAGS += -fstrict-aliasing -fno-math-errno
 endif
 ifeq ($(CC_IS_ICC),Intel)
 C_PROF_OPT = -p
-XTRA_CFLAGS += -g -tpp6 -ip
+XTRA_CFLAGS += -ansi -g -tpp7 -ip
 endif
 ifeq ($(CC_IS_ICC)-$(OS)-$(ARCH),Intel-Linux-i686)
-XTRA_CFLAGS += -xiM
+# Target processor: i: Pentium Pro/II, M: MMX, K: streaming SIMD - SSE,
+# W: Pentium IV (W implies iMK and K implies iM, but M does not imply i)
+XTRA_CFLAGS += -xW
+endif
+ifeq ($(CC_IS_PGCC)-$(OS),pgcc-Linux)
+#XTRA_CFLAGS += -Mnodalign
+XTRA_CFLAGS += -Mvect -Munroll -Mcache_align -Mvect=smallvect:3 \
+	-Mnoframe -Mnoreentrant
+# PGCC does not obey the __inline flag, so force inlining
+XTRA_CFLAGS += -Minline=dist_sqr_pt_cell -Minline=size:50,levels=3
+# Enable vectorized floating-point (requires Pentium III/IV or AthlonXP)
+XTRA_CFLAGS += -Mvect=sse
+# Enable prefetch (requires Pentium III/IV, Athlon or AthlonXP)
+XTRA_CFLAGS += -Mvect=prefetch
+# Specify target processor: p6 (Pentium Pro/II/III), p7 (Pentium IV), athlon
+# (Athlon) or athlonxp (Athlon XP/MP)
+XTRA_CFLAGS += -tp p7
+# Need these so that g++ can link PGCC compiled objects
+XTRA_LDFLAGS += -L$(PGI)/linux86/lib
+XTRA_LDLIBS += -lpgc
 endif
 ifeq ($(CC_IS_MP)-$(OS),MIPSpro-IRIX)
 C_PROF_OPT = -fbgen
-XTRA_CFLAGS += -IPA -g3
+XTRA_CFLAGS += -ansi -IPA -g3
 XTRA_LDFLAGS += -IPA
 endif
 ifeq ($(CC_IS_WS)-$(OS),WorkShop-SunOS)
 C_PROF_OPT = -xpg 
-XTRA_CFLAGS = -g -xlibmil -xCC
+XTRA_CFLAGS = -Xc -g -xlibmil -xCC # -Xc equivalent to -ansi in other compilers
 endif
 
 # C++ compiler options
 ifeq ($(CXX_IS_GCC),gcc)
 CXX_PROF_OPT = -pg
-XTRA_CXXFLAGS += -g -pipe
+XTRA_CXXFLAGS += -ansi -g -pipe
 WARN_CXXFLAGS = -pedantic -Wall -W -Wmissing-prototypes
 endif
 ifeq ($(CXX_IS_MP)-$(OS),MIPSpro-IRIX)
 CXX_PROF_OPT = -fbgen
-XTRA_CXXFLAGS += -g3
+XTRA_CXXFLAGS += -ansi -g3
 endif
 ifeq ($(CXX_IS_WS)-$(OS),WorkShop-SunOS)
 CXX_PROF_OPT = -xpg
@@ -279,7 +307,7 @@ clean_dist:
 	-rm -rf $(DISTDIR)/*
 
 clean-c:
-	-rm $(LIB3D_OBJS) $(addprefix $(OBJDIR)/, $(MESH_C_SRCS:.c=.o))
+	-rm -f $(LIB3D_OBJS) $(addprefix $(OBJDIR)/, $(MESH_C_SRCS:.c=.o))
 
 # Executable
 $(MESH_EXE): $(MESH_OBJS) $(LIB3D_SLIB)
