@@ -1,4 +1,4 @@
-/* $Id: subdiv_loop.c,v 1.5 2002/11/06 07:58:41 aspert Exp $ */
+/* $Id: subdiv_loop.c,v 1.6 2003/03/04 16:39:26 aspert Exp $ */
 #include <3dmodel.h>
 #include <normals.h>
 #include <geomutils.h>
@@ -92,6 +92,8 @@ void update_vertices_loop(const struct model *or_model,
   vertex_t tmp;
 
   for (i=0; i<or_model->num_vert; i++) {
+    if (rings[i].type != 0 && rings[i].type != 1)
+      continue;
     n = rings[i].size;
     if (rings[i].type == 0) {
       if (n == 3)
