@@ -1,4 +1,4 @@
-/* $Id: subdiv.c,v 1.10 2001/10/16 15:31:05 aspert Exp $ */
+/* $Id: subdiv.c,v 1.11 2001/10/18 16:22:18 aspert Exp $ */
 #include <3dutils.h>
 #include <subdiv_methods.h>
 #include <assert.h>
@@ -94,7 +94,8 @@ struct model* subdiv(struct model *raw_model,
 
 
 
-  printf("%d edges found in model \n", nedges);
+  printf("%d new vertices computed \n", nedges);
+  printf("subdiv_model->num_vert = %d\n", nedges+raw_model->num_vert);
 
   subdiv_model = (struct model*)malloc(sizeof(struct model));
   subdiv_model = memset(subdiv_model, 0, sizeof(struct model));
@@ -200,7 +201,10 @@ struct model* subdiv(struct model *raw_model,
 	break;
       }
     }
-  
+#ifdef __BUTTERFLY_CREASE_DEBUG
+    if (ufound_bm != 7)
+      fprintf(stderr, "ufound_bm = %d\n", ufound_bm);
+#endif
     switch(ufound_bm) {
     case 7:
       subdiv_model->faces[face_idx].f0 = v0;
@@ -395,7 +399,8 @@ int main(int argc, char **argv) {
 			 update_vertices_loop_crease);
       break;
     case SUBDIV_BUTTERFLY:
-      sub_model = subdiv(or_model, compute_midpoint_butterfly, NULL, NULL);
+      sub_model = subdiv(or_model, compute_midpoint_butterfly, 
+			 compute_midpoint_butterfly_crease, NULL);
       break;
     default:
       fprintf(stderr, "ERROR : Invalid subdivision method found = %d\n", 
