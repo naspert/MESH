@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.30 2002/02/26 10:39:17 dsanta Exp $
+# $Id: Makefile,v 1.31 2002/02/26 10:45:35 dsanta Exp $
 
 #
 # If the make variable PROFILE is defined to a non-empty value, profiling
@@ -200,11 +200,14 @@ default: all
 
 all: dirs $(MESH_EXE)
 
-clean: clean_moc
+clean: clean_moc clean_dist
 	-rm -f *.d $(OBJDIR)/*.o $(OBJDIR)/*.il $(BINDIR)/* $(LIBDIR)/*
 
 clean_moc:
 	-rm -f moc_*.cpp
+
+clean_dist:
+	-rm -rf $(DISTDIR)/*
 
 clean-c:
 	-rm $(LIB3D_OBJS) $(addprefix $(OBJDIR)/, $(MESH_C_SRCS:.c=.o))
