@@ -1,4 +1,4 @@
-/* $Id: final2.c,v 1.7 2001/04/06 11:09:04 jacquet Exp $ */
+/* $Id: final2.c,v 1.8 2001/04/06 14:44:48 jacquet Exp $ */
 
 #include <stdio.h>
 #include <math.h>
@@ -190,14 +190,14 @@ sample* echantillon(vertex a, vertex b, vertex c,double k)
   }
   for (i=0;i<=1;i+=k) {
     for (j=0;j<=1;j+=k) {
-      if (i+j<=1) {
+      if (i+j<1.000001) {
 	if(h>0)
 	  sample1->sample=(vertex*)realloc(sample1->sample,(h+1)*sizeof(vertex));
         sample1->sample[h].x=a.x+i*l1.x+j*l2.x;
         sample1->sample[h].y=a.y+i*l1.y+j*l2.y;
         sample1->sample[h].z=a.z+i*l1.z+j*l2.z;
         h++;
-      }      
+	}
     }
   }
   sample1->nbsamples=h;
@@ -292,28 +292,25 @@ int** cublist(cellules *cell,model *raw_model)
 {
 
 int **tab,i,j,k;
-int mem[1000][1];
+int mem[1000][1]={0};
 
 tab=(int **)malloc(1000*sizeof(int*));
-
- for(i=0;i<1000;i++){
-   tab[i]=(int *)malloc(sizeof(int));
-   /*tab[i][0]=-1;*/
-   mem[i][0]=0;
- }
-
 
  for(j=0;j<raw_model->nbfaces;j++){
    for(k=0;k<cell[j].nbcube;k++){
      i=cell[j].cube[k];
-     if(mem[i][0]>0)
-       tab[i]=(int *)realloc(tab[i],(mem[i][0]+1)*sizeof(int));
+     if(mem[i][0]==0)
+       tab[i]=NULL;
+     tab[i]=(int *)realloc(tab[i],(mem[i][0]+1)*sizeof(int));
      tab[i][mem[i][0]]=j;
      mem[i][0]++;
    }
  }
 
  for(i=0;i<1000;i++){
+   if(mem[i][0]==0)
+     tab[i]=NULL;
+   tab[i]=(int *)realloc(tab[i],(mem[i][0]+1)*sizeof(int));
    tab[i][mem[i][0]]=-1;
  }
 
@@ -332,11 +329,65 @@ return(tab);
 }
 
 /*****************************************************************************/
+/* on repertorie pour chaque cellule les faces qui intersectent les cellules */
+/*                    adjacentes                                             */
+/*****************************************************************************/
+
+int** repface(int **cublist)
+{
+int **repertory;
+int h,i,j,k;
+int m,n,o;
+int a,b,c;
+int state,cellule2;
+
+repertory=(int **)malloc(1000*sizeof(int*));
+
+ for(i=0;i<1000;i++){
+   h=0;
+   repertory[i]=NULL;
+   o=i/100;
+   n=(i-o*100)/10;
+   m=i-o*100-n*10;
+   for(a=m-2;a<=m+2;a++){
+     for(b=n-2;b<=n+2;b++){
+       for(c=o-2;c<=o+2;c++){
+	 cellule2=c*100+b*10+a;
+	 if(cellule2>=0 && cellule2<1000){
+	   j=0;
+	   while(cublist[cellule2][j]!=-1){
+	     state=0;
+	     for(k=0;k<h;k++){
+	       if(repertory[i][k]==cublist[cellule2][j]){
+		 state=1;
+		 break;
+	       }
+	     }
+	     if(state==0){
+	       repertory[i]=(int *)realloc(repertory[i],(h+1)*sizeof(int));
+	       repertory[i][h]=cublist[cellule2][j];
+	     h++;
+	     }
+	     j++;
+	   }
+	 }
+       }
+     }
+   }
+   repertory[i]=(int *)realloc(repertory[i],(h+1)*sizeof(int));
+   repertory[i][h]=-1;
+ }
+
+
+return(repertory);
+}
+
+/*****************************************************************************/
 /*                fonction qui calcule la plus courte distance d'un          */
 /*                         a une surface                                     */
 /*****************************************************************************/
 
-double pcd(vertex point,model *raw_model2, double k,int **list)
+double pcd(vertex point,model *raw_model2, double k,int **memoire)
 {
 double d,dmin;
 int m,n,o,i=0,j,cellule,mem;
@@ -358,14 +409,15 @@ if(o==10)
   o=9; 
 cellule=m+n*10+o*100;
 
- while(list[cellule][i]!=-1){
-   mem=list[cellule][i];
+
+ while(memoire[cellule][i]!=-1){
+   mem=memoire[cellule][i];
 
    sample1=echantillon(raw_model2->vertices[raw_model2->faces[mem].f0],
 		       raw_model2->vertices[raw_model2->faces[mem].f1],
 		       raw_model2->vertices[raw_model2->faces[mem].f2],
 		       k);
-   }
+   
    for(j=0;j<sample1->nbsamples;j++) {
      
      d=dist(point,sample1->sample[j]);
@@ -383,6 +435,7 @@ cellule=m+n*10+o*100;
    i++;
    }
 
+
  /*printf("nb face test: %d;dmin: %lf\n",h,dmin);*/    
 /*printf("%lf\n ",dmin);*/
 return(dmin);  
@@ -398,8 +451,8 @@ model* raw_model2;
 cellules *cell;
 double samplethin,diag,diag2,dcourant,dmax=0,superdmax=0;
 int **list,i,j;
+int **memoire;
 vertex bbox0,bbox1;
-
 
 
  if (argc!=4) {
@@ -439,12 +492,14 @@ printf("%lf %lf %lf\n",bbox1.x,bbox1.y,bbox1.z);
 cell=liste(raw_model2);
 
 list=cublist(cell,raw_model2);
-for(i=0;i<raw_model1->nbfaces;i++){
-  if(cell[i].cube != NULL) 
-    free(cell[i].cube);
+ for(i=0;i<raw_model1->nbfaces;i++){
+   if(cell[i].cube != NULL) 
+     free(cell[i].cube);
  }
  if(cell != NULL) 
    free(cell);
+
+memoire=repface(list);
 
 diag=dist(raw_model1->BBOX[0],raw_model1->BBOX[1]);
 diag2=dist(raw_model2->BBOX[0],raw_model2->BBOX[1]);
@@ -458,7 +513,7 @@ printf("diagBBOX2: %lf\n",diag2);
 		       raw_model1->vertices[raw_model1->faces[i].f2],
 		       samplethin); 
    for(j=0;j<sample2->nbsamples;j++){
-     dcourant=pcd(sample2->sample[j],raw_model2,samplethin,list);
+     dcourant=pcd(sample2->sample[j],raw_model2,samplethin,memoire);
      if(dcourant>dmax)
        dmax=dcourant;
    }
