@@ -1,4 +1,4 @@
-/* $Id: 3dmodel_io.c,v 1.1 2001/03/12 14:50:32 aspert Exp $ */
+/* $Id: 3dmodel_io.c,v 1.2 2001/03/13 10:04:38 aspert Exp $ */
 #include <3dmodel.h>
 
 
@@ -170,15 +170,26 @@ void write_raw_model(model *raw_model, char *filename) {
   FILE *pf;
   int i;
   char *rootname;
-  char *delim;
   char *finalname;
-  
+  char *tmp;
+  int root_length;
+
   if (raw_model->builtin_normals == 0 && raw_model->normals != NULL) {
-    delim = (char*)malloc(2*sizeof(char));
-    delim[0] = '.';
-    delim[1] = '\n';
-    rootname = strtok(filename, delim);
-    free(delim);
+
+    tmp = strrchr(filename, '.'); /* find last occurence of '.' */
+
+    if (tmp == NULL) /* filename does not have an extension */
+	rootname = filename;
+    else {
+      if (*(tmp+1) == '/') /* filename does not have an extension /
+	rootname = filename;
+      else {
+	root_length = tmp - filename; /* number of chars before extension */
+	rootname = (char*)malloc((root_length+1)*sizeof(char));
+	strncpy(rootname, filename, root_length*sizeof(char));
+	rootname[root_length] = '\0'; /* strncpy does not add it */
+      }
+    }
     finalname = (char*)malloc((strlen(rootname)+7)*sizeof(char));
     sprintf(finalname, "%s_n.raw", rootname);
   } else if (raw_model->normals == NULL)
