@@ -1,4 +1,4 @@
-/* $Id: rawview.c,v 1.21 2002/09/12 11:55:41 aspert Exp $ */
+/* $Id: rawview.c,v 1.22 2002/09/12 12:04:45 aspert Exp $ */
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -28,7 +28,8 @@ static struct display_lists_indices dl_idx;
 
 
 
-
+static void gfx_init(void);
+static void display(void);
 
 /* ************************************************************ */
 /* Here is the callback function when mouse buttons are pressed */
@@ -260,17 +261,18 @@ static void sp_key_pressed(int key, int x, int y) {
     fprintf(stderr, "\n***********************\n");
     fprintf(stderr, "* Rawview v3.0 - Help *\n");
     fprintf(stderr, "***********************\n\n");
-    fprintf(stderr, "F1 :\tDisplays this help\n");
-    fprintf(stderr, "F2 :\tToggles lighted/wireframe mode\n");
-    fprintf(stderr, "F3 :\tInvert normals (if any)\n");
-    fprintf(stderr, "F4 :\tDraw vertex normals (if any)\n");
-    fprintf(stderr, "F5 :\tSave model (incl. normals)\n");
-    fprintf(stderr, "F6 :\tGrab the frame to a PPM file (grabxxx.ppm)\n");
-    fprintf(stderr, "F7 :\tToggle triangle/point mode\n");
-    fprintf(stderr, "F8 :\tDraw vertices' labels (be careful !)\n");
-    fprintf(stderr, "F9 :\tDraw spanning tree (if any)\n");
-    fprintf(stderr, "F10:\tRender in a PostScript file (uses 'gl2ps')\n");
-    fprintf(stderr, "F11:\tToggle backface culling\n\n\n");
+    fprintf(stderr, "F1       :\tDisplays this help\n");
+    fprintf(stderr, "F2       :\tToggles lighted/wireframe mode\n");
+    fprintf(stderr, "F3       :\tInvert normals (if any)\n");
+    fprintf(stderr, "F4       :\tDraw vertex normals (if any)\n");
+    fprintf(stderr, "F5       :\tSave model (incl. normals)\n");
+    fprintf(stderr, "F6       :\tGrab the frame to a PPM file (grabxxx.ppm)\n");
+    fprintf(stderr, "F7       :\tToggle triangle/point mode\n");
+    fprintf(stderr, "F8       :\tDraw vertices' labels (be careful !)\n");
+    fprintf(stderr, "F9       :\tDraw spanning tree (if any)\n");
+    fprintf(stderr, "F10      :\tRender in a PostScript file (uses 'gl2ps')\n");
+    fprintf(stderr, "Shift+F10:\tSame as F10 but in negative\n");
+    fprintf(stderr, "F11      :\tToggle backface culling\n\n\n");
     fprintf(stderr, "Send bugs to Nicolas.Aspert@epfl.ch\n\t\t\tHave fun.\n");
     return;
   case GLUT_KEY_F2: /* Toggle Light+filled mode */
