@@ -1,4 +1,4 @@
-/* $Id: 3dmodel_io.c,v 1.11 2001/06/27 09:20:01 aspert Exp $ */
+/* $Id: 3dmodel_io.c,v 1.12 2001/07/02 12:50:03 aspert Exp $ */
 #include <3dmodel.h>
 
 
@@ -215,6 +215,7 @@ model* read_raw_model_frame(char *filename,int frame) {
 }
 
 
+
 void write_raw_model(model *raw_model, char *filename) {
   FILE *pf;
   int i;
@@ -282,3 +283,27 @@ void write_raw_model(model *raw_model, char *filename) {
   fclose(pf);
 }
 
+void write_brep_file(model *raw_model, char *filename, int grid_size_x,
+		     int grid_size_y, int  grid_size_z,
+		     vertex bbox_min, vertex bbox_max) {
+
+  FILE *pf;
+  int i;
+  
+  pf = fopen(filename, "w");
+  if (pf == NULL) {
+    fprintf(stderr, "Unable to open output file %s\n", filename);
+    exit(-1);
+  }
+  fprintf(pf, "%f %f %f %f %f %f\n",bbox_min.x, bbox_min.y, bbox_min.z, 
+	  bbox_max.x, bbox_max.y, bbox_max.z);
+  fprintf(pf, "%d %d %d\n", grid_size_x, grid_size_y, grid_size_z);
+  fprintf(pf, "0\n0\n%d\n%d\n", raw_model->num_vert, raw_model->num_faces);
+  for (i=0; i<raw_model->num_vert; i++)
+    fprintf(pf, "%f %f %f\n", raw_model->vertices[i].x, 
+	    raw_model->vertices[i].y, raw_model->vertices[i].z);
+  for (i=0; i<raw_model->num_faces; i++)
+    fprintf(pf, "%d %d %d\n", raw_model->faces[i].f0, raw_model->faces[i].f1,
+	    raw_model->faces[i].f2);
+  fclose(pf);
+}
