@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.13 2001/08/08 16:25:38 dsanta Exp $
+# $Id: Makefile,v 1.14 2001/08/09 17:41:03 dsanta Exp $
 
 #
 # If the make variable PROFILE is defined, profiling flags are automatically
@@ -13,16 +13,17 @@
 OS := $(shell uname -s)
 ARCH := $(shell uname -m)
 
+# If OS is IRIX64 make it IRIX since it's the same for us
+ifeq ($(OS),IRIX64)
+OS := IRIX
+endif
+
 # Default compiler for C and C++ (CPP is normally the C preprocessor)
 ifeq ($(OS),Linux)
 CC = gcc
 CXX = g++
 endif
 ifeq ($(OS),IRIX)
-CC = cc
-CXX = CC
-endif
-ifeq ($(OS),IRIX64)
 CC = cc
 CXX = CC
 endif
@@ -46,27 +47,29 @@ CC_IS_GCC := $(findstring gcc,$(shell $(CC) -v 2>&1))
 CXX_IS_GCC := $(findstring gcc,$(shell $(CXX) -v 2>&1))
 
 # Extra compiler flags (optimization, profiling, debug, etc.)
-XTRA_CFLAGS = -g -O2 -ansi
-XTRA_CXXFLAGS = -g -O2 -ansi
-XTRA_LDFLAGS = -g
+XTRA_CFLAGS = -O2 -ansi
+XTRA_CXXFLAGS = -O2 -ansi
+XTRA_LDFLAGS =
 
 # Derive compiler specific flags
-ifeq ($(CC_IS_GCC),gcc)
-WARN_CFLAGS = -pedantic -Wall -W -Winline -Wmissing-prototypes \
-	-Wstrict-prototypes -Wnested-externs -Wshadow -Waggregate-return
-WARN_CXXFLAGS = -pedantic -Wall -W -Wmissing-prototypes
-endif
 ifeq ($(CC_IS_GCC)-$(OS)-$(ARCH),gcc-Linux-i686)
 XTRA_CFLAGS += -march=i686
 endif
 ifeq ($(CC_IS_GCC),gcc)
 C_PROF_OPT = -pg
+XTRA_CFLAGS += -g
+WARN_CFLAGS = -pedantic -Wall -W -Winline -Wmissing-prototypes \
+        -Wstrict-prototypes -Wnested-externs -Wshadow -Waggregate-return
 endif
 ifeq ($(CC_IS_GCC)$(OS),IRIX)
 C_PROF_OPT = -fbgen
+XTRA_CFLAGS += -IPA
+XTRA_LDFLAGS += -IPA
 endif
 ifeq ($(CXX_IS_GCC),gcc)
 CXX_PROF_OPT = -pg
+XTRA_CXXFLAGS += -g
+WARN_CXXFLAGS = -pedantic -Wall -W -Wmissing-prototypes
 endif
 ifeq ($(CXX_IS_GCC)$(OS),IRIX)
 CXX_PROF_OPT = -fbgen
