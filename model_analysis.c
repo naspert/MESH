@@ -1,4 +1,4 @@
-/* $Id: model_analysis.c,v 1.18 2002/03/27 10:03:18 dsanta Exp $ */
+/* $Id: model_analysis.c,v 1.19 2002/03/27 13:35:38 dsanta Exp $ */
 
 
 /*
@@ -274,11 +274,10 @@ static int find_face_with_edge(const face_t *mfaces, int *vfaces,
 }
 
 /* Performs local analysis of the faces incident on vertex vidx. The faces of
- * the model are given in the mfaces array. The list of faces incident on each
- * verftex of the model is given by flist. The local topology information is
- * returned in *ltop. In addition it constructs the list of vertices,
- * different from vidx and without repetition, that belong to the faces
- * incident on vidx in vlist[vidx]. */
+ * the model are given in the mfaces array. The list of faces incident on vidx
+ * is given by flist. The local topology information is returned in *ltop. In
+ * addition it constructs the list of vertices, different from vidx and
+ * without repetition, that belong to the faces incident on vidx in *vlist. */
 static void get_vertex_topology(const face_t *mfaces, int vidx,
                                 const struct face_list *flist,
                                 struct topology *ltop,
@@ -299,32 +298,33 @@ static void get_vertex_topology(const face_t *mfaces, int vidx,
   /* Initialize */
   ltop->manifold = 1;
   ltop->closed = 1;
-  vlist[vidx].n_elems = 0;
-  nf = flist[vidx].n_faces;
-  if (nf == 0) return; /* isolated vertex => nothing to be done */
+  vlist->n_elems = 0;
+  nf = flist->n_faces;
+  if (nf == 0) { /* isolated vertex => nothing to be done */
+    vlist->vtcs = NULL;
+    return;
+  }
+  nf_left = nf-1;
+  fidx = flist->face[nf_left];
   vfaces = xa_malloc(sizeof(*vfaces)*nf);
-  memcpy(vfaces,flist[vidx].face,sizeof(*vfaces)*nf);
+  memcpy(vfaces,flist->face,sizeof(*vfaces)*nf_left);
+  vfaces[nf_left] = -1;
   /* do typical size allocation */
   vtx_buf_sz = nf+1;
-  vlist[vidx].vtcs = xa_realloc(vlist[vidx].vtcs,
-                                sizeof(*(vlist->vtcs))*vtx_buf_sz);
+  vlist->vtcs = xa_realloc(vlist->vtcs,sizeof(*(vlist->vtcs))*vtx_buf_sz);
   /* Get first face vertices */
-  fidx = vfaces[0];
   assert(fidx>=0);
-  nf_left = nf-1;
-  vfaces[0] = -1;
   get_ordered_vtcs(&mfaces[fidx],vidx,&vstart,&v2);
   /* Check the other faces in order */
   rev_orient = 0;
-  vstart_was_in_list = 0;
-  /* list empty, so vstart always added */
-  vtx_in_list_or_add(&vlist[vidx],vstart,&vtx_buf_sz);
-  v2_was_in_list = vtx_in_list_or_add(&vlist[vidx],v2,&vtx_buf_sz);
+  vstart_was_in_list = 0; /* list empty, so vstart always added */
+  vtx_in_list_or_add(vlist,vstart,&vtx_buf_sz);
+  v2_was_in_list = vtx_in_list_or_add(vlist,v2,&vtx_buf_sz);
   while (nf_left > 0) { /* process the remaining faces */
     fidx = find_face_with_edge(mfaces,vfaces,nf,vidx,&v2);
     if (fidx >= 0) { /* found an adjacent face */
       nf_left--;
-      v2_was_in_list = vtx_in_list_or_add(&vlist[vidx],v2,&vtx_buf_sz);
+      v2_was_in_list = vtx_in_list_or_add(vlist,v2,&vtx_buf_sz);
       if (v2_was_in_list) {
         if (v2 == vstart) vstart_was_in_list = 1;
         /* v2 appearing more than once is only admissible in a manifold if the
@@ -345,19 +345,18 @@ static void get_vertex_topology(const face_t *mfaces, int vidx,
           ltop->closed = 0;
         }
         /* Restart with first not yet counted triangle (always one) */
-        for (j=0; j<nf; j++) {
+        for (j=nf-2; j>=0; j--) {
           fidx = vfaces[j];
-          if (fidx != -1) break;
+          if (fidx >= 0) break;
         }
         assert(fidx >= 0);
+        vfaces[j] = -1;
+        nf_left--;
         rev_orient = 0; /* restore original orientation */
         /* Get new first face vertices */
         get_ordered_vtcs(&mfaces[fidx],vidx,&vstart,&v2);
-        vfaces[j] = -1;
-        nf_left--;
-        vstart_was_in_list = vtx_in_list_or_add(&vlist[vidx],
-                                                vstart,&vtx_buf_sz);
-        v2_was_in_list = vtx_in_list_or_add(&vlist[vidx],v2,&vtx_buf_sz);
+        vstart_was_in_list = vtx_in_list_or_add(vlist,vstart,&vtx_buf_sz);
+        v2_was_in_list = vtx_in_list_or_add(vlist,v2,&vtx_buf_sz);
       } else {
         /* we reverse scanning orientation and continue from the other side */
         int tmpi;
@@ -674,7 +673,8 @@ static char * model_topology(int n_vtcs, const face_t *mfaces,
     assert(visited_vtcs[cur.vidx] == 0);
     visited_vtcs[cur.vidx] = 1;
     n_visited_vertices++;
-    get_vertex_topology(mfaces,cur.vidx,flist,&vtx_top,vlist);
+    get_vertex_topology(mfaces,cur.vidx,&flist[cur.vidx],
+                        &vtx_top,&vlist[cur.vidx]);
     minfo->manifold = minfo->manifold && vtx_top.manifold;
     minfo->closed = minfo->closed && vtx_top.closed;
     manifold_vtcs[cur.vidx] = minfo->manifold;
@@ -690,7 +690,8 @@ static char * model_topology(int n_vtcs, const face_t *mfaces,
           /* found connected and not yet visited vertex => continue from new */
           visited_vtcs[next_vidx] = 1;
           n_visited_vertices++;
-          get_vertex_topology(mfaces,next_vidx,flist,&vtx_top,vlist);
+          get_vertex_topology(mfaces,next_vidx,&flist[next_vidx],
+                              &vtx_top,&vlist[next_vidx]);
           minfo->manifold = minfo->manifold && vtx_top.manifold;
           minfo->closed = minfo->closed && vtx_top.closed;
           manifold_vtcs[next_vidx] = minfo->manifold;
