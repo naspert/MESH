@@ -1,4 +1,4 @@
-/* $Id: ScreenWidget.cpp,v 1.35 2002/02/25 15:14:17 aspert Exp $ */
+/* $Id: ScreenWidget.cpp,v 1.36 2002/02/25 15:35:28 aspert Exp $ */
 #include <ScreenWidget.h>
 
 #include <qhbox.h>
@@ -19,6 +19,7 @@
 
 ScreenWidget::ScreenWidget(struct model_error *model1,
                            struct model_error *model2,
+                           int do_texture,
                            QWidget *parent, 
                            const char *name ):QWidget(parent,name) {
   QAction *fileQuitAction;
@@ -139,6 +140,8 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   dispInfoGrp->insert(verrBut, RawWidget::VERTEX_ERROR);
   dispInfoGrp->insert(fmerrBut, RawWidget::MEAN_FACE_ERROR);
   dispInfoGrp->insert(serrBut, RawWidget::SAMPLE_ERROR);
+  if (!do_texture) 
+    serrBut->setDisabled(TRUE);
   connect(dispInfoGrp, SIGNAL(clicked(int)), 
           glModel1, SLOT(setErrorMode(int)));
   connect(dispInfoGrp, SIGNAL(clicked(int)), this, SLOT(disableSlider(int)));

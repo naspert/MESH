@@ -1,4 +1,4 @@
-/* $Id: ScreenWidget.h,v 1.18 2002/02/25 15:14:17 aspert Exp $ */
+/* $Id: ScreenWidget.h,v 1.19 2002/02/25 15:35:28 aspert Exp $ */
 #ifndef SCREENWIDGET_H
 #define SCREENWIDGET_H
 
@@ -12,7 +12,7 @@ class ScreenWidget : public QWidget {
   Q_OBJECT
 public:
   ScreenWidget(struct model_error *model1, struct model_error *model2,
-               QWidget *parent=0, const char *name=0 );
+               int do_texture=0, QWidget *parent=0, const char *name=0);
 
 
 protected slots:

@@ -1,4 +1,4 @@
-/* $Id: mesh_run.h,v 1.7 2002/02/20 23:43:50 dsanta Exp $ */
+/* $Id: mesh_run.h,v 1.8 2002/02/25 15:35:28 aspert Exp $ */
 
 #ifndef _MESH_RUN_PROTO
 #define _MESH_RUN_PROTO
@@ -29,6 +29,8 @@ struct args {
                          * triangle */
   int do_symmetric; /* do symmetric error measure */
   int do_wlog; /* log the output into an external window */
+  int do_texture; /* enables the display of error as a texture mapped
+                   * on the model */
 };
 
 /* Runs the mesh program, given the parsed arguments in *args. The models and

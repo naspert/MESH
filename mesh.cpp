@@ -1,4 +1,4 @@
-/* $Id: mesh.cpp,v 1.20 2002/02/24 20:18:35 dsanta Exp $ */
+/* $Id: mesh.cpp,v 1.21 2002/02/25 15:35:28 aspert Exp $ */
 
 #include <time.h>
 #include <string.h>
@@ -101,6 +101,11 @@ static void print_usage(FILE *out)
   fprintf(out,"       \tis zero in non-GUI mode and two in GUI mode.\n");
   fprintf(out,"  -wlog\tDisplay textual results in a window instead of on\n");
   fprintf(out,"       \tstandard output. Not compatible with the -t option.\n");
+  fprintf(out,"  -tex\tEnables the display of the error by texture mapping\n");
+  fprintf(out,"      \ton the model. WARNING : handle with care. Some\n");
+  fprintf(out,"      \tplatforms will just fail to display this, and using\n");
+  fprintf(out,"      \tthis on big models will crash your computer with a\n");
+  fprintf(out,"      \tswap storm. Not compatible with the -t option.\n");
   fprintf(out,"\n");
 }
 
@@ -150,7 +155,10 @@ static void parse_args(int argc, char **argv, struct args *pargs)
         }
       } else if (strcmp(argv[i], "-wlog") == 0) { /* log into window */
 	pargs->do_wlog = 1;
-      } else { /* unrecognized option */
+      } else if (strcmp(argv[i], "-tex") == 0) { /* enable textures */
+        pargs->do_texture = 1;
+      } 
+      else { /* unrecognized option */
         fprintf(stderr,
                 "ERROR: unknown option in command line, use -h for help\n");
         exit(1);
@@ -170,6 +178,10 @@ static void parse_args(int argc, char **argv, struct args *pargs)
   }
   if (pargs->no_gui && pargs->do_wlog) {
     fprintf(stderr, "ERROR: incompatible options -t and -wlog\n");
+    exit(1);
+  }
+  if (pargs->no_gui && pargs->do_texture) {
+    fprintf(stderr, "ERROR: incompatible options -t and -tex\n");
     exit(1);
   }
   if (pargs->min_sample_freq < 0) {
@@ -255,7 +267,7 @@ int main( int argc, char **argv )
   }
   if (a != NULL) {
     if (pargs.m1_fname != NULL || pargs.m2_fname != NULL) {
-      c = new ScreenWidget(&model1, &model2);
+      c = new ScreenWidget(&model1, &model2, pargs.do_texture);
       a->setMainWidget(c);
       c->show(); 
     }
