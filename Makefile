@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.19 2001/09/12 09:53:47 dsanta Exp $
+# $Id: Makefile,v 1.20 2001/09/12 12:03:41 dsanta Exp $
 
 #
 # If the make variable PROFILE is defined to a non-empty value, profiling
@@ -126,10 +126,10 @@ endif
 endif
 
 # Source files and executable name
-VIEWER_EXE := $(BINDIR)/viewer
-VIEWER_C_SRCS := $(wildcard *.c)
-VIEWER_CXX_SRCS := $(filter-out moc_%.cpp,$(wildcard *.cpp))
-VIEWER_MOC_SRCS := RawWidget.h ScreenWidget.h InitWidget.h
+MESH_EXE := $(BINDIR)/mesh
+MESH_C_SRCS := $(wildcard *.c)
+MESH_CXX_SRCS := $(filter-out moc_%.cpp,$(wildcard *.cpp))
+MESH_MOC_SRCS := RawWidget.h ScreenWidget.h InitWidget.h
 LIB3D_C_SRCS = 3dmodel_io.c normals.c geomutils.c
 
 # Compiler and linker flags
@@ -158,9 +158,9 @@ LDFLAGS = $(XTRA_LDFLAGS)
 LDLIBS += $(XTRA_LDLIBS)
 
 # Automatically derived file names
-MOC_CXX_SRCS = $(addprefix moc_,$(VIEWER_MOC_SRCS:.h=.cpp))
-VIEWER_OBJS = $(addprefix $(OBJDIR)/, $(VIEWER_C_SRCS:.c=.o) \
-	$(VIEWER_CXX_SRCS:.cpp=.o) $(MOC_CXX_SRCS:.cpp=.o))
+MOC_CXX_SRCS = $(addprefix moc_,$(MESH_MOC_SRCS:.h=.cpp))
+MESH_OBJS = $(addprefix $(OBJDIR)/, $(MESH_C_SRCS:.c=.o) \
+	$(MESH_CXX_SRCS:.cpp=.o) $(MOC_CXX_SRCS:.cpp=.o))
 LIB3D_OBJS = $(addprefix $(OBJDIR)/,$(LIB3D_C_SRCS:.c=.o))
 LIB3D_SLIB = $(addprefix $(LIBDIR)/,lib3d.a)
 
@@ -169,15 +169,15 @@ LIB3D_SLIB = $(addprefix $(LIBDIR)/,lib3d.a)
 #
 
 # Main targets
-default: $(VIEWER_EXE)
+default: $(MESH_EXE)
 
-all: dirs $(VIEWER_EXE)
+all: dirs $(MESH_EXE)
 
 clean: 
 	-rm -f *.d $(OBJDIR)/*.o $(BINDIR)/* $(LIBDIR)/*
 
 # Executable
-$(VIEWER_EXE): $(VIEWER_OBJS) $(LIB3D_SLIB)
+$(MESH_EXE): $(MESH_OBJS) $(LIB3D_SLIB)
 	$(CXX) $(LDFLAGS) $^ $(LOADLIBES) $(LDLIBS) -o $@
 
 # LIB3D static library (only what we need of lib3d)
@@ -205,12 +205,12 @@ $(LIB3D_OBJS): $(OBJDIR)/%.o : $(LIB3DDIR)/src/%.c
 #
 
 ifneq ($(findstring clean,$(MAKECMDGOALS)),clean)
-include $(VIEWER_C_SRCS:.c=.d) $(LIB3D_C_SRCS:.c=.d) $(VIEWER_CXX_SRCS:.cpp=.d)
+include $(MESH_C_SRCS:.c=.d) $(LIB3D_C_SRCS:.c=.d) $(MESH_CXX_SRCS:.cpp=.d)
 endif
 # Regexp escaped version of $(OBJDIR)/
 OBJDIRRE := $(shell echo $(OBJDIR)/ | sed 's/\./\\\./g;s/\//\\\//g;')
 
-$(VIEWER_C_SRCS:.c=.d): %.d: %.c
+$(MESH_C_SRCS:.c=.d): %.d: %.c
 	set -e; $(CC) -M $(CPPFLAGS) $< \
 		| sed 's/\($*\)\.o[ :]*/$(OBJDIRRE)\1.o $@ : /g' > $@; \
 		[ -s $@ ] || rm -f $@
@@ -218,7 +218,7 @@ $(LIB3D_C_SRCS:.c=.d): %.d : $(LIB3DDIR)/src/%.c
 	set -e; $(CC) -M $(CPPFLAGS) $< \
 		| sed 's/\($*\)\.o[ :]*/$(OBJDIRRE)\1.o $@ : /g' > $@; \
 		[ -s $@ ] || rm -f $@
-$(VIEWER_CXX_SRCS:.cpp=.d): %.d : %.cpp
+$(MESH_CXX_SRCS:.cpp=.d): %.d : %.cpp
 	set -e; $(CXX) -M $(CPPFLAGS) $(QTINCFLAGS) $(GLINCFLAGS) $< \
 		| sed 's/\($*\)\.o[ :]*/$(OBJDIRRE)\1.o $@ : /g' > $@; \
 		[ -s $@ ] || rm -f $@

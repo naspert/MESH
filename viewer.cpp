@@ -1,4 +1,4 @@
-/* $Id: viewer.cpp,v 1.46 2001/09/11 16:34:36 dsanta Exp $ */
+/* $Id: viewer.cpp,v 1.47 2001/09/12 12:03:41 dsanta Exp $ */
 
 #include <time.h>
 #include <string.h>
@@ -26,9 +26,10 @@ struct args {
 /* Prints usage information to the out stream */
 static void print_usage(FILE *out)
 {
-  fprintf(out,"Calculate and display the distance between two 3D models\n");
+  fprintf(out,"MESH: Measuring Distance between Surfaces with the "
+          "Hausdorff distance\n");
   fprintf(out,"\n");
-  fprintf(out,"usage: viewer [[options] file1 file2]\n");
+  fprintf(out,"usage: mesh [[options] file1 file2]\n");
   fprintf(out,"\n");
   fprintf(out,"The program measures the distance from the 3D model in\n");
   fprintf(out,"file1 to the one in file2. The models must be given as\n");
