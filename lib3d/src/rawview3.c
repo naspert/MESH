@@ -1,4 +1,4 @@
-/* $Id: rawview3.c,v 1.24 2001/10/30 09:26:09 aspert Exp $ */
+/* $Id: rawview3.c,v 1.25 2001/11/12 13:31:31 aspert Exp $ */
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -259,8 +259,8 @@ void rebuild_list(struct model *raw_model) {
 	add3_sc_v(1.0/3.0, &(raw_model->vertices[cur_face2->f0]), 
 		  &(raw_model->vertices[cur_face2->f0]), 
 		  &(raw_model->vertices[cur_face2->f0]), &center2);
-	glVertex3d(center1.x, center1.y, center1.z);
-	glVertex3d(center2.x, center2.y, center2.z);
+	glVertex3f(center1.x, center1.y, center1.z);
+	glVertex3f(center2.x, center2.y, center2.z);
 
       }
       if ((raw_model->tree)[j]->right != NULL) {
@@ -269,8 +269,8 @@ void rebuild_list(struct model *raw_model) {
 	add3_sc_v(1.0/3.0, &(raw_model->vertices[cur_face2->f0]), 
 		  &(raw_model->vertices[cur_face2->f0]), 
 		  &(raw_model->vertices[cur_face2->f0]), &center2);
-	glVertex3d(center1.x, center1.y, center1.z);
-	glVertex3d(center2.x, center2.y, center2.z);
+	glVertex3f(center1.x, center1.y, center1.z);
+	glVertex3f(center2.x, center2.y, center2.z);
 
       }
     }
@@ -288,15 +288,15 @@ void rebuild_list(struct model *raw_model) {
       glBegin(GL_POINTS);
     for (i=0; i<raw_model->num_faces; i++) {
       cur_face = &(raw_model->faces[i]);
-      glVertex3d(raw_model->vertices[cur_face->f0].x,
+      glVertex3f(raw_model->vertices[cur_face->f0].x,
 		 raw_model->vertices[cur_face->f0].y,
 		 raw_model->vertices[cur_face->f0].z); 
 
-      glVertex3d(raw_model->vertices[cur_face->f1].x,
+      glVertex3f(raw_model->vertices[cur_face->f1].x,
 		 raw_model->vertices[cur_face->f1].y,
 		 raw_model->vertices[cur_face->f1].z); 
 
-      glVertex3d(raw_model->vertices[cur_face->f2].x,
+      glVertex3f(raw_model->vertices[cur_face->f2].x,
 		 raw_model->vertices[cur_face->f2].y,
 		 raw_model->vertices[cur_face->f2].z); 
     }
@@ -311,11 +311,11 @@ void rebuild_list(struct model *raw_model) {
 
 
       for (i=0; i<raw_model->num_vert; i++) {
-	glVertex3d(raw_model->vertices[i].x, 
+	glVertex3f(raw_model->vertices[i].x, 
 		   raw_model->vertices[i].y,
 		   raw_model->vertices[i].z);
 
-	glVertex3d(raw_model->vertices[i].x + 
+	glVertex3f(raw_model->vertices[i].x + 
 		   scale_fact*raw_model->normals[i].x,
 		   raw_model->vertices[i].y + 
 		   scale_fact*raw_model->normals[i].y,
@@ -335,22 +335,22 @@ void rebuild_list(struct model *raw_model) {
       glBegin(GL_POINTS);
     for (i=0; i<raw_model->num_faces; i++) {
       cur_face = &(raw_model->faces[i]);
-      glNormal3d(raw_model->normals[cur_face->f0].x,
+      glNormal3f(raw_model->normals[cur_face->f0].x,
 		 raw_model->normals[cur_face->f0].y,
 		 raw_model->normals[cur_face->f0].z);
-      glVertex3d(raw_model->vertices[cur_face->f0].x,
+      glVertex3f(raw_model->vertices[cur_face->f0].x,
 		 raw_model->vertices[cur_face->f0].y,
 		 raw_model->vertices[cur_face->f0].z);
-      glNormal3d(raw_model->normals[cur_face->f1].x,
+      glNormal3f(raw_model->normals[cur_face->f1].x,
 		 raw_model->normals[cur_face->f1].y,
 		 raw_model->normals[cur_face->f1].z); 
-      glVertex3d(raw_model->vertices[cur_face->f1].x,
+      glVertex3f(raw_model->vertices[cur_face->f1].x,
 		 raw_model->vertices[cur_face->f1].y,
 		 raw_model->vertices[cur_face->f1].z);
-      glNormal3d(raw_model->normals[cur_face->f2].x,
+      glNormal3f(raw_model->normals[cur_face->f2].x,
 		 raw_model->normals[cur_face->f2].y,
 		 raw_model->normals[cur_face->f2].z); 
-      glVertex3d(raw_model->vertices[cur_face->f2].x,
+      glVertex3f(raw_model->vertices[cur_face->f2].x,
 		 raw_model->vertices[cur_face->f2].y,
 		 raw_model->vertices[cur_face->f2].z); 
     }
@@ -363,10 +363,10 @@ void rebuild_list(struct model *raw_model) {
       glColor3f(1.0, 0.0, 0.0);
       glBegin(GL_LINES);
       for (i=0; i<raw_model->num_vert; i++) {
-	glVertex3d(raw_model->vertices[i].x, 
+	glVertex3f(raw_model->vertices[i].x, 
 		   raw_model->vertices[i].y,
 		   raw_model->vertices[i].z);
-	glVertex3d(raw_model->vertices[i].x + 
+	glVertex3f(raw_model->vertices[i].x + 
 		   scale_fact*raw_model->normals[i].x,
 		   raw_model->vertices[i].y + 
 		   scale_fact*raw_model->normals[i].y,
@@ -552,7 +552,7 @@ void norm_key_pressed(unsigned char key, int x, int y) {
 /* Callback function for the special keys (arrows, function) */
 /* ********************************************************* */
 void sp_key_pressed(int key, int x, int y) {
-  GLdouble tmp[16];
+
   /* Light specification */
   static const GLfloat amb[] = {0.1, 0.1, 0.1, 1.0};
   static const GLfloat dif[] = {1.0, 1.0, 1.0, 1.0};
@@ -575,12 +575,20 @@ void sp_key_pressed(int key, int x, int y) {
   
   light_mode = glIsEnabled(GL_LIGHTING);
   switch(key) {
-  case GLUT_KEY_F1:/* Print MODELVIEW matrix */
-    glGetDoublev(GL_MODELVIEW_MATRIX, tmp);
-    printf("\n");
-    for (i=0; i<4; i++)
-      printf("%f\t%f\t%f\t%f\n", tmp[4*i], tmp[4*i+1], tmp[4*i+2], 
-	     tmp[4*i+3]); 
+  case GLUT_KEY_F1:/* Print Help */
+    fprintf(stderr, "Rawview 3.0 Help\n\n");
+    fprintf(stderr, "F1:\tDisplays this help\n");
+    fprintf(stderr, "F2:\tToggles lighted/wireframe mode\n");
+    fprintf(stderr, "F3:\tInvert normals (if any)\n");
+    fprintf(stderr, "F4:\tDraw vertex normals (if any)\n");
+    fprintf(stderr, "F5:\tSave model (incl. normals)\n");
+    fprintf(stderr, "F6:\tGrab the frame to a PPM file (grabxxx.ppm)\n");
+    fprintf(stderr, "F7:\tToggle triangle/point mode\n");
+    fprintf(stderr, "F8:\tDraw vertices' labels (be careful !)\n");
+    fprintf(stderr, "F9:\tDraw spanning tree (if any)\n");
+    fprintf(stderr, "F10:\tRender in a PostScript file (uses 'gl2ps')\n");
+    fprintf(stderr, "F11:\tToggle backface culling\n\n\n");
+    fprintf(stderr, "Send bugs to Nicolas.Aspert@epfl.ch\n\t\t\tHave fun.\n");
     break;
   case GLUT_KEY_F2: /* Toggle Light+filled mode */
     if (light_mode == GL_FALSE) {
