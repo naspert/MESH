@@ -272,6 +272,10 @@ InputName=InitWidget
 # End Source File
 # Begin Source File
 
+SOURCE=.\mesh.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\mesh_run.h
 # End Source File
 # Begin Source File

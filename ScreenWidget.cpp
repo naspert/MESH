@@ -1,4 +1,4 @@
-/* $Id: ScreenWidget.cpp,v 1.36 2002/02/25 15:35:28 aspert Exp $ */
+/* $Id: ScreenWidget.cpp,v 1.37 2002/02/26 10:27:48 dsanta Exp $ */
 #include <ScreenWidget.h>
 
 #include <qhbox.h>
@@ -13,9 +13,10 @@
 #include <qvbuttongroup.h>
 #include <qgroupbox.h>
 #include <qslider.h>
+#include <qstring.h>
 #include <RawWidget.h>
 #include <ColorMapWidget.h>
-
+#include <mesh.h>
 
 ScreenWidget::ScreenWidget(struct model_error *model1,
                            struct model_error *model2,
@@ -69,6 +70,7 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   mainBar->insertItem("&Help", helpMenu);
   helpMenu->insertItem("&Key utilities", this, SLOT(aboutKeys()),CTRL+Key_H);
   helpMenu->insertItem("&Bug", this, SLOT(aboutBugs()));
+  helpMenu->insertItem("&About", this, SLOT(aboutMesh()));
 
   // --------------
   // Create the GUI
@@ -282,6 +284,17 @@ void ScreenWidget::disableSlider(int errMode)
   default: /* should never get here */
     return;
   }
+}
+
+void ScreenWidget::aboutMesh()
+{
+  QString msg;
+
+  msg.sprintf("Mesh v %s\n"
+              "Copyright (C) %s\n"
+              "Authors: Nicolas Aspert, Diego Santa Cruz, Davy Jacquet\n",
+              version, copyright);
+  QMessageBox::about(this, "Mesh", msg);
 }
 
 void ScreenWidget::aboutKeys()

@@ -1,4 +1,4 @@
-/* $Id: ScreenWidget.h,v 1.19 2002/02/25 15:35:28 aspert Exp $ */
+/* $Id: ScreenWidget.h,v 1.20 2002/02/26 10:27:48 dsanta Exp $ */
 #ifndef SCREENWIDGET_H
 #define SCREENWIDGET_H
 
@@ -23,6 +23,7 @@ protected slots:
   void disableSlider(int errMode);
   void aboutKeys();
   void aboutBugs();
+  void aboutMesh();
 
 private:
   QGroupBox *qgbSlider;
