@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.77 2002/02/15 12:17:31 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.78 2002/02/19 15:15:49 aspert Exp $ */
 
 #include <compute_error.h>
 
@@ -242,16 +242,16 @@ static void calc_normals_as_oriented_model(struct model *m,
   /* add face normals to vertices, weighted by face area */
   for (k=0, kmax=m->num_faces; k < kmax; k++) {
     vertex_d2f_v(&(tl->triangles[k].normal),&n); /* convert double to float */
-    prod_v((float)tl->triangles[k].s_area,&n,&n);
-    add_v(&n,&(m->normals[m->faces[k].f0]),&(m->normals[m->faces[k].f0]));
-    add_v(&n,&(m->normals[m->faces[k].f1]),&(m->normals[m->faces[k].f1]));
-    add_v(&n,&(m->normals[m->faces[k].f2]),&(m->normals[m->faces[k].f2]));
+    __prod_v(tl->triangles[k].s_area,n,n);
+    __add_v(n,m->normals[m->faces[k].f0],m->normals[m->faces[k].f0]);
+    __add_v(n,m->normals[m->faces[k].f1],m->normals[m->faces[k].f1]);
+    __add_v(n,m->normals[m->faces[k].f2],m->normals[m->faces[k].f2]);
   }
   /* normalize final normals */
   for (k=0, kmax=m->num_vert; k<kmax; k++) {
     /* skip vertices which have no triangles or only degenerated ones */
     if (m->normals[k].x != 0 || m->normals[k].y != 0 || m->normals[k].z != 0) {
-      normalize_v(&(m->normals[k]));
+      __normalize_v(m->normals[k]);
     }
   }
 }
@@ -555,12 +555,12 @@ static void init_triangle(const vertex_t *a, const vertex_t *b,
   vertex_f2d_dv(c,&dv_c);
   /* Get the vertices in the proper ordering (the orientation is not
    * changed). AB should be the longest side. */
-  substract_dv(&dv_b,&dv_a,&ab);
-  substract_dv(&dv_c,&dv_a,&ac);
-  substract_dv(&dv_c,&dv_b,&bc);
-  ab_len_sqr = norm2_dv(&ab);
-  ac_len_sqr = norm2_dv(&ac);
-  bc_len_sqr = norm2_dv(&bc);
+  __substract_v(dv_b,dv_a,ab);
+  __substract_v(dv_c,dv_a,ac);
+  __substract_v(dv_c,dv_b,bc);
+  ab_len_sqr = __norm2_v(ab);
+  ac_len_sqr = __norm2_v(ac);
+  bc_len_sqr = __norm2_v(bc);
   if (ab_len_sqr <= ac_len_sqr) {
     if (ac_len_sqr <= bc_len_sqr) { /* BC longest side => A to C */
       assert(bc_len_sqr >= ac_len_sqr && bc_len_sqr >= ab_len_sqr);
@@ -578,9 +578,9 @@ static void init_triangle(const vertex_t *a, const vertex_t *b,
       t->b = dv_a;
       t->c = dv_b;
       t->a = dv_c;
-      neg_dv(&ac,&(t->ab));
+      __neg_v(ac,t->ab);
       t->ca = bc;
-      neg_dv(&ab,&(t->cb));
+      __neg_v(ab,t->cb);
       t->ab_len_sqr = ac_len_sqr;
       t->ca_len_sqr = bc_len_sqr;
       t->cb_len_sqr = ab_len_sqr;
@@ -603,8 +603,8 @@ static void init_triangle(const vertex_t *a, const vertex_t *b,
       t->b = dv_b;
       t->c = dv_c;
       t->ab = ab;
-      neg_dv(&ac,&(t->ca));
-      neg_dv(&bc,&(t->cb));
+      __neg_v(ac,t->ca);
+      __neg_v(bc,t->cb);
       t->ab_len_sqr = ab_len_sqr;
       t->ca_len_sqr = ac_len_sqr;
       t->cb_len_sqr = bc_len_sqr;
@@ -628,31 +628,31 @@ static void init_triangle(const vertex_t *a, const vertex_t *b,
   t->ca_1_len_sqr = 1/t->ca_len_sqr;
   t->cb_1_len_sqr = 1/t->cb_len_sqr;
   /* Get the triangle normal (normalized) */
-  crossprod_dv(&(t->ca),&(t->ab),&(t->normal));
-  n_len = norm_dv(&(t->normal));
+  __crossprod_dv(t->ca,t->ab,t->normal);
+  n_len = __norm_v(t->normal);
   if (n_len < DBL_MIN*DMARGIN) {
     t->normal.x = 0;
     t->normal.y = 0;
     t->normal.z = 0;
   } else {
-    prod_dv(1/n_len,&(t->normal),&(t->normal));
+    __prod_dv(1/n_len,t->normal,t->normal);
   }
   /* Get planes trough sides */
-  crossprod_dv(&(t->ab),&(t->normal),&(t->nhsab));
-  crossprod_dv(&(t->normal),&(t->cb),&(t->nhsbc));
-  crossprod_dv(&(t->ca),&(t->normal),&(t->nhsca));
+  __crossprod_dv(t->ab,t->normal,t->nhsab);
+  __crossprod_dv(t->normal,t->cb,t->nhsbc);
+  __crossprod_dv(t->ca,t->normal,t->nhsca);
   /* Get constants for plane equations */
-  t->chsab = scalprod_dv(&(t->a),&(t->nhsab));
-  t->chsca = scalprod_dv(&(t->a),&(t->nhsca));
-  t->chsbc = scalprod_dv(&(t->b),&(t->nhsbc));
+  t->chsab = __scalprod_v(t->a,t->nhsab);
+  t->chsca = __scalprod_v(t->a,t->nhsca);
+  t->chsbc = __scalprod_v(t->b,t->nhsbc);
   /* Miscellaneous fields */
   t->obtuse_at_c = (t->ab_len_sqr > t->ca_len_sqr+t->cb_len_sqr);
-  t->a_n = scalprod_dv(&(t->a),&(t->normal));
+  t->a_n = __scalprod_v(t->a,t->normal);
   /* Get surface area */
   if (is_point) {
     t->s_area = 0;
   } else {
-    ca_ab = scalprod_dv(&(t->ca),&(t->ab));
+    ca_ab = __scalprod_v(t->ca,t->ab);
     height_sqr = t->ca_len_sqr-ca_ab*ca_ab*t->ab_1_len_sqr;
     if (height_sqr < 0) height_sqr = 0; /* avoid rounding problems */
     t->s_area = sqrt(t->ab_len_sqr*height_sqr)*0.5;
@@ -694,60 +694,60 @@ static double dist_sqr_pt_triag(const struct triangle_info *t,
   if (scalprod_dv(p,&(t->nhsab)) >= t->chsab) {
     /* P in the exterior side of hsab plane => closest to AB */
     substract_dv(p,&(t->a),&ap);
-    ap_ab = scalprod_dv(&ap,&(t->ab));
+    ap_ab = __scalprod_v(ap,t->ab);
     if(ap_ab > 0) {
       if (ap_ab < t->ab_len_sqr) { /* projection of P on AB is in AB */
-        dmin_sqr = norm2_dv(&ap) - (ap_ab*ap_ab)*t->ab_1_len_sqr;
+        dmin_sqr = __norm2_v(ap) - (ap_ab*ap_ab)*t->ab_1_len_sqr;
         if (dmin_sqr < 0) dmin_sqr = 0; /* correct rounding problems */
         return dmin_sqr;
       } else { /* B is closer */
         return dist2_dv(p,&(t->b));
       }
     } else { /* A is closer */
-      return norm2_dv(&ap);
+      return __norm2_v(ap);
     }
   } else if (scalprod_dv(p,&(t->nhsbc)) >= t->chsbc) {
     /* P in the exterior side of hsbc plane => closest to BC or AC */
     substract_dv(p,&(t->c),&cp);
-    cp_cb = scalprod_dv(&cp,&(t->cb));
+    cp_cb = __scalprod_v(cp,t->cb);
     if(cp_cb > 0) {
       if (cp_cb < t->cb_len_sqr) { /* projection of P on BC is in BC */
-        dmin_sqr = norm2_dv(&cp) - (cp_cb*cp_cb)*t->cb_1_len_sqr;
+        dmin_sqr = __norm2_v(cp) - (cp_cb*cp_cb)*t->cb_1_len_sqr;
         if (dmin_sqr < 0) dmin_sqr = 0; /* correct rounding problems */
         return dmin_sqr;
       } else { /* B is closer */
         return dist2_dv(p,&(t->b));
       }
     } else if (!t->obtuse_at_c) { /* C is closer */
-      return norm2_dv(&cp);
+      return __norm2_v(cp);
     } else { /* AC is closer */
-      cp_ca = scalprod_dv(&cp,&(t->ca));
+      cp_ca = __scalprod_v(cp,t->ca);
       if(cp_ca > 0) {
         if (cp_ca < t->ca_len_sqr) { /* projection of P on AC is in AC */
-          dmin_sqr = norm2_dv(&cp) - (cp_ca*cp_ca)*t->ca_1_len_sqr;
+          dmin_sqr = __norm2_v(cp) - (cp_ca*cp_ca)*t->ca_1_len_sqr;
           if (dmin_sqr < 0) dmin_sqr = 0; /* correct rounding problems */
           return dmin_sqr;
         } else { /* A is closer */
           return dist2_dv(p,&(t->a));
         }
       } else { /* C is closer */
-        return norm2_dv(&cp);
+        return __norm2_v(cp);
       }
     }
   } else if (scalprod_dv(p,&(t->nhsca)) >= t->chsca) {
     /* P in the exterior side of hsca plane => closest to AC */
     substract_dv(p,&(t->c),&cp);
-    cp_ca = scalprod_dv(&cp,&(t->ca));
+    cp_ca = __scalprod_v(cp,t->ca);
     if(cp_ca > 0) {
       if (cp_ca < t->ca_len_sqr) { /* projection of P on AC is in AC */
-        dmin_sqr = norm2_dv(&cp) - (cp_ca*cp_ca)*t->ca_1_len_sqr;
+        dmin_sqr = __norm2_v(cp) - (cp_ca*cp_ca)*t->ca_1_len_sqr;
         if (dmin_sqr < 0) dmin_sqr = 0; /* correct rounding problems */
         return dmin_sqr;
       } else { /* A is closer */
         return dist2_dv(p,&(t->a));
       }
     } else { /* C is closer */
-      return norm2_dv(&cp);
+      return __norm2_v(cp);
     }
   } else { /* P projects into triangle */
     dpp = scalprod_dv(p,&(t->normal))-t->a_n;
@@ -923,8 +923,8 @@ static void sample_triangle(const dvertex_t *a, const dvertex_t *b,
   substract_dv(c,a,&v);
   if (n != 1) { /* normal case */
     a_cache = *a;
-    prod_dv(1/(double)(n-1),&u,&u);
-    prod_dv(1/(double)(n-1),&v,&v);
+    __prod_dv(1/(double)(n-1),u,u);
+    __prod_dv(1/(double)(n-1),v,v);
     /* Sample triangle */
     for (k = 0, i = 0; i < n; i++) {
       for (j = 0, maxj = n-i; j < maxj; j++) {
@@ -1154,7 +1154,7 @@ static double dist_pt_surf(dvertex_t p, const struct triangle_list *tl,
   fic_triag_idx = fic->triag_idx;
 
   /* Get relative coordinates of point */
-  substract_dv(&p,&bbox_min,&p_rel);
+  __substract_v(p,bbox_min,p_rel);
   /* Get the cell coordinates of where point is. Since the bounding box bbox
    * is that of the model 2, the grid coordinates can be out of bounds (in
    * which case we limit them) */

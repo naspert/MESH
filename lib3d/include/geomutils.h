@@ -1,4 +1,4 @@
-/* $Id: geomutils.h,v 1.25 2002/02/19 12:58:55 aspert Exp $ */
+/* $Id: geomutils.h,v 1.26 2002/02/19 15:15:50 aspert Exp $ */
 #include <3dmodel.h>
 
 #ifndef _GEOMUTILS_PROTO_
@@ -494,6 +494,15 @@ extern "C" {
            } while(0)
 #endif
 
+#ifndef __prod_dv
+#define __prod_dv(m, v, vout)                    \
+        do {                                     \
+             (vout).x = ((double)m)*(v).x;       \
+             (vout).y = ((double)m)*(v).y;       \
+             (vout).z = ((double)m)*(v).z;       \
+           } while(0)
+#endif
+
 /* 
  * Adds two vertices 
  * vout = v1 + v2
@@ -554,6 +563,17 @@ extern "C" {
              __res__.y = (v1).z*(v2).x - (v1).x*(v2).z;         \
              __res__.z = (v1).x*(v2).y - (v1).y*(v2).x;         \
              vout = __res__;                                    \
+           } while(0)
+#endif
+
+#ifndef __crossprod_dv
+#define __crossprod_dv(v1, v2, vout)                             \
+        do {                                                     \
+             dvertex_t __res__;                                  \
+             __res__.x = (v1).y*(v2).z - (v1).z*(v2).y;          \
+             __res__.y = (v1).z*(v2).x - (v1).x*(v2).z;          \
+             __res__.z = (v1).x*(v2).y - (v1).y*(v2).x;          \
+             vout = __res__;                                     \
            } while(0)
 #endif
 
