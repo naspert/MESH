@@ -1,11 +1,11 @@
-/* $Id: debug_print.h,v 1.2 2002/11/13 12:53:06 aspert Exp $ */
+/* $Id: debug_print.h,v 1.3 2002/11/13 13:45:03 aspert Exp $ */
 
 #ifndef DEBUG_PRINT_PROTO
 #define DEBUG_PRINT_PROTO
 
 #include <stdio.h>
 
-#if defined(__GNUC__) && (__GNUC__>2 || __GNUC__==2 && __GNUC_MINOR__>=95)
+#if defined(__GNUC__) && (__GNUC__>2 || __GNUC__==2 && __GNUC_MINOR__>=95) 
 
 # define DEBUG_PRINT(format, args...)                           \
 do {                                                            \
@@ -13,7 +13,7 @@ do {                                                            \
   printf(format , ## args );                                    \
 } while(0)
 
-#elif defined(_MSC_VER)
+#elif defined(_MSC_VER) || defined(__STDC__)
 /* Microsoft Visual C++ does not know about __FUNCTION__, nor about
  * varargs macros... */
 /* Of course, if this is in a loop, do not forget the brackets, 'cause
