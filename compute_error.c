@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.63 2001/09/20 15:45:39 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.64 2001/09/26 09:30:25 aspert Exp $ */
 
 #include <compute_error.h>
 
@@ -184,13 +184,6 @@ struct dist_pt_surf_stats {
  *                    Local utility functions                                *
  * --------------------------------------------------------------------------*/
 
-/* Returns, in vout, the negative of vector v. */
-static INLINE void neg_v(const vertex *v, vertex *vout)
-{
-  vout->x = -v->x;
-  vout->y = -v->y;
-  vout->z = -v->z;
-}
 
 /* Reallocates the buffers of tse to store the sample errors for a triangle
  * sampling with n samples in each direction. If tse->err and tse->err_lin is
@@ -1073,7 +1066,7 @@ static struct t_in_cell_list *triangles_in_cells(const struct triangle_list *tl,
  * of the cubic cells is of length cell_sz, and there are
  * (grid_sz.x,grid_sz.y,grid_sz.z) cells in teh X,Y,Z directions. Cell (0,0,0)
  * starts at bbox_min, which is the minimum coordinates of the (axis aligned)
- * bounding box on which the grid is placed. If DO_DIST_PT_SURF_STATS is
+ * bounding box on which the grid is placed. If DO_DIST_T_SURF_STATS is
  * defined at compile time, the statistics stats are updated (no reset to zero
  * occurs, the counters are increased). The list of cells distant of k cells
  * in the X, Y or Z direction, for each cell, is cached in dcl, which must be
