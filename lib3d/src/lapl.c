@@ -1,4 +1,4 @@
-/* $Id: lapl.c,v 1.1 2003/01/09 11:59:58 aspert Exp $ */
+/* $Id: lapl.c,v 1.2 2003/03/26 09:01:16 aspert Exp $ */
 #include <3dmodel.h>
 #include <geomutils.h>
 #include <ring.h>
@@ -11,18 +11,28 @@ int main(int argc, char **argv) {
   vertex_t *new_vert, tmp;
   struct ring_info *ring;
   int i, j, rcode, n_lev=1, lev;
+  int use_binary=0;
 
-  if (argc != 3 && argc != 4) {
-    fprintf(stderr, "Usage: lapl infile outfile [n_lev]\n");
+  if (argc < 3 || argc > 5) {
+    fprintf(stderr, "Usage: lapl [-bin] infile outfile [n_lev]\n");
     exit(-1);
   }
-
-  in_fname = argv[1];
-  out_fname = argv[2];
   
-  if (argc == 4) {
-    i = atoi(argv[3]);
-    n_lev = (i < 1)?1:i;
+  if (strcmp(argv[1],"-bin") == 0) {
+    use_binary=1;
+    in_fname = argv[2];
+    out_fname = argv[3];
+    if (argc == 5) {
+      i = atoi(argv[4]);
+      n_lev = (i < 1)?1:i;
+    }
+  } else {
+    in_fname = argv[1];
+    out_fname = argv[2];
+    if (argc == 4) {
+      i = atoi(argv[3]);
+      n_lev = (i < 1)?1:i;
+    }
   }
 
   rcode = read_fmodel(&raw_model, in_fname, MESH_FF_AUTO, 0);
@@ -55,7 +65,7 @@ int main(int argc, char **argv) {
       free(ring[j].ord_face);
     }
   }
-  write_raw_model(raw_model, out_fname);
+  write_raw_model(raw_model, out_fname, use_binary);
   free(new_vert);
  
   free(ring);

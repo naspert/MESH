@@ -1,4 +1,4 @@
-/* $Id: dirac.c,v 1.8 2003/01/14 11:37:38 aspert Exp $ */
+/* $Id: dirac.c,v 1.9 2003/03/26 09:01:16 aspert Exp $ */
 #include <3dutils.h>
 
 int main(int argc, char **argv) {
@@ -44,7 +44,7 @@ int main(int argc, char **argv) {
   }
   
 
-  write_raw_model(dirac, out_fname);
+  write_raw_model(dirac, out_fname, 0);
 
   __free_raw_model(dirac);
   return 0;

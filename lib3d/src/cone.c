@@ -1,4 +1,4 @@
-/* $Id: cone.c,v 1.5 2002/02/26 14:46:46 aspert Exp $ */
+/* $Id: cone.c,v 1.6 2003/03/26 09:01:16 aspert Exp $ */
 #include <3dutils.h>
 
 int main(int argc, char **argv) {
@@ -45,7 +45,7 @@ int main(int argc, char **argv) {
     cone->faces[fcount++].f2 = 0;
   }
 
-  write_raw_model(cone, out_fname);
+  write_raw_model(cone, out_fname, 0);
 
   __free_raw_model(cone);
   return 0;

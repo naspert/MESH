@@ -1,4 +1,4 @@
-/* $Id: isoca.c,v 1.8 2002/11/05 10:18:55 aspert Exp $ */
+/* $Id: isoca.c,v 1.9 2003/03/26 09:01:16 aspert Exp $ */
 #include <3dutils.h>
 #include <subdiv.h>
 
@@ -24,15 +24,22 @@ int main(int argc, char **argv) {
   char *filename;
   struct model isoca;
   struct model *or_mod, *sub_mod=NULL;
-  int count_faces = 0;
-
-  if (argc != 3) {
-    fprintf(stderr, "isoca filename lev\n");
+  int count_faces=0, use_binary=0;
+  struct subdiv_functions iso_sub = { 0xff, midpoint_sph, NULL, NULL };
+  if (argc != 3 && argc != 4) {
+    fprintf(stderr, "isoca [-bin] filename lev\n");
     exit(-1);
   }
   
-  filename = argv[1];
-  n = atoi(argv[2]);
+  if (argc == 3) {
+    filename = argv[1];
+    n = atoi(argv[2]);
+  } else {
+    if (strcmp(argv[1],"-bin")==0)
+      use_binary = 1;
+    filename = argv[2];
+    n = atoi(argv[3]);
+  }
   
   /* init the isoca structure */
   memset(&isoca, 0, sizeof(struct model));
@@ -118,7 +125,7 @@ int main(int argc, char **argv) {
  
   for (i=0; i<n; i++) {
     printf("Level %d ... ", i+1);fflush(stdout);
-    sub_mod = subdiv(or_mod, midpoint_sph, NULL, NULL);
+    sub_mod = subdiv(or_mod, &iso_sub);
     free(or_mod->faces);
     free(or_mod->vertices);
     or_mod = sub_mod;
@@ -128,7 +135,7 @@ int main(int argc, char **argv) {
   sub_mod->normals = NULL;
   sub_mod->face_normals = NULL;
   sub_mod->tree = NULL;
-  write_raw_model(sub_mod, filename);
+  write_raw_model(sub_mod, filename, use_binary);
 
   __free_raw_model(sub_mod);
   return 0;

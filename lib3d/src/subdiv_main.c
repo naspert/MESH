@@ -1,4 +1,4 @@
-/* $Id: subdiv_main.c,v 1.8 2003/03/24 12:16:39 aspert Exp $ */
+/* $Id: subdiv_main.c,v 1.9 2003/03/26 09:01:17 aspert Exp $ */
 #include <3dutils.h>
 #include <subdiv.h>
 #include <subdiv_methods.h>
@@ -7,46 +7,58 @@
 int main(int argc, char **argv) {
   char *infile, *outfile;
   struct model *or_model, *sub_model=NULL;
-  int lev, nlev=1, rcode;
-  int sub_method=-1;
+  int lev, nlev=1, rcode, nonopt_argc=1;
+  int sub_method=-1, use_binary=0;
   struct subdiv_methods sm;
   
   /* Initialize the subdivision structures */
   INIT_SUBDIV_METHODS(sm);
 
   
-  if (argc != 4 && argc != 5) {
+  if (argc < 4 || argc > 6) {
     fprintf(stderr, 
-	    "Usage: subdiv [-sph, -but, -loop, -ksqrt3]"
+	    "Usage: subdiv [-sph, -but, -loop, -ksqrt3][-bin]"
             " infile outfile n_lev\n");
     exit(1);
   }
-  if (strcmp(argv[1], "-sph") == 0) 
-    sub_method = SUBDIV_SPH;
-  else if (strcmp(argv[1], "-but") == 0) 
-    sub_method = SUBDIV_BUTTERFLY;
-  else if (strcmp(argv[1], "-loop") == 0)
-    sub_method = SUBDIV_LOOP;
-  else if (strcmp(argv[1], "-ksqrt3") == 0)
-    sub_method = SUBDIV_KOB_SQRT3;
-  else {
-    fprintf(stderr, "Invalid subdivision method %s\n", argv[1]);
+  
+  for (nonopt_argc=1; nonopt_argc<=2; nonopt_argc++) {
+#ifdef DEBUG
+    printf("argv[%d] = %s\n", nonopt_argc, argv[nonopt_argc]);
+#endif
+    if (strcmp(argv[nonopt_argc], "-sph") == 0) 
+      sub_method = SUBDIV_SPH;
+    else if (strcmp(argv[nonopt_argc], "-but") == 0) 
+      sub_method = SUBDIV_BUTTERFLY;
+    else if (strcmp(argv[nonopt_argc], "-loop") == 0)
+      sub_method = SUBDIV_LOOP;
+    else if (strcmp(argv[nonopt_argc], "-ksqrt3") == 0)
+      sub_method = SUBDIV_KOB_SQRT3;
+    else if (strcmp(argv[nonopt_argc], "-bin") == 0)
+      use_binary = 1;
+    else
+      break;
+      
+  }
+  if (sub_method == -1) {
+    fprintf(stderr, "Invalid subdivision method\n");
     fprintf(stderr, 
-	    "Usage: subdiv [-sph, -but, -loop, -ksqrt3]"
+	    "Usage: subdiv [-sph, -but, -loop, -ksqrt3][-bin]"
             " infile outfile n_lev\n");
     exit(1);
   }
 
-  infile = argv[2];
-  outfile = argv[3];
+  infile = argv[nonopt_argc];
+  outfile = argv[++nonopt_argc];
 
-  if (argc==5)
-    nlev = atoi(argv[4]);
+  if (argc == nonopt_argc+2)
+    nlev = atoi(argv[++nonopt_argc]);
   
   if (nlev < 1)
     nlev = 1;
 
   rcode = read_fmodel(&or_model, infile, MESH_FF_AUTO, 0);
+
   if (rcode < 0) {
     fprintf(stderr, "Unable to read model - error code %d\n", rcode);
     exit(-1);
@@ -81,7 +93,7 @@ int main(int argc, char **argv) {
     
     or_model = sub_model;
   }
-  write_raw_model(sub_model, outfile);
+  write_raw_model(sub_model, outfile, use_binary);
 
   __free_raw_model(sub_model);
   return 0;

@@ -1,4 +1,4 @@
-/* $Id: torus.c,v 1.6 2002/03/25 11:50:41 aspert Exp $ */
+/* $Id: torus.c,v 1.7 2003/03/26 09:01:17 aspert Exp $ */
 #include <3dmodel.h>
 #include <geomutils.h>
 #include <3dmodel_io.h>
@@ -10,12 +10,12 @@ int main(int argc, char **argv) {
   float theta, phi, dth, dph;
   float r,h;
   double k1, k2;
-  int nh, nr, do_curv=0;
+  int nh, nr, do_curv=0, use_binary=0;
   char *filename;
 
-  if (argc != 6 && argc != 7) {
+  if (argc != 6 && argc != 7 && argc != 8) {
     fprintf(stderr,
-	    "Usage : \n\ttorus [-curv] r h n_points_th n_points_phi"
+	    "Usage : \n\ttorus [-curv,-bin] r h n_points_th n_points_phi"
             " filename\n");
     exit(-1);
   }
@@ -26,9 +26,11 @@ int main(int argc, char **argv) {
     nr = atoi(argv[3]);
     nh = atoi(argv[4]);
     filename = argv[5];
-  } else {
-    if (strcmp(argv[1], "-curv")==0)
+  } else if (argc == 7) {
+    if (strcmp(argv[1], "-curv") == 0)
       do_curv = 1;
+    else if (strcmp(argv[1], "-bin") == 0)
+      use_binary = 1;
     else {
       fprintf(stderr, "Invalid option : %s\n", argv[1]);
       exit(-1);
@@ -38,6 +40,17 @@ int main(int argc, char **argv) {
     nr = atoi(argv[4]);
     nh = atoi(argv[5]);
     filename = argv[6];
+  } else {
+    if (strcmp(argv[1], "-curv")==0 || strcmp(argv[2], "-curv")==0)
+      do_curv = 1;
+    if (strcmp(argv[1], "-bin")==0 || strcmp(argv[2], "-bin")==0)
+      use_binary = 1;
+
+    r = atof(argv[3]);
+    h = atof(argv[4]);
+    nr = atoi(argv[5]);
+    nh = atoi(argv[6]);
+    filename = argv[7];
   }
 
   if (r <= h) {
@@ -121,10 +134,10 @@ int main(int argc, char **argv) {
   torus->faces[k].f2 = 0;
   k++;
 
-  write_raw_model(torus,filename);
-  free(torus->faces);
-  free(torus->vertices);
-  free(torus);
+
+  write_raw_model(torus, filename, use_binary);
+  __free_raw_model(torus);
+
   return 0;
 
 }

@@ -1,4 +1,4 @@
-/* $Id: rawview.c,v 1.37 2003/03/24 13:18:59 aspert Exp $ */
+/* $Id: rawview.c,v 1.38 2003/03/26 09:01:17 aspert Exp $ */
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -441,7 +441,7 @@ static void sp_key_pressed(int key, int x, int y) {
     break;
   case GLUT_KEY_F5: /* Save model... useful for normals */
     verbose_printf(gl_ctx.verbose, "Write model...\n");
-    write_raw_model(gl_ctx.raw_model, gl_ctx.in_filename);
+    write_raw_model(gl_ctx.raw_model, gl_ctx.in_filename, 0);
     return;
   case GLUT_KEY_F6: /* Frame grab */
     frame_grab(&gl_ctx);
@@ -570,7 +570,7 @@ int main(int argc, char **argv) {
 
   int i, rcode=0;
   char *title=NULL;
-  const char s_title[]="Raw Mesh Viewer $Revision: 1.37 $ - ";
+  const char s_title[]="Raw Mesh Viewer $Revision: 1.38 $ - ";
   vertex_t center;
   struct model* raw_model;
 
