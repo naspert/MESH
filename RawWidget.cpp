@@ -1,4 +1,4 @@
-/* $Id: RawWidget.cpp,v 1.16 2001/09/12 14:34:22 dsanta Exp $ */
+/* $Id: RawWidget.cpp,v 1.17 2001/09/12 14:38:57 dsanta Exp $ */
 #include <RawWidget.h>
 #include <qmessagebox.h>
 
@@ -84,7 +84,8 @@ void RawWidget::setLine() {
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     glDraw(); 
   } else {
-    printf("Invalid state value found for GL_POLYGON_MODE: %d\n", line_state);
+    printf("Invalid state value found for GL_POLYGON_MODE: %d %d\n",
+           line_state[0],line_state[1]);
   }
 }
 
