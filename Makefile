@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.1 2001/05/15 11:32:46 jacquet Exp $
+# $Id: Makefile,v 1.2 2001/05/30 12:41:56 jacquet Exp $
 
 CC = gcc
 CPP = g++
@@ -18,7 +18,7 @@ INCLFLAGS = -I$(LIB3DDIR)/include -I.
 QTINCFLAGS = $(INCLFLAGS) -I$(QTDIR)/include
 GLINCLFLAGS = $(INCLFLAGS) -I/usr/X11R6/include
 DEBUGINCFLAGS = -I/home/sun1/aspert/debug
-XTRA_CFLAGS = -g -O2
+XTRA_CFLAGS = -g -O2 -ansi
 
 BASE_CFLAGS = $(INCLFLAGS) $(XTRA_CFLAGS)
 GL_CFLAGS = $(GLINCLFLAGS) $(XTRA_CFLAGS)
@@ -28,8 +28,8 @@ BASE_LIBFLAGS = -L$(LIBDIR)  -lm
 GL_LIBFLAGS = -L$(LIBDIR) -L/usr/X11R6/lib  -lglut -lGLU -lGL -lXmu -lXext -lX11 $(LIB3D_FLAGS) -lm
 
 
-BASE_LDFLAGS = -g -O2 $(BASE_LIBFLAGS)
-GL_LDFLAGS = -g -O2 $(GL_LIBFLAGS)
+BASE_LDFLAGS = -g -O2 -ansi $(BASE_LIBFLAGS)
+GL_LDFLAGS = -g -O2 -ansi $(GL_LIBFLAGS)
 QT_LIBFLAGS = -L$(QTDIR)/lib -lqt
 QTGL_LIBFLAGS = $(QT_LIBFLAGS) -L/usr/X11R6/lib -lGLU -lGL $(LIB3D_FLAGS) -lm
 
