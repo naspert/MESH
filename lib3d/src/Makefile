@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.40 2002/06/04 13:06:39 aspert Exp $
+# $Id: Makefile,v 1.41 2002/06/05 09:29:25 aspert Exp $
 
 
 OS := $(shell uname -s)
@@ -32,7 +32,7 @@ endif #Linux
 
 ifeq ($(OS), IRIX64)
 CC = cc
-XTRA_CFLAGS = -g  #-D__DONT_USE_DISPLAY_LISTS_
+XTRA_CFLAGS = -g 
 STATIC_GLFLAGS =  -lglut -lGLU -lGL -lX11 -lXmu $(BASE_LIBFLAGS)
 ALL_TARGETS = $(TARGETS) rawview subdiv
 endif
