@@ -1,4 +1,4 @@
-/* $Id: subdiv_methods.c,v 1.6 2001/10/30 09:26:16 aspert Exp $ */
+/* $Id: subdiv_methods.c,v 1.7 2002/02/13 10:25:57 aspert Exp $ */
 #include <3dmodel.h>
 #include <geomutils.h>
 #include <subdiv_methods.h>
@@ -52,7 +52,9 @@ void compute_midpoint_sph(struct ring_info *rings, int center, int v1,
 
   /* Compute the new position */
   nr = 0.5*r;
-  if (ph < -M_PI_4) {
+  if (ph <= -M_PI_2 || ph >= M_PI_2)
+    nph = ph;
+  else if (ph < -M_PI_4) {
     g = 0.5*(1.0 + (ph/M_PI_4 + 1.0)*(ph/M_PI_4 + 1.0));
     nph = g*ph;
   } else if (ph > M_PI_4) {
@@ -116,7 +118,9 @@ void compute_midpoint_sph(struct ring_info *rings, int center, int v1,
 #endif
 
   nr = 0.5*r;
-  if (ph < -M_PI_4) {
+  if (ph <= -M_PI_2 || ph >= M_PI_2)
+    nph = ph;
+  else if (ph < -M_PI_4) {
     g = 0.5*(1.0 + (ph/M_PI_4 + 1.0)*(ph/M_PI_4 + 1.0));
     nph = g*ph;
   } else if (ph > M_PI_4) {
@@ -150,7 +154,6 @@ void compute_midpoint_sph(struct ring_info *rings, int center, int v1,
 void compute_midpoint_butterfly(struct ring_info *rings, int center,  int v1, 
 				struct model *raw_model, vertex_t *vout) {
   float *s, *t;
-  float qt=0.0, qs=0.0;
   int j;
   vertex_t p, r;
   int n = rings[center].size;
@@ -180,8 +183,8 @@ void compute_midpoint_butterfly(struct ring_info *rings, int center,  int v1,
     while (ring_op.ord_vert[v2] != center)
       v2++;
     
-    s = (float*)malloc(n*sizeof(float));
-    t = (float*)malloc(m*sizeof(float));
+    s = (float*)calloc(n, sizeof(float));
+    t = (float*)calloc(m, sizeof(float));
 
     /* Compute values of stencil for end-vertex_t */
     if (m > 4) {
@@ -189,19 +192,14 @@ void compute_midpoint_butterfly(struct ring_info *rings, int center,  int v1,
  	t[j] = (0.25 + cos(2*M_PI*j/(float)m) + 
 		0.5*cos(4*M_PI*j/(float)m))/(float)m;
       }
-      qt = 0.75;
       
     } else if (m == 4) {
       t[0] = 0.375;
-      t[1] = 0.0;
       t[2] = -0.125;
-      t[3] = 0.0;
-      qt = 0.75;
     } else if (m == 3) {
       t[0] = 5.0/12.0;
       t[1] = -1.0/12.0;
       t[2] = t[1];
-      qt = 0.75;
     }
 
 
@@ -211,19 +209,15 @@ void compute_midpoint_butterfly(struct ring_info *rings, int center,  int v1,
 	s[j] = (0.25 + cos(2*M_PI*j/(float)n) + 
 		0.5*cos(4*M_PI*j/(float)n))/(float)n;
       }
-      qs = 0.75;
+
       
     } else if (n == 4) {
       s[0] = .375;
-      s[1] = 0.0;
       s[2] = -0.125;
-      s[3] = 0.0;
-      qs = 0.75;
     } else if (n == 3) {
       s[0] = 5.0/12.0;
       s[1] = -1.0/12.0;
       s[2] = s[1];
-      qs = 0.75;
     }
     
     p.x = 0.0;
@@ -249,7 +243,7 @@ void compute_midpoint_butterfly(struct ring_info *rings, int center,  int v1,
 #endif
     }
 
-    add_prod_v(qs, &(raw_model->vertices[center]), &p, &p);
+    add_prod_v(__QS, &(raw_model->vertices[center]), &p, &p);
 
 
     
@@ -258,7 +252,7 @@ void compute_midpoint_butterfly(struct ring_info *rings, int center,  int v1,
       add_prod_v(t[j], &(raw_model->vertices[ring_op.ord_vert[(v2+j)%m]]), 
 		 &r, &r);
 
-    add_prod_v(qt, &(raw_model->vertices[center2]), &r, &r); 
+    add_prod_v(__QT, &(raw_model->vertices[center2]), &r, &r); 
 
 
     prod_v(0.5, &r, &r);
@@ -271,14 +265,7 @@ void compute_midpoint_butterfly(struct ring_info *rings, int center,  int v1,
   }
   else if (n == 6 && m == 6) {/* regular */
     /* apply the 10 point stencil */
-    s = (float*)malloc(6*sizeof(float));
-    s[0] = 0.25 - 2.0*w;
-    s[1] = 0.125 + 2.0*w;
-    s[2] = -s[1];
-    s[3] = 2.0*w;
-    s[4] = s[2];
-    s[5] = s[1];
-    qs = 0.75;
+
 
     while (ring_op.ord_vert[v2] != center)
       v2++;
@@ -293,45 +280,38 @@ void compute_midpoint_butterfly(struct ring_info *rings, int center,  int v1,
 
     /* Apply stencil to 1st vertex_t */
     for (j=0; j<6; j++) 
-      add_prod_v(s[j], &(raw_model->vertices[ring.ord_vert[(v1+j)%6]]), &p, 
-		 &p);
+      add_prod_v(r_sten[j], &(raw_model->vertices[ring.ord_vert[(v1+j)%6]]), 
+                 &p, &p);
 
-    add_prod_v(qs, &(raw_model->vertices[center]), &p, &p);
+    add_prod_v(__QS, &(raw_model->vertices[center]), &p, &p);
 
 
     /* Apply stencil to end vertex_t */
     for (j=0; j<6; j++) 
-      add_prod_v(s[j], &(raw_model->vertices[ring_op.ord_vert[(v2+j)%6]]), &p, 
-		 &p);
+      add_prod_v(r_sten[j], &(raw_model->vertices[ring_op.ord_vert[(v2+j)%6]]),
+                 &p, &p);
 
-    add_prod_v(qs, &(raw_model->vertices[center2]), &p, &p);
+    add_prod_v(__QS, &(raw_model->vertices[center2]), &p, &p);
 
 
     prod_v(0.5, &p, &p);
 
-
-    free(s);
   }
   else if (n!=6 && m==6){ /* only one irreg. vertex_t */
-    s = (float*)malloc(n*sizeof(float));
+    s = (float*)calloc(n, sizeof(float));
     if (n > 4) {
       for (j=0; j<n; j++) {
 	s[j] = (0.25 + cos(2*M_PI*j/(float)n) + 
 		0.5*cos(4*M_PI*j/(float)n))/(float)n;
       }
-      qs = 0.75;
       
     } else if (n == 4) {
       s[0] = .375;
-      s[1] = 0.0;
       s[2] = -0.125;
-      s[3] = 0.0;
-      qs = 0.75;
     } else if (n == 3) {
       s[0] = 5.0/12.0;
       s[1] = -1.0/12.0;
       s[2] = s[1];
-      qs = 0.75;
     }
     
     p.x = 0.0;
@@ -342,11 +322,11 @@ void compute_midpoint_butterfly(struct ring_info *rings, int center,  int v1,
       add_prod_v(s[j], &(raw_model->vertices[ring.ord_vert[(v1+j)%n]]), &p, 
 		 &p);
 
-    add_prod_v(qs, &(raw_model->vertices[center]), &p, &p);
+    add_prod_v(__QS, &(raw_model->vertices[center]), &p, &p);
 
-    free(s);
+
   } else if (n==6 && m!=6) {
-    t = (float*)malloc(m*sizeof(float));
+    t = (float*)calloc(m, sizeof(float));
 
     while (ring_op.ord_vert[v2] != center)
       v2++;
@@ -356,19 +336,15 @@ void compute_midpoint_butterfly(struct ring_info *rings, int center,  int v1,
 	t[j] = (0.25 + cos(2*M_PI*j/(float)m) + 
 		0.5*cos(4*M_PI*j/(float)m))/(float)m;
       }
-      qt = 0.75;
+
       
     } else if (m == 4) {
       t[0] = 0.375;
-      t[1] = 0.0;
       t[2] = -0.125;
-      t[3] = 0.0;
-      qt = 0.75;
     } else if (m == 3) {
       t[0] = 5.0/12.0;
       t[1] = -1.0/12.0;
       t[2] = t[1];
-      qt = 0.75;
     }
     
     p.x = 0.0;
@@ -380,7 +356,7 @@ void compute_midpoint_butterfly(struct ring_info *rings, int center,  int v1,
 		 &p);
 
 
-    add_prod_v(qt, &(raw_model->vertices[center2]), &p, &p);
+    add_prod_v(__QT, &(raw_model->vertices[center2]), &p, &p);
 
     free(t);
   } 

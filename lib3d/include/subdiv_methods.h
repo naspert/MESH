@@ -1,4 +1,4 @@
-/* $Id: subdiv_methods.h,v 1.3 2001/10/18 16:23:40 aspert Exp $ */
+/* $Id: subdiv_methods.h,v 1.4 2002/02/13 10:25:57 aspert Exp $ */
 
 
 #ifndef __SUBDIV_METHODS_PROTO
@@ -16,9 +16,14 @@
 # define SUBDIV_BUTTERFLY_BOUNDARY 0x11
 # define SUBDIV_LOOP_BOUNDARY      0x13
 
-/* This is a parameter for Butterfly subdivision */
-static const double w=-0.0625; 
+/* These are parameters for Butterfly subdivision */
+#define __QT   0.75
+#define __QS   0.75
+#define __2W  -0.125
 
+/* Precomputed regular stencil */
+const static float r_sten[6] = {0.25 - __2W,  0.125 + __2W, -0.125 - __2W, 
+                                __2W, -0.125 - __2W, 0.125 + __2W};
 
 # ifdef __cplusplus
 extern "C" {
