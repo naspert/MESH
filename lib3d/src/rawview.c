@@ -1,4 +1,4 @@
-/* $Id: rawview.c,v 1.29 2002/11/14 16:45:02 aspert Exp $ */
+/* $Id: rawview.c,v 1.30 2003/01/23 14:30:44 aspert Exp $ */
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -351,7 +351,7 @@ static void sp_key_pressed(int key, int x, int y) {
     fprintf(stderr, "F7       :\tToggle triangle/point mode\n");
     fprintf(stderr, "F8       :\tDraw vertices' labels (be careful !)\n");
     fprintf(stderr, "F9       :\tDraw spanning tree (if any)\n");
-    fprintf(stderr, "F10      :\tRender in a PostScript file (uses 'gl2ps')\n");
+    fprintf(stderr, "F10      :\tRender in a EPS file (uses 'gl2ps')\n");
     fprintf(stderr, "Shift+F10:\tSame as F10 but in negative\n");
     fprintf(stderr, "F11      :\tToggle backface culling\n\n\n");
     fprintf(stderr, "Send bugs to Nicolas.Aspert@epfl.ch\n\t\t\tHave fun.\n");
@@ -547,7 +547,7 @@ int main(int argc, char **argv) {
 
   int i, rcode=0;
   char *title;
-  const char s_title[]="Raw Mesh Viewer $Revision: 1.29 $ - ";
+  const char s_title[]="Raw Mesh Viewer $Revision: 1.30 $ - ";
   vertex_t center;
   struct model* raw_model;
 

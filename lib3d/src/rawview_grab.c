@@ -1,4 +1,4 @@
-/* $Id: rawview_grab.c,v 1.2 2002/09/12 11:55:41 aspert Exp $ */
+/* $Id: rawview_grab.c,v 1.3 2003/01/23 14:30:44 aspert Exp $ */
 
 #include <rawview_misc.h>
 
@@ -57,7 +57,7 @@ void ps_grab(struct gl_render_context *gl_ctx,
   char filename[13];
   FILE *ps_file;
 
-  sprintf(filename, "psgrab%03d.ps", gl_ctx->ps_number);
+  sprintf(filename, "psgrab%03d.eps", gl_ctx->ps_number);
   ps_file = fopen(filename, "w");
   if (ps_file == NULL)
     fprintf(stderr, "Unable to open PS outfile %s\n", filename);
@@ -75,8 +75,8 @@ void ps_grab(struct gl_render_context *gl_ctx,
     }
     while (state == GL2PS_OVERFLOW) {
       bufsize += 1024*1024;
-      gl2psBeginPage("PS Grab", "LaTeX", GL2PS_PS, GL2PS_SIMPLE_SORT, 
-		     GL2PS_SIMPLE_LINE_OFFSET, 
+      gl2psBeginPage("EPS Grab", "LaTeX", GL2PS_EPS, GL2PS_SIMPLE_SORT, 
+		     GL2PS_SIMPLE_LINE_OFFSET | GL2PS_NO_PS3_SHADING, 
 		     GL_RGBA, 0, NULL, bufsize, ps_file, 
 		     filename);
     
