@@ -1,4 +1,4 @@
-/* $Id: viewer.cpp,v 1.45 2001/09/10 15:07:43 dsanta Exp $ */
+/* $Id: viewer.cpp,v 1.46 2001/09/11 16:34:36 dsanta Exp $ */
 
 #include <time.h>
 #include <string.h>
@@ -122,19 +122,15 @@ static void parse_args(int argc, char **argv, struct args *pargs)
 int main( int argc, char **argv )
 {
   clock_t start_time;
-  model *raw_model1, *raw_model2;
-  double dmoy,dmoymax=0,dmoymin=DBL_MAX;
-  double dmoyrange;
+  model_error model1,model2;
   struct face_list *vfl;
-  int i,j;
-  double surfacemoy=0;
+  int i;
   QString m1,n1,o1;
   struct face_error *fe = NULL;
   struct face_error *fe_rev = NULL;
   struct dist_surf_surf_stats stats;
   struct dist_surf_surf_stats stats_rev;
   double bbox1_diag,bbox2_diag;
-  double *tmp_error;
   struct args pargs;
   ScreenWidget *c;
   QApplication *a;
@@ -174,19 +170,23 @@ int main( int argc, char **argv )
   }
   
   /* Read models from input files */
-  raw_model1 = read_raw_model(pargs.m1_fname);
-  raw_model2 = read_raw_model(pargs.m2_fname);
+  memset(&model1,0,sizeof(model1));
+  memset(&model2,0,sizeof(model2));
+  model1.mesh = read_raw_model(pargs.m1_fname);
+  model2.mesh = read_raw_model(pargs.m2_fname);
 
   /* Analyze models (we don't need normals for model 1, so we don't request
    * for it to be oriented). */
   start_time = clock();
-  bbox1_diag = dist(raw_model1->bBox[0], raw_model1->bBox[1]);
-  bbox2_diag = dist(raw_model2->bBox[0], raw_model2->bBox[1]);
-  vfl = faces_of_vertex(raw_model1);
-  analyze_model(raw_model1,vfl,&m1info,0);
-  analyze_model(raw_model2,NULL,&m2info,1);
+  bbox1_diag = dist(model1.mesh->bBox[0], model1.mesh->bBox[1]);
+  bbox2_diag = dist(model2.mesh->bBox[0], model2.mesh->bBox[1]);
+  vfl = faces_of_vertex(model1.mesh);
+  analyze_model(model1.mesh,vfl,&m1info,0);
+  model1.info = &m1info;
+  analyze_model(model2.mesh,NULL,&m2info,1);
+  model2.info = &m2info;
   if(pargs.no_gui){
-    free_face_lists(vfl,raw_model1->num_vert);
+    free_face_lists(vfl,model1.mesh->num_vert);
     vfl = NULL;
   }
   /* Adjust sampling step size */
@@ -195,9 +195,9 @@ int main( int argc, char **argv )
   /* Print available model information */
   printf("\n                      Model information\n\n");
   printf("Number of vertices:     \t%11d\t%11d\n",
-         raw_model1->num_vert,raw_model2->num_vert);
+         model1.mesh->num_vert,model2.mesh->num_vert);
   printf("Number of triangles:    \t%11d\t%11d\n",
-         raw_model1->num_faces,raw_model2->num_faces);
+         model1.mesh->num_faces,model2.mesh->num_faces);
   printf("BoundingBox diagonal:   \t%11g\t%11g\n",
          bbox1_diag,bbox2_diag);
   printf("Number of disjoint parts:\t%11d\t%11d\n",
@@ -216,8 +216,8 @@ int main( int argc, char **argv )
   fflush(stdout);
 
   /* Compute the distance from one model to the other */
-  dist_surf_surf(raw_model1,raw_model2,pargs.sampling_step,
-                 &fe,&stats,m2info.oriented&&(!pargs.no_gui),pargs.quiet);
+  dist_surf_surf(model1.mesh,model2.mesh,pargs.sampling_step,
+                 &fe,&stats,!pargs.no_gui,pargs.quiet);
 
   /* Print results */
   printf("Surface area:           \t%11g\t%11g\n",
@@ -238,7 +238,7 @@ int main( int argc, char **argv )
 
   if (pargs.do_symmetric) { /* Invert models and recompute distance */
     printf("       Distance from model 2 to model 1\n\n");
-    dist_surf_surf(raw_model2,raw_model1,pargs.sampling_step,
+    dist_surf_surf(model2.mesh,model1.mesh,pargs.sampling_step,
                    &fe_rev,&stats_rev,0,pargs.quiet);
     free_face_error(fe_rev);
     fe_rev = NULL;
@@ -283,20 +283,20 @@ int main( int argc, char **argv )
            "        \t         \t     of model 1\t"
            "           of model 2\n");
     printf("Samples:\t%9d\t%15.2f\t%21.2f\n",
-           stats.m1_samples,((double)stats.m1_samples)/raw_model1->num_faces,
-           ((double)stats.m1_samples)/raw_model2->num_faces);
+           stats.m1_samples,((double)stats.m1_samples)/model1.mesh->num_faces,
+           ((double)stats.m1_samples)/model2.mesh->num_faces);
   } else {
     printf("                 \t    Total\tAvg. / triangle\t"
            "      Avg. / triangle\n"
            "                 \t         \t     of model 1\t"
            "           of model 2\n");
     printf("Samples (1 to 2):\t%9d\t%15.2f\t%21.2f\n",
-           stats.m1_samples,((double)stats.m1_samples)/raw_model1->num_faces,
-           ((double)stats.m1_samples)/raw_model2->num_faces);
+           stats.m1_samples,((double)stats.m1_samples)/model1.mesh->num_faces,
+           ((double)stats.m1_samples)/model2.mesh->num_faces);
     printf("Samples (2 to 1):\t%9d\t%15.2f\t%21.2f\n",
            stats_rev.m1_samples,
-           ((double)stats_rev.m1_samples)/raw_model1->num_faces,
-           ((double)stats_rev.m1_samples)/raw_model2->num_faces);
+           ((double)stats_rev.m1_samples)/model1.mesh->num_faces,
+           ((double)stats_rev.m1_samples)/model2.mesh->num_faces);
   }
   printf("\n");
   if (!pargs.do_symmetric) {
@@ -322,57 +322,20 @@ int main( int argc, char **argv )
     free_face_error(fe);
     fe = NULL;
   } else {
-   /* on assigne une couleur a chaque vertex qui est proportionnelle */
-   /* a la moyenne de l'erreur sur les faces incidentes */
-   raw_model1->error=(int *)malloc(raw_model1->num_vert*sizeof(int));
-
-   tmp_error = (double*)malloc(raw_model1->num_vert*sizeof(double));
-
-   for(i=0; i<raw_model1->num_vert; i++){
-     if (vfl[i].n_faces > 0) { /* skip degenerate cases */
-       dmoy = 0;
-       surfacemoy = 0;
-       for(j=0; j<vfl[i].n_faces; j++) {
-         dmoy += fe[vfl[i].face[j]].mean_error*fe[vfl[i].face[j]].face_area;
-         surfacemoy += fe[vfl[i].face[j]].face_area;
-       }
-       dmoy /= surfacemoy;
-       tmp_error[i] = dmoy;
-       if(dmoy>dmoymax) dmoymax = dmoy;
-       if(dmoy<dmoymin) dmoymin = dmoy;
-     }
-   }
-
-   /* Free now useless data */
-   free_face_error(fe);
-   fe = NULL;
-
-   dmoyrange = dmoymax-dmoymin;
-   if (dmoyrange < DBL_MIN*1e100) dmoyrange = 1;
-   for(i=0;i<raw_model1->num_vert;i++){
-     if (vfl[i].n_faces > 0) {
-       raw_model1->error[i] = (int)floor(7*(tmp_error[i] - dmoymin)/dmoyrange);
-       if(raw_model1->error[i]<0) raw_model1->error[i]=0;
-       if(raw_model1->error[i]>7) raw_model1->error[i]=7;
-     } else {
-        /* error value should never be read => set an invalid value */
-       raw_model1->error[i] = -1;
-     }
-   }
-   
-   /* Free now useless data */
-   free_face_lists(vfl,raw_model1->num_vert);
-   vfl = NULL;
-   free(tmp_error);
+    /* Get the per vertex error metric */
+    calc_vertex_error(&model1,fe,vfl);
+    /* Free now useless data */
+    free_face_error(fe);
+    fe = NULL;
+    free_face_lists(vfl,model1.mesh->num_vert);
+    vfl = NULL;
 
    
-   c = new ScreenWidget(raw_model1, raw_model2, dmoymin, dmoymax);
-   QObject::connect(c->quitBut, SIGNAL(clicked()), 
-	    a, SLOT(quit()));
-   a->setMainWidget( c );
-   c->show(); 
-   return a->exec();
-
+    c = new ScreenWidget(&model1, &model2);
+    QObject::connect(c->quitBut, SIGNAL(clicked()), 
+                     a, SLOT(quit()));
+    a->setMainWidget( c );
+    c->show(); 
+    return a->exec();
   }
- 
 }
