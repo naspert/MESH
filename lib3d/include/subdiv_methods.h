@@ -1,4 +1,4 @@
-/* $Id: subdiv_methods.h,v 1.14 2002/11/01 10:06:13 aspert Exp $ */
+/* $Id: subdiv_methods.h,v 1.15 2002/11/01 12:50:01 aspert Exp $ */
 #include <3dmodel.h>
 #include <ring.h>
 
@@ -14,7 +14,6 @@
 # define SUBDIV_BUTTERFLY          0x01
 # define SUBDIV_SPH                0x02
 # define SUBDIV_LOOP               0x03
-# define SUBDIV_SPH_ALT            0x0A
 
 
 
