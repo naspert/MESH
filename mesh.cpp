@@ -1,4 +1,4 @@
-/* $Id: mesh.cpp,v 1.54 2002/08/30 07:56:00 aspert Exp $ */
+/* $Id: mesh.cpp,v 1.55 2002/08/30 09:18:42 aspert Exp $ */
 
 
 /*
@@ -37,9 +37,11 @@
  *  Reference :
  *   "MESH : Measuring Errors between Surfaces using the Hausdorff distance"
  *   in Proceedings of IEEE Intl. Conf. on Multimedia and Expo (ICME) 2002, 
- *   pp. 705-708, available on http://mesh.epfl.ch
+ *   vol. I, pp. 705-708, available on http://mesh.epfl.ch
  *
  */
+
+
 
 
 
@@ -62,7 +64,7 @@
 #endif
 
 /* The version string, also parsed by Makefile */
-const char *version = "1.6-rc2";
+const char *version = "1.6";
 
 /* The Copyright */
 const char *copyright = "2001-2002 EPFL";

@@ -1,4 +1,4 @@
-/* $Id: TextWidget.cpp,v 1.13 2002/08/30 07:55:59 aspert Exp $ */
+/* $Id: TextWidget.cpp,v 1.14 2002/08/30 09:18:41 aspert Exp $ */
 
 
 /*
@@ -37,9 +37,11 @@
  *  Reference :
  *   "MESH : Measuring Errors between Surfaces using the Hausdorff distance"
  *   in Proceedings of IEEE Intl. Conf. on Multimedia and Expo (ICME) 2002, 
- *   pp. 705-708, available on http://mesh.epfl.ch
+ *   vol. I, pp. 705-708, available on http://mesh.epfl.ch
  *
  */
+
+
 
 
 
