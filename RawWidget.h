@@ -1,4 +1,4 @@
-/* $Id: RawWidget.h,v 1.18 2001/09/27 08:56:56 aspert Exp $ */
+/* $Id: RawWidget.h,v 1.19 2001/10/01 16:50:38 dsanta Exp $ */
 #ifndef RAWWIDGET_H
 #define RAWWIDGET_H
 
@@ -35,6 +35,7 @@ class RawWidget : public QGLWidget
 public:  
   RawWidget(struct model_error *model, int renderType, QWidget *parent=0, 
 	    const char *name=0); // Constructor
+  ~RawWidget(); // Destructor
 
   
 public slots: 

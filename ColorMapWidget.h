@@ -1,4 +1,4 @@
-/* $Id: ColorMapWidget.h,v 1.6 2001/09/27 08:56:55 aspert Exp $ */
+/* $Id: ColorMapWidget.h,v 1.7 2001/10/01 16:47:35 dsanta Exp $ */
 #ifndef COLORMAPWIDGET_H
 #define COLORMAPWIDGET_H
 
@@ -10,6 +10,7 @@ Q_OBJECT
 public:
   ColorMapWidget(double dmoymin, double dmoymax, 
 		 QWidget *parent=0, const char *name=0 );
+ ~ColorMapWidget();
 
 public slots:
   void rescale(double dmoymin, double dmoymax);

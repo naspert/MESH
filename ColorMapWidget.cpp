@@ -1,4 +1,4 @@
-/* $Id: ColorMapWidget.cpp,v 1.9 2001/09/27 08:56:54 aspert Exp $ */
+/* $Id: ColorMapWidget.cpp,v 1.10 2001/10/01 16:47:49 dsanta Exp $ */
 #include <ColorMapWidget.h>
 
 #include <qpainter.h>
@@ -20,6 +20,9 @@ ColorMapWidget::ColorMapWidget(double dmoymin, double dmoymax,
 
 }
 
+ColorMapWidget::~ColorMapWidget() {
+  free_colormap(colormap);
+}
 
 void ColorMapWidget::rescale(double dmoymin, double dmoymax) {
   dmax = dmoymax;
