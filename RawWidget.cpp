@@ -1,4 +1,4 @@
-/* $Id: RawWidget.cpp,v 1.27 2001/09/27 13:19:13 aspert Exp $ */
+/* $Id: RawWidget.cpp,v 1.28 2001/10/01 16:49:58 dsanta Exp $ */
 
 #include <RawWidget.h>
 #include <qmessagebox.h>
@@ -61,6 +61,11 @@ RawWidget::RawWidget(struct model_error *model, int renderType,
 
 }
 
+RawWidget::~RawWidget() {
+  free_colormap(colormap);
+  makeCurrent();
+  if (glIsList(model_list) == GL_TRUE) glDeleteLists(model_list,1);
+}
 
 void RawWidget::transfer(double dist,double *mvmat) {
 
@@ -253,10 +258,16 @@ void RawWidget::rebuild_list() {
   float drange;
   face_t *cur_face;
 
-  if (glIsList(model_list)==GL_TRUE) 
-    glDeleteLists(model_list, 1);
-
-  model_list=glGenLists(1);
+  // Get a display list, if we don't have one yet.
+  if (model_list == 0) {
+    model_list=glGenLists(1);
+    if (model_list == 0) {
+      QMessageBox::critical(this,"GL error",
+                            "No OpenGL display list available.\n"
+                            "Cannot display model!");
+      return;
+    }
+  }
   
   switch(renderFlag & RW_CAPA_MASK) {
   case RW_LIGHT_TOGGLE:
