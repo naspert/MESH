@@ -1,4 +1,4 @@
-/* $Id: 3dmodel.h,v 1.17 2001/09/27 11:44:42 aspert Exp $ */
+/* $Id: 3dmodel.h,v 1.18 2001/09/27 13:19:15 aspert Exp $ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -99,7 +99,7 @@ struct face_tree {
   struct face_tree *right;
   struct face_tree *parent;
   int v0,v1,v2;
-}face_tree;
+};
 
 
 struct model {
@@ -117,7 +117,7 @@ struct model {
 #ifdef EST_NORMALS
   vertex_t *est_normals;
 #endif
-}model;
+};
 
 
 struct dual_graph_info {

@@ -1,4 +1,4 @@
-/* $Id: model_analysis.c,v 1.4 2001/08/18 15:59:02 dsanta Exp $ */
+/* $Id: model_analysis.c,v 1.5 2001/09/27 13:19:14 aspert Exp $ */
 
 #include <model_analysis.h>
 
@@ -27,7 +27,7 @@ struct vtx_walk_state {
  * --------------------------------------------------------------------------*/
 
 /* Given the face orientation map face_orientation, orients the model m. */
-static void orient_model(model *m, signed char *face_orientation)
+static void orient_model(struct model *m, signed char *face_orientation)
 {
   int i,imax;
   int tmpi;
@@ -50,7 +50,7 @@ static void orient_model(model *m, signed char *face_orientation)
  * orientation of each face to obtain an oriented model is recorder in
  * st->face_orientation. The vertex vidx should already be marked as visited
  * (st->visited_vertex[vidx] != 0). */
-static void analyze_faces_rec(const face *mfaces, int vidx, int pfidx,
+static void analyze_faces_rec(const face_t *mfaces, int vidx, int pfidx,
                               struct vtx_walk_state *st)
 {
   int j;           /* loop counter */
@@ -261,7 +261,7 @@ static void analyze_faces_rec(const face *mfaces, int vidx, int pfidx,
  * st. If vidx is an isolated vertex, it is marked and counted and visited but
  * nothing else is done. The counter for the number of disjoint parts is
  * incremented by one (if the vertex is not isolated). */
-static void walk_vertex_tree(const face *mfaces, int vidx,
+static void walk_vertex_tree(const face_t *mfaces, int vidx,
                              struct vtx_walk_state *st) {
   /* Mark vidx vertex as visited */
   st->visited_vertex[vidx] = 1;
@@ -282,7 +282,7 @@ static void walk_vertex_tree(const face *mfaces, int vidx,
  * --------------------------------------------------------------------------*/
 
 /* See model_analysis.h */
-void analyze_model(model *m, const struct face_list *flist,
+void analyze_model(struct model *m, const struct face_list *flist,
                    struct model_info *info, int do_orient)
 {
   struct vtx_walk_state st; /* walk state storage */
@@ -340,7 +340,7 @@ void analyze_model(model *m, const struct face_list *flist,
 }
 
 /* See model_analysis.h */
-struct face_list *faces_of_vertex(const model *m)
+struct face_list *faces_of_vertex(const struct model *m)
 {
   int j,jmax;           /* indices and loop limits */
   int v0,v1,v2;         /* current triangle's vertex indices */

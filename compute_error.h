@@ -1,4 +1,4 @@
-/* $Id: compute_error.h,v 1.15 2001/09/27 08:56:58 aspert Exp $ */
+/* $Id: compute_error.h,v 1.16 2001/09/27 13:19:14 aspert Exp $ */
 #ifndef _COMPUTE_ERROR_PROTO
 #define _COMPUTE_ERROR_PROTO
 
@@ -41,7 +41,7 @@ struct face_error {
 
 /* Model and error, plus miscellaneous model properties */
 struct model_error {
-  model *mesh;            /* The 3D model mesh */
+  struct model *mesh;            /* The 3D model mesh */
   float *verror;          /* The per vertex error array. NULL if not
                            * present. */
   float min_verror;       /* The minimum vertex error for the model */
@@ -96,7 +96,8 @@ struct dist_surf_surf_stats {
  * fast. If quiet is zero a progress meter is displayed in stdout. The memory
  * allocated at *fe_ptr should be freed by calling
  * free_face_error(*fe_ptr). */
-void dist_surf_surf(const model *m1, model *m2, double sampling_step,
+void dist_surf_surf(const struct model *m1, struct model *m2, 
+		    double sampling_step,
                     struct face_error *fe_ptr[],
                     struct dist_surf_surf_stats *stats, int calc_normals,
                     int quiet);

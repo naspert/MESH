@@ -1,4 +1,4 @@
-/* $Id: InitWidget.cpp,v 1.6 2001/09/25 13:24:39 dsanta Exp $ */
+/* $Id: InitWidget.cpp,v 1.7 2001/09/27 13:19:13 aspert Exp $ */
 
 #include <InitWidget.h>
 
@@ -38,7 +38,8 @@ InitWidget::InitWidget(struct args defArgs, QWidget *parent, const char *name):
   connect(B2, SIGNAL(clicked()), this, SLOT(loadMesh2()));
   
   /* Sampling step */
-  qledSplStep = new QLineEdit(QString("%1").arg(pargs.sampling_step*100), this);
+  qledSplStep = new QLineEdit(QString("%1").arg(pargs.sampling_step*100), 
+			      this);
   qledSplStep->setValidator(new QDoubleValidator(1e-3,1e10,10,0));
   qlboxSplStep = new QListBox(this);
   qlabSplStep = new QLabel(qlboxSplStep, "Sampling step (%)", this);

@@ -1,4 +1,4 @@
-/* $Id: model_analysis.h,v 1.2 2001/08/18 15:59:26 dsanta Exp $ */
+/* $Id: model_analysis.h,v 1.3 2001/09/27 13:19:15 aspert Exp $ */
 
 #ifndef _MODEL_ANALYSIS_PROTO
 #define _MODEL_ANALYSIS_PROTO
@@ -56,12 +56,12 @@ struct model_info {
  * flist. If NULL a list is locally generated. If do_orient is non-zero and
  * the model is orientable, the model m will be modified so as to be oriented
  * (if the model is not orientable, no modification is done). */
-void analyze_model(model *m, const struct face_list *flist,
+void analyze_model(struct model *m, const struct face_list *flist,
                    struct model_info *info, int do_orient);
 
 /* Returns an array of length m->num_vert with the list of faces incident on
  * each vertex. */
-struct face_list *faces_of_vertex(const model *m);
+struct face_list *faces_of_vertex(const struct model *m);
 
 /* Frees the storage for the array of face lists fl, of length n */
 void free_face_lists(struct face_list *fl, int n);

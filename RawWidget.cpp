@@ -1,4 +1,4 @@
-/* $Id: RawWidget.cpp,v 1.26 2001/09/27 08:56:55 aspert Exp $ */
+/* $Id: RawWidget.cpp,v 1.27 2001/09/27 13:19:13 aspert Exp $ */
 
 #include <RawWidget.h>
 #include <qmessagebox.h>
@@ -13,7 +13,7 @@ RawWidget::RawWidget(struct model_error *model, int renderType,
   :QGLWidget(parent, name) { 
   
   int i;
-  vertex center;
+  vertex_t center;
 
   // Fixed size widget
   setMinimumSize(512, 512);
@@ -251,7 +251,7 @@ void RawWidget::rebuild_list() {
   // Local vars
   int i,cidx;
   float drange;
-  face *cur_face;
+  face_t *cur_face;
 
   if (glIsList(model_list)==GL_TRUE) 
     glDeleteLists(model_list, 1);

@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.64 2001/09/26 09:30:25 aspert Exp $ */
+/* $Id: compute_error.c,v 1.65 2001/09/27 13:19:14 aspert Exp $ */
 
 #include <compute_error.h>
 
@@ -94,7 +94,7 @@ struct t_in_cell_list {
 
 /* A list of samples of a surface in 3D space. */
 struct sample_list {
-  vertex* sample; /* Array of sample 3D coordinates */
+  vertex_t* sample; /* Array of sample 3D coordinates */
   int n_samples;  /* The number of samples in the array */
 };
 
@@ -139,27 +139,27 @@ struct triangle_list {
 /* A triangle and useful associated information. AB is always the longest side
  * of the triangle. That way the projection of C on AB is always inside AB. */
 struct triangle_info {
-  vertex a;            /* The A vertex of the triangle */
-  vertex b;            /* The B vertex of the triangle */
-  vertex c;            /* The C vertex of the triangle. The projection of C
+  vertex_t a;            /* The A vertex of the triangle */
+  vertex_t b;            /* The B vertex of the triangle */
+  vertex_t c;            /* The C vertex of the triangle. The projection of C
                         * on AB is always inside the AB segment. */
-  vertex ab;           /* The AB vector */
-  vertex ca;           /* The CA vector */
-  vertex cb;           /* The CB vector */
+  vertex_t ab;           /* The AB vector */
+  vertex_t ca;           /* The CA vector */
+  vertex_t cb;           /* The CB vector */
   double ab_len_sqr;   /* The square of the length of AB */
   double ca_len_sqr;   /* The square of the length of CA */
   double cb_len_sqr;   /* The square of the length of CB */
   double ab_1_len_sqr; /* One over the square of the length of AB */
   double ca_1_len_sqr; /* One over the square of the length of CA */
   double cb_1_len_sqr; /* One over the square of the length of CB */
-  vertex normal;       /* The (unit length) normal of the ABC triangle
+  vertex_t normal;       /* The (unit length) normal of the ABC triangle
                         * (orinted with the right hand rule turning from AB to
                         * AC). If the triangle is degenerate it is (0,0,0). */
-  vertex nhsab;        /* (unnormalized) normal of the plane trough AB,
+  vertex_t nhsab;        /* (unnormalized) normal of the plane trough AB,
                         * perpendicular to ABC and pointing outside of ABC */
-  vertex nhsbc;        /* (unnormalized) normal of the plane trough BC,
+  vertex_t nhsbc;        /* (unnormalized) normal of the plane trough BC,
                         * perpendicular to ABC and pointing outside of ABC */
-  vertex nhsca;        /* (unnormalized) normal of the plane trough CA,
+  vertex_t nhsca;        /* (unnormalized) normal of the plane trough CA,
                         * perpendicular to ABC and pointing outside of ABC */
   double chsab;        /* constant of the plane equation: <p|npab>=cpab */
   double chsbc;        /* constant of the plane equation: <p|npbc>=cpbc */
@@ -225,11 +225,11 @@ static void free_triag_sample_error(struct triag_sample_error *tse)
  * calculation. If the model is not oriented, the resulting normals will be
  * incorrect. Vertices that belong to no triangles or to degenerate ones only
  * have a (0,0,0) normal vector set. */
-static void calc_normals_as_oriented_model(model *m,
+static void calc_normals_as_oriented_model(struct model *m,
                                            const struct triangle_list *tl)
 {
   int k,kmax;
-  vertex *n;
+  vertex_t *n;
 
   /* initialize all normals to zero */
   m->normals = xa_realloc(m->normals,m->num_vert*sizeof(*(m->normals)));
@@ -256,8 +256,8 @@ static void calc_normals_as_oriented_model(model *m,
  * triangle is not larger than step, and as close as possible. Note that,
  * depending on the triangle's shape, the distance between samples along other
  * sides might be much shorter than step. */
-static int get_sampling_freq(const vertex *a, const vertex *b, const vertex *c,
-                             double step)
+static int get_sampling_freq(const vertex_t *a, const vertex_t *b, 
+			     const vertex_t *c, double step)
 {
   double ab_len_sqr;
   double ac_len_sqr;
@@ -279,7 +279,7 @@ static int get_sampling_freq(const vertex *a, const vertex *b, const vertex *c,
  * size. The cubic cell side length is returned and the grid size is stored in
  * *grid_sz. */
 static double get_cell_size(const struct triangle_list *tl,
-                            const vertex *bbox_min, const vertex *bbox_max,
+                            const vertex_t *bbox_min, const vertex_t *bbox_max,
                             struct size3d *grid_sz)
 {
   double cell_sz;
@@ -525,10 +525,10 @@ static void get_cells_at_distance(struct dist_cell_lists *dlists,
 
 /* Initializes the triangle '*t' using the '*a' '*b' and '*c' vertices and
  * calculates all the relative fields of the struct. */
-static void init_triangle(const vertex *a, const vertex *b, const vertex *c,
-                          struct triangle_info *t)
+static void init_triangle(const vertex_t *a, const vertex_t *b, 
+			  const vertex_t *c, struct triangle_info *t)
 {
-  vertex ab,ac,bc;
+  vertex_t ab,ac,bc;
   double ab_len_sqr,ac_len_sqr,bc_len_sqr;
   double n_len;
   double ca_ab;
@@ -644,11 +644,12 @@ static void init_triangle(const vertex *a, const vertex *b, const vertex *c,
 /* Compute the square of the distance between point 'p' and triangle 't' in 3D
  * space. The distance from a point p to a triangle is defined as the
  * Euclidean distance from p to the closest point in the triangle. */
-static double dist_sqr_pt_triag(const struct triangle_info *t, const vertex *p)
+static double dist_sqr_pt_triag(const struct triangle_info *t, 
+				const vertex_t *p)
 {
   double dpp;             /* (signed) distance point to ABC plane */
   double ap_ab,cp_cb,cp_ca; /* scalar products */
-  vertex ap,cp;           /* Point to point vectors */
+  vertex_t ap,cp;           /* Point to point vectors */
   double dmin_sqr;        /* minimum distance squared */
 
   /* NOTE: If the triangle has a wide angle (i.e. angle larger than 90
@@ -743,7 +744,7 @@ static double dist_sqr_pt_triag(const struct triangle_info *t, const vertex *p)
  * cell_sz. If the point p is in the cell (m,n,o) the distance is zero. The
  * number of cells in the grid along X is given by grid_sz_x, and the
  * separation between adjacent cells along Z is given by cell_stride_z. */
-static INLINE double dist_sqr_pt_cell(const vertex *p, int gr_x, int gr_y,
+static INLINE double dist_sqr_pt_cell(const vertex_t *p, int gr_x, int gr_y,
                                       int gr_z, int cell_idx, int grid_sz_x,
                                       int cell_stride_z, double cell_sz)
 {
@@ -775,12 +776,12 @@ static INLINE double dist_sqr_pt_cell(const vertex *p, int gr_x, int gr_y,
 /* Convert the triangular model m to a triangle list (without connectivity
  * information) with the associated information. All the information about the
  * triangles (i.e. fields of struct triangle_info) is computed. */
-static struct triangle_list* model_to_triangle_list(const model *m)
+static struct triangle_list* model_to_triangle_list(const struct model *m)
 {
   int i,n;
   struct triangle_list *tl;
   struct triangle_info *triags;
-  face *face_i;
+  face_t *face_i;
 
   /* Initialize and allocate storage */
   n = m->num_faces;
@@ -877,17 +878,17 @@ static void error_stat_triag(const struct triag_sample_error *tse,
  * i and j are the sampling indices along the ab and ac sides,
  * respectively. As a special case, if n equals 1, the triangle middle point
  * is used as the sample. */
-static void sample_triangle(const vertex *a, const vertex *b, const vertex *c,
-                            int n, struct sample_list* s)
+static void sample_triangle(const vertex_t *a, const vertex_t *b, 
+			    const vertex_t *c, int n, struct sample_list* s)
 {
-  vertex u,v;     /* basis parametrization vectors */
-  vertex a_cache; /* local (on stack) copy of a for faster access */
+  vertex_t u,v;     /* basis parametrization vectors */
+  vertex_t a_cache; /* local (on stack) copy of a for faster access */
   int i,j,maxj,k; /* counters and limits */
 
   /* initialize */
   a_cache = *a;
   s->n_samples = n*(n+1)/2;
-  s->sample = xa_realloc(s->sample,sizeof(vertex)*s->n_samples);
+  s->sample = xa_realloc(s->sample,sizeof(vertex_t)*s->n_samples);
   /* get basis vectors */
   substract_v(b,a,&u);
   substract_v(c,a,&v);
@@ -914,10 +915,11 @@ static void sample_triangle(const vertex *a, const vertex *b, const vertex *c,
  * by grid_sz, the side length of the cubic cells by cell_sz and the minimum
  * coordinates of the bounding box (i.e. origin) of the grid by bbox_min. The
  * returned struct, its arrays and subarrays are malloc'ed independently. */
-static struct t_in_cell_list *triangles_in_cells(const struct triangle_list *tl,
-                                                 struct size3d grid_sz,
-                                                 double cell_sz,
-                                                 vertex bbox_min)
+static struct t_in_cell_list* 
+triangles_in_cells(const struct triangle_list *tl,
+		   struct size3d grid_sz,
+		   double cell_sz,
+		   vertex_t bbox_min)
 {
   struct t_in_cell_list *lst; /* The list to return */
   struct sample_list sl;      /* samples from a triangle */
@@ -1074,16 +1076,16 @@ static struct t_in_cell_list *triangles_in_cells(const struct triangle_list *tl,
  * all zero on the first call to this function. The distance obtained from a
  * previous point *prev_p is prev_d (it is used to minimize the work). For the
  * first call set prev_d as zero. */
-static double dist_pt_surf(vertex p, const struct triangle_list *tl,
+static double dist_pt_surf(vertex_t p, const struct triangle_list *tl,
                            const struct t_in_cell_list *fic,
 #ifdef DO_DIST_PT_SURF_STATS
                            struct dist_pt_surf_stats *stats,
 #endif
                            struct size3d grid_sz, double cell_sz,
-                           vertex bbox_min, struct dist_cell_lists *dcl,
-                           const vertex *prev_p, double prev_d)
+                           vertex_t bbox_min, struct dist_cell_lists *dcl,
+                           const vertex_t *prev_p, double prev_d)
 {
-  vertex p_rel;         /* coordinates of p relative to bbox_min */
+  vertex_t p_rel;         /* coordinates of p relative to bbox_min */
   struct size3d grid_coord; /* coordinates of cell in which p is */
   int k;                /* cell index distance of current scan */
   int kmax;             /* maximum limit for k (avoid infinite loops) */
@@ -1213,12 +1215,13 @@ static double dist_pt_surf(vertex p, const struct triangle_list *tl,
  * --------------------------------------------------------------------------*/
 
 /* See compute_error.h */
-void dist_surf_surf(const model *m1, model *m2, double sampling_step,
+void dist_surf_surf(const struct model *m1, struct model *m2, 
+		    double sampling_step,
                     struct face_error *fe_ptr[],
                     struct dist_surf_surf_stats *stats, int calc_normals,
                     int quiet)
 {
-  vertex bbox_min,bbox_max;   /* min and max of bounding box of m1 and m2 */
+  vertex_t bbox_min,bbox_max;   /* min and max of bounding box of m1 and m2 */
   struct triangle_list *tl2;  /* triangle list for m2 */
   struct t_in_cell_list *fic; /* list of faces intersecting each cell */
   struct sample_list ts;      /* list of sample from a triangle */
@@ -1231,7 +1234,7 @@ void dist_surf_surf(const model *m1, model *m2, double sampling_step,
   int report_step;            /* The step to update the progress report */
   struct dist_cell_lists *dcl;/* Cache for the list of non-empty cells at each
                                * distance, for each cell. */
-  vertex prev_p;              /* previous point */
+  vertex_t prev_p;              /* previous point */
   double prev_d;              /* distance for previous point */
 #ifdef DO_DIST_PT_SURF_STATS
   struct dist_pt_surf_stats dps_stats; /* Statistics */
