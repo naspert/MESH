@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.48 2001/08/23 09:06:17 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.49 2001/08/23 13:37:56 dsanta Exp $ */
 
 #include <compute_error.h>
 
@@ -600,24 +600,24 @@ static double dist_sqr_pt_triag(const struct triangle_info *t, const vertex *p)
         dmin_sqr = norm2_v(&cp) - (cp_cb*cp_cb)*t->cb_1_len_sqr;
         if (dmin_sqr < 0) dmin_sqr = 0; /* correct rounding problems */
         return dmin_sqr;
-      } else if (!t->wide_at_c) { /* C is closer */
-        return norm2_v(&cp);
-      } else { /* AC is closer */
-        cp_ca = scalprod_v(&cp,&(t->ca));
-        if(cp_ca > 0) {
-          if (cp_ca < t->ca_len_sqr) { /* projection of P on AC is in AC */
-            dmin_sqr = norm2_v(&cp) - (cp_ca*cp_ca)*t->ca_1_len_sqr;
-            if (dmin_sqr < 0) dmin_sqr = 0; /* correct rounding problems */
-            return dmin_sqr;
-          } else { /* C is closer */
-            return norm2_v(&cp);
-          }
+      } else { /* B is closer */
+        return dist2_v(p,&(t->b));
+      }
+    } else if (!t->wide_at_c) { /* C is closer */
+      return norm2_v(&cp);
+    } else { /* AC is closer */
+      cp_ca = scalprod_v(&cp,&(t->ca));
+      if(cp_ca > 0) {
+        if (cp_ca < t->ca_len_sqr) { /* projection of P on AC is in AC */
+          dmin_sqr = norm2_v(&cp) - (cp_ca*cp_ca)*t->ca_1_len_sqr;
+          if (dmin_sqr < 0) dmin_sqr = 0; /* correct rounding problems */
+          return dmin_sqr;
         } else { /* A is closer */
           return dist2_v(p,&(t->a));
         }
+      } else { /* C is closer */
+        return norm2_v(&cp);
       }
-    } else { /* B is closer */
-      return dist2_v(p,&(t->b));
     }
   } else if (scalprod_v(p,&(t->nhsca)) >= t->chsca) {
     /* P in the exterior side of hsca plane => closest to AC */
@@ -628,11 +628,11 @@ static double dist_sqr_pt_triag(const struct triangle_info *t, const vertex *p)
         dmin_sqr = norm2_v(&cp) - (cp_ca*cp_ca)*t->ca_1_len_sqr;
         if (dmin_sqr < 0) dmin_sqr = 0; /* correct rounding problems */
         return dmin_sqr;
-      } else { /* C is closer */
-        return norm2_v(&cp);
+      } else { /* A is closer */
+        return dist2_v(p,&(t->a));
       }
-    } else { /* A is closer */
-      return dist2_v(p,&(t->a));
+    } else { /* C is closer */
+      return norm2_v(&cp);
     }
   } else { /* P projects into triangle */
     dpp = scalprod_v(p,&(t->normal))-t->a_n;
