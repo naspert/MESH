@@ -1,14 +1,17 @@
-# $Id: Makefile.sgi,v 1.1 2001/04/30 07:50:47 jacquet Exp $
+# $Id: Makefile.sgi,v 1.2 2001/05/01 08:28:43 jacquet Exp $
 
 CC = cc
 CPP = CC
 #CC = /usr/freeware/bin/gcc
 
-BINDIR = ../bin
+MAKEDIR = /home/sun1/jacquet/comparatif/Metro
+BINDIR = /home/sun1/jacquet/lib3d/bin
 LIBDIR = /home/sun1/jacquet/lib3d/lib
-OBJDIR = ../obj
+OBJDIR = /home/sun1/jacquet/lib3d/obj
 
-INCLFLAGS = -I../include
+MOC = $(QTDIR)/bin/moc
+
+INCLFLAGS = -I/home/sun1/jacquet/lib3d/include
 QTINCFLAGS = -I$(QTDIR)/include
 GLINCLFLAGS = $(INCLFLAGS)
 DEBUGINCFLAGS = -I/home/sun1/aspert/debug
@@ -27,47 +30,38 @@ QT_LIBFLAGS = -L/home/sun1/jacquet/qt-CC/lib -lqt
 QTGL_LIBFLAGS = -L$(LIBDIR) -lGLU -lGL -l3d -lm
 
 
-default : viewer
+default :
 
-all: dirs viewer rawview3
+all: dirs viewer 
 
 clean : 
 	rm $(OBJDIR)/*.o $(BINDIR)/* $(LIBDIR)/*
 
+viewer : $(MAKEDIR)/viewer.o $(MAKEDIR)/moc_RawWidget.o  $(MAKEDIR)/RawWidget.o $(MAKEDIR)/compute_error.o lib3d
+	$(CPP) $(MAKEDIR)/viewer.o $(MAKEDIR)/moc_RawWidget.o  $(MAKEDIR)/RawWidget.o $(MAKEDIR)/compute_error.o -o ../viewer $(QTGL_LIBFLAGS) $(QT_LIBFLAGS)
 
-
-test : 
-	$(CPP) $(QTINCFLAGS) test.cpp -o $(BINDIR)/test $(QT_LIBFLAGS)
-
-viewer : $(OBJDIR)/viewer.o lib3d
-	$(CPP) $(OBJDIR)/viewer.o -o $(BINDIR)/viewer $(QTGL_LIBFLAGS) $(QT_LIBFLAGS)
-
-rawview3 : $(OBJDIR)/rawview3.o lib3d libimage
-	$(CC) $(OBJDIR)/rawview3.o -o $(BINDIR)/rawview3 $(GL_LDFLAGS)
-
-torus : $(OBJDIR)/torus.o lib3d
-	$(CC) -o $(BINDIR)/torus $< $(BASE_LDFLAGS) -l3d
-
-subdiv : $(OBJDIR)/subdiv.o lib3d
-	$(CC) -o $(BINDIR)/subdiv $< $(BASE_LDFLAGS) -l3d
-
-libimage : $(OBJDIR)/image.o
-	$(CC) -g -shared  -o $(LIBDIR)/libimage.so $<
-
-lib3d : $(OBJDIR)/geomutils.o $(OBJDIR)/3dmodel_io.o $(OBJDIR)/normals.o $(OBJDIR)/compute_error.o
+lib3d :  $(OBJDIR)/3dmodel_io.o $(OBJDIR)/normals.o  $(OBJDIR)/geomutils.o
 	$(CC) -g -shared -o $(LIBDIR)/lib3d.so $^
 
-$(OBJDIR)/viewer.o : viewer.cpp
-	$(CPP) $(QTINCFLAGS) $(GL_CFLAGS) -D_CPLUSPLUS -c $< -o $@
+$(MAKEDIR)/viewer.o : viewer.cpp
+	$(CPP) $(QTINCFLAGS) $(GL_CFLAGS) -I$(MAKEDIR) -D_CPLUSPLUS -c $< -o $@
+
+$(MAKEDIR)/moc_RawWidget.o : $(MAKEDIR)/moc_RawWidget.cpp
+	$(CPP) -I$(MAKEDIR) $(QTINCFLAGS) $(GL_CFLAGS) -c $< -o $@
+
+$(MAKEDIR)/moc_RawWidget.cpp : $(MAKEDIR)/RawWidget.h
+	$(MOC) $< -o $@
+
+$(MAKEDIR)/RawWidget.o : RawWidget.cpp
+	$(CPP) -I$(MAKEDIR) $(QTINCFLAGS) $(GL_CFLAGS) -c $< -o $@
+
+$(OBJDIR)/%.o : /home/sun1/jacquet/lib3d/src/%.c
+	$(CC) $(BASE_CFLAGS)-D_METRO -c $< -o $@
+
+$(MAKEDIR)/compute_error.o : compute_error.c
+	$(CC) -I$(MAKEDIR) $(GL_CFLAGS) -c $< -o $@	
 
 
-$(OBJDIR)/rawview3.o : rawview3.c
-	$(CC) $(GL_CFLAGS) -c rawview3.c -o $@
-
-$(OBJDIR)/%.o : %.c
-	$(CC) $(BASE_CFLAGS) -c $< -o $@	
-
-dirs : libdir bindir objdir
 
 libdir : 
 	-[ -d $(LIBDIR) ] || mkdir $(LIBDIR)
@@ -77,3 +71,4 @@ bindir :
 
 objdir :
 	-[ -d $(OBJDIR) ] || mkdir $(OBJDIR)
+
