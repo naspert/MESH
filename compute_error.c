@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.16 2001/08/08 14:33:14 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.17 2001/08/08 15:54:43 dsanta Exp $ */
 
 #include <compute_error.h>
 
@@ -702,13 +702,27 @@ static double dist_pt_surf(vertex p, const struct triangle_list *tl,
   triags = tl->triangles;
   /* Get relative coordinates of point */
   substract_v(&p,&bbox_min,&p_rel);
-  /* Get the cell coordinates of where point is */
+  /* Get the cell coordinates of where point is. Since the bounding box bbox
+   * is that of the model 2, the grid coordinates can be out of bounds (in
+   * which case we limit them) */
   grid_coord.x = floor(p_rel.x/cell_sz);
-  if (grid_coord.x == grid_sz.x) grid_coord.x = grid_sz.x-1;
+  if (grid_coord.x < 0) {
+    grid_coord.x = 0;
+  } else if (grid_coord.x >= grid_sz.x) {
+    grid_coord.x = grid_sz.x-1;
+  }
   grid_coord.y = floor(p_rel.y/cell_sz);
-  if (grid_coord.y == grid_sz.y) grid_coord.y = grid_sz.y-1;
+  if (grid_coord.y < 0) {
+    grid_coord.y = 0;
+  } else if (grid_coord.y >= grid_sz.y) {
+    grid_coord.y = grid_sz.y-1;
+  }
   grid_coord.z = floor(p_rel.z/cell_sz);
-  if (grid_coord.z == grid_sz.z) grid_coord.z = grid_sz.z-1;
+  if (grid_coord.z < 0) {
+    grid_coord.z = 0;
+  } else if (grid_coord.z >= grid_sz.z) {
+    grid_coord.z = grid_sz.z-1;
+  }
 
   /* Scan cells, at sequentially increasing index distance k */
   k = 0;
