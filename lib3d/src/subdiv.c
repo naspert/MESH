@@ -1,4 +1,4 @@
-/* $Id: subdiv.c,v 1.8 2001/10/16 14:15:23 aspert Exp $ */
+/* $Id: subdiv.c,v 1.9 2001/10/16 14:37:59 aspert Exp $ */
 #include <3dutils.h>
 #include <subdiv_methods.h>
 #include <assert.h>
@@ -334,8 +334,9 @@ int main(int argc, char **argv) {
   else if (strcmp(argv[1], "-loop") == 0)
     sub_method = SUBDIV_LOOP;
   else {
-    fprintf(stderr, "Invalid option %s\n", argv[1]);
-    fprintf(stderr, "Usage: subdiv_sph [-sph, -but] infile outfile\n");
+    fprintf(stderr, "Invalid subdivision method %s\n", argv[1]);
+    fprintf(stderr, 
+	    "Usage: subdiv_sph [-sph, -but, loop] infile outfile n_lev\n");
     exit(1);
   }
 
