@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.62 2001/09/20 15:22:31 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.63 2001/09/20 15:45:39 dsanta Exp $ */
 
 #include <compute_error.h>
 
@@ -1125,19 +1125,19 @@ static double dist_pt_surf(vertex p, const struct triangle_list *tl,
   /* Get the cell coordinates of where point is. Since the bounding box bbox
    * is that of the model 2, the grid coordinates can be out of bounds (in
    * which case we limit them) */
-  grid_coord.x = floor(p_rel.x/cell_sz);
+  grid_coord.x = (int) floor(p_rel.x/cell_sz);
   if (grid_coord.x < 0) {
     grid_coord.x = 0;
   } else if (grid_coord.x >= grid_sz.x) {
     grid_coord.x = grid_sz.x-1;
   }
-  grid_coord.y = floor(p_rel.y/cell_sz);
+  grid_coord.y = (int) floor(p_rel.y/cell_sz);
   if (grid_coord.y < 0) {
     grid_coord.y = 0;
   } else if (grid_coord.y >= grid_sz.y) {
     grid_coord.y = grid_sz.y-1;
   }
-  grid_coord.z = floor(p_rel.z/cell_sz);
+  grid_coord.z = (int) floor(p_rel.z/cell_sz);
   if (grid_coord.z < 0) {
     grid_coord.z = 0;
   } else if (grid_coord.z >= grid_sz.z) {
@@ -1147,7 +1147,7 @@ static double dist_pt_surf(vertex p, const struct triangle_list *tl,
   /* Determine starting k, based on previous point (which is typically close
    * to current point) and its distance to closest triangle */
   dmin = prev_d-dist_v(&p,prev_p);
-  k = floor(dmin*SQRT_1_3/cell_sz)-2;
+  k = (int) floor(dmin*SQRT_1_3/cell_sz)-2;
   if (k <0) k = 0;
 
   /* Scan cells, at sequentially increasing index distance k */
@@ -1404,9 +1404,9 @@ void calc_vertex_error(struct model_error *me, const struct face_error *fe,
         tot_area += fe[vfl[i].face[j]].face_area;
       }
       mean_error /= tot_area;
-      me->verror[i] = mean_error;
-      if (mean_error < me->min_verror) me->min_verror = mean_error;
-      if (mean_error > me->max_verror) me->max_verror = mean_error;
+      me->verror[i] = (float) mean_error;
+      if (mean_error < me->min_verror) me->min_verror = (float) mean_error;
+      if (mean_error > me->max_verror) me->max_verror = (float) mean_error;
     } else { /* vertex error should never be consulted */
       me->verror[i] = -1; /* invalid value */
     }

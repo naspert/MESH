@@ -1,4 +1,4 @@
-/* $Id: RawWidget.cpp,v 1.22 2001/09/13 08:18:52 dsanta Exp $ */
+/* $Id: RawWidget.cpp,v 1.23 2001/09/20 15:45:52 dsanta Exp $ */
 #include <RawWidget.h>
 #include <qmessagebox.h>
 
@@ -146,10 +146,10 @@ void RawWidget::resizeGL(int width ,int height) {
 
 // Initializations for the renderer
 void RawWidget::initializeGL() { 
-  static const GLfloat amb[] = {0.1, 0.1, 0.1, 1.0};
-  static const GLfloat dif[] = {0.3, 0.3, 0.3, 1.0};
-  static const GLfloat spec[] = {0.3, 0.3, 0.3, 0.3};
-  static const GLfloat amb_light[] = {0.8, 0.8, 0.8, 1.0};
+  static const GLfloat amb[] = {0.1f, 0.1f, 0.1f, 1.0f};
+  static const GLfloat dif[] = {0.3f, 0.3f, 0.3f, 1.0f};
+  static const GLfloat spec[] = {0.3f, 0.3f, 0.3f, 0.3f};
+  static const GLfloat amb_light[] = {0.8f, 0.8f, 0.8f, 1.0f};
 
   glDepthFunc(GL_LESS);
   glEnable(GL_DEPTH_TEST);
@@ -211,16 +211,16 @@ void RawWidget::display(double distance) {
 // viewing parameters (light...)
 void RawWidget::rebuild_list() {
   // Surface material characteristics for lighted mode
-  static const float front_amb_mat[4] = {0.5, 0.5, 0.5, 1.0};
-  static const float front_diff_mat[4] = {0.7, 0.7, 0.7, 1.0};
-  static const float front_spec_mat[4] = {0.3, 0.3, 0.3, 1.0};
-  static const float front_mat_shin = 30.0;
-  static const float back_amb_mat[4] = {0.3, 0.3, 0.3, 1.0};
-  static const float back_diff_mat[4] = {0.5, 0.5, 0.5, 1.0};
-  static const float back_spec_mat[4] = {0.2, 0.2, 0.2, 1.0};
-  static const float back_mat_shin = 10.0;
+  static const float front_amb_mat[4] = {0.5f, 0.5f, 0.5f, 1.0f};
+  static const float front_diff_mat[4] = {0.7f, 0.7f, 0.7f, 1.0f};
+  static const float front_spec_mat[4] = {0.3f, 0.3f, 0.3f, 1.0f};
+  static const float front_mat_shin = 30.0f;
+  static const float back_amb_mat[4] = {0.3f, 0.3f, 0.3f, 1.0f};
+  static const float back_diff_mat[4] = {0.5f, 0.5f, 0.5f, 1.0f};
+  static const float back_spec_mat[4] = {0.2f, 0.2f, 0.2f, 1.0f};
+  static const float back_mat_shin = 10.0f;
   // Color for non-lighted mode
-  static const float lighted_color[3] = {1.0, 1.0, 1.0};
+  static const float lighted_color[3] = {1.0f, 1.0f, 1.0f};
   // Local vars
   int i,cidx;
   float drange;
