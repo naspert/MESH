@@ -1,17 +1,16 @@
-/* $Id: ScreenWidget.cpp,v 1.24 2001/11/06 17:13:42 dsanta Exp $ */
+/* $Id: ScreenWidget.cpp,v 1.25 2001/11/09 10:59:12 dsanta Exp $ */
 #include <ScreenWidget.h>
 
 #include <qhbox.h>
 #include <qhbuttongroup.h>
 #include <RawWidget.h>
 #include <ColorMapWidget.h>
-#include <compute_error.h>
 
 
 ScreenWidget::ScreenWidget(struct model_error *model1,
                            struct model_error *model2,
-			   QWidget *parent, 
-			   const char *name ):QWidget(parent,name) {
+                           QWidget *parent, 
+                           const char *name ):QWidget(parent,name) {
   QAction *fileQuitAction;
   QPushButton *syncBut, *lineSwitch1, *lineSwitch2;
   QMenuBar *mainBar;

@@ -1,4 +1,4 @@
-/* $Id: ScreenWidget.h,v 1.13 2001/11/06 10:15:38 dsanta Exp $ */
+/* $Id: ScreenWidget.h,v 1.14 2001/11/09 10:59:12 dsanta Exp $ */
 #ifndef SCREENWIDGET_H
 #define SCREENWIDGET_H
 
@@ -16,13 +16,14 @@
 #include <qtoolbar.h>
 #include <qbuttongroup.h>
 #include <qradiobutton.h>
+#include <compute_error.h>
 
 
 class ScreenWidget : public QWidget {
   Q_OBJECT
 public:
   ScreenWidget(struct model_error *model1, struct model_error *model2,
-	       QWidget *parent=0, const char *name=0 );
+               QWidget *parent=0, const char *name=0 );
 
 signals:
   void actualUpdate(double dmoymin, double dmoymax);
