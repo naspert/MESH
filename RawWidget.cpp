@@ -1,4 +1,4 @@
-/* $Id: RawWidget.cpp,v 1.20 2001/09/12 16:16:29 dsanta Exp $ */
+/* $Id: RawWidget.cpp,v 1.21 2001/09/12 16:30:32 dsanta Exp $ */
 #include <RawWidget.h>
 #include <qmessagebox.h>
 
@@ -161,6 +161,7 @@ void RawWidget::initializeGL() {
   glLightfv(GL_LIGHT0, GL_DIFFUSE, dif);
   glLightfv(GL_LIGHT0, GL_SPECULAR, spec);
   glLightModelfv(GL_LIGHT_MODEL_AMBIENT,amb_light);
+  if (!model->info->closed) glLightModeli(GL_LIGHT_MODEL_TWO_SIDE,GL_TRUE);
   glEnable(GL_LIGHT0);
   glFrontFace(GL_CCW);
 
