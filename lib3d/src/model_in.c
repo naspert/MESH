@@ -1,4 +1,4 @@
-/* $Id: model_in.c,v 1.22 2002/04/15 16:13:55 aspert Exp $ */
+/* $Id: model_in.c,v 1.23 2002/04/22 06:17:03 aspert Exp $ */
 
 
 /*
@@ -1710,10 +1710,11 @@ static int read_iv_tmesh(struct model **tmesh_ref, struct file_data *data) {
  * It returns the number of meshes read (i.e. 1) if successful, and a 
  * negative code if it failed. */
 static int read_smf_tmesh(struct model **tmesh_ref, struct file_data *data) {
-  int  c;
+  int  c, i;
   struct model *tmesh;
   vertex_t bbmin, bbmax;
   int max_vidx=-1;
+  int min_vidx=INT_MAX;
   int nvtcs=0;
   int nfaces=0;
   int l_vertices=0, l_faces=0;
@@ -1733,9 +1734,6 @@ static int read_smf_tmesh(struct model **tmesh_ref, struct file_data *data) {
                           *  file */
 
     c = getc(data); /* get 1st char of the current line */
-#ifdef DEBUG
-    printf("[read_smf_tmesh] nread=%d line_buf=%s\n", nread, line_buf);
-#endif
     switch (c) {
     case 'v': /* vertex line found */
       if (nvtcs == l_vertices) { /* Reallocate storage if needed */
@@ -1803,13 +1801,17 @@ static int read_smf_tmesh(struct model **tmesh_ref, struct file_data *data) {
       printf("[read_smf_tmesh] %d %d %d\n", f0, f1, f2);
 #endif
       /* Do not forget that SMF vertex indices start at 1 !! */
-      tmesh->faces[nfaces].f0 = --f0;
-      tmesh->faces[nfaces].f1 = --f1;
-      tmesh->faces[nfaces++].f2 = --f2;
+      tmesh->faces[nfaces].f0 = f0;
+      tmesh->faces[nfaces].f1 = f1;
+      tmesh->faces[nfaces++].f2 = f2;
 
       if (f0 > max_vidx) max_vidx = f0;
       if (f1 > max_vidx) max_vidx = f1;
       if (f2 > max_vidx) max_vidx = f2;
+      if (f0 < min_vidx) min_vidx = f0;
+      if (f1 < min_vidx) min_vidx = f1;
+      if (f2 < min_vidx) min_vidx = f2;
+
 
       if (f0 < 0 || f1 < 0 || f2 < 0)
         rcode = MESH_CORRUPTED;
@@ -1828,7 +1830,7 @@ static int read_smf_tmesh(struct model **tmesh_ref, struct file_data *data) {
 
   } while(c != EOF  && rcode > 0);
 
-  if (max_vidx >= nvtcs)
+  if (max_vidx > nvtcs || min_vidx > 1)
     rcode = MESH_CORRUPTED;
 
   if (nvtcs == 0) {
@@ -1841,6 +1843,13 @@ static int read_smf_tmesh(struct model **tmesh_ref, struct file_data *data) {
     tmesh->bBox[1] = bbmax;
     tmesh->num_vert = nvtcs;
     tmesh->num_faces = nfaces;
+    if (min_vidx == 1) {
+      for (i=0; i<nfaces; i++) {
+	tmesh->faces[i].f0--;
+	tmesh->faces[i].f1--;
+	tmesh->faces[i].f2--;
+      }
+    } 
     *tmesh_ref = tmesh;
   } else 
     __free_raw_model(tmesh);
