@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.50 2001/08/23 17:22:20 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.51 2001/08/24 08:46:21 dsanta Exp $ */
 
 #include <compute_error.h>
 
@@ -312,14 +312,17 @@ static void get_cells_at_distance(struct dist_cell_lists *dlists,
 {
   int max_n_cells;
   int cell_idx;
+  int cell_idx1,cell_idx2;
   int cell_stride_z;
   ec_bitmap_t *fic_empty_cell;
   int *cell_list;
   int *cur_cell;
   int cll;
   int m,n,o;
+  int m1,m2,n1,n2,o1,o2;
   int min_m,max_m,min_n,max_n,min_o,max_o;
   int d;
+  int tmp;
 
   assert(k == 0 || dlists->n_dists <= k);
 
@@ -349,71 +352,131 @@ static void get_cells_at_distance(struct dist_cell_lists *dlists,
       *(cur_cell++) = cell_idx;
     }
   }
+  /* Try to put the cells in the order of increasing distances (minimizes
+   * number of cells and triangles to test). Doing a full ordering is too
+   * slow, we just do what we can fast. */
   d = k+1; /* max displacement */
-  min_m = max(cell_gr_coord.x-d,0);
-  max_m = min(cell_gr_coord.x+d,grid_sz.x-1);
-  min_n = max(cell_gr_coord.y-d,0);
-  max_n = min(cell_gr_coord.y+d,grid_sz.y-1);
-  if ((o = cell_gr_coord.z-d) >= 0) { /* bottom layer */
-    for (n = min_n; n <= max_n; n++) {
-      for (m = min_m; m <= max_m; m++) {
-        cell_idx = m+n*grid_sz.x+o*cell_stride_z;
-        if (!EC_BITMAP_TEST_BIT(fic_empty_cell,cell_idx)) {
-          *(cur_cell++) = cell_idx;
-        }
-      }
-    }
-  }
-  if ((o = cell_gr_coord.z+d) < grid_sz.z) { /* top layer */
-    for (n = min_n; n <= max_n; n++) {
-      for (m = min_m; m <= max_m; m++) {
-        cell_idx = m+n*grid_sz.x+o*cell_stride_z;
-        if (!EC_BITMAP_TEST_BIT(fic_empty_cell,cell_idx)) {
-          *(cur_cell++) = cell_idx;
-        }
-      }
-    }
-  }
   min_o = max(cell_gr_coord.z-d+1,0);
   max_o = min(cell_gr_coord.z+d-1,grid_sz.z-1);
-  if ((n = cell_gr_coord.y-d) >= 0) { /* back layer */
-    for (o = min_o; o <= max_o; o++) {
-      for (m = min_m; m <= max_m; m++) {
-        cell_idx = m+n*grid_sz.x+o*cell_stride_z;
-        if (!EC_BITMAP_TEST_BIT(fic_empty_cell,cell_idx)) {
-          *(cur_cell++) = cell_idx;
+  min_n = max(cell_gr_coord.y-d+1,0);
+  max_n = min(cell_gr_coord.y+d-1,grid_sz.y-1);
+  m1 = cell_gr_coord.x-d;
+  m2 = cell_gr_coord.x+d;
+  if (m1 >= 0) {
+    if (m2 < grid_sz.x) { /* left + right layer */
+      for (o = min_o; o <= max_o; o++) {
+        for (n = min_n; n <= max_n; n++) {
+          tmp = n*grid_sz.x+o*cell_stride_z;
+          cell_idx1 = m1+tmp;
+          cell_idx2 = m2+tmp;
+          if (!EC_BITMAP_TEST_BIT(fic_empty_cell,cell_idx1)) {
+            *(cur_cell++) = cell_idx1;
+          }
+          if (!EC_BITMAP_TEST_BIT(fic_empty_cell,cell_idx2)) {
+            *(cur_cell++) = cell_idx2;
+          }
+        }
+      }
+    } else { /* left layer */
+      for (o = min_o; o <= max_o; o++) {
+        for (n = min_n; n <= max_n; n++) {
+          cell_idx = m1+n*grid_sz.x+o*cell_stride_z;
+          if (!EC_BITMAP_TEST_BIT(fic_empty_cell,cell_idx)) {
+            *(cur_cell++) = cell_idx;
+          }
+        }
+      }
+    }
+  } else {
+    if (m2 < grid_sz.x) { /* right layer */
+      for (o = min_o; o <= max_o; o++) {
+        for (n = min_n; n <= max_n; n++) {
+          cell_idx = m2+n*grid_sz.x+o*cell_stride_z;
+          if (!EC_BITMAP_TEST_BIT(fic_empty_cell,cell_idx)) {
+            *(cur_cell++) = cell_idx;
+          }
         }
       }
     }
   }
-  if ((n = cell_gr_coord.y+d) < grid_sz.y) { /* front layer */
-    for (o = min_o; o <= max_o; o++) {
-      for (m = min_m; m <= max_m; m++) {
-        cell_idx = m+n*grid_sz.x+o*cell_stride_z;
-        if (!EC_BITMAP_TEST_BIT(fic_empty_cell,cell_idx)) {
-          *(cur_cell++) = cell_idx;
+  min_m = max(cell_gr_coord.x-d,0);
+  max_m = min(cell_gr_coord.x+d,grid_sz.x-1);
+  n1 = cell_gr_coord.y-d;
+  n2 = cell_gr_coord.y+d;
+  if (n1 >= 0) {
+    if (n2 < grid_sz.y) { /* back + front layers */
+      for (o = min_o; o <= max_o; o++) {
+        for (m = min_m; m <= max_m; m++) {
+          tmp = m+o*cell_stride_z;
+          cell_idx1 = tmp+n1*grid_sz.x;
+          cell_idx2 = tmp+n2*grid_sz.x;
+          if (!EC_BITMAP_TEST_BIT(fic_empty_cell,cell_idx1)) {
+            *(cur_cell++) = cell_idx1;
+          }
+          if (!EC_BITMAP_TEST_BIT(fic_empty_cell,cell_idx2)) {
+            *(cur_cell++) = cell_idx2;
+          }
+        }
+      }
+    } else { /* back layer */
+      for (o = min_o; o <= max_o; o++) {
+        for (m = min_m; m <= max_m; m++) {
+          cell_idx = m+n1*grid_sz.x+o*cell_stride_z;
+          if (!EC_BITMAP_TEST_BIT(fic_empty_cell,cell_idx)) {
+            *(cur_cell++) = cell_idx;
+          }
+        }
+      }
+    }
+  } else {
+    if (n2 < grid_sz.y) { /* front layer */
+      for (o = min_o; o <= max_o; o++) {
+        for (m = min_m; m <= max_m; m++) {
+          cell_idx = m+n2*grid_sz.x+o*cell_stride_z;
+          if (!EC_BITMAP_TEST_BIT(fic_empty_cell,cell_idx)) {
+            *(cur_cell++) = cell_idx;
+          }
         }
       }
     }
   }
-  min_n = max(cell_gr_coord.y-k+1,0);
-  max_n = min(cell_gr_coord.y+k-1,grid_sz.y-1);
-  if ((m = cell_gr_coord.x-d) >= 0) { /* left layer */
-    for (o = min_o; o <= max_o; o++) {
+  min_n = max(cell_gr_coord.y-d,0);
+  max_n = min(cell_gr_coord.y+d,grid_sz.y-1);
+  o1 = cell_gr_coord.z-d;
+  o2 = cell_gr_coord.z+d;
+  if (o1 >= 0) {
+    if (o2 < grid_sz.z) { /* bottom + top layers */
       for (n = min_n; n <= max_n; n++) {
-        cell_idx = m+n*grid_sz.x+o*cell_stride_z;
-        if (!EC_BITMAP_TEST_BIT(fic_empty_cell,cell_idx)) {
-          *(cur_cell++) = cell_idx;
+        for (m = min_m; m <= max_m; m++) {
+          tmp = m+n*grid_sz.x;
+          cell_idx1 = tmp+o1*cell_stride_z;
+          cell_idx2 = tmp+o2*cell_stride_z;
+          if (!EC_BITMAP_TEST_BIT(fic_empty_cell,cell_idx1)) {
+            *(cur_cell++) = cell_idx1;
+          }
+          if (!EC_BITMAP_TEST_BIT(fic_empty_cell,cell_idx2)) {
+            *(cur_cell++) = cell_idx2;
+          }
+        }
+      }
+    } else { /* bottom */
+      for (n = min_n; n <= max_n; n++) {
+        for (m = min_m; m <= max_m; m++) {
+          cell_idx = m+n*grid_sz.x+o1*cell_stride_z;
+          if (!EC_BITMAP_TEST_BIT(fic_empty_cell,cell_idx)) {
+            *(cur_cell++) = cell_idx;
+          }
         }
       }
     }
-  }
-  if ((m = cell_gr_coord.x+d) < grid_sz.x) { /* right layer */
-    for (o = min_o; o <= max_o; o++) {
+  } else {
+    if (o2 < grid_sz.z) { /* top layer */
       for (n = min_n; n <= max_n; n++) {
-        cell_idx = m+n*grid_sz.x+o*cell_stride_z;
-        if (!EC_BITMAP_TEST_BIT(fic_empty_cell,cell_idx)) {
-          *(cur_cell++) = cell_idx;
+        for (m = min_m; m <= max_m; m++) {
+          cell_idx = m+n*grid_sz.x+o2*cell_stride_z;
+          if (!EC_BITMAP_TEST_BIT(fic_empty_cell,cell_idx)) {
+            *(cur_cell++) = cell_idx;
+          }
         }
       }
     }
