@@ -1,4 +1,4 @@
-/* $Id: RawWidget.cpp,v 1.55 2002/04/03 10:29:39 aspert Exp $ */
+/* $Id: RawWidget.cpp,v 1.56 2002/04/08 15:21:24 dsanta Exp $ */
 
 
 /*
@@ -196,7 +196,7 @@ void RawWidget::setLight(bool state) {
       if (model->mesh->normals !=NULL){// Are these ones computed ?
 	glEnable(GL_LIGHTING);
       } else {// Normals should have been computed
-        fprintf(stderr,"ERROR: normals where not computed!\n");
+        fprintf(stderr,"ERROR: normals were not computed!\n");
       }
     }
     else if (light_state==GL_TRUE){// We are now switching to wireframe mode
@@ -648,7 +648,7 @@ void RawWidget::initializeGL() {
       }
       glEnable(GL_LIGHTING);
     } else {// Normals should have been computed
-      fprintf(stderr,"ERROR: normals where not computed!\n");
+      fprintf(stderr,"ERROR: normals were not computed!\n");
     }
   }
   checkGlErrors("initializeGL()");
