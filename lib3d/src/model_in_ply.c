@@ -1,4 +1,4 @@
-/* $Id: model_in_ply.c,v 1.10 2002/08/26 14:22:29 aspert Exp $ */
+/* $Id: model_in_ply.c,v 1.11 2002/08/26 14:27:27 aspert Exp $ */
 
 /*
  *
@@ -378,26 +378,28 @@ static int read_ply_property(struct file_data *data, int prop_type,
 }
 
 /* Returns the associated integer to a PLY type conatined in a string
- * of characters 'str' (see 'model_in_ply.h' for all types) */
+ * of characters 'str' (see 'model_in_ply.h' for all types). It also
+ * supports the 'old-fashioned' types, defined in a previous version
+ * of the PLY file format. */
 static int get_type(char* str) 
 {
   int t;
   
-  if (strcmp(str, "int8") == 0)
+  if (strcmp(str, "int8") == 0 || strcmp(str, "char") == 0)
     t = int8;
-  else if (strcmp(str, "uint8") == 0)
+  else if (strcmp(str, "uint8") == 0 || strcmp(str, "uchar") == 0)
     t = uint8;
-  else if (strcmp(str, "int16") == 0)
+  else if (strcmp(str, "int16") == 0 || strcmp(str, "short") == 0)
     t = int16;
-  else if (strcmp(str, "uint16") == 0)
+  else if (strcmp(str, "uint16") == 0 || strcmp(str, "ushort") == 0)
     t = uint16;
-  else if (strcmp(str, "int32") == 0)
+  else if (strcmp(str, "int32") == 0 || strcmp(str, "int") == 0)
     t = int32;
-  else if (strcmp(str, "uint32") == 0)
+  else if (strcmp(str, "uint32") == 0 || strcmp(str, "uint") == 0)
     t = uint32;
-  else if (strcmp(str, "float32") == 0)
+  else if (strcmp(str, "float32") == 0 || strcmp(str, "float") == 0)
     t = float32;
-  else if (strcmp(str, "float64") == 0)
+  else if (strcmp(str, "float64") == 0 || strcmp(str, "double") == 0)
     t = float64;
   else
     t = not_valid;
