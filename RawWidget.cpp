@@ -1,11 +1,12 @@
-/* $Id: RawWidget.cpp,v 1.14 2001/09/05 12:16:37 dsanta Exp $ */
+/* $Id: RawWidget.cpp,v 1.15 2001/09/11 16:32:33 dsanta Exp $ */
 #include <RawWidget.h>
+#include <qmessagebox.h>
 
 // 
 // This is a derived class from QGLWidget used to render models
 // 
 
-RawWidget::RawWidget(model *raw_model, int renderType, 
+RawWidget::RawWidget(model_error *model, int renderType, 
 		     QWidget *parent, const char *name)
   :QGLWidget( parent, name) { 
   
@@ -24,29 +25,29 @@ RawWidget::RawWidget(model *raw_model, int renderType,
   colormap = HSVtoRGB();
 
   // Get the structure containing the model
-  rawModelStruct = raw_model;
+  this->model = model;
 
   // Get the flags
   renderFlag = renderType;
 
   // Initialize the state
   move_state=0;
-  computed_normals = 0;
+  not_orientable_warned = 0;
 
   // Compute the center of the bounding box of the model
-  center.x = 0.5*(rawModelStruct->bBox[1].x + rawModelStruct->bBox[0].x);
-  center.y = 0.5*(rawModelStruct->bBox[1].y + rawModelStruct->bBox[0].y);
-  center.z = 0.5*(rawModelStruct->bBox[1].z + rawModelStruct->bBox[0].z);
+  center.x = 0.5*(model->mesh->bBox[1].x + model->mesh->bBox[0].x);
+  center.y = 0.5*(model->mesh->bBox[1].y + model->mesh->bBox[0].y);
+  center.z = 0.5*(model->mesh->bBox[1].z + model->mesh->bBox[0].z);
 
   // Center the model around (0, 0, 0)
-  for (i=0; i<rawModelStruct->num_vert; i++) {
-    rawModelStruct->vertices[i].x -= center.x;
-    rawModelStruct->vertices[i].y -= center.y;
-    rawModelStruct->vertices[i].z -= center.z;
+  for (i=0; i<model->mesh->num_vert; i++) {
+    model->mesh->vertices[i].x -= center.x;
+    model->mesh->vertices[i].y -= center.y;
+    model->mesh->vertices[i].z -= center.z;
   }
   
   // This should be enough to see the whole model when starting
-  distance = dist(rawModelStruct->bBox[0], rawModelStruct->bBox[1])/
+  distance = dist(model->mesh->bBox[0], model->mesh->bBox[1])/
     tan(FOV*M_PI_2/180.0);
 
   // This is the increment used when moving closer/farther from the object
@@ -98,16 +99,10 @@ void RawWidget::setLight() {
     light_state = glIsEnabled(GL_LIGHTING);
 
     if (light_state==GL_FALSE){ // We are now switching to lighted mode
-      if (rawModelStruct->normals !=NULL){// Are these ones computed ?
+      if (model->mesh->normals !=NULL){// Are these ones computed ?
 	glEnable(GL_LIGHTING);
-      } else {// Attempt to compute normals
-        if (compute_normals()) {
-          glEnable(GL_LIGHTING);
-          // rebuild display list to include normals
-          rebuild_list();
-        } else {
-          glDisable(GL_LIGHTING); // Just to be sure
-        }
+      } else {// Normals should have been computed
+        fprintf(stderr,"ERROR: normals where not computed!\n");
       }
     }
     else if (light_state==GL_TRUE){// We are now switching to wireframe mode
@@ -165,6 +160,19 @@ void RawWidget::initializeGL() {
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
   glGetDoublev(GL_MODELVIEW_MATRIX, mvmatrix); /* Initialize the temp matrix */
+  if (renderFlag == RW_LIGHT_TOGGLE) {
+    if (model->mesh->normals !=NULL){// Are these ones computed ?
+      if (!model->info->orientable && !not_orientable_warned) {
+        not_orientable_warned = 1;
+        QMessageBox::warning(this,"Not orientable model",
+                             "Model is not orientable.\n"
+                             "Surface shading is probably incorrect.");
+      }
+      glEnable(GL_LIGHTING);
+    } else {// Normals should have been computed
+      fprintf(stderr,"ERROR: normals where not computed!\n");
+    }
+  }
 }  
 
 
@@ -187,7 +195,8 @@ void RawWidget::display(double distance) {
 // This function generates the model's display list, depending on the
 // viewing parameters (light...)
 void RawWidget::rebuild_list() {
-  int i;
+  int i,cidx;
+  float drange;
   face *cur_face;
 
   if (glIsList(model_list)==GL_TRUE) 
@@ -196,57 +205,65 @@ void RawWidget::rebuild_list() {
   model_list=glGenLists(1);
   
   if (renderFlag == RW_COLOR) {
+    drange = model->max_verror-model->min_verror;
+    if (drange < FLT_MIN*100) drange = 1;
     glNewList(model_list, GL_COMPILE);
     glBegin(GL_TRIANGLES);  
-    for (i=0; i<rawModelStruct->num_faces; i++) {
-      cur_face = &(rawModelStruct->faces[i]);
-      glColor3dv(colormap[rawModelStruct->error[cur_face->f0]]);
-      glVertex3d(rawModelStruct->vertices[cur_face->f0].x,
-		 rawModelStruct->vertices[cur_face->f0].y,
-		 rawModelStruct->vertices[cur_face->f0].z); 
+    for (i=0; i<model->mesh->num_faces; i++) {
+      cur_face = &(model->mesh->faces[i]);
+      cidx = (int) floor(7*(model->verror[cur_face->f0]-
+                            model->min_verror)/drange);
+      glColor3dv(colormap[cidx]);
+      glVertex3d(model->mesh->vertices[cur_face->f0].x,
+		 model->mesh->vertices[cur_face->f0].y,
+		 model->mesh->vertices[cur_face->f0].z); 
       
-      glColor3dv(colormap[rawModelStruct->error[cur_face->f1]]);
-      glVertex3d(rawModelStruct->vertices[cur_face->f1].x,
-		 rawModelStruct->vertices[cur_face->f1].y,
-		 rawModelStruct->vertices[cur_face->f1].z); 
+      cidx = (int) floor(7*(model->verror[cur_face->f1]-
+                            model->min_verror)/drange);
+      glColor3dv(colormap[cidx]);
+      glVertex3d(model->mesh->vertices[cur_face->f1].x,
+		 model->mesh->vertices[cur_face->f1].y,
+		 model->mesh->vertices[cur_face->f1].z); 
       
-      glColor3dv(colormap[rawModelStruct->error[cur_face->f2]]);
-      glVertex3d(rawModelStruct->vertices[cur_face->f2].x,
-		 rawModelStruct->vertices[cur_face->f2].y,
-		 rawModelStruct->vertices[cur_face->f2].z);       
+      cidx = (int) floor(7*(model->verror[cur_face->f2]-
+                            model->min_verror)/drange);
+      glColor3dv(colormap[cidx]);
+      glVertex3d(model->mesh->vertices[cur_face->f2].x,
+		 model->mesh->vertices[cur_face->f2].y,
+		 model->mesh->vertices[cur_face->f2].z);       
     }
     glEnd();
     glEndList();
   }   
   else if (renderFlag == RW_LIGHT_TOGGLE) {
-    if (rawModelStruct->normals != NULL) {
+    if (model->mesh->normals != NULL) {
       glNewList(model_list, GL_COMPILE);
       glColor3f(1.0,1.0,1.0);
       glBegin(GL_TRIANGLES);  
-      for (i=0; i<rawModelStruct->num_faces; i++) {
-	cur_face = &(rawModelStruct->faces[i]);
+      for (i=0; i<model->mesh->num_faces; i++) {
+	cur_face = &(model->mesh->faces[i]);
 	
 	
-	glNormal3d(rawModelStruct->normals[cur_face->f0].x,
-		   rawModelStruct->normals[cur_face->f0].y,
-		   rawModelStruct->normals[cur_face->f0].z);
-	glVertex3d(rawModelStruct->vertices[cur_face->f0].x,
-		   rawModelStruct->vertices[cur_face->f0].y,
-		   rawModelStruct->vertices[cur_face->f0].z); 
+	glNormal3d(model->mesh->normals[cur_face->f0].x,
+		   model->mesh->normals[cur_face->f0].y,
+		   model->mesh->normals[cur_face->f0].z);
+	glVertex3d(model->mesh->vertices[cur_face->f0].x,
+		   model->mesh->vertices[cur_face->f0].y,
+		   model->mesh->vertices[cur_face->f0].z); 
 	
-	glNormal3d(rawModelStruct->normals[cur_face->f1].x,
-		   rawModelStruct->normals[cur_face->f1].y,
-		   rawModelStruct->normals[cur_face->f1].z);  
-	glVertex3d(rawModelStruct->vertices[cur_face->f1].x,
-		   rawModelStruct->vertices[cur_face->f1].y,
-		   rawModelStruct->vertices[cur_face->f1].z); 
+	glNormal3d(model->mesh->normals[cur_face->f1].x,
+		   model->mesh->normals[cur_face->f1].y,
+		   model->mesh->normals[cur_face->f1].z);  
+	glVertex3d(model->mesh->vertices[cur_face->f1].x,
+		   model->mesh->vertices[cur_face->f1].y,
+		   model->mesh->vertices[cur_face->f1].z); 
 	
-	glNormal3d(rawModelStruct->normals[cur_face->f2].x,
-		   rawModelStruct->normals[cur_face->f2].y,
-		   rawModelStruct->normals[cur_face->f2].z); 
-	glVertex3d(rawModelStruct->vertices[cur_face->f2].x,
-		   rawModelStruct->vertices[cur_face->f2].y,
-		   rawModelStruct->vertices[cur_face->f2].z);       
+	glNormal3d(model->mesh->normals[cur_face->f2].x,
+		   model->mesh->normals[cur_face->f2].y,
+		   model->mesh->normals[cur_face->f2].z); 
+	glVertex3d(model->mesh->vertices[cur_face->f2].x,
+		   model->mesh->vertices[cur_face->f2].y,
+		   model->mesh->vertices[cur_face->f2].z);       
       }
       glEnd();
       glEndList();
@@ -254,20 +271,20 @@ void RawWidget::rebuild_list() {
       glNewList(model_list, GL_COMPILE);
       glColor3f(1.0,1.0,1.0);
       glBegin(GL_TRIANGLES);  
-      for (i=0; i<rawModelStruct->num_faces; i++) {
-	cur_face = &(rawModelStruct->faces[i]);
+      for (i=0; i<model->mesh->num_faces; i++) {
+	cur_face = &(model->mesh->faces[i]);
 	
-	glVertex3d(rawModelStruct->vertices[cur_face->f0].x,
-		   rawModelStruct->vertices[cur_face->f0].y,
-		   rawModelStruct->vertices[cur_face->f0].z); 
+	glVertex3d(model->mesh->vertices[cur_face->f0].x,
+		   model->mesh->vertices[cur_face->f0].y,
+		   model->mesh->vertices[cur_face->f0].z); 
 	
-	glVertex3d(rawModelStruct->vertices[cur_face->f1].x,
-		   rawModelStruct->vertices[cur_face->f1].y,
-		   rawModelStruct->vertices[cur_face->f1].z); 
+	glVertex3d(model->mesh->vertices[cur_face->f1].x,
+		   model->mesh->vertices[cur_face->f1].y,
+		   model->mesh->vertices[cur_face->f1].z); 
 	
-	glVertex3d(rawModelStruct->vertices[cur_face->f2].x,
-		   rawModelStruct->vertices[cur_face->f2].y,
-		   rawModelStruct->vertices[cur_face->f2].z);       
+	glVertex3d(model->mesh->vertices[cur_face->f2].x,
+		   model->mesh->vertices[cur_face->f2].y,
+		   model->mesh->vertices[cur_face->f2].z);       
       }
       glEnd();
       glEndList();
@@ -275,54 +292,6 @@ void RawWidget::rebuild_list() {
   }
 
 }
-
-// Computes the normals of the model. The retunr value is one for success or
-// zero for failure. In case of failure the current normals ae left untouched
-// (however the face normals are deleted)
-int RawWidget::compute_normals(void) {
-  info_vertex *curv;
-  int i;
-
-  computed_normals = 1;
-  rawModelStruct->area =
-    (double*)realloc(rawModelStruct->area,
-                     rawModelStruct->num_faces*sizeof(double));
-  curv = 
-    (info_vertex*)malloc(rawModelStruct->num_vert*sizeof(info_vertex));
-  if (rawModelStruct->face_normals==NULL)
-    rawModelStruct->face_normals = compute_face_normals(rawModelStruct, 
-                                                        curv);
-  if (rawModelStruct->face_normals == NULL) {
-    free(rawModelStruct->area);
-    return 0; // failure
-  }
-  else { // Compute a normal for each vertex
-	    
-#ifdef __RAW_WID_DEBUG
-    for (i=0; i<rawModelStruct->num_vert; i++) {
-      printf("[RawWidget]: nf=%d curv[%d].list_face[0] = %d\n", 
-             curv[i].num_faces, 
-             i, curv[i].list_face[0]);
-      printf("[RawWidget]: curv[%d].list_face = 0x%x\n", i, 
-             (unsigned int)curv[i].list_face);
-    }
-    printf("[RawWidget]: curv=0x%x\n", (unsigned int)curv);
-#endif
-    free(rawModelStruct->normals);
-    rawModelStruct->normals = NULL;
-    compute_vertex_normal(rawModelStruct, curv, 
-                          rawModelStruct->face_normals);
-    for (i=0; i<rawModelStruct->num_vert; i++) 
-      free(curv[i].list_face);
-    free(curv);	
-    free(rawModelStruct->face_normals);
-    free(rawModelStruct->area);
-    rawModelStruct->face_normals = NULL;
-    rawModelStruct->area = NULL;
-    return 1; // success
-  }
-}
-
 
 /* ************************************************************ */
 /* Here is the callback function when mouse buttons are pressed */
@@ -417,36 +386,19 @@ void RawWidget::keyPressEvent(QKeyEvent *k) {
     if (renderFlag == RW_LIGHT_TOGGLE) {
       light_state = glIsEnabled(GL_LIGHTING);
       if (light_state == GL_TRUE) { // Invert normals
-	for (i=0; i<rawModelStruct->num_vert; i++) {
-	  rawModelStruct->normals[i].x = -rawModelStruct->normals[i].x;
-	  rawModelStruct->normals[i].y = -rawModelStruct->normals[i].y;
-	  rawModelStruct->normals[i].z = -rawModelStruct->normals[i].z;
+	for (i=0; i<model->mesh->num_vert; i++) {
+	  model->mesh->normals[i].x = -model->mesh->normals[i].x;
+	  model->mesh->normals[i].y = -model->mesh->normals[i].y;
+	  model->mesh->normals[i].z = -model->mesh->normals[i].z;
 	}
 	rebuild_list();
 	glDraw();
       }
     }
     break;
-  case Key_F5:
-    if (renderFlag == RW_LIGHT_TOGGLE) {
-      if (computed_normals) {
-        fprintf(stderr,
-                "Normals have already been computed (or attempted to)\n");
-        break;
-      }
-      free(rawModelStruct->face_normals); // force calculation of new normals
-      rawModelStruct->face_normals = NULL;
-      if (compute_normals()) {
-        rebuild_list(); // rebuild display list to include new normals
-        glDraw();
-      }
-    }
-    break;
   default:
     break;
   }
-
-  
 }
 
 
