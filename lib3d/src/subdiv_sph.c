@@ -1,4 +1,4 @@
-/* $Id: subdiv_sph.c,v 1.10 2002/10/31 13:03:20 aspert Exp $ */
+/* $Id: subdiv_sph.c,v 1.11 2002/11/05 13:35:36 aspert Exp $ */
 #include <3dmodel.h>
 #include <normals.h>
 #include <geomutils.h>
@@ -37,7 +37,7 @@ static void half_sph(const vertex_t *p,
   pl_off = -scalprod_v(p, n);
   substract_v(q, p, &dir);
 
-  r = norm_v(&dir);
+  r = __norm_v(dir);
 
   lambda = -(pl_off + scalprod_v(q, n));
   prod_v(lambda, n, &m);
@@ -50,7 +50,7 @@ static void half_sph(const vertex_t *p,
   /* Sanity check for curve subdivision mostly */
   /* some cases can happen where ||v||=0 */
   /* It sucks. Let's take the midpoint of the edge */
-  if (norm_v(&v) < EPS) {
+  if (__norm_v(v) < EPS) {
     add_v(p, q, &np);
     prod_v(0.5, &np, vout);
 #ifdef __SUBDIV_SPH_DEBUG
@@ -60,9 +60,9 @@ static void half_sph(const vertex_t *p,
   }
 
   if (lambda >= 0.0)
-    th = -atan(norm_v(&m)/norm_v(&v));
+    th = -atan(__norm_v(m)/__norm_v(v));
   else
-    th = atan(norm_v(&m)/norm_v(&v));
+    th = atan(__norm_v(m)/__norm_v(v));
 
   nr = 0.5*r;
   nth = h(th);
@@ -70,7 +70,7 @@ static void half_sph(const vertex_t *p,
   dz = nr*sin(nth);
   rp = nr*cos(nth);
 
-  normalize_v(&v);
+  __normalize_v(v);
   prod_v(rp, &v, &np);
 
   /* np += dz*n + p */
@@ -120,7 +120,7 @@ void compute_midpoint_sph(const struct ring_info *rings, const int center,
   
   half_sph(&p, &n, &vj, &np2);
 
-  add_v(&np1, &np2, &np);
+  __add_v(np1, np2, np);
   prod_v(0.5, &np, vout);
 
 
@@ -162,24 +162,24 @@ void compute_midpoint_sph_crease(const struct ring_info *rings,
       return;
     }
 
-    substract_v(&(raw_model->vertices[v3]), &p, &a);
-    r1 = norm_v(&a);
-    substract_v(&q, &p, &b);
-    r2 = norm_v(&b);
+    __substract_v(raw_model->vertices[v3], p, a);
+    r1 = __norm_v(a);
+    __substract_v(q, p, b);
+    r2 = __norm_v(b);
 
-    crossprod_v(&a, &b, &np);
-    normalize_v(&np);
+    __crossprod_v(a, b, np);
+    __normalize_v(np);
 
     /* get side normals */
-    crossprod_v(&a, &np, &ns1);
-    normalize_v(&ns1);
-    crossprod_v(&np, &b, &ns2);
-    normalize_v(&ns2);
+    __crossprod_v(a, np, ns1);
+    __normalize_v(ns1);
+    __crossprod_v(np, b, ns2);
+    __normalize_v(ns2);
 
     /* Now get the normal est. at vertex 'center' */
-    prod_v(r1, &ns1, &n);
-    add_prod_v(r2, &ns2, &n, &n);
-    normalize_v(&n);
+    __prod_v(r1, ns1, n);
+    __add_prod_v(r2, ns2, n, n);
+    __normalize_v(n);
 
 
     /* Now proceed through a usual spherical subdivision */
@@ -191,36 +191,36 @@ void compute_midpoint_sph_crease(const struct ring_info *rings,
     else if (ring_op.ord_vert[nrop-1] == center)
       v3 = ring_op.ord_vert[0];
     else {
-      add_v(&p, &q, &np);
+      __add_v(p, q, np);
       prod_v(0.5, &np, vout);
       return;
     }
 
     /* Get the normal to the plane (center, center2, v3) */
-    substract_v(&p, &q, &a);
+    __substract_v(p, q, a);
     r1 = r2;
-    substract_v(&(raw_model->vertices[v3]), &q, &b);
-    r2 = norm_v(&b);
-    crossprod_v(&a, &b, &np);
-    normalize_v(&np);
+    __substract_v(raw_model->vertices[v3], q, b);
+    r2 = __norm_v(b);
+    __crossprod_v(a, b, np);
+    __normalize_v(np);
 
     /* get side normals */
-    crossprod_v(&a, &np, &ns1);
-    normalize_v(&ns1);
-    crossprod_v(&np, &b, &ns2);
-    normalize_v(&ns2);
+    __crossprod_v(a, np, ns1);
+    __normalize_v(ns1);
+    __crossprod_v(np, b, ns2);
+    __normalize_v(ns2);
 
     /* Now get the normal est. at vertex 'center2' */
-    prod_v(r1, &ns1, &n);
-    add_prod_v(r2, &ns2, &n, &n);
-    normalize_v(&n);
+    __prod_v(r1, ns1, n);
+    __add_prod_v(r2, ns2, n, n);
+    __normalize_v(n);
 
 
     /* Perform sph. subdivision */
     half_sph(&q, &n, &p, &np2);
 
     /* gather those new points */
-    add_v(&np1, &np2, &np);
+    __add_v(np1, np2, np);
     prod_v(0.5, &np, vout);
 
   } else if (ring.type == 1)  /* && ring_op.type == 0 */
