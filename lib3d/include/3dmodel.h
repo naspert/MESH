@@ -1,4 +1,4 @@
-/* $Id: 3dmodel.h,v 1.23 2001/10/23 10:51:13 aspert Exp $ */
+/* $Id: 3dmodel.h,v 1.24 2001/10/25 12:03:56 aspert Exp $ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -77,7 +77,7 @@ struct info_vertex{
   int outdegree;
   int *list_vertex; /* Index of vertices neighbouring the current vertex */
   double mixed_area;
-  double gauss_curv;
+  double gauss_curv, mean_curv;
   vertex_t mean_curv_normal;
   double c[3];
   double k1, k2; /* principal curvature */
