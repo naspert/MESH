@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.49 2002/10/31 10:19:52 aspert Exp $
+# $Id: Makefile,v 1.50 2002/11/04 15:27:46 aspert Exp $
 
 #Set PROFILE to something to enable profiling
 #PROFILE=1
@@ -75,7 +75,8 @@ GL_CFLAGS = $(INCLFLAGS) $(GLINCLFLAGS) $(XTRA_CFLAGS)
 #
 BASE_OBJECTS = $(OBJDIR)/geomutils.o $(OBJDIR)/normals.o \
 	$(OBJDIR)/3dmodel_io.o $(OBJDIR)/ring.o \
-	$(OBJDIR)/model_in.o $(OBJDIR)/model_in_raw.o $(OBJDIR)/model_in_smf.o \
+	$(OBJDIR)/model_in.o $(OBJDIR)/model_in_raw.o \
+	$(OBJDIR)/model_in_smf.o $(OBJDIR)/block_list.o \
 	$(OBJDIR)/model_in_ply.o $(OBJDIR)/model_in_vrml_iv.o \
 	$(OBJDIR)/curvature.o  # $(OBJDIR)/purify.o
 GL_OBJECTS = $(OBJDIR)/rawview.o $(OBJDIR)/gl2ps.o $(OBJDIR)/rawview_disp.o \

@@ -1,4 +1,4 @@
-/* $Id: model_in_smf.c,v 1.3 2002/08/30 09:18:47 aspert Exp $ */
+/* $Id: model_in_smf.c,v 1.4 2002/11/04 15:27:47 aspert Exp $ */
 
 
 /*
@@ -45,6 +45,7 @@
 
 
 #include <model_in.h>
+#include <block_list.h>
 
 /* Reads a _triangular_ mesh from a SMF file (used by M. Garland's QSlim).
  * Only the vertices and faces are read. All other possible fields in
@@ -64,30 +65,41 @@ int read_smf_tmesh(struct model **tmesh_ref, struct file_data *data) {
   int f0, f1, f2;
   float x, y, z;
   int rcode = 1;
-
-
+  struct block_list *head_verts, *cur_vert;
+  struct block_list *head_faces, *cur_face;
+  
+  head_verts = (struct block_list*)malloc(sizeof(struct block_list));
+  head_faces = (struct block_list*)malloc(sizeof(struct block_list));
+  
+  cur_vert = head_verts;
+  cur_face = head_faces;
 
   bbmin.x = bbmin.y = bbmin.z = FLT_MAX;
   bbmax.x = bbmax.y = bbmax.z = -FLT_MAX;
   tmesh = (struct model*)calloc(1, sizeof(struct model));
 
+  rcode = init_block_list(head_verts, sizeof(vertex_t));
+  if(rcode<0) 
+    return rcode;
+
+  rcode = init_block_list(head_faces, sizeof(face_t));
+  if(rcode < 0)
+    return rcode;
+
   do {
     c = skip_ws_comm(data);
     if (c == EOF) break; /* maybe ok if we have reached the end of
                           *  file */
-
+    
     c = getc(data); /* get 1st char of the current line */
     
     switch (c) {
     case 'v': /* vertex line found */
-      if (nvtcs == l_vertices) { /* Reallocate storage if needed */
-        tmesh->vertices = grow_array(tmesh->vertices, 
-                                     sizeof(*(tmesh->vertices)), 
-                                     &l_vertices, SZ_MAX_INCR);
-        if (tmesh->vertices == NULL) {
-          rcode = MESH_NO_MEM;
-          break;
-        }
+      if (cur_vert->elem_filled == cur_vert->nelem) { 
+	/* Reallocate storage if needed */
+	cur_vert = get_next_block(cur_vert);
+	if (cur_vert == NULL)
+	  rcode = MESH_NO_MEM;
       }
       if (float_scanf(data, &x) != 1) {
         rcode = MESH_CORRUPTED;
@@ -106,9 +118,10 @@ int read_smf_tmesh(struct model **tmesh_ref, struct file_data *data) {
       printf("[read_smf_tmesh] %f %f %f\n", x, y, z);
 #endif
 
-      tmesh->vertices[nvtcs].x = x;
-      tmesh->vertices[nvtcs].y = y;
-      tmesh->vertices[nvtcs++].z = z;
+      ((vertex_t*)cur_vert->data)[cur_vert->elem_filled].x = x;
+      ((vertex_t*)cur_vert->data)[cur_vert->elem_filled].y = y;
+      ((vertex_t*)cur_vert->data)[cur_vert->elem_filled++].z = z;
+      nvtcs++;
 
       if (x < bbmin.x) bbmin.x = x;
       if (x > bbmax.x) bbmax.x = x;
@@ -120,10 +133,10 @@ int read_smf_tmesh(struct model **tmesh_ref, struct file_data *data) {
       break; /* end for 'v' */
 
     case 'f':/* face line found */
-      if (nfaces == l_faces) { /* Reallocate storage if needed */
-        tmesh->faces = grow_array(tmesh->faces, sizeof(*(tmesh->faces)), 
-                                  &l_faces, SZ_MAX_INCR);
-        if (tmesh->faces == NULL) {
+      if (cur_face->elem_filled == cur_face->nelem) { 
+	/* Reallocate storage if needed */
+	cur_face = get_next_block(cur_face);
+        if (cur_face == NULL) {
           rcode = MESH_NO_MEM;
           break;
         }
@@ -145,10 +158,10 @@ int read_smf_tmesh(struct model **tmesh_ref, struct file_data *data) {
       printf("[read_smf_tmesh] %d %d %d\n", f0, f1, f2);
 #endif
       /* Do not forget that SMF vertex indices start at 1 !! */
-      tmesh->faces[nfaces].f0 = --f0;
-      tmesh->faces[nfaces].f1 = --f1;
-      tmesh->faces[nfaces++].f2 = --f2;
-
+      ((face_t*)cur_face->data)[cur_face->elem_filled].f0 = --f0;
+      ((face_t*)cur_face->data)[cur_face->elem_filled].f1 = --f1;
+      ((face_t*)cur_face->data)[cur_face->elem_filled++].f2 = --f2;
+      nfaces++;
       if (f0 > max_vidx) max_vidx = f0;
       if (f1 > max_vidx) max_vidx = f1;
       if (f2 > max_vidx) max_vidx = f2;
@@ -177,13 +190,24 @@ int read_smf_tmesh(struct model **tmesh_ref, struct file_data *data) {
     memset(&bbmin, 0, sizeof(bbmin));
     memset(&bbmax, 0, sizeof(bbmax));
   }
-  
+
   if (rcode > 0) {
     tmesh->bBox[0] = bbmin;
     tmesh->bBox[1] = bbmax;
     tmesh->num_vert = nvtcs;
     tmesh->num_faces = nfaces;
-    *tmesh_ref = tmesh;
+    tmesh->vertices = malloc(nvtcs*sizeof(vertex_t));
+    tmesh->faces = malloc(nfaces*sizeof(face_t));
+    rcode = gather_block_list(head_verts, tmesh->vertices, 
+                              nvtcs*sizeof(vertex_t));
+    rcode = gather_block_list(head_faces, tmesh->faces, 
+                              nfaces*sizeof(face_t));
+    free_block_list(&head_verts);
+    free_block_list(&head_faces);
+    if (rcode == 0)
+      *tmesh_ref = tmesh;
+    else 
+      __free_raw_model(tmesh);
   } else 
     __free_raw_model(tmesh);
   

@@ -1,4 +1,4 @@
-/* $Id: model_in_vrml_iv.c,v 1.3 2002/08/30 09:18:47 aspert Exp $ */
+/* $Id: model_in_vrml_iv.c,v 1.4 2002/11/04 15:27:47 aspert Exp $ */
 
 
 /*
@@ -45,7 +45,7 @@
 
 
 #include <model_in.h>
-
+#include <block_list.h>
 
 /* Advances the '*data' stream past the end of the VRML field (single, array
  * or node). Returns zero on success and an error code (MESH_CORRUPTED, etc.) 
@@ -102,7 +102,8 @@ static void free_model_pfields(struct model *m) {
  * number of normals in '*vnrmls_ref' is returned. Otherwise the negative
  * error code is returned and '*vnrmls_ref' is not modified. */
 static int tidxnormals_to_vnormals(vertex_t **vnrmls_ref, vertex_t *nrmls,
-                                   int n_nrmls, int *nrml_idcs, int n_nrml_idcs,
+                                   int n_nrmls, int *nrml_idcs, 
+                                   int n_nrml_idcs,
                                    int max_nidx, int max_vidx, face_t *faces,
                                    int n_faces)
 {
@@ -245,16 +246,19 @@ static int read_sfbool(int *res, struct file_data *data)
  * opening bracket '[', values be separated by VRML whitespace (e.g., commas)
  * and it must finish with a closing bracket ']'. If the array has only
  * 'nelem' values the brackets can be left out (typically used for MFVec3f
- * fields with 'nelem = 3', otherwise 'nelem' should be 1 for MFFloat). The
- * array (allocated via malloc) is returned in '*a_ref'. It is NULL for empty
- * arrays. The number of elements in the array is returned by the function. In
+ * fields with 'nelem = 3', otherwise 'nelem' should be 1 for
+ * MFFloat). 
+ * A valid pointer 'blk' to a 'block_list', properly initialized with
+ * elements having a size of sizeof(float) must be passed to the function.
+ * The number of elements in the array is returned by the function. In
  * case of error the negative error code is returned (MESH_NO_MEM,
- * MESH_CORRUPTED, etc.)  and '*a_ref' is not modified. */
-static int read_mffloat(float **a_ref, struct file_data *data, int nelem)
+ * MESH_CORRUPTED, etc.) */
+static int read_mffloat(struct block_list *blk, struct file_data *data, 
+                        int nelem)
 {
   int len, n;
   int c, in_brackets;
-  float *array;
+  struct block_list *cur=blk;
   float tmpf;
 
   /* Identify first char */
@@ -267,7 +271,6 @@ static int read_mffloat(float **a_ref, struct file_data *data, int nelem)
   }
 
   /* Get numbers until we reach closing bracket */
-  array = NULL;
   len = 0;
   n = 0;
   do {
@@ -281,14 +284,15 @@ static int read_mffloat(float **a_ref, struct file_data *data, int nelem)
         break;
       }
     } else if (c != EOF && float_scanf(data,&tmpf) == 1) {
-      if (n == len) { /* Need more storage */
-        array = grow_array(array,sizeof(*array),&len,SZ_MAX_INCR);
-        if (array == NULL) {
+      if (cur->elem_filled == cur->nelem) { /* Need more storage */
+        cur = get_next_block(cur);
+        if (cur == NULL) {
           n = MESH_NO_MEM;
           break;
         }
       }
-      array[n++] = tmpf;
+      ((float*)cur->data)[cur->elem_filled++] = tmpf;
+      n++;
     } else { /* error */
       n = MESH_CORRUPTED;
     }
@@ -296,28 +300,28 @@ static int read_mffloat(float **a_ref, struct file_data *data, int nelem)
 #ifdef DEBUG
   printf("[read_mffloat]in_brackets=%d n=%d c=%d \n", in_brackets, n, c);
 #endif
-  if (n >= 0) { /* read OK */
-    *a_ref = array;
-  } else { /* An error occurred */
-    free(array);
-  }
+  
   return n;
 }
 
 /* Reads an ASCII VRML or Inventor integer array. The array must start by an
  * opening bracket '[', values be separated by VRML whitespace (e.g., commas)
  * and it must finish with a closing bracket ']'. If the array has only one
- * value the brackets can be left out. The array (allocated via malloc) is
- * returned in '*a_ref' and the maximum value in it returned in '*max_val',
- * '*a_ref' is NULL for empty arrays. The number of elements in the array is
- * returned by the function. In case of error the negative error code is
- * returned (MESH_NO_MEM, MESH_CORRUPTED, etc.)  and '*a_ref' and '*max_val'
- * are not modified. */
-static int read_mfint32(int **a_ref, struct file_data *data, int *max_val)
+ * value the brackets can be left out. 
+ * A valid pointer 'blk' to a 'block_list' (initialized, with elements
+ * having a size of sizeof(int) must be passed to the function, in
+ * order to store the data read from the file.
+ * The maximum value in it returned in '*max_val', the number of
+ * elements in the array is returned by the function. 
+ * In case of error the negative error code is
+ * returned (MESH_NO_MEM, MESH_CORRUPTED, etc.)  and  '*max_val'
+ * is not modified. */
+static int read_mfint32(struct block_list *blk, struct file_data *data, 
+                        int *max_val)
 {
   int len,n;
   int c,in_brackets;
-  int *array;
+  struct block_list *cur=blk;
   int tmpi;
   int maxv;
 
@@ -331,7 +335,6 @@ static int read_mfint32(int **a_ref, struct file_data *data, int *max_val)
   }
 
   /* Get numbers until we reach closing bracket */
-  array = NULL;
   len = 0;
   n = 0;
   maxv = INT_MIN;
@@ -345,26 +348,24 @@ static int read_mfint32(int **a_ref, struct file_data *data, int *max_val)
         break;
       }
     } else if (c != EOF && int_scanf(data,&tmpi) == 1) {
-      if (n == len) { /* Reallocate storage */
-        array = grow_array(array,sizeof(*array),&len,SZ_MAX_INCR);
-        if (array == NULL) {
+      if (cur->elem_filled == cur->nelem) { /* Reallocate storage */
+        cur = get_next_block(cur);
+        if (cur == NULL) {
           n = MESH_NO_MEM;
           break;
         }
       }
       if (tmpi > maxv) maxv = tmpi;
-      array[n++] = tmpi;
+      ((int*)cur->data)[cur->elem_filled++] = tmpi;
+      n++;
     } else { /* error */
       n = MESH_CORRUPTED;
     }
   } while (in_brackets && c != EOF && n >= 0);
 
-  if (n >= 0) { /* read OK */
-    *a_ref = array;
+  if (n >= 0)  /* read OK */
     *max_val = maxv;
-  } else { /* An error occurred */
-    free(array);
-  }
+   
   return n;
 }
 
@@ -378,16 +379,37 @@ static int read_mfint32(int **a_ref, struct file_data *data, int *max_val)
  * MESH_CORRUPTED, etc.)  and '*a_ref' is not modified. */
 static int read_mfvec3f(vertex_t **a_ref, struct file_data *data)
 {
-  float *vals;
-  vertex_t *vtcs;
-  int n_vals,n_vtcs;
-  int i,j;
+  struct block_list *tmp=NULL;
+  float *vals=NULL;
+  vertex_t *vtcs=NULL;
+  int n_vals, n_vtcs;
+  int i, j, rcode;
 
-  vals = NULL;
-  n_vals = read_mffloat(&vals,data,3);
+  tmp = (struct block_list*)calloc(1, sizeof(struct block_list));
+  if (tmp == NULL)
+    return MESH_NO_MEM;
+
+  rcode = init_block_list(tmp, sizeof(float));
+  if (rcode < 0)
+    return rcode;
+
+  n_vals = read_mffloat(tmp, data, 3);
+
   if (n_vals < 0) {
+    free_block_list(&tmp);
     return n_vals; /* error */
   }
+
+  /* gather data into a classical array */
+  vals = (float*)malloc(n_vals*sizeof(float));
+  if (vals == NULL)
+    return MESH_NO_MEM;
+
+  rcode = gather_block_list(tmp, vals, n_vals*sizeof(float));
+  free_block_list(&tmp);
+  if (rcode < 0)
+    return rcode;
+
   n_vtcs = n_vals/3;
   if (n_vtcs > 0) {
     vtcs = malloc(sizeof(*vtcs)*n_vtcs);
@@ -404,9 +426,9 @@ static int read_mfvec3f(vertex_t **a_ref, struct file_data *data)
     vtcs = NULL;
   }
   free(vals);
-  if (n_vtcs >= 0) {
+  if (n_vtcs >= 0) 
     *a_ref = vtcs;
-  }
+  
   return n_vtcs;
 }
 
@@ -423,21 +445,41 @@ static int read_mfvec3f(vertex_t **a_ref, struct file_data *data)
 static int read_mfvec3f_bbox(vertex_t **a_ref, struct file_data *data,
                              vertex_t *bbox_min, vertex_t *bbox_max)
 {
-  float *vals;
-  vertex_t *vtcs;
-  vertex_t bbmin,bbmax;
-  int n_vals,n_vtcs;
-  int i,j;
+  struct block_list *tmp=NULL;
+  float *vals=NULL;
+  vertex_t *vtcs=NULL;
+  vertex_t bbmin, bbmax;
+  int n_vals, n_vtcs;
+  int i, j, rcode;
 
-  vals = NULL;
+  tmp = (struct block_list*)calloc(1, sizeof(struct block_list));
+  if (tmp == NULL)
+    return MESH_NO_MEM;
+
+  rcode = init_block_list(tmp, sizeof(float));
+  if (rcode < 0)
+    return rcode;
+
+
   bbmin.x = bbmin.y = bbmin.z = FLT_MAX;
   bbmax.x = bbmax.y = bbmax.z = -FLT_MAX;
 
-  n_vals = read_mffloat(&vals,data,3);
+  n_vals = read_mffloat(tmp, data, 3);
 
   if (n_vals < 0) {
+    free_block_list(&tmp);
     return n_vals; /* error */
   }
+  /* gather data into a classical array */
+  vals = (float*)malloc(n_vals*sizeof(float));
+  if (vals == NULL)
+    return MESH_NO_MEM;
+
+  rcode = gather_block_list(tmp, vals, n_vals*sizeof(float));
+  free_block_list(&tmp);
+  if (rcode < 0)
+    return rcode;
+
   n_vtcs = n_vals/3;
   if (n_vtcs > 0) {
     vtcs = malloc(sizeof(*vtcs)*n_vtcs);
@@ -479,18 +521,42 @@ static int read_mfvec3f_bbox(vertex_t **a_ref, struct file_data *data,
  * function. In case of error the negative error code is returned
  * (MESH_NO_MEM, MESH_CORRUPTED, MESH_NOT_TRIAG, etc.)  and '*a_ref' and
  * '*max_vidx' are not modified. */
-static int read_tcoordindex(face_t **a_ref, struct file_data *data, int *max_vidx)
+static int read_tcoordindex(face_t **a_ref, struct file_data *data, 
+                            int *max_vidx)
 {
   int *fidxs;
+  struct block_list *tmp=NULL;
   face_t *faces;
   int n_fidxs,n_faces;
-  int i,j;
+  int i, j, rcode;
   int max_idx;
 
   fidxs = NULL;
   max_idx = -1;
-  n_fidxs = read_mfint32(&fidxs,data,&max_idx);
+  tmp = (struct block_list*)calloc(1, sizeof(struct block_list));
+
+  if (tmp == NULL)
+    return MESH_NO_MEM;
+
+  rcode = init_block_list(tmp, sizeof(int));
+  if (rcode < 0) {
+    free_block_list(&tmp);
+    return rcode;
+  }
+
+  n_fidxs = read_mfint32(tmp,data,&max_idx);
   if (n_fidxs < 0) return n_fidxs; /* error */
+
+  /* gather data */
+  fidxs = (int*)malloc(n_fidxs*sizeof(int));
+  if (fidxs == NULL)
+    return MESH_NO_MEM;
+  rcode = gather_block_list(tmp, fidxs, n_fidxs*sizeof(int));
+  free_block_list(&tmp);
+  if (rcode < 0)
+    return rcode;
+
+
   n_faces = (n_fidxs+1)/4;
   if (n_faces > 0) {
     faces = malloc(sizeof(*faces)*n_faces);
@@ -627,34 +693,26 @@ static int read_vrml_ifs(struct model *tmesh, struct file_data *data)
 {
   char stmp[MAX_WORD_LEN+1];
   int c;
-  vertex_t *vtcs;
-  face_t *faces;
-  vertex_t *normals,*vnormals,*fnormals;
-  int *nrml_idcs;
+  vertex_t *vtcs=NULL;
+  face_t *faces=NULL;
+  vertex_t *normals=NULL, *vnormals=NULL, *fnormals=NULL;
+  int *nrml_idcs=NULL;
+  struct block_list *tmp=NULL;
   vertex_t bbmin,bbmax;
-  int n_vtcs,n_faces,n_nrmls,n_nrml_idcs;
-  int max_vidx,max_nidx;
-  int nrml_per_vertex;
-  int rcode;
+  int n_vtcs=-1, n_faces=-1, n_nrmls=-1, n_nrml_idcs=-1;
+  int max_vidx=-1, max_nidx=-1;
+  int nrml_per_vertex=1;
+  int rcode=0;
 
   /* Get the opening curly bracket */
   if ((c = skip_ws_comm(data)) == EOF || c != '{') return MESH_CORRUPTED;
   getc(data); /* skip { */
 
-  rcode = 0;
-  vtcs = NULL;
-  faces = NULL;
-  normals = vnormals = fnormals = NULL;
-  nrml_idcs = NULL;
+
+
   memset(&bbmin,0,sizeof(bbmin));
   memset(&bbmax,0,sizeof(bbmax));
-  nrml_per_vertex = 1;
-  n_vtcs = -1;
-  n_faces = -1;
-  n_nrmls = -1;
-  n_nrml_idcs = -1;
-  max_vidx = -1;
-  max_nidx = -1;
+
   do {
     c = skip_ws_comm(data);
     if (c == '}') { /* end of node */
@@ -702,8 +760,32 @@ static int read_vrml_ifs(struct model *tmesh, struct file_data *data)
         if (n_nrml_idcs != -1) {
           rcode = MESH_CORRUPTED;
         } else {
-          n_nrml_idcs = read_mfint32(&nrml_idcs,data,&max_nidx);
-          if (n_nrml_idcs < 0) rcode = n_nrml_idcs; /* error */
+          tmp = (struct block_list*)calloc(1, sizeof(struct block_list));
+          if (tmp == NULL)
+            break;
+
+          rcode = init_block_list(tmp, sizeof(int));
+          if (rcode < 0)
+            break;
+
+          n_nrml_idcs = read_mfint32(tmp,data,&max_nidx);
+          if (n_nrml_idcs < 0) { 
+            free_block_list(&tmp);
+            rcode = n_nrml_idcs; /* error */
+            break;
+          }
+          else {
+            nrml_idcs = (int*)malloc(n_nrml_idcs*sizeof(int));
+            if (nrml_idcs == NULL) {
+              rcode = MESH_NO_MEM;
+              break;
+            }
+            rcode = gather_block_list(tmp, nrml_idcs, n_nrml_idcs*sizeof(int));
+            free_block_list(&tmp);
+            if (rcode < 0)
+              break;
+          }
+            
         }
       } else if (strcmp(stmp,"color") == 0 || strcmp(stmp,"texCoord") == 0) {
         /* unsupported node field */
@@ -763,6 +845,7 @@ static int read_vrml_ifs(struct model *tmesh, struct file_data *data)
       }
     }
   }
+
   if (rcode == 0) {
     memset(tmesh,0,sizeof(*tmesh)); /* reset *tmesh */
     tmesh->vertices = vtcs;
@@ -782,6 +865,7 @@ static int read_vrml_ifs(struct model *tmesh, struct file_data *data)
     free(normals);
   if (nrml_idcs != NULL)
     free(nrml_idcs);
+
   return rcode;
 }
 
@@ -947,6 +1031,7 @@ int read_vrml_tmesh(struct model **tmeshes_ref, struct file_data *data,
       n_tmeshes = 0; /* avoid freeing tmeshes */
     }
   }
+/*   abort(); */
   for (i=0; i<n_tmeshes; i++) {
     free_model_pfields(tmeshes+i);
   }
