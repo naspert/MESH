@@ -1,4 +1,4 @@
-/* $Id: compare_curv.c,v 1.14 2003/06/12 16:20:35 aspert Exp $ */
+/* $Id: compare_curv.c,v 1.15 2003/06/25 14:50:05 aspert Exp $ */
 #include <3dutils.h>
 #include <ring.h>
 #include <curvature.h>
@@ -6,7 +6,7 @@
 
 int main(int argc, char **argv) {
   struct model *raw_model1, *raw_model2;
-  struct info_vertex *info1, *info2;
+  struct vertex_curvature *info1, *info2;
   struct ring_info *ring1, *ring2;
   int i;
   char *filename1, *filename2;
@@ -34,15 +34,15 @@ int main(int argc, char **argv) {
   }
 
   printf("Computing face normals...\n");
-  info1 = (struct info_vertex*)
-    malloc(raw_model1->num_vert*sizeof(struct info_vertex));
+  info1 = (struct vertex_curvature*)
+    malloc(raw_model1->num_vert*sizeof(struct vertex_curvature));
   ring1 = (struct ring_info*)
     malloc(raw_model1->num_vert*sizeof(struct ring_info));
   build_star_global(raw_model1, ring1);
   raw_model1->face_normals = compute_face_normals(raw_model1, ring1);
 
-  info2 = (struct info_vertex*)
-    malloc(raw_model2->num_vert*sizeof(struct info_vertex));
+  info2 = (struct vertex_curvature*)
+    malloc(raw_model2->num_vert*sizeof(struct vertex_curvature));
   ring2 = (struct ring_info*)
     malloc(raw_model2->num_vert*sizeof(struct ring_info));
   build_star_global(raw_model2, ring2);
