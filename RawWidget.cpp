@@ -1,193 +1,46 @@
-/* $Id: RawWidget.cpp,v 1.52 2002/03/11 18:34:55 dsanta Exp $ */
-
-#include <RawWidget.h>
-#include <qmessagebox.h>
-#include <qapplication.h>
-#include <colormap.h>
-#include <geomutils.h>
-#include <xalloc.h>
-#include <assert.h>
-
-// 
-// This is a derived class from QGLWidget used to render models
-// 
-
-RawWidget::RawWidget(struct model_error *model_err, int renderType, 
-		     QWidget *parent, const char *name)
-  :QGLWidget(parent, name), no_err_value(0.25) { 
-  
-  int i;
-  vertex_t center;
-
-  // Get as big as possible screen space
-  setSizePolicy(QSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding));
-
-  // 0 is not a valid display list index
-  model_list = 0;
-
-  // Build the colormap used to display the mean error onto the surface of
-  // the model
-  colormap = colormap_hsv(CMAP_LENGTH);
-
-  // Get the structure containing the model
-  this->model = model_err;
-
-  // Get the flags
-  renderFlag = renderType;
-  error_mode = VERTEX_ERROR;
-
-  // Initialize the state
-  move_state=0;
-  not_orientable_warned = 0;
-  two_sided_material = 1;
-  etex_id = NULL;
-  etex_sz = NULL;
-  downsampling = 1;
-  gl_initialized = false;
-
-  // Compute the center of the bounding box of the model
-  add_v(&(model_err->mesh->bBox[0]), &(model_err->mesh->bBox[1]), &center);
-  prod_v(0.5, &center, &center);
-
-  // Center the model around (0, 0, 0)
-  for (i=0; i<model_err->mesh->num_vert; i++) 
-    substract_v(&(model_err->mesh->vertices[i]), &center, 
-		&(model_err->mesh->vertices[i]));
-
-  
-  
-  // This should be enough to see the whole model when starting
-  distance = dist_v(&(model_err->mesh->bBox[0]), &(model_err->mesh->bBox[1]))/
-    tan(FOV*M_PI_2/180.0);
+/* $Id: RawWidget.cpp,v 1.53 2002/03/15 16:03:49 aspert Exp $ */
 
 
-  // This is the increment used when moving closer/farther from the object
-  dstep = distance*0.01;
+/*
+ *
+ *  Copyright (C) 2001-2002 EPFL (Swiss Federal Institute of Technology,
+ *  Lausanne) This program is free software; you can redistribute it
+ *  and/or modify it under the terms of the GNU General Public License
+ *  as published by the Free Software Foundation; either version 2 of
+ *  the License, or (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful, but
+ *  WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *  General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+ *  USA.
+ *
+ *  In addition, as a special exception, EPFL gives permission to link
+ *  the code of this program with the Qt non-commercial edition library
+ *  (or with modified versions of Qt non-commercial edition that use the
+ *  same license as Qt non-commercial edition), and distribute linked
+ *  combinations including the two.  You must obey the GNU General
+ *  Public License in all respects for all of the code used other than
+ *  Qt non-commercial edition.  If you modify this file, you may extend
+ *  this exception to your version of the file, but you are not
+ *  obligated to do so.  If you do not wish to do so, delete this
+ *  exception statement from your version.
+ *
+ *  Authors : Nicolas Aspert, Diego Santa-Cruz and Davy Jacquet
+ *
+ *  Web site : http://mesh.epfl.ch
+ *
+ *  Reference :
+ *   "MESH : Measuring Errors between Surfaces using the Hausdorff distance"
+ *   Submitted to ICME 2002, available on http://mesh.epfl.ch
+ *
+ */
 
 
-
-
-}
-
-QSize RawWidget::sizeHint() const {
-  return QSize(512,512);
-}
-
-QSize RawWidget::minimumSizeHint() const {
-  return QSize(256,256);
-}
-
-RawWidget::~RawWidget() {
-  // NOTE: Don't delete display lists and/or texture bindings here, it
-  // sometimes leads to coredumps on some combinations of QT and libGL. In any
-  // case those resources will be freed when the GL context is finally
-  // destroyed (normally just before this method returns). In addition, it is
-  // much faster to let the GL context do it (especially with a large number
-  // of textures, as is often the case in sample error texture mode).
-  free_colormap(colormap);
-  free(etex_id);
-  free(etex_sz);
-}
-
-void RawWidget::transfer(double dist,double *mvmat) {
-
-  distance = dist;
-  // Copy the 4x4 transformation matrix
-  memcpy(mvmatrix, mvmat, 16*sizeof(double)); 
-  // update display
-  updateGL();
-}
-
-void RawWidget::switchSync(bool state) {
-  if (state) {
-    move_state = 1;
-    emit(transferValue(distance, mvmatrix));
-  } else
-    move_state = 0;
-}
-
-
-void RawWidget::setLine(bool state) {
-  // state=TRUE -> switch to line
-  // state=FALSE -> switch to fill
-  GLint line_state[2]; // front and back values
-
-  if (!gl_initialized) {
-    fprintf(stderr,
-            "RawWidget::setLine() called before GL context is initialized!\n");
-    return;
-  }
-
-  // Forces the widget to be the current context. Undefined otherwise
-  // and this causes a _silly_ behaviour !
-  makeCurrent();
-
-  glGetIntegerv(GL_POLYGON_MODE,line_state);
-  if (line_state[0]==GL_FILL && line_state[1]==GL_FILL && state==TRUE) {
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-  } else if (line_state[0]==GL_LINE && line_state[1]==GL_LINE && 
-	     state==FALSE) {
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-  } else {
-    printf("Invalid state value found for GL_POLYGON_MODE: %d %d\n",
-           line_state[0],line_state[1]);
-    return;
-  }
-  checkGlErrors("setLine(bool)");
-  updateGL();
-}
-
-void RawWidget::setLight(bool state) {
-  GLboolean light_state;
-
-  if (!gl_initialized) {
-    fprintf(stderr,
-            "RawWidget::setLight() called before GL context is initialized!\n");
-    return;
-  }
-
-  // Get state from renderer
-  if ((renderFlag & RW_CAPA_MASK) ==  RW_LIGHT_TOGGLE) {
-    makeCurrent();
-    light_state = glIsEnabled(GL_LIGHTING);
-    if (light_state != !state) // harmless
-      printf("Mismatched state between qcbLight/light_state\n");
-    if (light_state==GL_FALSE){ // We are now switching to lighted mode
-      if (model->mesh->normals !=NULL){// Are these ones computed ?
-	glEnable(GL_LIGHTING);
-      } else {// Normals should have been computed
-        fprintf(stderr,"ERROR: normals where not computed!\n");
-      }
-    }
-    else if (light_state==GL_TRUE){// We are now switching to wireframe mode
-      glDisable(GL_LIGHTING);
-    }
-    checkGlErrors("setLight()");
-    updateGL();
-  }
-}
-
-// Returns the ceil(log(v)/log(2)), if v is zero or less it returns zero
-int RawWidget::ceilLog2(int v) {
-  int i;
-  i = 0;
-  v -= 1;
-  while ((v >> i) > 0) {
-    i++;
-  }
-  return i;
-}
-
-// creates the error texture for fe and stores it in texture
-int RawWidget::fillTexture(const struct face_error *fe,
-                           GLubyte *texture) const {
-  int i,j,i2,j2,k,n,sz,cidx;
-  GLubyte r,g,b;
-  float drange;
-  float e1,e2,e3;
-
-  n = fe->sample_freq;
-  if (n == 0) { /* no samples, using no error value gray */
     for (i=0, k=0; i<9; i++) { /* set border and center to no_err_value */
       texture[k++] = (GLubyte) (255*no_err_value);
       texture[k++] = (GLubyte) (255*no_err_value);
