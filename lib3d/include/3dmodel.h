@@ -1,4 +1,4 @@
-/* $Id: 3dmodel.h,v 1.1 2001/03/12 14:50:32 aspert Exp $ */
+/* $Id: 3dmodel.h,v 1.2 2001/03/20 11:38:34 aspert Exp $ */
 #ifdef MEM_DEBUG
 #include <purify.h>
 #endif
@@ -36,6 +36,7 @@ typedef struct {
   vertex *face_normals;
   face* faces;
   double* area; /* area of each face */
+  vertex bBox[2]; /* bBox[0] is the min  bBox[1] is the max */
 }model;
 
 

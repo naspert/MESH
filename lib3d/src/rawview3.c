@@ -1,4 +1,4 @@
-/* $Id: rawview3.c,v 1.4 2001/03/15 09:25:04 aspert Exp $ */
+/* $Id: rawview3.c,v 1.5 2001/03/20 11:38:15 aspert Exp $ */
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <GL/glut.h>
@@ -598,12 +598,9 @@ void display() {
 /* perform callback registration and go into the glutMainLoop   */
 /* ************************************************************ */
 int main(int argc, char **argv) {
-  double bBoxXm=FLT_MAX, bBoxXM=-FLT_MAX, 
-    bBoxYm=FLT_MAX, bBoxYM=-FLT_MAX, 
-    bBoxZm=FLT_MAX, bBoxZM=-FLT_MAX;
-
 
   int i;
+  vertex diag_bbox; /* bounding box diagonal */
 
   if (argc != 2) {
     printf("rawview file.raw\n");
@@ -621,31 +618,18 @@ int main(int argc, char **argv) {
     printf("The model has builtin normals\n");
   }
 
-  for (i=0; i<raw_model->num_vert; i++) {
-    if (raw_model->vertices[i].x > bBoxXM) 
-      bBoxXM = raw_model->vertices[i].x;
-    else if (raw_model->vertices[i].x < bBoxXm)
-      bBoxXm = raw_model->vertices[i].x;
-
-    if (raw_model->vertices[i].y > bBoxYM) 
-      bBoxYM = raw_model->vertices[i].y;
-    else if (raw_model->vertices[i].y < bBoxYm)
-      bBoxYm = raw_model->vertices[i].y;
-
-    if (raw_model->vertices[i].z > bBoxZM) 
-      bBoxZM = raw_model->vertices[i].z;
-    else if (raw_model->vertices[i].z < bBoxZm)
-      bBoxZm = raw_model->vertices[i].z;
-  }
   
 #ifdef DEBUG
-  printf("bbox_min = %f %f %f\n", bBoxXm, bBoxYm, bBoxZm);
-  printf("bbox_max = %f %f %f\n", bBoxXM, bBoxYM, bBoxZM);
+  printf("bbox_min = %f %f %f\n", raw_model->bBox[0].x, 
+	 raw_model->bBox[0].y, raw_model->bBox[0].z);
+  printf("bbox_max = %f %f %f\n", raw_model->bBox[1].x, 
+	 raw_model->bBox[1].y, raw_model->bBox[1].z);
 #endif
 
-  center.x = 0.5*(bBoxXM + bBoxXm);
-  center.y = 0.5*(bBoxYM + bBoxYm);
-  center.z = 0.5*(bBoxZM + bBoxZm);
+  center.x = 0.5*(raw_model->bBox[1].x + raw_model->bBox[0].x);
+  center.y = 0.5*(raw_model->bBox[1].y + raw_model->bBox[0].y);
+  center.z = 0.5*(raw_model->bBox[1].z + raw_model->bBox[0].z);
+
 
   for (i=0; i<raw_model->num_vert; i++) {
     raw_model->vertices[i].x -= center.x;
@@ -653,9 +637,12 @@ int main(int argc, char **argv) {
     raw_model->vertices[i].z -= center.z;
   }
   
-  
-  distance = sqrt((bBoxXM-bBoxXm)*(bBoxXM-bBoxXm) + 
-		  (bBoxYM-bBoxYm)*(bBoxYM-bBoxYm))/tan(FOV*M_PI_2/180.0);
+
+  diag_bbox.x = raw_model->bBox[1].x - raw_model->bBox[0].x;
+  diag_bbox.y = raw_model->bBox[1].y - raw_model->bBox[0].y;
+  diag_bbox.z = raw_model->bBox[1].z - raw_model->bBox[0].z;
+
+  distance = norm(diag_bbox)/tan(FOV*M_PI_2/180.0);
   
   dstep = distance*0.01;
 

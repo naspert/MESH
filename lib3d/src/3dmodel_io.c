@@ -1,4 +1,4 @@
-/* $Id: 3dmodel_io.c,v 1.6 2001/03/14 10:28:12 aspert Exp $ */
+/* $Id: 3dmodel_io.c,v 1.7 2001/03/20 11:38:15 aspert Exp $ */
 #include <3dmodel.h>
 
 
@@ -54,6 +54,14 @@ model* alloc_read_model(FILE *pf, int nvert, int nfaces, int nnorms) {
   raw_model->faces = (face*)malloc(nfaces*sizeof(face));
   raw_model->vertices = (vertex*)malloc(nvert*sizeof(vertex));
 
+  raw_model->bBox[0].x = FLT_MAX;
+  raw_model->bBox[0].y = FLT_MAX;
+  raw_model->bBox[0].z = FLT_MAX;
+
+  raw_model->bBox[1].x = -FLT_MAX;
+  raw_model->bBox[1].y = -FLT_MAX;
+  raw_model->bBox[1].z = -FLT_MAX;
+
   if (nnorms > 0) {
     raw_model->normals = (vertex*)malloc(nnorms*sizeof(vertex));
     raw_model->builtin_normals = 1;
@@ -68,6 +76,20 @@ model* alloc_read_model(FILE *pf, int nvert, int nfaces, int nnorms) {
     raw_model->vertices[i].x = 1.0*x;
     raw_model->vertices[i].y = 1.0*y;
     raw_model->vertices[i].z = 1.0*z;
+     if (raw_model->vertices[i].x > raw_model->bBox[1].x) 
+      raw_model->bBox[1].x = raw_model->vertices[i].x;
+    else if (raw_model->vertices[i].x < raw_model->bBox[0].x)
+      raw_model->bBox[0].x = raw_model->vertices[i].x;
+
+    if (raw_model->vertices[i].y > raw_model->bBox[1].y) 
+      raw_model->bBox[1].y = raw_model->vertices[i].y;
+    else if (raw_model->vertices[i].y < raw_model->bBox[0].y)
+      raw_model->bBox[0].y = raw_model->vertices[i].y;
+
+    if (raw_model->vertices[i].z > raw_model->bBox[1].z) 
+      raw_model->bBox[1].z = raw_model->vertices[i].z;
+    else if (raw_model->vertices[i].z < raw_model->bBox[0].z)
+      raw_model->bBox[0].z = raw_model->vertices[i].z;
   }
   
   for (i=0; i<nfaces; i++) {
