@@ -1,12 +1,14 @@
-/* $Id: subdiv_loop.c,v 1.1 2002/05/27 15:17:17 aspert Exp $ */
+/* $Id: subdiv_loop.c,v 1.2 2002/10/31 10:26:13 aspert Exp $ */
 #include <3dmodel.h>
 #include <normals.h>
 #include <geomutils.h>
 #include <subdiv_methods.h>
 #include <assert.h>
 
-void compute_midpoint_loop(struct ring_info *rings, int center, int v1, 
-			   struct model *raw_model, vertex_t *vout) {
+void compute_midpoint_loop(const struct ring_info *rings, const int center, 
+                           const int v1, 
+			   const struct model *raw_model, vertex_t *vout) 
+{
 
   vertex_t np, tmp;
   struct ring_info ring = rings[center];
@@ -31,9 +33,9 @@ void compute_midpoint_loop(struct ring_info *rings, int center, int v1,
 
 }
 
-void update_vertices_loop(struct model *or_model, 
+void update_vertices_loop(const struct model *or_model, 
 			  struct model *subdiv_model, 
-			  struct ring_info *rings) {
+			  const struct ring_info *rings) {
   int i, j, v, n;
   float beta;
   vertex_t tmp;
@@ -56,8 +58,9 @@ void update_vertices_loop(struct model *or_model,
 
 }
 
-void compute_midpoint_loop_crease(struct ring_info *rings, int center,  
-				  int v1, struct model *raw_model, 
+void compute_midpoint_loop_crease(const struct ring_info *rings, 
+                                  const int center,  
+				  const int v1, const struct model *raw_model, 
 				  vertex_t *vout) {
   int n = rings[center].size;
   struct ring_info ring = rings[center];
@@ -103,9 +106,9 @@ void compute_midpoint_loop_crease(struct ring_info *rings, int center,
   }
 }
 
-void update_vertices_loop_crease(struct model *or_model, 
+void update_vertices_loop_crease(const struct model *or_model, 
 				 struct model *subdiv_model, 
-				 struct ring_info *rings) {
+				 const struct ring_info *rings) {
   int i, j, v, n;
   float beta;
   vertex_t tmp;

@@ -1,4 +1,4 @@
-/* $Id: subdiv.c,v 1.22 2002/05/27 15:52:05 aspert Exp $ */
+/* $Id: subdiv.c,v 1.23 2002/10/31 10:26:12 aspert Exp $ */
 #include <3dutils.h>
 #include <subdiv_methods.h>
 #include <subdiv.h>
@@ -12,12 +12,15 @@
    non-interpolating subd. (i.e. Loop). For interpolating subd. 
    you just pass NULL as argument */
 struct model* subdiv(struct model *raw_model, 
-		     void (*midpoint_func)(struct ring_info*, int, int, 
-					   struct model*, vertex_t*), 
-		     void (*midpoint_func_bound)(struct ring_info*, int, int, 
-						 struct model*, vertex_t*), 
-		     void (*update_func)(struct model*, struct model*, 
-					 struct ring_info*) ) {
+		     void (*midpoint_func)(const struct ring_info*, const int,
+                                           const int, 
+					   const struct model*, vertex_t*), 
+		     void (*midpoint_func_bound)(const struct ring_info*, 
+                                                 const int, const int, 
+						 const struct model*, 
+                                                 vertex_t*), 
+		     void (*update_func)(const struct model*, struct model*, 
+					 const struct ring_info*) ) {
   struct ring_info *rings;
   struct model *subdiv_model;
   int i, j;
@@ -67,7 +70,7 @@ struct model* subdiv(struct model *raw_model,
       if (rings[i].ord_vert[j] < i) 
 	continue; 
 
-      /* 2 boundary v. */
+      /* boundary vertices found */
       if (rings[i].type==1 || rings[rings[i].ord_vert[j]].type==1) {
 	if (midpoint_func_bound == NULL)
 	  continue;

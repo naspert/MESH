@@ -1,4 +1,4 @@
-/* $Id: subdiv.h,v 1.4 2002/05/27 15:52:05 aspert Exp $ */
+/* $Id: subdiv.h,v 1.5 2002/10/31 10:26:11 aspert Exp $ */
 
 #include <3dmodel.h>
 #include <ring.h>
@@ -14,13 +14,15 @@ extern "C" {
 #endif
 
   struct model* subdiv(struct model*, 
-		       void (*midpoint_func)(struct ring_info*, int, int, 
-					     struct model*, vertex_t*), 
-                        void (*midpoint_func_bound)(struct ring_info*, int, 
-                                                    int, struct model*, 
+		       void (*midpoint_func)(const struct ring_info*, 
+                                             const int, const int, 
+					     const struct model*, vertex_t*), 
+                        void (*midpoint_func_bound)(const struct ring_info*, 
+                                                    const int, const int, 
+                                                    const struct model*, 
                                                     vertex_t*), 
-		       void (*update_func)(struct model*, struct model*, 
-					   struct ring_info*));
+		       void (*update_func)(const struct model*, struct model*, 
+					   const struct ring_info*));
 
 #ifdef __cplusplus
 }

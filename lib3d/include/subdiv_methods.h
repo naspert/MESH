@@ -1,4 +1,4 @@
-/* $Id: subdiv_methods.h,v 1.12 2002/06/04 08:46:02 aspert Exp $ */
+/* $Id: subdiv_methods.h,v 1.13 2002/10/31 10:26:12 aspert Exp $ */
 #include <3dmodel.h>
 #include <ring.h>
 
@@ -24,19 +24,33 @@
 extern "C" {
 # endif
 
-  void compute_midpoint_sph(struct ring_info*, int, int, struct model*, 
-			    vertex_t*);
-  void compute_midpoint_butterfly(struct ring_info*, int, int, struct model*, 
+  /* spherical subdivision */
+  void compute_midpoint_sph(const struct ring_info*, const int, const int, 
+                            const struct model*, vertex_t*);
+  void compute_midpoint_sph_crease(const struct ring_info*, const int, 
+                                   const int, const struct model*,
+                                   vertex_t*);
+
+  /* Butterfly subdivision */
+  void compute_midpoint_butterfly(const struct ring_info*, const int, 
+                                  const int, const struct model*, 
 				  vertex_t*);
-  void compute_midpoint_loop(struct ring_info*, int, int, struct model*,
-			     vertex_t*);
-  void update_vertices_loop(struct model*, struct model*, struct ring_info*);
-  void compute_midpoint_butterfly_crease(struct ring_info*, int, int, 
-					 struct model*, vertex_t*);
-  void compute_midpoint_loop_crease(struct ring_info*, int, int, struct model*,
+  void compute_midpoint_butterfly_crease(const struct ring_info*, const int, 
+                                         const int, const struct model*, 
+                                         vertex_t*);
+
+
+  /* Loop subdivision */
+  void compute_midpoint_loop(const struct ring_info*, const int, const int, 
+                             const struct model*, vertex_t*);
+  void update_vertices_loop(const struct model*, struct model*, 
+                            const struct ring_info*);
+
+  void compute_midpoint_loop_crease(const struct ring_info*, const int, 
+                                    const int, const struct model*,
 				    vertex_t*);
-  void update_vertices_loop_crease(struct model*, struct model*, 
-				   struct ring_info*);
+  void update_vertices_loop_crease(const struct model*, struct model*, 
+				   const struct ring_info*);
 
 # ifdef __cplusplus
 }

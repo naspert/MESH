@@ -1,4 +1,4 @@
-/* $Id: subdiv_main.c,v 1.2 2002/05/01 12:13:30 aspert Exp $ */
+/* $Id: subdiv_main.c,v 1.3 2002/10/31 10:26:13 aspert Exp $ */
 #include <3dutils.h>
 #include <subdiv.h>
 #include <subdiv_methods.h>
@@ -65,7 +65,8 @@ int main(int argc, char **argv) {
     /* performs the subdivision */
     switch (sub_method) {
     case SUBDIV_SPH:
-      sub_model = subdiv(or_model, compute_midpoint_sph, NULL, NULL);
+      sub_model = subdiv(or_model, compute_midpoint_sph, 
+                         compute_midpoint_sph_crease, NULL);
       break;
     case SUBDIV_LOOP:
       sub_model = subdiv(or_model, compute_midpoint_loop, NULL, 
