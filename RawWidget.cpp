@@ -1,4 +1,4 @@
-/* $Id: RawWidget.cpp,v 1.24 2001/09/25 13:17:43 dsanta Exp $ */
+/* $Id: RawWidget.cpp,v 1.25 2001/09/25 14:56:16 dsanta Exp $ */
 
 #include <RawWidget.h>
 #include <qmessagebox.h>
@@ -68,8 +68,7 @@ void RawWidget::transfer(double dist,double *mvmat) {
   // Copy the 4x4 transformation matrix
   memcpy(mvmatrix, mvmat, 16*sizeof(double)); 
   // update display
-  makeCurrent();
-  glDraw();
+  updateGL();
 }
 
 void RawWidget::switchSync(bool state) {
@@ -93,11 +92,11 @@ void RawWidget::setLine(bool state) {
   glGetIntegerv(GL_POLYGON_MODE,line_state);
   if (line_state[0]==GL_FILL && line_state[1]==GL_FILL && state==TRUE) {
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    glDraw();
+    updateGL();
   } else if (line_state[0]==GL_LINE && line_state[1]==GL_LINE && 
 	     state==FALSE) {
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-    glDraw(); 
+    updateGL();
   } else {
     printf("Invalid state value found for GL_POLYGON_MODE: %d %d\n",
            line_state[0],line_state[1]);
@@ -107,9 +106,9 @@ void RawWidget::setLine(bool state) {
 void RawWidget::setLight() {
   GLboolean light_state;
 
-  makeCurrent();
   // Get state from renderer
   if (renderFlag == RW_LIGHT_TOGGLE) {
+    makeCurrent();
     light_state = glIsEnabled(GL_LIGHTING);
 
     if (light_state==GL_FALSE){ // We are now switching to lighted mode
@@ -122,7 +121,7 @@ void RawWidget::setLight() {
     else if (light_state==GL_TRUE){// We are now switching to wireframe mode
       glDisable(GL_LIGHTING);
     }
-    glDraw();
+    updateGL();
   }
 }
 
@@ -188,7 +187,7 @@ void RawWidget::initializeGL() {
       fprintf(stderr,"ERROR: normals where not computed!\n");
     }
   }
-}  
+}
 
 
 // 'display' function called by the paintGL call back
@@ -197,7 +196,6 @@ void RawWidget::initializeGL() {
 void RawWidget::display(double distance) {
   GLfloat lpos[] = {-1.0, 1.0, 1.0, 0.0} ;
 
-  makeCurrent();
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glLoadIdentity();
   /* Set the light position relative to eye point */
@@ -372,6 +370,7 @@ void RawWidget::mouseMoveEvent(QMouseEvent *event) {
   dx= event->x() - oldx;
   dy= event->y() - oldy;
 
+  makeCurrent();
   if(left_button_state==1){  
     dth = dx*0.5; 
     dph = dy*0.5;
@@ -382,11 +381,11 @@ void RawWidget::mouseMoveEvent(QMouseEvent *event) {
     glMultMatrixd(mvmatrix); 
     glGetDoublev(GL_MODELVIEW_MATRIX, mvmatrix); 
     glPopMatrix(); 
-    glDraw();
+    updateGL();
   }
   else if (middle_button_state == 1) {
     distance += dy*dstep;
-    glDraw();
+    updateGL();
   }
   else if (right_button_state == 1) { 
     dpsi = -dx*0.5;
@@ -396,7 +395,7 @@ void RawWidget::mouseMoveEvent(QMouseEvent *event) {
     glMultMatrixd(mvmatrix);
     glGetDoublev(GL_MODELVIEW_MATRIX, mvmatrix); /* Get the final matrix */
     glPopMatrix(); /* Reload previous transform context */
-    glDraw(); 
+    updateGL();
   }
 
   if(move_state==1)
@@ -435,7 +434,7 @@ void RawWidget::keyPressEvent(QKeyEvent *k) {
 	  model->mesh->normals[i].z = -model->mesh->normals[i].z;
 	}
 	rebuild_list();
-	glDraw();
+        updateGL();
       }
     }
     break;
@@ -444,7 +443,7 @@ void RawWidget::keyPressEvent(QKeyEvent *k) {
       makeCurrent();
       two_sided_material = !two_sided_material;
       rebuild_list();
-      glDraw();
+      updateGL();
     }
     break;
   default:
