@@ -1,4 +1,4 @@
-/* $Id: model_analysis.c,v 1.13 2002/03/25 16:00:42 dsanta Exp $ */
+/* $Id: model_analysis.c,v 1.14 2002/03/25 16:02:42 dsanta Exp $ */
 
 
 /*
@@ -305,7 +305,7 @@ static void analyze_faces_rec(const face_t *mfaces, int vidx, int pfidx,
           if (fidx != -1) break;
         }
         assert(fidx >= 0);
-        if (rev_orient) rev_orient = 0; /* restore original orientation */
+        rev_orient = 0; /* restore original orientation */
         /* Get new first face vertices */
         get_ordered_vtcs(&mfaces[fidx],vidx,&vstart,&v2);
         /* Get and mark orientation of new first face */
