@@ -1,5 +1,5 @@
 #! /bin/sh
-# $Id: subdiv.sh,v 1.2 2002/03/25 10:06:02 aspert Exp $
+# $Id: subdiv.sh,v 1.3 2002/03/25 12:42:40 aspert Exp $
 
 
 bin_path=/home/sun1/aspert/devel/lib3d/bin
@@ -21,6 +21,10 @@ then
   logfile=$4
 else
   logfile="/dev/null"
+fi
+if [[ !-e $logfile ]] 
+then
+  touch $logfile
 fi
 
 if [[ -e ${bin_path}/subdiv && -x ${bin_path}/subdiv ]]
@@ -65,7 +69,7 @@ do
   for ((i=1; i<=nlev; i++))
   do
      outfile=${sub_model_root}_${suffix}${i}.raw 
-     $sub_exec $meth $prev_model $outfile > $logfile 2>&1
+     $sub_exec $meth $prev_model $outfile >> $logfile 2>&1
      prev_model=$outfile
   done
   echo "done"
