@@ -1,4 +1,4 @@
-/* $Id: 3dmodel_io.c,v 1.2 2001/03/13 10:04:38 aspert Exp $ */
+/* $Id: 3dmodel_io.c,v 1.3 2001/03/13 10:07:19 aspert Exp $ */
 #include <3dmodel.h>
 
 
@@ -181,7 +181,7 @@ void write_raw_model(model *raw_model, char *filename) {
     if (tmp == NULL) /* filename does not have an extension */
 	rootname = filename;
     else {
-      if (*(tmp+1) == '/') /* filename does not have an extension /
+      if (*(tmp+1) == '/') /* filename does not have an extension */
 	rootname = filename;
       else {
 	root_length = tmp - filename; /* number of chars before extension */
