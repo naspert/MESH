@@ -1,9 +1,9 @@
-/* $Id: ring.c,v 1.7 2003/01/08 18:34:21 aspert Exp $ */
+/* $Id: ring.c,v 1.8 2003/01/13 12:46:10 aspert Exp $ */
 
 
 /*
  *
- *  Copyright (C) 2001-2002 EPFL (Swiss Federal Institute of Technology,
+ *  Copyright (C) 2001-2003 EPFL (Swiss Federal Institute of Technology,
  *  Lausanne)
  *  You are not allowed to redistribute this program without the explicit
  *  permission of the author.

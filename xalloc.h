@@ -1,9 +1,9 @@
-/* $Id: xalloc.h,v 1.7 2002/08/30 09:18:44 aspert Exp $ */
+/* $Id: xalloc.h,v 1.8 2003/01/13 12:46:08 aspert Exp $ */
 
 
 /*
  *
- *  Copyright (C) 2001-2002 EPFL (Swiss Federal Institute of Technology,
+ *  Copyright (C) 2001-2003 EPFL (Swiss Federal Institute of Technology,
  *  Lausanne) This program is free software; you can redistribute it
  *  and/or modify it under the terms of the GNU General Public License
  *  as published by the Free Software Foundation; either version 2 of

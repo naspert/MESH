@@ -1,9 +1,9 @@
-/* $Id: mesh.cpp,v 1.56 2002/11/05 07:45:20 aspert Exp $ */
+/* $Id: mesh.cpp,v 1.57 2003/01/13 12:46:07 aspert Exp $ */
 
 
 /*
  *
- *  Copyright (C) 2001-2002 EPFL (Swiss Federal Institute of Technology,
+ *  Copyright (C) 2001-2003 EPFL (Swiss Federal Institute of Technology,
  *  Lausanne) This program is free software; you can redistribute it
  *  and/or modify it under the terms of the GNU General Public License
  *  as published by the Free Software Foundation; either version 2 of
@@ -64,10 +64,10 @@
 #endif
 
 /* The version string, also parsed by Makefile */
-const char *version = "1.7";
+const char *version = "1.8-rc1";
 
 /* The Copyright */
-const char *copyright = "2001-2002 EPFL";
+const char *copyright = "2001-2003 EPFL";
 
 static void print_version(FILE *out) {
   fprintf(out,"MESH: Measuring Error between Surfaces using the "

@@ -1,3 +1,12 @@
+* Changes from v1.7 to v1.8 :
+	- Added prettier debug prints when DEBUG is defined at compile time
+	- Fixed the return code of 'read_smf_tmesh' (should be 1 if success)
+	- Added a 'demo' mode (i.e. the models turn without intervention)
+	- Fixed the switching between GL_LINE and GL_FILL polygon mode by 
+	  forcing a call to 'rebuildList' (otherwise caused a 'black-screen'
+	  syndrome, esp. in the right RawWidget)
+	- Updated copyright years
+
 * Changes from v1.6 to v1.7 :
 	- Removed deprecated stuff from 'geomutils.c'
 	- Better triangle area computation, and thus better degeneracy
