@@ -1,4 +1,4 @@
-/* $Id: mesh_run.c,v 1.7 2002/02/06 15:31:23 dsanta Exp $ */
+/* $Id: mesh_run.c,v 1.8 2002/02/10 15:45:04 dsanta Exp $ */
 
 #include <time.h>
 #include <string.h>
@@ -224,6 +224,11 @@ void mesh_run(const struct args *args, struct model_error *model1,
     outbuf_printf(out,"Partitioning grid size:\t%6d\t%5d\t%4d\t%8d\n",
                   stats.grid_sz.x,stats.grid_sz.y,stats.grid_sz.z,
                   stats.grid_sz.x*stats.grid_sz.y*stats.grid_sz.z);
+    outbuf_printf(out,"\nAvg. number of triangles per non-empty cell:\t%.2f\n",
+                  stats.n_t_p_nec);
+    outbuf_printf(out,"Proportion of non-empty cells:          \t%.2f%%\n",
+                  (double)stats.n_ne_cells/(stats.grid_sz.x*stats.grid_sz.y*
+                                            stats.grid_sz.z)*100.0);
   } else {
     outbuf_printf(out,"                                \t     "
                   "X\t    Y\t   Z\t   Total\n");
@@ -233,6 +238,19 @@ void mesh_run(const struct args *args, struct model_error *model1,
     outbuf_printf(out,"Partitioning grid size (2 to 1):\t%6d\t%5d\t%4d\t%8d\n",
                   stats_rev.grid_sz.x,stats_rev.grid_sz.y,stats_rev.grid_sz.z,
                   stats_rev.grid_sz.x*stats_rev.grid_sz.y*stats_rev.grid_sz.z);
+    outbuf_printf(out,"\nAvg. number of triangles per non-empty cell (1 to 2):"
+                  "\t%.2f\n",stats.n_t_p_nec);
+    outbuf_printf(out,"Avg. number of triangles per non-empty cell (2 to 1):"
+                  "\t%.2f\n",stats_rev.n_t_p_nec);
+    outbuf_printf(out,
+                  "Proportion of non-empty cells (1 to 2):          \t%.2f%%\n",
+                  (double)stats.n_ne_cells/(stats.grid_sz.x*stats.grid_sz.y*
+                                            stats.grid_sz.z)*100.0);
+    outbuf_printf(out,
+                  "Proportion of non-empty cells (2 to 1):          \t%.2f%%\n",
+                  (double)stats_rev.n_ne_cells/
+                  (stats_rev.grid_sz.x*stats_rev.grid_sz.y*
+                   stats_rev.grid_sz.z)*100.0);
   }
   outbuf_printf(out,"\n");
   outbuf_printf(out,"Execution time (secs.):\t%.2f\n",

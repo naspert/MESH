@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.71 2002/02/10 15:35:08 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.72 2002/02/10 15:45:03 dsanta Exp $ */
 
 #include <compute_error.h>
 
@@ -92,6 +92,8 @@ struct t_in_cell_list {
                              * cell i is empty, the bit (i&EC_BITMAP_T_MASK)
                              * of empty_cell[i/EC_BITMAP_T_BITS] is
                              * non-zero. */
+  int n_ne_cells;           /* The number of non-empty cells */
+  double n_t_per_ne_cell;   /* Average number of triangles per non-empty cell */
 };
 
 /* A list of samples of a surface in 3D space. */
@@ -901,7 +903,6 @@ static void sample_triangle(const dvertex_t *a, const dvertex_t *b,
   int i,j,maxj,k;    /* counters and limits */
 
   /* initialize */
-  a_cache = *a;
   s->n_samples = n*(n+1)/2;
   if (s->buf_sz < s->n_samples) {
     s->sample = xa_realloc(s->sample,sizeof(*(s->sample))*s->n_samples);
@@ -911,6 +912,7 @@ static void sample_triangle(const dvertex_t *a, const dvertex_t *b,
   substract_dv(b,a,&u);
   substract_dv(c,a,&v);
   if (n != 1) { /* normal case */
+    a_cache = *a;
     prod_dv(1/(double)(n-1),&u,&u);
     prod_dv(1/(double)(n-1),&v,&v);
     /* Sample triangle */
@@ -922,9 +924,9 @@ static void sample_triangle(const dvertex_t *a, const dvertex_t *b,
       }
     }
   } else { /* special case, use triangle middle point */
-    s->sample[0].x = a_cache.x+0.5*u.x+0.5*v.x;
-    s->sample[0].y = a_cache.y+0.5*u.y+0.5*v.y;
-    s->sample[0].z = a_cache.z+0.5*u.z+0.5*v.z;
+    s->sample[0].x = a->x+0.5*u.x+0.5*v.x;
+    s->sample[0].y = a->y+0.5*u.y+0.5*v.y;
+    s->sample[0].z = a->z+0.5*u.z+0.5*v.z;
   }
 }
 
@@ -935,9 +937,9 @@ static void sample_triangle(const dvertex_t *a, const dvertex_t *b,
  * returned struct, its arrays and subarrays are malloc'ed independently. */
 static struct t_in_cell_list* 
 triangles_in_cells(const struct triangle_list *tl,
-		   struct size3d grid_sz,
-		   double cell_sz,
-		   dvertex_t bbox_min)
+                   struct size3d grid_sz,
+                   double cell_sz,
+                   dvertex_t bbox_min)
 {
   struct t_in_cell_list *lst; /* The list to return */
   struct sample_list sl;      /* samples from a triangle */
@@ -1063,14 +1065,18 @@ triangles_in_cells(const struct triangle_list *tl,
   }
 
   /* Terminate lists with -1 and set empty cell bitmap */
-  for(i=0, imax=grid_sz.x*grid_sz.y*grid_sz.z; i<imax; i++){
+  for(i=0, j=0, h=0, imax=grid_sz.x*grid_sz.y*grid_sz.z; i<imax; i++){
     if (nt[i] == 0) { /* mark empty cell in bitmap */
       EC_BITMAP_SET_BIT(ecb,i);
     } else {
       tab[i][nt[i]] = -1;
+      j++;
+      h += nt[i];
     }
   }
 
+  lst->n_ne_cells = j;
+  lst->n_t_per_ne_cell = (double)h/j;
   free(nt);
   free(sl.sample);
   free(c_buf);
@@ -1291,6 +1297,8 @@ void dist_surf_surf(const struct model *m1, struct model *m2,
 
   /* Get the list of triangles in each cell */
   fic = triangles_in_cells(tl2,grid_sz,cell_sz,bbox_min);
+  stats->n_ne_cells = fic->n_ne_cells;
+  stats->n_t_p_nec = fic->n_t_per_ne_cell;
 
   /* Allocate storage for errors */
   *fe_ptr = xa_realloc(*fe_ptr,m1->num_faces*sizeof(**fe_ptr));

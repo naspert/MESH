@@ -1,4 +1,4 @@
-/* $Id: compute_error.h,v 1.20 2002/01/15 17:02:05 aspert Exp $ */
+/* $Id: compute_error.h,v 1.21 2002/02/10 15:45:03 dsanta Exp $ */
 #ifndef _COMPUTE_ERROR_PROTO
 #define _COMPUTE_ERROR_PROTO
 
@@ -63,6 +63,8 @@ struct dist_surf_surf_stats {
   double cell_sz;   /* The partitioning cubic cell side length */
   struct size3d grid_sz; /* The number of cells in the partitioning grid in
                           * each direction X,Y,Z */
+  int n_ne_cells;   /* Number of non-empty cells */
+  double n_t_p_nec; /* Average number of triangles per non-empty cell */
 };
 
 /* --------------------------------------------------------------------------*
