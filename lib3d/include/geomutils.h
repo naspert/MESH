@@ -1,4 +1,4 @@
-/* $Id: geomutils.h,v 1.12 2001/09/20 15:21:46 dsanta Exp $ */
+/* $Id: geomutils.h,v 1.13 2001/09/26 09:28:30 aspert Exp $ */
 #include <3dmodel.h>
 
 #ifndef _GEOMUTILS_PROTO_
@@ -10,16 +10,16 @@ extern "C" {
 
 /* a few useful macros */
 #ifndef min
-#define min(__X, __Y) ((__X)<(__Y)?(__X):(__Y))
+#  define min(__X, __Y) ((__X)<(__Y)?(__X):(__Y))
 #endif
 #ifndef max
-#define max(__X, __Y) ((__X)>(__Y)?(__X):(__Y))
+#  define max(__X, __Y) ((__X)>(__Y)?(__X):(__Y))
 #endif
 #ifndef max3
-#define max3(__X,__Y,__Z) max((__X), max((__Y), (__Z)))
+#  define max3(__X,__Y,__Z) max((__X), max((__Y), (__Z)))
 #endif
 #ifndef min3
-#define min3(__X,__Y,__Z) min((__X), min((__Y),(__Z)))
+#  define min3(__X,__Y,__Z) min((__X), min((__Y),(__Z)))
 #endif
 
   /* exported functions */
@@ -36,7 +36,7 @@ extern "C" {
   void compute_circle3d(vertex, vertex, vertex, double*, vertex*);
   double tri_area(vertex, vertex, vertex);
 
-  /* Diego's faster functions */
+  /* Inlined faster functions */
   double scalprod_v(const vertex*, const vertex*);
   double norm2_v(const vertex*);
   double norm_v(const vertex*);
@@ -50,6 +50,7 @@ extern "C" {
   void crossprod_v(const vertex*, const vertex*, vertex*);
   void ncrossp_v(const vertex*, const vertex*, const vertex*, vertex*);
   double tri_area_v(const vertex*, const vertex*, const vertex*);
+  void neg_v(const vertex*, vertex*);
 
 /* inline definitions */
 #ifdef INLINE
@@ -225,6 +226,12 @@ extern "C" {
 
 
     return (norm_v(&h)*sqrt(nu2)*0.5);
+  }
+
+  INLINE void neg_v(const vertex *v, vertex *vout) {
+    vout->x = -v->x;
+    vout->y = -v->y;
+    vout->z = -v->z;
   }
 
 #undef INLINE
