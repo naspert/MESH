@@ -1,4 +1,4 @@
-/* $Id: 3dmodel.h,v 1.22 2001/10/22 11:24:48 aspert Exp $ */
+/* $Id: 3dmodel.h,v 1.23 2001/10/23 10:51:13 aspert Exp $ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -88,6 +88,7 @@ struct info_vertex{
 struct edge_v {
   int v0;
   int v1;
+  int face;
 };
 
 
