@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.56 2001/09/10 15:09:53 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.57 2001/09/10 15:16:29 dsanta Exp $ */
 
 #include <compute_error.h>
 
@@ -1239,7 +1239,7 @@ void dist_surf_surf(const model *m1, model *m2, double sampling_step,
   /* Initialize */
   memset(&ts,0,sizeof(ts));
   memset(&tse,0,sizeof(tse));
-  report_step = m1->num_faces/(100/2); /* report every 2 % */
+  report_step = m1->num_faces/(100/1); /* report every 1 % */
   if (report_step <= 0) report_step = 1;
   bbox_min.x = min(m1->bBox[0].x,m2->bBox[0].x);
   bbox_min.y = min(m1->bBox[0].y,m2->bBox[0].y);
@@ -1281,7 +1281,7 @@ void dist_surf_surf(const model *m1, model *m2, double sampling_step,
   /* For each triangle in model 1, sample and calculate the error */
   if (!quiet) printf("Progress %2d %%",0);
   for (k=0, kmax=m1->num_faces; k<kmax; k++) {
-    if (!quiet && k!=0 && k%report_step) {
+    if (!quiet && k!=0 && k%report_step==0) {
       printf("\rProgress %2d %%",100*k/(kmax-1));
       fflush(stdout);
     }
