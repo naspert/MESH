@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.38 2001/08/20 10:12:38 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.39 2001/08/20 15:54:40 dsanta Exp $ */
 
 #include <compute_error.h>
 
@@ -97,6 +97,13 @@ struct sample_list {
 struct cell_list {
   int *cell;   /* The array of the linear indices of the cells in the list */
   int n_cells; /* The number of elemnts in the array */
+};
+
+/* A list of cells for different distances */
+struct dist_cell_lists {
+  struct cell_list *list; /* list[k]: the list of cells at distance k in the
+                           * X, Y or Z direction. */
+  int n_dists;            /* The number of elements in list */
 };
 
 /* Storage for triangle sample errors. */
@@ -286,6 +293,128 @@ static double get_cell_size(const struct triangle_list *tl,
   grid_sz->y = (int) f_gsz_y;
   grid_sz->z = (int) f_gsz_z;
   return cell_sz;
+}
+
+/* Gets the list of non-empty cells at distance k in the X, Y or Z direction
+ * from the cell with grid coordinates cell_gr_coord. The list is stored in
+ * dlists->list[k] and dlists->n_dists is updated to reflect the number of
+ * calculated distances. The list of cells at distances less than k must have
+ * already been calculated. The list of empty cells is obtained from the list
+ * of faces in each cell, fic. The size of the cell grid is given by
+ * grid_sz. */
+static void get_cells_at_distance(struct dist_cell_lists *dlists,
+                                  struct size3d cell_gr_coord,
+                                  struct size3d grid_sz, int k,
+                                  const struct t_in_cell_list *fic)
+{
+  int max_n_cells;
+  int cell_idx;
+  int cell_stride_z;
+  ec_bitmap_t *fic_empty_cell;
+  int *cell_list;
+  int cll;
+  int m,n,o;
+  int min_m,max_m,min_n,max_n,min_o,max_o;
+
+  assert(k == 0 || dlists->n_dists == k);
+
+  /* Initialize */
+  cell_stride_z = grid_sz.y*grid_sz.x;
+  fic_empty_cell = fic->empty_cell;
+
+  /* Expand storage for distance cell list */
+  dlists->list = xa_realloc(dlists->list,(k+1)*sizeof(*(dlists->list)));
+  dlists->n_dists = k+1;
+
+  /* Get list of cells at distance k in X, Y or Z direction */
+
+  if (k == 0) { /* zero distance, only cell is center one */
+    cell_idx = cell_gr_coord.x+cell_gr_coord.y*grid_sz.x+
+      cell_gr_coord.z*cell_stride_z;
+    if (!EC_BITMAP_TEST_BIT(fic_empty_cell,cell_idx)) {
+      dlists->list[k].cell = xa_malloc(sizeof(*cell_list));
+      dlists->list[k].cell[0] = cell_idx;
+      dlists->list[k].n_cells = 1;
+    } else { /* empty cell */
+      dlists->list[k].cell = NULL;
+      dlists->list[k].n_cells = 0;
+    }
+    return;
+  }
+
+  /* Non-zero distance k */
+  max_n_cells = 6*(2*k+1)*(2*k+1)+8*(2*k+1)+8;
+  cell_list = xa_malloc(max_n_cells*sizeof(*cell_list));
+  cll = 0;
+  min_m = max(cell_gr_coord.x-k,0);
+  max_m = min(cell_gr_coord.x+k,grid_sz.x-1);
+  min_n = max(cell_gr_coord.y-k,0);
+  max_n = min(cell_gr_coord.y+k,grid_sz.y-1);
+  min_o = max(cell_gr_coord.z-k,0);
+  max_o = min(cell_gr_coord.z+k,grid_sz.z-1);
+  if ((o = cell_gr_coord.z-k) >= 0) { /* bottom layer */
+    for (n = min_n; n <= max_n; n++) {
+      for (m = min_m; m <= max_m; m++) {
+        cell_idx = m+n*grid_sz.x+o*cell_stride_z;
+        if (!EC_BITMAP_TEST_BIT(fic_empty_cell,cell_idx)) {
+          cell_list[cll++] = cell_idx;
+        }
+      }
+    }
+  }
+  if ((n = cell_gr_coord.y-k) >= 0) { /* back layer */
+    for (o = min_o+1; o < max_o; o++) {
+      for (m = min_m; m <= max_m; m++) {
+        cell_idx = m+n*grid_sz.x+o*cell_stride_z;
+        if (!EC_BITMAP_TEST_BIT(fic_empty_cell,cell_idx)) {
+          cell_list[cll++] = cell_idx;
+        }
+      }
+    }
+  }
+  if ((m = cell_gr_coord.x-k) >= 0) { /* left layer */
+    for (o = min_o+1; o < max_o; o++) {
+      for (n = min_n+1; n <= max_n; n++) {
+        cell_idx = m+n*grid_sz.x+o*cell_stride_z;
+        if (!EC_BITMAP_TEST_BIT(fic_empty_cell,cell_idx)) {
+          cell_list[cll++] = cell_idx;
+        }
+      }
+    }
+  }
+  if ((m = cell_gr_coord.x+k) < grid_sz.x) { /* right layer */
+    for (o = min_o+1; o < max_o; o++) {
+      for (n = min_n+1; n <= max_n; n++) {
+        cell_idx = m+n*grid_sz.x+o*cell_stride_z;
+        if (!EC_BITMAP_TEST_BIT(fic_empty_cell,cell_idx)) {
+          cell_list[cll++] = cell_idx;
+        }
+      }
+    }
+  }
+  if ((n = cell_gr_coord.y+k) < grid_sz.y) { /* front layer */
+    for (o = min_o+1; o < max_o; o++) {
+      for (m = min_m; m <= max_m; m++) {
+        cell_idx = m+n*grid_sz.x+o*cell_stride_z;
+        if (!EC_BITMAP_TEST_BIT(fic_empty_cell,cell_idx)) {
+          cell_list[cll++] = cell_idx;
+        }
+        }
+    }
+  }
+  if ((o = cell_gr_coord.z+k) < grid_sz.z) { /* top layer */
+    for (n = min_n; n <= max_n; n++) {
+      for (m = min_m; m <= max_m; m++) {
+        cell_idx = m+n*grid_sz.x+o*cell_stride_z;
+        if (!EC_BITMAP_TEST_BIT(fic_empty_cell,cell_idx)) {
+          cell_list[cll++] = cell_idx;
+        }
+      }
+    }
+  }
+  /* Store resulting cell list */
+  dlists->list[k].cell = xa_realloc(cell_list,cll*sizeof(*cell_list));
+  dlists->list[k].n_cells = cll;
 }
 
 /* --------------------------------------------------------------------------*
@@ -863,17 +992,19 @@ static struct t_in_cell_list *triangles_in_cells(const struct triangle_list *tl,
  * of the cubic cells is of length cell_sz, and there are
  * (grid_sz.x,grid_sz.y,grid_sz.z) cells in teh X,Y,Z directions. Cell (0,0,0)
  * starts at bbox_min, which is the minimum coordinates of the (axis aligned)
- * bounding box. Static storage is used by this function, so it is not
- * reentrant (i.e. thread safe). If DO_DIST_PT_SURF_STATS is defined at
- * compile time, the statistics stats are updated (no reset to zero occurs,
- * the counters are increased). */
+ * bounding box. If DO_DIST_PT_SURF_STATS is defined at compile time, the
+ * statistics stats are updated (no reset to zero occurs, the counters are
+ * increased). The list of cells distant of k cells in the X, Y or Z
+ * direction, for each cell, is cached in dcl, which must be an array of
+ * length grid_sz.x*grid_sz.y*grid_sz.z and must be initialized to all zero on
+ * the first call to this function. */
 static double dist_pt_surf(vertex p, const struct triangle_list *tl,
                            const struct t_in_cell_list *fic,
 #ifdef DO_DIST_PT_SURF_STATS
                            struct dist_pt_surf_stats *stats,
 #endif
                            struct size3d grid_sz, double cell_sz,
-                           vertex bbox_min)
+                           vertex bbox_min, struct dist_cell_lists *dcl)
 {
   vertex p_rel;         /* coordinates of p relative to bbox_min */
   struct size3d grid_coord; /* coordinates of cell in which p is */
@@ -886,29 +1017,16 @@ static double dist_pt_surf(vertex p, const struct triangle_list *tl,
   int tfcl_idx;         /* triangle index in faces in cell list */
   int t_idx;            /* triangle index in triangle list */
   int dmin_update;      /* flag to signal update of dmin_sqr */
-  int min_m,max_m,min_n,max_n,min_o,max_o; /* cell indices loop limits */
   int cell_stride_z;    /* spacement for Z index in 3D addressing of cell
                          * list */
   int *cell_tl;         /* list of triangles intersecting the current cell */
   struct triangle_info *triags; /* local pointer to triangle array */
-  static int *cell_list;/* list of cells to scan for the current k */
-  static int cell_list_sz; /* size of cell_list_{m,n,o} */
+  int *cell_list;       /* list of cells to scan for the current k */
   int cll;              /* length of cell list */
   int j;                /* counter */
   int tmpi;             /* temporary integer */
   ec_bitmap_t *fic_empty_cell; /* stack copy of fic->empty_cell (faster) */
   int **fic_triag_idx;  /* stack copy of fic->triag_idx (faster) */
-
-  /* Reusing the buffers from call to call gives significant speedup. The size
-   * used is an (larger) approximation than the real maximum. */
-  tmpi = 2*grid_sz.x*grid_sz.y+2*grid_sz.x*grid_sz.z+2*grid_sz.y*grid_sz.z;
-  if (cell_list == NULL) {
-    cell_list_sz = tmpi;
-    cell_list = xa_malloc(sizeof(*cell_list)*cell_list_sz);
-  } else if (cell_list_sz < tmpi) {
-    cell_list_sz = tmpi;
-    cell_list = xa_realloc(cell_list,sizeof(*cell_list)*cell_list_sz);
-  }
 
   /* NOTE: tests have shown it is faster to scan each triangle, even
    * repeteadly, than to track which triangles have been scanned (too much
@@ -950,86 +1068,17 @@ static double dist_pt_surf(vertex p, const struct triangle_list *tl,
   dmin_sqr = DBL_MAX;
   do {
     dmin_update = 0;
+
     /* Get the list of cells at distance k in X Y or Z direction, which has
      * not been previously tested. Only non-empty cells are included in the
      * list. */
-    if (k == 0) {
-      cell_idx = grid_coord.x+grid_coord.y*grid_sz.x+grid_coord.z*cell_stride_z;
-      if (!EC_BITMAP_TEST_BIT(fic_empty_cell,cell_idx)) {
-        cll = 1;
-        cell_list[0] = cell_idx;
-      } else { /* empty cell */
-        cll = 0;
-      }
-    } else {
-      cll = 0;
-      min_m = max(grid_coord.x-k,0);
-      max_m = min(grid_coord.x+k,grid_sz.x-1);
-      min_n = max(grid_coord.y-k,0);
-      max_n = min(grid_coord.y+k,grid_sz.y-1);
-      min_o = max(grid_coord.z-k,0);
-      max_o = min(grid_coord.z+k,grid_sz.z-1);
-      if ((o = grid_coord.z-k) >= 0) { /* bottom layer */
-        for (n = min_n; n <= max_n; n++) {
-          for (m = min_m; m <= max_m; m++) {
-            cell_idx = m+n*grid_sz.x+o*cell_stride_z;
-            if (!EC_BITMAP_TEST_BIT(fic_empty_cell,cell_idx)) {
-              cell_list[cll++] = cell_idx;
-            }
-          }
-        }
-      }
-      if ((n = grid_coord.y-k) >= 0) { /* back layer */
-        for (o = min_o+1; o < max_o; o++) {
-          for (m = min_m; m <= max_m; m++) {
-            cell_idx = m+n*grid_sz.x+o*cell_stride_z;
-            if (!EC_BITMAP_TEST_BIT(fic_empty_cell,cell_idx)) {
-              cell_list[cll++] = cell_idx;
-            }
-          }
-        }
-      }
-      if ((m = grid_coord.x-k) >= 0) { /* left layer */
-        for (o = min_o+1; o < max_o; o++) {
-          for (n = min_n+1; n <= max_n; n++) {
-            cell_idx = m+n*grid_sz.x+o*cell_stride_z;
-            if (!EC_BITMAP_TEST_BIT(fic_empty_cell,cell_idx)) {
-              cell_list[cll++] = cell_idx;
-            }
-          }
-        }
-      }
-      if ((m = grid_coord.x+k) < grid_sz.x) { /* right layer */
-        for (o = min_o+1; o < max_o; o++) {
-          for (n = min_n+1; n <= max_n; n++) {
-            cell_idx = m+n*grid_sz.x+o*cell_stride_z;
-            if (!EC_BITMAP_TEST_BIT(fic_empty_cell,cell_idx)) {
-              cell_list[cll++] = cell_idx;
-            }
-          }
-        }
-      }
-      if ((n = grid_coord.y+k) < grid_sz.y) { /* front layer */
-        for (o = min_o+1; o < max_o; o++) {
-          for (m = min_m; m <= max_m; m++) {
-            cell_idx = m+n*grid_sz.x+o*cell_stride_z;
-            if (!EC_BITMAP_TEST_BIT(fic_empty_cell,cell_idx)) {
-              cell_list[cll++] = cell_idx;
-            }
-          }
-        }
-      }
-      if ((o = grid_coord.z+k) < grid_sz.z) { /* top layer */
-        for (n = min_n; n <= max_n; n++) {
-          for (m = min_m; m <= max_m; m++) {
-            cell_idx = m+n*grid_sz.x+o*cell_stride_z;
-            if (!EC_BITMAP_TEST_BIT(fic_empty_cell,cell_idx)) {
-              cell_list[cll++] = cell_idx;
-            }
-          }
-        }
-      }
+    cell_idx = grid_coord.x+grid_coord.y*grid_sz.x+grid_coord.z*cell_stride_z;
+    if (dcl[cell_idx].n_dists <= k) {
+      get_cells_at_distance(&(dcl[cell_idx]),grid_coord,grid_sz,k,fic);
     }
+    cell_list = dcl[cell_idx].list[k].cell;
+    cll = dcl[cell_idx].list[k].n_cells;
+
     /* Scan each (non-empty) cell in the compiled list */
     for (j=0; j<cll; j++) {
       cell_idx = cell_list[j];
@@ -1102,6 +1151,8 @@ void dist_surf_surf(const model *m1, model *m2, int n_spt,
   struct size3d grid_sz;      /* number of cells in the X, Y and Z directions */
   struct face_error *fe;      /* The error metrics for each face of m1 */
   int report_step;            /* The step to update the progress report */
+  struct dist_cell_lists *dcl;/* Cache for the list of non-empty cells at each
+                               * distance, for each cell. */
 #ifdef DO_DIST_PT_SURF_STATS
   struct dist_pt_surf_stats dps_stats; /* Statistics */
 #endif
@@ -1117,6 +1168,7 @@ void dist_surf_surf(const model *m1, model *m2, int n_spt,
   /* Get the triangle list from model 2 and determine the grid and cell size */
   tl2 = model_to_triangle_list(m2);
   cell_sz = get_cell_size(tl2,&bbox2_min,&bbox2_max,&grid_sz);
+  dcl = xa_calloc(grid_sz.x*grid_sz.y*grid_sz.z,sizeof(*dcl));
 
   /* Get the list of triangles in each cell */
   fic = triangles_in_cells(tl2,grid_sz,cell_sz,bbox2_min);
@@ -1157,7 +1209,7 @@ void dist_surf_surf(const model *m1, model *m2, int n_spt,
 #ifdef DO_DIST_PT_SURF_STATS
                                     &dps_stats,
 #endif
-                                    grid_sz,cell_sz,bbox2_min);
+                                    grid_sz,cell_sz,bbox2_min,dcl);
     }
     error_stat_triag(&tse,&fe[k]);
     /* Update overall statistics */
