@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.64 2004/04/30 07:50:20 aspert Exp $
+# $Id: Makefile,v 1.65 2004/10/12 12:33:07 aspert Exp $
 
 
 
@@ -329,7 +329,7 @@ MESH_CXX_SRCS := $(filter-out moc_%.cpp,$(wildcard *.cpp))
 MESH_MOC_SRCS := Basic3DViewerWidget.h Lighted3DViewerWidget.h \
 	Error3DViewerWidget.h ScreenWidget.h InitWidget.h ColorMapWidget.h
 LIB3D_C_SRCS = geomutils.c model_in.c model_in_raw.c model_in_smf.c \
-	model_in_ply.c model_in_vrml_iv.c block_list.c
+	model_in_ply.c model_in_vrml_iv.c model_in_off.c block_list.c
 
 # Files for distribution
 MISC_FILES = Makefile Mesh.dsp Mesh.dsw meshIcon.xpm Mesh.spec \
@@ -349,7 +349,7 @@ LDLIBS = -lqt -lGL -lGLU -lXmu -lXext -lSM -lICE -lXft -lpng -ljpeg -lmng \
 	-lXi -ldl -lXt -lz -lfreetype -lXrender -lX11
 XTRA_LDLIBS += -lm_p -lc_p
 else
-LDLIBS = -lqt -lGL -lGLU -lpthread -lXmu -lXext -lX11 -lm
+LDLIBS = -lqt -lGL -lGLU -lpthread -lXmu -lXext -lX11 -lm -lz
 endif
 LOADLIBES = -L$(QTDIR)/lib -L/usr/X11R6/lib
 LDFLAGS =
