@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.51 2001/08/24 08:46:21 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.52 2001/08/24 14:52:23 dsanta Exp $ */
 
 #include <compute_error.h>
 
@@ -787,9 +787,15 @@ static void error_stat_triag(const struct triag_sample_error *tse,
 {
   int n,i,j,imax,jmax;
   double err_local;
+  double err_a,err_b,err_c;
   double err_min, err_max, err_tot, err_sqr_tot;
   double **s_err;
 
+  /* NOTE: In a triangle with values at the vertex e1, e2 and e3 and using
+   * linear interpolation to obtain the values within the triangle, the mean
+   * value (i.e. integral of the value divided by the surface) is
+   * (e1+e2+e3)/3; and the squared mean value (i.e. integral of the squared
+   * value divided by the surface) is (e1^2+e2^2+e3^2+e1*e2+e2*e3+e1*e3)/6. */
   err_min = DBL_MAX;
   err_max = 0;
   err_tot = 0;
@@ -801,17 +807,21 @@ static void error_stat_triag(const struct triag_sample_error *tse,
    * (n-1)*n/2 of these. */
   for (i=0, imax=n-1; i<imax; i++) {
     for (j=0, jmax=imax-i; j<jmax; j++) {
-      err_local = s_err[i][j]+s_err[i][j+1]+s_err[i+1][j];
-      err_tot += err_local;
-      err_sqr_tot += err_local*err_local;
+      err_a = s_err[i][j];
+      err_b = s_err[i][j+1];
+      err_c = s_err[i+1][j];
+      err_tot += err_a+err_b+err_c;
+      err_sqr_tot += err_a*(err_a+err_b+err_c)+err_b*(err_b+err_c)+err_c*err_c;
     }
   }
   /* Do the other triangles. There are (n-2)*(n-1)/2 of these. */
   for (i=1; i<n; i++) {
     for (j=1, jmax=n-i; j<jmax; j++) {
-      err_local = s_err[i-1][j]+s_err[i][j-1]+s_err[i][j];
-      err_tot += err_local;
-      err_sqr_tot += err_local*err_local;
+      err_a = s_err[i-1][j];
+      err_b = s_err[i][j-1];
+      err_c = s_err[i][j];
+      err_tot += err_a+err_b+err_c;
+      err_sqr_tot += err_a*(err_a+err_b+err_c)+err_b*(err_b+err_c)+err_c*err_c;
     }
   }
   /* Get min max */
@@ -825,7 +835,7 @@ static void error_stat_triag(const struct triag_sample_error *tse,
   fe->max_error = err_max;
   if (n != 1) { /* normal case */
     fe->mean_error = err_tot/(((n-1)*n/2+(n-2)*(n-1)/2)*3);
-    fe->mean_sqr_error = err_sqr_tot/(((n-1)*n/2+(n-2)*(n-1)/2)*3);
+    fe->mean_sqr_error = err_sqr_tot/(((n-1)*n/2+(n-2)*(n-1)/2)*6);
   } else { /* special case */
     fe->mean_error = tse->err_lin[0];
     fe->mean_sqr_error = tse->err_lin[0]*tse->err_lin[0];
