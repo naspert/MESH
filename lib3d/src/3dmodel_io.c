@@ -1,22 +1,19 @@
-/* $Id: 3dmodel_io.c,v 1.3 2001/03/13 10:07:19 aspert Exp $ */
+/* $Id: 3dmodel_io.c,v 1.4 2001/03/14 10:25:43 aspert Exp $ */
 #include <3dmodel.h>
 
 
 int read_header(FILE *pf, int *nvert, int *nfaces, int *nnorms) {
   char buffer[300];
-  char *tok1;
-  char *tok2;
-  char *tok3;
-  char *delim;
+  char *tok1, *tok2, *tok3, *delim;
 
-
+    
   *nfaces = 0;
   *nvert = 0;
   *nnorms = 0;
   /* These are delimiters for the header */
-  delim = (char*)malloc(3*sizeof(char));
+  delim = (char*)malloc(2*sizeof(char));
   delim[0] = ' ';
-  delim[1] = '\n';
+  delim[1] = '\0';
   /* Scan 1st line */
   fgets(buffer, 200, pf);
   /* Extract tokens */
@@ -30,12 +27,13 @@ int read_header(FILE *pf, int *nvert, int *nfaces, int *nnorms) {
     *nfaces = atoi(tok2);
     *nvert = atoi(tok1);
     if (*nvert != *nnorms) {
-      fprintf(stderr, "Incorrect number of normals\n");
+      fprintf(stderr, "Incorrect number of normals %d\n", *nnorms);
       return 0;
     }
   } else if (tok1 != NULL && tok2 != NULL) {
     *nfaces = atoi(tok2);
     *nvert = atoi(tok1);
+    printf("nfaces = %d nvert = %d\n", *nfaces, *nvert);
   } else {
     fprintf(stderr, "Invalid header\n");
     return 0;
