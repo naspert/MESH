@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.55 2001/09/10 15:07:42 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.56 2001/09/10 15:09:53 dsanta Exp $ */
 
 #include <compute_error.h>
 
@@ -1144,6 +1144,7 @@ static double dist_pt_surf(vertex p, const struct triangle_list *tl,
 
   /* Scan cells, at sequentially increasing index distance k */
   kmax = max3(grid_sz.x,grid_sz.y,grid_sz.z);
+  if (k >= kmax) k = kmax-1;
   dmin_sqr = DBL_MAX;
   cell_sz_sqr = cell_sz*cell_sz;
   do {
