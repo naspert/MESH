@@ -1,4 +1,4 @@
-/* $Id: viewer.cpp,v 1.19 2001/07/09 14:45:14 jacquet Exp $ */
+/* $Id: viewer.cpp,v 1.20 2001/07/10 12:53:16 jacquet Exp $ */
 
 #include <qapplication.h>
 #include <ScreenWidget.h>
@@ -45,7 +45,7 @@ int main( int argc, char **argv )
  QApplication a( argc, argv ); 
 
 
- if(argc<=4){
+ if(argc<4){
    InitWidget b;
    a.setMainWidget( &b );
    b.show(); 
@@ -69,7 +69,6 @@ int main( int argc, char **argv )
      in_filename1 = argv[1];
      in_filename2 = argv[2];
      samplethin=atof(argv[3]);
-     text = 1;
    }
   
  } 
@@ -107,7 +106,7 @@ int main( int argc, char **argv )
   if (raw_model2->face_normals==NULL) {
     raw_model2->face_normals = compute_face_normals(raw_model2,curv);
         
-    if (raw_model2->face_normals != NULL){
+    if (raw_model2->face_normals != NULL && text==1){
       compute_vertex_normal(raw_model2, curv, raw_model2->face_normals);
       for (i=0; i<raw_model2->num_vert; i++) 
 	free(curv[i].list_face);
@@ -130,9 +129,9 @@ int main( int argc, char **argv )
   else if(raw_model2->num_faces<1000)
     facteur=10;
   else if(raw_model2->num_faces<10000)
-    facteur=15;
-  else if(raw_model2->num_faces<100000)
     facteur=20;
+  else if(raw_model2->num_faces<100000)
+    facteur=30;
 
 //   if (raw_model2->num_faces/raw_model1->num_faces>50)
 //     facteur/=2;
@@ -197,7 +196,7 @@ int main( int argc, char **argv )
     
     dmoy=err_moy(mem_err,sample2,k); /* dmoy= erreur moy * surface triangle */
     meanerror+=dmoy;
-    dmoy=err_moy(mem_err,sample2,k)/triarea;
+    dmoy=dmoy/triarea;
     error_per_face[i][0]=dmoy;
 
     for(j=0;j<k;j++)
@@ -261,11 +260,11 @@ int main( int argc, char **argv )
 
 
  if(text == 1){
-   printf("coucou");
    ScreenWidget c(raw_model1,raw_model2,superdmin,superdmax);
    a.setMainWidget( &c );
    c.show(); 
    a.exec();
+
  }
  
 }

@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.9 2001/07/09 14:45:14 jacquet Exp $ */
+/* $Id: compute_error.c,v 1.10 2001/07/10 12:53:16 jacquet Exp $ */
 
 #include <compute_error.h>
 
@@ -441,7 +441,7 @@ cell=(cellules *)malloc((raw_model->num_faces)*sizeof(cellules));
    B=raw_model->vertices[raw_model->faces[i].f1];
    C=raw_model->vertices[raw_model->faces[i].f2];
 
-   raw_model->face_normals[i]=ncrossp(A,B,C);
+/*    raw_model->face_normals[i]=ncrossp(A,B,C); */
    sample1=echantillon(A,B,C,0.05);
 
    for(j=0;j<sample1->nbsamples;j++){

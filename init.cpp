@@ -98,6 +98,6 @@ void InitWidget::collect()
 void InitWidget::about()
 {
   QMessageBox::about(this,"ERROR",
-		     "vous devez remplir tous les chanps\n"
+		     "vous devez remplir tous les champs\n"
 		     "mais c'est pas vrai");
 }
