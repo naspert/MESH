@@ -1,4 +1,4 @@
-/* $Id: InitWidget.cpp,v 1.3 2001/09/10 15:07:42 dsanta Exp $ */
+/* $Id: InitWidget.cpp,v 1.4 2001/09/20 16:15:17 dsanta Exp $ */
 #include <InitWidget.h>
 
 InitWidget::InitWidget(QWidget *parent, const char *name):
@@ -9,6 +9,9 @@ InitWidget::InitWidget(QWidget *parent, const char *name):
   QListBox *qlboxSplStep;
   QGridLayout *bigGrid;
   QHBoxLayout *smallGrid1, *smallGrid2, *smallGrid3, *smallGrid4;
+
+  /* Initialize */
+  isValid = 0;
 
   /* First mesh */
   qledMesh1 = new QLineEdit("mesh1.raw", this);
@@ -102,8 +105,10 @@ void InitWidget::getParameters() {
   if(tmpMesh1=="mesh1.raw" || tmpMesh2=="mesh2.raw" || 
      tmpSplStep=="sampling step")
     incompleteFields();
-  else
+  else {
+    isValid = 1;
     emit(exit());
+  }
   
 }
   

@@ -1,4 +1,4 @@
-/* $Id: InitWidget.h,v 1.3 2001/09/10 15:07:42 dsanta Exp $ */
+/* $Id: InitWidget.h,v 1.4 2001/09/20 16:15:08 dsanta Exp $ */
 
 #ifndef INITW_H
 #define INITW_H
@@ -19,6 +19,7 @@ class InitWidget : public QWidget {
 public:
   InitWidget(QWidget *parent=0, const char *name=0 );
   char *mesh1, *mesh2, *step;
+  int isValid;
 
 public slots:
     void loadMesh1();
