@@ -1,7 +1,7 @@
-/* $Id: geomutils.c,v 1.1 2001/03/12 14:50:32 aspert Exp $ */
+/* $Id: geomutils.c,v 1.2 2001/03/26 12:17:28 aspert Exp $ */
 #include <3dmodel.h>
 
-
+/* Computes the normalized cross product between vectors p2p1 and p3p1 */
 vertex ncrossp(vertex p1, vertex p2, vertex p3) {
   vertex v1, v2, tmp;
   double norm;
@@ -30,6 +30,7 @@ vertex ncrossp(vertex p1, vertex p2, vertex p3) {
   return tmp;
 }
 
+/* Computes the cross product between vectors p2p1 and p3p1 */
 vertex crossprod(vertex v1, vertex v2) {
   vertex res;
 
@@ -53,15 +54,29 @@ double cross_product2d(vertex p1, vertex p2, vertex p3) {
     return (v1.x*v2.y - v1.y*v2.x);
 }
 
+/* Computes the scalar product between 2 vectors */
 double scalprod(vertex v1, vertex v2) {
   return (v1.x*v2.x + v1.y*v2.y + v1.z*v2.z);
 }
 
+/* Computes the norm of vector v */
 double norm(vertex v) {
   return (sqrt(v.x*v.x + v.y*v.y + v.z*v.z));
 }
 
+/* Computes the distance between v1 and v2 */
+double dist(vertex v1, vertex v2) {
+  vertex tmp;
+  
+  tmp.x = v1.x - v2.x;
+  tmp.y = v1.y - v2.y;
+  tmp.z = v1.z - v2.z;
 
+  return norm(tmp);
+  
+}
+
+/* Normalizes vertex v */
 void normalize(vertex *v) {
   double n;
 
@@ -90,7 +105,7 @@ int inside(vertex p, vertex center, double r) {
 	return 0;
 }
 
-
+/* Computes the radius and center of the 2D circle passing by p1 p2 and p3 */
 void compute_circle2d(vertex p1, vertex p2, vertex p3, 
 		      double *r, vertex *center) {
     vertex v1, v2;
@@ -203,6 +218,8 @@ void compute_circle3d(vertex p1, vertex p2, vertex p3,
     
 }
 
+
+/* Computes the area of the triangle p1,p2, p3 */
 double tri_area(vertex p1, vertex p2, vertex p3) {
     vertex u,v,h;
     double nu,nv,uv,nh;
