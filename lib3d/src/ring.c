@@ -1,4 +1,4 @@
-/* $Id: ring.c,v 1.3 2002/06/04 08:48:00 aspert Exp $ */
+/* $Id: ring.c,v 1.4 2002/11/05 13:54:52 aspert Exp $ */
 
 
 /*
@@ -76,7 +76,9 @@ void build_star_global(const struct model *raw_model,
   
   for (i=0; i<raw_model->num_vert; i++) {
     if(num_edges[i] == 0) {
+#ifdef DEBUG
       fprintf(stderr, "Vertex %d has no face...\n", i);
+#endif
       continue;
     }
     /* build ring of each vertex */
@@ -185,14 +187,14 @@ void build_star_global(const struct model *raw_model,
     ring[i].size = star_size;
     ring[i].ord_vert = (int*)malloc(star_size*sizeof(int));
     memcpy(ring[i].ord_vert, final_star, star_size*sizeof(int));
-#if 0
+#ifdef DEBUG
     printf("vertex %d: valence=%d\n", i, star_size);
 #endif
     ring[i].n_faces = n_faces;
     ring[i].ord_face = (int*)malloc(n_faces*sizeof(int));
     memcpy(ring[i].ord_face, face_star, n_faces*sizeof(int));
 
-#if 0
+#ifdef DEBUG
     printf("vertex %d Tr: ", i);
     for (j=0; j<ring[i].n_faces; j++) {
       printf("%d ", ring[i].ord_face[j]);
@@ -270,7 +272,9 @@ void build_star(const struct model *raw_model, int v, struct ring_info *ring) {
   }
 
   if (num_edges == 0) {
+#ifdef DEBUG
     printf("Vertex %d has no face...\n", v);
+#endif
     ring->type = 0;
     ring->size = 0;
     ring->ord_vert = NULL;
