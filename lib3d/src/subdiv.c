@@ -1,4 +1,4 @@
-/* $Id: subdiv.c,v 1.24 2002/11/05 10:20:10 aspert Exp $ */
+/* $Id: subdiv.c,v 1.25 2002/11/05 12:14:52 aspert Exp $ */
 #include <3dutils.h>
 #include <subdiv_methods.h>
 #include <subdiv.h>
@@ -23,10 +23,10 @@ struct model* subdiv(struct model *raw_model,
 					 const struct ring_info*) ) {
   struct ring_info *rings;
   struct model *subdiv_model;
-  int i, j;
+  int i, j, i0, i1, i2;
   int v0, v1, v2;
   int u0=-1, u1=-1, u2=-1;
-  unsigned char ufound_bm;
+
   vertex_t p;
   int nedges = 0;
   int vert_idx = raw_model->num_vert;
@@ -126,155 +126,51 @@ struct model* subdiv(struct model *raw_model,
     v1 = raw_model->faces[j].f1;
     v2 = raw_model->faces[j].f2;
 
-    ufound_bm = 0;
+    i0 = 0;
+    while (rings[v0].ord_vert[i0] != v1)
+      i0++;
+    u0 = mp_info[v0].midpoint_idx[i0];
 
-    i = 0;
-    while (rings[v0].ord_vert[i] != v1)
-      i++;
-    if (mp_info[v0].midpoint_idx[i] != -1) {
-      u0 = mp_info[v0].midpoint_idx[i];
-      subdiv_model->vertices[u0] = 
-	mp_info[v0].midpoint[i];
-      ufound_bm |= U0_FOUND;
-    } 
-     
-    i = 0;
-    while (rings[v1].ord_vert[i] != v2)
-      i++;
-    if (mp_info[v1].midpoint_idx[i] != -1) {
-      u1 = mp_info[v1].midpoint_idx[i];
-      subdiv_model->vertices[u1] = 
-	mp_info[v1].midpoint[i];
-      ufound_bm |= U1_FOUND;
-    } 
 
-    i = 0;
-    while (rings[v2].ord_vert[i] != v0)
-      i++;
-    if (mp_info[v2].midpoint_idx[i] != -1) {
-      u2 = mp_info[v2].midpoint_idx[i];
-      subdiv_model->vertices[u2] = 
-	mp_info[v2].midpoint[i];
-      ufound_bm |= U2_FOUND;
-    } 
+    i1 = 0;
+    while (rings[v1].ord_vert[i1] != v2)
+      i1++;
+    u1 = mp_info[v1].midpoint_idx[i1];
 
-  
-#ifdef __BUTTERFLY_CREASE_DEBUG
-    if (ufound_bm != 7)
-      fprintf(stderr, "ufound_bm = %d\n", ufound_bm);
-#endif
-    switch(ufound_bm) {
-    case 7:
-      subdiv_model->faces[face_idx].f0 = v0;
-      subdiv_model->faces[face_idx].f1 = u0;
-      subdiv_model->faces[face_idx].f2 = u2;    
-      face_idx++;
-      
-      subdiv_model->faces[face_idx].f0 = v1;
-      subdiv_model->faces[face_idx].f1 = u0;
-      subdiv_model->faces[face_idx].f2 = u1;
-      face_idx++;
-      
-      subdiv_model->faces[face_idx].f0 = v2;
-      subdiv_model->faces[face_idx].f1 = u1;
-      subdiv_model->faces[face_idx].f2 = u2;
-      face_idx++;
-      
-      subdiv_model->faces[face_idx].f0 = u2;
-      subdiv_model->faces[face_idx].f1 = u0;
-      subdiv_model->faces[face_idx].f2 = u1;
-      face_idx++;
-      break;
-    case 6: /* u1 & u2 found */
-      subdiv_model->faces[face_idx].f0 = v0;
-      subdiv_model->faces[face_idx].f1 = v1;
-      subdiv_model->faces[face_idx].f2 = u2;    
-      face_idx++;
-      
-      subdiv_model->faces[face_idx].f0 = v1;
-      subdiv_model->faces[face_idx].f1 = u2;
-      subdiv_model->faces[face_idx].f2 = u1;
-      face_idx++;
-      
-      subdiv_model->faces[face_idx].f0 = v2;
-      subdiv_model->faces[face_idx].f1 = u1;
-      subdiv_model->faces[face_idx].f2 = u2;
-      face_idx++;
-      break;
-    case 5: /* u0 & u2 found */
-      subdiv_model->faces[face_idx].f0 = v0;
-      subdiv_model->faces[face_idx].f1 = u0;
-      subdiv_model->faces[face_idx].f2 = u2;    
-      face_idx++;
-      
-      subdiv_model->faces[face_idx].f0 = v2;
-      subdiv_model->faces[face_idx].f1 = u2;
-      subdiv_model->faces[face_idx].f2 = u0;
-      face_idx++;
-      
-      subdiv_model->faces[face_idx].f0 = v1;
-      subdiv_model->faces[face_idx].f1 = u0;
-      subdiv_model->faces[face_idx].f2 = v2;
-      face_idx++;
-      break;
-    case 4: /* u2 found */
-      subdiv_model->faces[face_idx].f0 = v0;
-      subdiv_model->faces[face_idx].f1 = v1;
-      subdiv_model->faces[face_idx].f2 = u2;
-      face_idx++;
+    i2 = 0;
+    while (rings[v2].ord_vert[i2] != v0)
+      i2++;
+    u2 = mp_info[v2].midpoint_idx[i2];
 
-      subdiv_model->faces[face_idx].f0 = v1;
-      subdiv_model->faces[face_idx].f1 = u2;
-      subdiv_model->faces[face_idx].f2 = v2;
-      face_idx++;
-      break;
-    case 3: /* u0 & u1 found */
-      subdiv_model->faces[face_idx].f0 = v0;
-      subdiv_model->faces[face_idx].f1 = u1;
-      subdiv_model->faces[face_idx].f2 = v2;    
-      face_idx++;
-      
-      subdiv_model->faces[face_idx].f0 = v1;
-      subdiv_model->faces[face_idx].f1 = u0;
-      subdiv_model->faces[face_idx].f2 = u1;
-      face_idx++;
-      
-      subdiv_model->faces[face_idx].f0 = v0;
-      subdiv_model->faces[face_idx].f1 = u0;
-      subdiv_model->faces[face_idx].f2 = u1;
-      face_idx++;
-      break;
-    case 2: /* u1 found */
-      subdiv_model->faces[face_idx].f0 = v0;
-      subdiv_model->faces[face_idx].f1 = u1;
-      subdiv_model->faces[face_idx].f2 = v2;
-      face_idx++;
-
-      subdiv_model->faces[face_idx].f0 = v1;
-      subdiv_model->faces[face_idx].f1 = v0;
-      subdiv_model->faces[face_idx].f2 = u1;
-      face_idx++;
-      break;
-    case 1: /* u0 found */
-      subdiv_model->faces[face_idx].f0 = v0;
-      subdiv_model->faces[face_idx].f1 = u0;
-      subdiv_model->faces[face_idx].f2 = v2;
-      face_idx++;
-
-      subdiv_model->faces[face_idx].f0 = v1;
-      subdiv_model->faces[face_idx].f1 = u0;
-      subdiv_model->faces[face_idx].f2 = v2;
-      face_idx++;
-      break;
-    case 0: /* none found */
-      subdiv_model->faces[face_idx].f0 = v0;
-      subdiv_model->faces[face_idx].f1 = v1;
-      subdiv_model->faces[face_idx].f2 = v2;    
-      face_idx++;
-      break;
-    default: /* should never get here */
-      fprintf(stderr, "Trouble ufound_bm = %d\n", ufound_bm);
+    if (u0 == -1 || u1 == -1 || u2 == -1) {
+      fprintf(stderr, "Unsubdivided edge found !! Aborting...\n");
+      abort();
     }
+
+    subdiv_model->vertices[u0] =  mp_info[v0].midpoint[i0];
+    subdiv_model->vertices[u1] =  mp_info[v1].midpoint[i1];
+    subdiv_model->vertices[u2] =  mp_info[v2].midpoint[i2];
+
+    subdiv_model->faces[face_idx].f0 = v0;
+    subdiv_model->faces[face_idx].f1 = u0;
+    subdiv_model->faces[face_idx].f2 = u2;    
+    face_idx++;
+    
+    subdiv_model->faces[face_idx].f0 = v1;
+    subdiv_model->faces[face_idx].f1 = u0;
+    subdiv_model->faces[face_idx].f2 = u1;
+    face_idx++;
+    
+    subdiv_model->faces[face_idx].f0 = v2;
+    subdiv_model->faces[face_idx].f1 = u1;
+    subdiv_model->faces[face_idx].f2 = u2;
+    face_idx++;
+    
+    subdiv_model->faces[face_idx].f0 = u2;
+    subdiv_model->faces[face_idx].f1 = u0;
+    subdiv_model->faces[face_idx].f2 = u1;
+    face_idx++;
+
   }
 
 
