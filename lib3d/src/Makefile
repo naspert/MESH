@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.16 2001/09/25 07:57:25 aspert Exp $
+# $Id: Makefile,v 1.17 2001/09/25 07:59:37 aspert Exp $
 
 #CC = /home/sun1/aspert/gcc/bin/gcc
 CC = gcc
@@ -49,10 +49,11 @@ torus : $(OBJDIR)/torus.o lib3d
 butterfly : $(OBJDIR)/butterfly.o lib3d
 	$(CC) -o $(BINDIR)/$@ $< $(BASE_LDFLAGS) -l3d
 
-
 isoca : $(OBJDIR)/isoca.o lib3d
 	$(CC) -o $(BINDIR)/$@ $< $(BASE_LDFLAGS) -l3d
 
+cone: $(OBJDIR)/cone.o lib3d
+	$(CC) -g -o $(BINDIR)/$@ $< $(BASE_LDFLAGS) -l3d
 
 maps_lsq : $(OBJDIR)/maps_lsq.o lib3d
 	$(CC) -o $(BINDIR)/$@ $< $(BASE_LDFLAGS) -l3d -lgsl -lgslcblas
@@ -71,13 +72,6 @@ libimage : $(OBJDIR)/image.o
 
 lib3d : $(OBJDIR)/geomutils.o $(OBJDIR)/3dmodel_io.o $(OBJDIR)/normals.o
 	$(CC) -g -shared -o $(LIBDIR)/$@.so $^
-
-cone: $(OBJDIR)/cone.o lib3d
-	$(CC) -g -o $(BINDIR)/$@ $< $(BASE_LDFLAGS) -l3d
-
-$(OBJDIR)/viewer.o :viewer.cpp
-	$(CPP) $(QTINCL) $(BASE_CFLAGS) -c $< -o $@
-
 
 $(OBJDIR)/rawview3.o : rawview3.c
 	$(CC) $(GL_CFLAGS) -c $< -o $@
