@@ -11,7 +11,7 @@
 	  add_adj_face_extra() (mis-sized realloc leading to memory corruption)
 	- Added support for compiling with PGCC (Portland Group) compiler
 	- Optimization: align doubles at 8 byte boundaries on x86
-	- Default to Penitum IV only builds with PGCC and ICC compilers
+	- Default to Pentium IV only builds with PGCC and ICC compilers
 	- When detecting the file format, check for file error before
 	  returning.
 	- Fixed incorrect handling of unknown nodes (color and texCoord). They
