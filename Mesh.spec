@@ -1,8 +1,8 @@
 # Spec file for MESH
-# $Id: Mesh.spec,v 1.9 2003/05/26 15:22:29 aspert Exp $
+# $Id: Mesh.spec,v 1.10 2004/04/30 07:58:42 aspert Exp $
 Summary: Measuring Errors between Surfaces using the Hausdorff distance
 Name: Mesh
-Version: 1.10
+Version: 1.11
 Release: 1
 License: GPL
 Group: Applications/Scientific Visualization
