@@ -1,4 +1,4 @@
-/* $Id: RawWidget.cpp,v 1.54 2002/03/15 16:32:06 aspert Exp $ */
+/* $Id: RawWidget.cpp,v 1.55 2002/04/03 10:29:39 aspert Exp $ */
 
 
 /*
@@ -83,7 +83,7 @@ RawWidget::RawWidget(struct model_error *model_err, int renderType,
   etex_id = NULL;
   etex_sz = NULL;
   downsampling = 1;
-  gl_initialized = false;
+  gl_initialized = FALSE;
 
   // Compute the center of the bounding box of the model
   add_v(&(model_err->mesh->bBox[0]), &(model_err->mesh->bBox[1]), &center);
@@ -652,7 +652,7 @@ void RawWidget::initializeGL() {
     }
   }
   checkGlErrors("initializeGL()");
-  gl_initialized = true;
+  gl_initialized = TRUE;
 }
 
 
