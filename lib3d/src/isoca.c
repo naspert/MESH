@@ -1,4 +1,4 @@
-/* $Id: isoca.c,v 1.4 2001/10/30 09:26:06 aspert Exp $ */
+/* $Id: isoca.c,v 1.5 2002/01/11 12:56:49 aspert Exp $ */
 #include <3dutils.h>
 
 
@@ -22,7 +22,7 @@ struct model* subdiv(struct model *raw_model) {
   int new1, new2, new3;
 
 
-  subd = (struct model*)malloc(sizeof(struct model));
+  subd = (struct model*)calloc(1, sizeof(struct model));
   subd->num_faces = 4*raw_model->num_faces;
   subd->faces = (face_t*)malloc(subd->num_faces*sizeof(face_t));
   subd->vertices = (vertex_t*)malloc(raw_model->num_vert*sizeof(vertex_t));
@@ -138,6 +138,9 @@ int main(int argc, char **argv) {
   
   filename = argv[1];
   n = atoi(argv[2]);
+  
+  /* init the isoca structure */
+  memset(&isoca, 0, sizeof(struct model));
 
   isoca.vertices = (vertex_t*)malloc(12*sizeof(vertex_t));
   isoca.faces = (face_t*)malloc(20*sizeof(face_t));
@@ -217,6 +220,7 @@ int main(int argc, char **argv) {
   
   or_mod = &isoca;
   sub_mod = &isoca;
+ 
   for (i=1; i<n; i++) {
     printf("Level %d ... ", i+1);fflush(stdout);
     sub_mod = subdiv(or_mod);
