@@ -1,4 +1,4 @@
-/* $Id: rawview.c,v 1.23 2002/09/17 08:36:31 aspert Exp $ */
+/* $Id: rawview.c,v 1.24 2002/11/07 07:53:23 aspert Exp $ */
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -10,6 +10,8 @@
 #include <3dutils.h>
 #include <rawview.h>
 #include <rawview_misc.h>
+#include <subdiv.h>
+#include <subdiv_methods.h>
 #include <assert.h>
 
 
@@ -174,9 +176,28 @@ static void display() {
 /* Callback for the normal keys */
 /* **************************** */
 static void norm_key_pressed(unsigned char key, int x, int y) {
+  struct model *sub_model;
 
 
   switch(key) {
+  case 'b':
+  case 'B':
+    sub_model = subdiv(gl_ctx.raw_model, compute_midpoint_butterfly, 
+                       compute_midpoint_butterfly_crease, NULL);
+    if (sub_model != NULL) {
+      __free_raw_model(gl_ctx.raw_model);
+      gl_ctx.normals_done = 0;
+      gl_ctx.curv_done = 0;
+      gl_ctx.disp_curv = 0;
+      gl_ctx.draw_normals = 0;
+      set_light_off();
+      gl_ctx.raw_model = sub_model;
+      rebuild_list(&gl_ctx, &dl_idx);
+      glutPostRedisplay();
+    } else 
+      fprintf(stderr, "Butterfly subdivision failed\n");
+    break;
+    break;
   case 'g':
   case 'G': /* Enable Gaussian curvature display */
     if (gl_ctx.disp_curv != 1) {
@@ -204,6 +225,23 @@ static void norm_key_pressed(unsigned char key, int x, int y) {
   case 'I':
     fprintf(stderr, "\nModel Info :\n %d vertices and %d triangles\n\n", 
             gl_ctx.raw_model->num_vert, gl_ctx.raw_model->num_faces);
+    break;
+  case 'l':
+  case 'L':
+    sub_model = subdiv(gl_ctx.raw_model, compute_midpoint_loop, 
+                       compute_midpoint_loop_crease, update_vertices_loop);
+    if (sub_model != NULL) {
+      __free_raw_model(gl_ctx.raw_model);
+      gl_ctx.normals_done = 0;
+      gl_ctx.curv_done = 0;
+      gl_ctx.disp_curv = 0;
+      gl_ctx.draw_normals = 0;
+      set_light_off();
+      gl_ctx.raw_model = sub_model;
+      rebuild_list(&gl_ctx, &dl_idx);
+      glutPostRedisplay();
+    } else 
+      fprintf(stderr, "Loop subdivision failed\n");
     break;
   case 'm':
   case 'M': /* Enable Mean curvature display */
@@ -240,6 +278,31 @@ static void norm_key_pressed(unsigned char key, int x, int y) {
     __free_raw_model(gl_ctx.raw_model);
     exit(0);
     break;
+  case 's':
+  case 'S':
+    if (!gl_ctx.normals_done) {
+      if (!do_normals(gl_ctx.raw_model)) 
+        gl_ctx.normals_done = 1;
+      else {
+        fprintf(stderr, "Unable to compute normals ...\n");
+        break;
+      }
+    }
+    sub_model = subdiv(gl_ctx.raw_model, compute_midpoint_sph, 
+                       compute_midpoint_sph_crease, NULL);
+    if (sub_model != NULL) {
+      __free_raw_model(gl_ctx.raw_model);
+      gl_ctx.normals_done = 0;
+      gl_ctx.curv_done = 0;
+      gl_ctx.disp_curv = 0;
+      gl_ctx.draw_normals = 0;
+      set_light_off();
+      gl_ctx.raw_model = sub_model;
+      rebuild_list(&gl_ctx, &dl_idx);
+      glutPostRedisplay();
+    } else 
+      fprintf(stderr, "Loop subdivision failed\n");
+    break;
   default:
     break;
   }
@@ -259,8 +322,14 @@ static void sp_key_pressed(int key, int x, int y) {
   switch(key) {
   case GLUT_KEY_F1:/* Print Help */
     fprintf(stderr, "\n***********************\n");
-    fprintf(stderr, "* Rawview v3.0 - Help *\n");
+    fprintf(stderr, "* Rawview    -    Help *\n");
     fprintf(stderr, "***********************\n\n");
+    fprintf(stderr, "b/B      :\tPerforms Butterfly subdivision\n");
+    fprintf(stderr, "g/G      :\tDisplay Gaussian curvature\n");
+    fprintf(stderr, "i/I      :\tDisplay model information\n");
+    fprintf(stderr, "l/L      :\tPerforms Loop subdivision\n");
+    fprintf(stderr, "m/M      :\tDisplays mean curvature\n");
+    fprintf(stderr, "s/S      :\tPerforms Spherical subdivision\n\n");
     fprintf(stderr, "F1       :\tDisplays this help\n");
     fprintf(stderr, "F2       :\tToggles lighted/wireframe mode\n");
     fprintf(stderr, "F3       :\tInvert normals (if any)\n");
@@ -465,7 +534,7 @@ int main(int argc, char **argv) {
 
   int i, rcode=0;
   char *title;
-  const char s_title[]="Raw Mesh Viewer v3.1 - ";
+  const char s_title[]="Raw Mesh Viewer $Revision: 1.24 $ - ";
   vertex_t center;
   struct model* raw_model;
 

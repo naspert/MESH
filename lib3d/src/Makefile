@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.50 2002/11/04 15:27:46 aspert Exp $
+# $Id: Makefile,v 1.51 2002/11/07 07:53:23 aspert Exp $
 
 #Set PROFILE to something to enable profiling
 #PROFILE=1
@@ -13,11 +13,11 @@ BASE_LIBFLAGS = -lm -lz
 TARGETS = torus cone dirac compare_curv
 GSL_TARGETS = maps_lsq
 ifeq ($(OS), Linux)
-CC = gcc
+CC = gcc3
 PROF_FLAGS = -pg
 XTRA_CFLAGS = -g -pipe -ansi -pedantic -Wall -DREAD_TIME  -W -Winline \
 	-Wmissing-prototypes -Wstrict-prototypes -Wnested-externs \
-	-Wshadow -Waggregate-return -Wno-unused # -DDEBUG \
+	-Wshadow -Waggregate-return  -Wno-unused  #-DDEBUG \
 	-D__BUTTERFLY_CREASE_DEBUG -DDONT_USE_ZLIB
 
 
@@ -78,7 +78,9 @@ BASE_OBJECTS = $(OBJDIR)/geomutils.o $(OBJDIR)/normals.o \
 	$(OBJDIR)/model_in.o $(OBJDIR)/model_in_raw.o \
 	$(OBJDIR)/model_in_smf.o $(OBJDIR)/block_list.o \
 	$(OBJDIR)/model_in_ply.o $(OBJDIR)/model_in_vrml_iv.o \
-	$(OBJDIR)/curvature.o  # $(OBJDIR)/purify.o
+	$(OBJDIR)/curvature.o
+SUBDIV_OBJECTS = $(OBJDIR)/subdiv.o $(OBJDIR)/subdiv_loop.o \
+	$(OBJDIR)/subdiv_sph.o $(OBJDIR)/subdiv_butterfly.o
 GL_OBJECTS = $(OBJDIR)/rawview.o $(OBJDIR)/gl2ps.o $(OBJDIR)/rawview_disp.o \
 	$(OBJDIR)/rawview_utils.o $(OBJDIR)/rawview_grab.o
 GSL_OBJECTS = $(OBJDIR)/maps_lsq.o
@@ -102,7 +104,7 @@ default : rawview
 
 all: dirs $(ALL_TARGETS)
 
-rawview : $(GL_OBJECTS) $(BASE_OBJECTS) $(OBJDIR)/image.o
+rawview : $(GL_OBJECTS) $(BASE_OBJECTS) $(SUBDIV_OBJECTS) $(OBJDIR)/image.o 
 	$(CC) -g $^ -o $(BINDIR)/$@ $(STATIC_GLFLAGS)
 
 $(TARGETS): % : $(OBJDIR)/%.o $(BASE_OBJECTS)
@@ -114,9 +116,7 @@ $(GSL_TARGETS): % : $(OBJDIR)/%.o $(BASE_OBJECTS)
 isoca: $(OBJDIR)/isoca.o $(OBJDIR)/subdiv.o $(BASE_OBJECTS)
 	$(CC) -o $(BINDIR)/$@ $^ $(BASE_LDFLAGS) 
 
-subdiv : $(OBJDIR)/subdiv_main.o $(OBJDIR)/subdiv.o \
-	$(OBJDIR)/subdiv_sph.o $(OBJDIR)/subdiv_butterfly.o \
-	$(OBJDIR)/subdiv_loop.o $(BASE_OBJECTS)
+subdiv : $(OBJDIR)/subdiv_main.o $(SUBDIV_OBJECTS) $(BASE_OBJECTS)
 	$(CC) -o $(BINDIR)/$@ $^ $(BASE_LDFLAGS) 
 
 rawview_d : $(GL_OBJECTS) lib3d libimage
