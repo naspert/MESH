@@ -1,4 +1,4 @@
-/* $Id: model_in_ply.c,v 1.4 2002/08/22 17:26:34 aspert Exp $ */
+/* $Id: model_in_ply.c,v 1.5 2002/08/23 07:02:04 aspert Exp $ */
 
 /*
  *
@@ -51,38 +51,49 @@ static int read_ply_faces(face_t *faces, struct file_data *data,
                           int n_faces, int n_vtcs)
 {
   int i, c, f0, f1, f2;
+  int rcode=0;
 
   for(i=0; i<n_faces; i++) {
     
-    if (int_scanf(data, &c) != 1) 
-      return MESH_CORRUPTED;
-    
-    if (c != 3)  /* Non-triangular mesh -> bail out */
-      return  MESH_NOT_TRIAG;
-    
+    if (int_scanf(data, &c) != 1) {
+      rcode = MESH_CORRUPTED;
+      break;
+    }
+
+    if (c != 3) { /* Non-triangular mesh -> bail out */
+      rcode =  MESH_NOT_TRIAG;
+      break;
+    }
         
     /* Read faces */
-    if (int_scanf(data, &f0) != 1) 
-      return MESH_CORRUPTED;
+    if (int_scanf(data, &f0) != 1) {
+      rcode = MESH_CORRUPTED;
+      break;
+    }
 
-    if (int_scanf(data, &f1) != 1) 
-      return MESH_CORRUPTED;
+    if (int_scanf(data, &f1) != 1) {
+      rcode = MESH_CORRUPTED;
+      break;
+    }
 
-    if (int_scanf(data, &f2) != 1) 
-      return MESH_CORRUPTED;
+    if (int_scanf(data, &f2) != 1) {
+      rcode = MESH_CORRUPTED;
+      break;
+    }
 
     /* Check if indices are consistent ...*/
     if (f0 < 0 || f1 < 0 || f2 < 0 || 
-        f0 >= n_vtcs || f1 >= n_vtcs || f2 >= n_vtcs ) 
-      return MESH_MODEL_ERR;
-
+        f0 >= n_vtcs || f1 >= n_vtcs || f2 >= n_vtcs ) {
+      rcode = MESH_MODEL_ERR;
+      break;
+    }
 
     faces[i].f0 = f0;
     faces[i].f1 = f1;
     faces[i].f2 = f2;
   } /* end face loop */
 
-  return 0;
+  return rcode;
 }
 
 /* Reads 'n_vtcs' vertex points from the '*data' stream in raw ascii format
@@ -94,19 +105,24 @@ static int read_ply_vertices(vertex_t *vtcs, struct file_data *data,
                              vertex_t *bbox_min, vertex_t *bbox_max)
 {
   vertex_t bbmin, bbmax;
-  int i, c;
+  int i, c, rcode=0;
 
   bbmin.x = bbmin.y = bbmin.z = FLT_MAX;
   bbmax.x = bbmax.y = bbmax.z = -FLT_MAX;
 
   for (i=0; i< n_vtcs; i++) {
-    if (float_scanf(data, &(vtcs[i].x)) != 1) 
-      return MESH_CORRUPTED;
-    if (float_scanf(data, &(vtcs[i].y)) != 1) 
-      return MESH_CORRUPTED;
-    if (float_scanf(data, &(vtcs[i].z)) != 1) 
-      return MESH_CORRUPTED;
-    
+    if (float_scanf(data, &(vtcs[i].x)) != 1) {
+      rcode = MESH_CORRUPTED;
+      break;
+    }
+    if (float_scanf(data, &(vtcs[i].y)) != 1) {
+      rcode = MESH_CORRUPTED;
+      break;
+    }
+    if (float_scanf(data, &(vtcs[i].z)) != 1) {
+      rcode = MESH_CORRUPTED;
+      break;
+    }
     /* skip the rest of the current line, which can contain
      * additional informations (e.g. color), but currently ignored
      */
@@ -114,9 +130,11 @@ static int read_ply_vertices(vertex_t *vtcs, struct file_data *data,
       c = getc(data);
     } while (c != '\n' && c != '\r' && c != EOF);
     
-    if (c == EOF) 
-      return MESH_CORRUPTED;
-    
+    if (c == EOF) {
+      rcode = MESH_CORRUPTED;
+      break;
+    }
+
     if (vtcs[i].x < bbmin.x) bbmin.x = vtcs[i].x;
     if (vtcs[i].y < bbmin.y) bbmin.y = vtcs[i].y;
     if (vtcs[i].z < bbmin.z) bbmin.z = vtcs[i].z;
@@ -130,7 +148,7 @@ static int read_ply_vertices(vertex_t *vtcs, struct file_data *data,
   }
   *bbox_min = bbmin;
   *bbox_max = bbmax;
-  return 0;
+  return rcode;
 }
 
 /* Reads a _triangular_ mesh from a PLY ASCII file. Note that no
@@ -154,7 +172,7 @@ int read_ply_tmesh(struct model **tmesh_ref, struct file_data *data)
   tmesh = (struct model*)calloc(1, sizeof(struct model));
 
   /* read the header */
-  /* check if the format is ASCII */
+  /* check if the format is ASCII or binary */
   skip_ws_comm(data);
   if (string_scanf(data, stmp) == 1 && strcmp(stmp, "format") == 0) {
     skip_ws_comm(data);
@@ -244,7 +262,7 @@ int read_ply_tmesh(struct model **tmesh_ref, struct file_data *data)
     tmesh->bBox[0] = bbmin;
     tmesh->bBox[1] = bbmax;
     *tmesh_ref = tmesh;
-    rcode = 0;
+    rcode = 1;
   }
 
   return rcode;
