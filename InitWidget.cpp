@@ -1,4 +1,4 @@
-/* $Id: InitWidget.cpp,v 1.8 2001/09/28 11:48:14 aspert Exp $ */
+/* $Id: InitWidget.cpp,v 1.9 2001/10/01 16:49:01 dsanta Exp $ */
 
 #include <InitWidget.h>
 
@@ -14,7 +14,9 @@
 
 #include <stdlib.h>
 
-InitWidget::InitWidget(struct args defArgs, QWidget *parent, const char *name):
+InitWidget::InitWidget(struct args defArgs,
+                       struct model_error *m1, struct model_error *m2,
+                       QWidget *parent, const char *name):
   QWidget( parent, name) {
 
   QLabel *qlabMesh1, *qlabMesh2, *qlabSplStep;
@@ -26,6 +28,9 @@ InitWidget::InitWidget(struct args defArgs, QWidget *parent, const char *name):
 
   /* Initialize */
   pargs = defArgs;
+  model1 = m1;
+  model2 = m2;
+  c = NULL;
 
   /* First mesh */
   qledMesh1 = new QLineEdit("", this);
@@ -102,6 +107,10 @@ InitWidget::InitWidget(struct args defArgs, QWidget *parent, const char *name):
   smallGrid4->addWidget(OK, 0, 1);
 }
 
+InitWidget::~InitWidget() {
+  delete c;
+}
+
 void InitWidget::loadMesh1() {
   QString fn = QFileDialog::getOpenFileName(QString::null, "*.raw", this);
   if ( !fn.isEmpty() )
@@ -145,7 +154,7 @@ void InitWidget::meshRun() {
   pargs.sampling_step = atof((char*)qledSplStep->text().latin1())/100;
   pargs.do_symmetric = chkSymDist->isChecked() == TRUE;
   pargs.do_curvature = chkCurv->isChecked() == TRUE;
-  mesh_run(&pargs,&model1,&model2);
-  c = new ScreenWidget(&model1, &model2);
+  mesh_run(&pargs,model1,model2);
+  c = new ScreenWidget(model1, model2);
   c->show();
 }

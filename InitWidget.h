@@ -1,4 +1,4 @@
-/* $Id: InitWidget.h,v 1.7 2001/09/28 11:48:14 aspert Exp $ */
+/* $Id: InitWidget.h,v 1.8 2001/10/01 16:49:17 dsanta Exp $ */
 
 #ifndef INITW_H
 #define INITW_H
@@ -14,7 +14,10 @@ class InitWidget : public QWidget {
   Q_OBJECT
 
 public:
-  InitWidget(struct args defArgs, QWidget *parent=0, const char *name=0 );
+  InitWidget(struct args defArgs,
+             struct model_error *m1, struct model_error *m2,
+             QWidget *parent=0, const char *name=0 );
+  ~InitWidget();
 
 private slots:
   void loadMesh1();
@@ -27,7 +30,7 @@ private:
     QLineEdit *qledMesh1, *qledMesh2, *qledSplStep; 
     QCheckBox *chkSymDist, *chkCurv;
     struct args pargs;
-    struct model_error model1,model2;
+    struct model_error *model1,*model2;
     ScreenWidget *c;
 };
 
