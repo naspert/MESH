@@ -1,4 +1,4 @@
-/* $Id */
+/* $Id: final2.c,v 1.3 2001/04/02 07:08:21 jacquet Exp $ */
 
 #include <stdio.h>
 #include <math.h>
@@ -293,8 +293,8 @@ sample *sample1;
 int i,j=0,h=0,l=0;
 int m,n,o;
 int a,b,c;
-int memoire[2000];
-int cellule,area,state=0;
+int memoire[100];
+int cellule,facemin,state=0;
 vertex bbox0,bbox1;
 
 memoire[0]='\0';
@@ -315,25 +315,6 @@ if(o==10)
 
 cellule=m+n*10+o*100;
 /*printf("point dans cellule %d ",cellule);*/
-
-/*echantillonnage des faces appartenant a la cellule*/
-/*et calcul de la distance de ce point a cette face */ 
-/* while(list[cellule][j]!='\0'){
-   sample1=echantillon(raw_model2->vertices[raw_model2->faces[area].f0],raw_model2->vertices[raw_model2->faces[area].f1],raw_model2->vertices[raw_model2->faces[area].f2],k);
-   for(i=0;i<sample1->nbsamples;i++) {
-
-     d=dist(point,sample1->sample[i]);
-	     
-     if (h==0){
-       dmin=d;
-     }
-     else if(d<dmin)
-       dmin=d;
-   }
-   free(sample1->sample);
- }
-*/
-
 
  /*on echantillonne les faces qui se trouvent dans les cellules adjacentes*/
  for(a=m-2;a<=m+2;a++){
@@ -369,19 +350,30 @@ printf("\n");
  */
  for(l=0;l<h;l++){
 
-   sample1=echantillon(raw_model2->vertices[raw_model2->faces[memoire[l]].f0],raw_model2->vertices[raw_model2->faces[memoire[l]].f1],raw_model2->vertices[raw_model2->faces[memoire[l]].f2],k);
+   sample1=echantillon(raw_model2->vertices[raw_model2->faces[memoire[l]].f0],raw_model2->vertices[raw_model2->faces[memoire[l]].f1],raw_model2->vertices[raw_model2->faces[memoire[l]].f2],0.5);
    for(i=0;i<sample1->nbsamples;i++) {
 
      d=dist(point,sample1->sample[i]);
 
      if (l==0){
        dmin=d;
+       facemin=memoire[l];
      }
      else if(d<dmin)
        dmin=d;
+       facemin=memoire[l];
    }
    free(sample1->sample);
  }
+
+sample1=echantillon(raw_model2->vertices[raw_model2->faces[facemin].f0],raw_model2->vertices[raw_model2->faces[facemin].f1],raw_model2->vertices[raw_model2->faces[facemin].f2],k);
+ for(i=0;i<sample1->nbsamples;i++) {
+
+   d=dist(point,sample1->sample[i]);
+   if(d<dmin)
+     dmin=d;
+ }
+free(sample1->sample);
 
  /*printf("nb face test: %d;dmin: %lf\n",h,dmin);*/    
  /*printf("%lf ",dmin);*/
