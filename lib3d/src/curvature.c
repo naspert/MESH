@@ -1,4 +1,4 @@
-/* $Id: curvature.c,v 1.2 2002/06/04 14:39:11 aspert Exp $ */
+/* $Id: curvature.c,v 1.3 2002/06/05 09:28:09 aspert Exp $ */
 #include <3dutils.h>
 #include <ring.h>
 
@@ -11,8 +11,8 @@ static double get_top_angle(const vertex_t *v0, const vertex_t *v1,
   substract_v(v1, v0, &u0);
   substract_v(v2, v0, &u1);
 
-  tmp = scalprod_v(&u0, &u1);
-  tmp /= norm_v(&u0)*norm_v(&u1);
+  tmp = __scalprod_v(u0, u1);
+  tmp /= __norm_v(u0)*__norm_v(u1);
   return acos(tmp);
 
 }
@@ -59,7 +59,7 @@ static int obtuse_triangle(const vertex_t *v0, const vertex_t *v1,
   return 0;
 }
 
-static void 
+static void
 compute_mean_curvature_normal(const struct model *raw_model, 
                               struct info_vertex *info, 
                               int v0, const struct ring_info *rings, 
@@ -99,8 +99,8 @@ compute_mean_curvature_normal(const struct model *raw_model,
   
   *gauss_curv = 2.0*M_PI;
 
-  for (i=0; i<info[v0].num_faces; i++) {
-    cur_face = raw_model->faces[info[v0].list_face[i]];
+  for (i=0; i<rings[v0].n_faces; i++) {
+    cur_face = raw_model->faces[rings[v0].ord_face[i]];
     if (cur_face.f0 == v0) {
       v1 = cur_face.f1;
       v2 = cur_face.f2;
@@ -159,7 +159,7 @@ compute_mean_curvature_normal(const struct model *raw_model,
 }
 
 
-void compute_curvature_with_rings(const struct model *raw_model, 
+int compute_curvature_with_rings(const struct model *raw_model, 
                                   struct info_vertex *info, 
                                   const struct ring_info *rings) {
   int i;
@@ -169,7 +169,7 @@ void compute_curvature_with_rings(const struct model *raw_model,
     if (rings[i].type != 0) {
       fprintf(stderr, "Unsupported vertex type %d found at %d\n", 
 	      rings[i].type, i);
-      return;
+      return 1;
     }
     compute_mean_curvature_normal(raw_model, info, i, rings, 
 				  &(info[i].mean_curv_normal), 
@@ -200,23 +200,26 @@ void compute_curvature_with_rings(const struct model *raw_model,
  	   info[i].k1, info[i].k2); 
 #endif
   }
+  return 0;
 }
 
 
 /* Calls the above function but do the rings computation before */
-void compute_curvature(struct model *raw_model, struct info_vertex *info) {
+int compute_curvature(struct model *raw_model, struct info_vertex *info) {
   struct ring_info* rings;
-  int i;
+  int i, ret;
 
   rings = 
     (struct ring_info*)malloc(raw_model->num_vert*sizeof(struct ring_info));
 
   build_star_global(raw_model, rings);
-  compute_curvature_with_rings(raw_model, info, rings);
+  ret = compute_curvature_with_rings(raw_model, info, rings);
   for (i=0; i<raw_model->num_vert; i++) {
     free(rings[i].ord_vert);
     free(rings[i].ord_face);
     
   }
   free(rings);
+
+  return ret;
 }

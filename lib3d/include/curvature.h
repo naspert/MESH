@@ -1,4 +1,4 @@
-/* $Id: curvature.h,v 1.2 2002/06/04 14:39:11 aspert Exp $ */
+/* $Id: curvature.h,v 1.3 2002/06/05 09:28:09 aspert Exp $ */
 
 #include <3dmodel.h>
 #include <ring.h>
@@ -12,9 +12,9 @@ extern "C" {
 #endif
 
 
-  void compute_curvature_with_rings(const struct model*, struct info_vertex*,
+  int compute_curvature_with_rings(const struct model*, struct info_vertex*,
                                     const struct ring_info*);
-  void compute_curvature(const struct model*, struct info_vertex*);
+  int compute_curvature(const struct model*, struct info_vertex*);
 
 #ifdef __cplusplus
 }
