@@ -1,4 +1,4 @@
-/* $Id: model_in.c,v 1.21 2002/04/12 14:01:41 aspert Exp $ */
+/* $Id: model_in.c,v 1.22 2002/04/15 16:13:55 aspert Exp $ */
 
 
 /*
@@ -1900,7 +1900,7 @@ static int detect_file_format(struct file_data *data)
         if (c == 'v' || c == 'b' || c == 'f' || c == 'c')
           rcode = MESH_FF_SMF;
         else 
-          rcode = MESH_BAD_FF;
+          rcode = ferror((FILE*)data->f) ? MESH_CORRUPTED : MESH_BAD_FF;
       }
     } else {
       /* We need to test for SMF files here also, maybe a comment line
@@ -1910,7 +1910,7 @@ static int detect_file_format(struct file_data *data)
       if (c == 'v' || c == 'b' || c == 'f' || c == 'c')
         rcode = MESH_FF_SMF;
       else 
-        rcode = MESH_BAD_FF;
+        rcode = ferror((FILE*)data->f) ? MESH_CORRUPTED : MESH_BAD_FF;
     }
   } else if (c == 'p') { /* Probably ply */
     c = ungetc(c,data);
@@ -1940,7 +1940,7 @@ static int detect_file_format(struct file_data *data)
     if (c == 'v' || c == 'b' || c == 'f' || c == 'c')
       rcode = MESH_FF_SMF;
     else 
-      rcode = MESH_BAD_FF;
+      rcode = ferror((FILE*)data->f) ? MESH_CORRUPTED : MESH_BAD_FF;
 
   }
   return rcode;
