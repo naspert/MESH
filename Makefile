@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.25 2001/11/19 18:00:21 dsanta Exp $
+# $Id: Makefile,v 1.26 2002/02/04 16:10:03 dsanta Exp $
 
 #
 # If the make variable PROFILE is defined to a non-empty value, profiling
@@ -62,7 +62,7 @@ CC_IS_ICC := $(findstring Intel,$(shell $(CC) -V 2>&1))
 XTRA_CFLAGS = -O2 -ansi
 XTRA_CXXFLAGS = -O2 -ansi
 XTRA_CPPFLAGS = -DNDEBUG
-XTRA_LDFLAGS = 
+XTRA_LDFLAGS =
 
 # Derive compiler specific flags
 ifeq ($(CC_IS_GCC)-$(OS)-$(ARCH),gcc-Linux-i686)
@@ -138,7 +138,7 @@ MESH_EXE := $(BINDIR)/mesh
 MESH_C_SRCS := $(wildcard *.c)
 MESH_CXX_SRCS := $(filter-out moc_%.cpp,$(wildcard *.cpp))
 MESH_MOC_SRCS := RawWidget.h ScreenWidget.h InitWidget.h ColorMapWidget.h
-LIB3D_C_SRCS = 3dmodel_io.c normals.c geomutils.c
+LIB3D_C_SRCS = 3dmodel_io.c normals.c geomutils.c model_in.c
 
 # Compiler and linker flags
 INCFLAGS = -I$(LIB3DDIR)/include -I.
@@ -190,6 +190,9 @@ clean: clean_moc
 
 clean_moc:
 	-rm -f moc_*.cpp
+
+clean-c:
+	-rm $(LIB3D_OBJS) $(addprefix $(OBJDIR)/, $(MESH_C_SRCS:.c=.o))
 
 # Executable
 $(MESH_EXE): $(MESH_OBJS) $(LIB3D_SLIB)
