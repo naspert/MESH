@@ -1,4 +1,4 @@
-/* $Id: model_in.h,v 1.10 2002/04/12 14:01:41 aspert Exp $ */
+/* $Id: model_in.h,v 1.11 2002/04/26 06:36:38 aspert Exp $ */
 
 
 /*
@@ -145,7 +145,7 @@ struct file_data {
 #else
   gzFile f;
 #endif
-  unsigned char *block; /* data block = 1KB */
+  unsigned char *block; /* data block = 16KB */
   int nbytes; /* actual number of bytes in block */
   int pos; /* current position in block */
   int eof_reached;
