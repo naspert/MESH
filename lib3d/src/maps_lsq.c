@@ -1,3 +1,4 @@
+/* $Id: maps_lsq.c,v 1.8 2002/06/04 09:07:34 aspert Exp $ */
 #include <3dutils.h>
 #include <ring.h>
 #include <gsl/gsl_multifit.h>
