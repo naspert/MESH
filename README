@@ -42,8 +42,8 @@ of each triangular face. The vertex indices are zero based. If the vertex
 normals are given follows the X, Y, Z affine coordinates of the vertex normal
 vectors, in the same order as the vertices. The normal vectors should all be
 normalized. The VRML2 parser reads IndexedFaceSet nodes, ignoring all
-transformations, and does not support DEF/USE tags. Only triangular meshes are
-accepted.
+transformations, and does not support USE tags (DEF tags are ignored). Only
+triangular meshes are accepted.
 
 Please report any bugs to:
 

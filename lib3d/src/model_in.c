@@ -1,4 +1,4 @@
-/* $Id: model_in.c,v 1.2 2002/02/04 16:40:03 dsanta Exp $ */
+/* $Id: model_in.c,v 1.3 2002/02/06 14:56:42 dsanta Exp $ */
 
 /*
  * Functions to read 3D model data from files
@@ -439,6 +439,37 @@ static int skip_vrml_field(FILE *data)
   return (c != EOF) ? 0 : MESH_CORRUPTED;
 }
 
+/* Gets the type of the node appearing next in the '*data' stream. The node
+ * name is returned in 's', up to 'slen' characters (including the terminating
+ * null). Any DEF statement is skipped, along with the node name. Returns zero
+ * on success or the negative error code on error. If an error occurs 's' is
+ * not modified. */
+static int read_node_type(char *s, FILE *data, int slen)
+{
+  char stmp[MAX_WORD_LEN+1];
+  const char sfmt[] = "%" STRING(MAX_WORD_LEN) "[^" VRML_WSCOMMSTR_CHARS "]";
+  int rcode;
+
+  rcode = 0;
+  if (skip_ws_comm(data) == EOF) return MESH_CORRUPTED;
+  if (fscanf(data,sfmt,stmp) != 1) {
+    rcode = MESH_CORRUPTED;
+  } else {
+    if (strcmp("DEF",stmp) == 0) {
+      /* DEF tag => skip node name and get node type */
+      if (skip_ws_comm(data) == EOF || skip_vrml_field(data) == EOF ||
+          skip_ws_comm(data) == EOF || fscanf(data,sfmt,stmp) != 1) {
+        rcode = MESH_CORRUPTED;
+      }
+    }
+  }
+  if (rcode == 0) {
+    strncpy(s,stmp,slen);
+    s[slen-1] = '\0'; /* make sure string is always null terminated */
+  }
+  return rcode;
+}
+
 /* Reads a VRML boolean field from the '*data' stream. If the field is "TRUE"
  * one is returned in '*res', if it is "FALSE" zero is returned in '*res'. Any
  * other value is an error. If an error occurs '*res' is not modified and the
@@ -876,10 +907,10 @@ static int read_vrml_ifs(struct model *tmesh, FILE *data)
       fgetc(data); /* skip } */
     } else if (c != EOF && fscanf(data,sfmt,stmp) == 1) { /* field */
       if (strcmp(stmp,"coord") == 0) { /* Coordinates */
-        if (n_vtcs != -1 || skip_ws_comm(data) == EOF ||
-            fscanf(data,sfmt,stmp) != 1 || strcmp(stmp,"Coordinate") != 0) {
+        if (n_vtcs != -1) {
           rcode = MESH_CORRUPTED;
-        } else { /* read "Coordinate" */
+        } else if ((rcode = read_node_type(stmp,data,MAX_WORD_LEN+1)) == 0 &&
+                   strcmp(stmp,"Coordinate") == 0) {
           n_vtcs = read_vrml_coordinate(&vtcs,data,&bbmin,&bbmax);
           if (n_vtcs < 0) rcode = n_vtcs; /* error */
         }
@@ -893,10 +924,10 @@ static int read_vrml_ifs(struct model *tmesh, FILE *data)
       } else if (strcmp(stmp,"normalPerVertex") == 0) {
         rcode = read_sfbool(&nrml_per_vertex,data);
       } else if (strcmp(stmp,"normal") == 0) { /* normal vectors */
-        if (n_nrmls != -1 || skip_ws_comm(data) == EOF ||
-            fscanf(data,sfmt,stmp) != 1 || strcmp(stmp,"Normal") != 0) {
+        if (n_nrmls != -1) {
           rcode = MESH_CORRUPTED;
-        } else { /* read "Normal" */
+        } else if ((rcode = read_node_type(stmp,data,MAX_WORD_LEN+1)) == 0 &&
+                   strcmp(stmp,"Normal") == 0) {
           n_nrmls = read_vrml_normal(&normals,data);
           if (n_nrmls < 0) rcode = n_nrmls; /* error */
         }
