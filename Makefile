@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.28 2002/02/20 17:27:41 dsanta Exp $
+# $Id: Makefile,v 1.29 2002/02/26 10:37:56 dsanta Exp $
 
 #
 # If the make variable PROFILE is defined to a non-empty value, profiling
@@ -19,6 +19,11 @@
 # files will be compiled with full pointer dereferencing checking. These two
 # last options require GCC and will significantly slow down the execution.
 #
+
+# Mesh's version: is the string defined as version in mesh.cpp
+# This is an ugly sed command, but it ensures that the version number is
+# always in sync with the one in mesh.cpp.
+MESHVER := $(shell sed '/char *\* *version *= *"[^"]*" *; *$$/ { s/[^"]*"\([^"]*\)".*/\1/; p; } ; d' mesh.cpp )
 
 # Autodetect platform
 OS := $(shell uname -s)
@@ -43,6 +48,7 @@ endif
 BINDIR = ./bin
 LIBDIR = ./lib
 OBJDIR = ./obj
+DISTDIR = ./dist
 LIB3DDIR = ./lib3d
 # QTDIR should come from the environment
 ifndef QTDIR
@@ -144,6 +150,11 @@ MESH_CXX_SRCS := $(filter-out moc_%.cpp,$(wildcard *.cpp))
 MESH_MOC_SRCS := RawWidget.h ScreenWidget.h InitWidget.h ColorMapWidget.h
 LIB3D_C_SRCS = 3dmodel_io.c normals.c geomutils.c model_in.c
 
+# Files for distribution
+MISC_FILES = Makefile Mesh.dsp Mesh.dsw meshIcon.xpm
+LIB3D_INCLUDES = 3dmodel.h 3dmodel_io.h geomutils.h model_in.h normals.h
+MESH_INCLUDES := $(wildcard *.h)
+
 # Compiler and linker flags
 INCFLAGS = -I$(LIB3DDIR)/include -I.
 QTINCFLAGS = -I$(QTDIR)/include
@@ -187,7 +198,7 @@ LIB3D_SLIB = $(addprefix $(LIBDIR)/,lib3d.a)
 # Main targets
 default: clean_moc $(MESH_EXE)
 
-all: dirs  $(MESH_EXE)
+all: dirs $(MESH_EXE)
 
 clean: clean_moc
 	-rm -f *.d $(OBJDIR)/*.o $(OBJDIR)/*.il $(BINDIR)/* $(LIBDIR)/*
@@ -221,6 +232,26 @@ $(OBJDIR)/%.o: %.c
 # lib3d sources
 $(LIB3D_OBJS): $(OBJDIR)/%.o : $(LIB3DDIR)/src/%.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
+
+#
+# Distribution
+#
+
+dist: distdir
+	rm -rf $(DISTDIR)/Mesh-$(MESHVER) $(DISTDIR)/Mesh-$(MESHVER).tar.gz && \
+	mkdir -p $(DISTDIR)/Mesh-$(MESHVER) \
+		$(DISTDIR)/Mesh-$(MESHVER)/$(LIB3DDIR)/{src,include} && \
+	cp $(MISC_FILES) $(MESH_C_SRCS) $(MESH_CXX_SRCS) $(MESH_INCLUDES) \
+		$(DISTDIR)/Mesh-$(MESHVER) && \
+	cp $(addprefix $(LIB3DDIR)/include/,$(LIB3D_INCLUDES)) \
+		$(DISTDIR)/Mesh-$(MESHVER)/$(LIB3DDIR)/include && \
+	cp $(addprefix $(LIB3DDIR)/src/,$(LIB3D_C_SRCS)) \
+		$(DISTDIR)/Mesh-$(MESHVER)/$(LIB3DDIR)/src
+	cd $(DISTDIR) && \
+	tar cvf Mesh-$(MESHVER).tar Mesh-$(MESHVER) && \
+	gzip -9 Mesh-$(MESHVER).tar && \
+	rm -rf Mesh-$(MESHVER) || \
+	rm -f Mesh-$(MESHVER).tar Mesh-$(MESHVER).tar.gz
 
 #
 # Automatic dependency
@@ -259,5 +290,8 @@ bindir :
 objdir :
 	-[ -d $(OBJDIR) ] || mkdir $(OBJDIR)
 
+distdir :
+	-[ -d $(DISTDIR) ] || mkdir $(DISTDIR)
+
 # Targets which are not real files
-.PHONY: default all dirs clean libdir bindir objdir
+.PHONY: default all dirs clean libdir bindir objdir distdir
