@@ -1,4 +1,4 @@
-/* $Id: model_analysis.c,v 1.7 2002/02/22 23:32:21 dsanta Exp $ */
+/* $Id: model_analysis.c,v 1.8 2002/02/22 23:35:03 dsanta Exp $ */
 
 #include <model_analysis.h>
 
@@ -10,7 +10,7 @@ struct vtx_walk_state {
   char *visited_vertex;          /* array to mark the already visited
                                   * vertices (visited_vertex[i] == 1 if vertex
                                   * i has been visited). */
-  int n_visited_vertices;        /* the number of laredy visited vertices */
+  int n_visited_vertices;        /* the number of alredy visited vertices */
   struct face_list *flist;       /* the list of faces incident on each vertex */
   struct model_info minfo;       /* the model information */
   signed char *face_orientation; /* the orientation for each face. If
@@ -20,6 +20,12 @@ struct vtx_walk_state {
                                   * negative its orientation should be
                                   * inversed to obtain an oriented model (if
                                   * the model is orientable). */
+};
+
+/* A list of vertices */
+struct vtx_list {
+  int *vtcs;    /* The list of vertex indices */
+  int n_elems;  /* The number of elements in the list */
 };
 
 /* --------------------------------------------------------------------------*
@@ -41,13 +47,31 @@ static void orient_model(struct model *m, signed char *face_orientation)
   }
 }
 
+/* Searches for vertex index v in list. If not found v is added to
+ * list. Returns zero if not-found and non-zero otherwise. list->vtcs storage
+ * must be large enough for v to be added.  */
+static int vtx_in_list_or_add(struct vtx_list *list, int v)
+{
+  int i;
+  i = 0;
+  while (i < list->n_elems && list->vtcs[i] != v) {
+    i++;
+  }
+  if (i == list->n_elems) {
+    list->vtcs[list->n_elems++] = v;
+    return 0;
+  } else {
+    return 1;
+  }
+}
+
 /* Recursively analyze the faces incident on the on any of the vertices
  * connected to vertex vidx, and updates the information in st
- * accordingly. The face analysis starts at face ofidx, which should be
+ * accordingly. The face analysis starts at face pfidx, which should be
  * incident on vidx and already oriented (st->face_orientation[ofidx] !=
  * 0). The vertex of each face is given by mfaces. The analysis updates the
  * oriented, orientable, manifold and closed properties of the model. The
- * orientation of each face to obtain an oriented model is recorder in
+ * orientation of each face to obtain an oriented model is recorded in
  * st->face_orientation. The vertex vidx should already be marked as visited
  * (st->visited_vertex[vidx] != 0). */
 static void analyze_faces_rec(const face_t *mfaces, int vidx, int pfidx,
@@ -65,16 +89,26 @@ static void analyze_faces_rec(const face_t *mfaces, int vidx, int pfidx,
   int cface_orient;/* orientation of current face */
   int *vfaces;     /* list of faces incident on current vertex */
   int ffidx;       /* first face index */
+  struct vtx_list vlist; /* list of found vertices  */
+  int cur_degen;   /* flag for degenerate current triangle */
+  int new_degen;   /* flag for degenerate new triangle */
+  int v2_was_in_list; /* flag: v2 already visited when last encountered */
+  int vstart_was_in_list; /* same as above but for vstart */
 
+  /* Initialize */
   nf = st->flist[vidx].n_faces;
+  vlist.vtcs = xa_malloc(sizeof(*(vlist.vtcs))*nf*2); /* worst case size */
+  vlist.n_elems = 0;
+  assert(st->visited_vertex[vidx] != 0);
   assert(nf != 0); /* An isolated vertex should never get here  */
   vfaces = st->flist[vidx].face;
   /* Locate the face from which we are coming, so that it is the first face */
   for (j=0; j<nf; j++) {
     if (vfaces[j] == pfidx) break;
   }
+  assert(j<nf);
   /* Get first face vertices */
-  fidx = vfaces[j];
+  fidx = pfidx;
   if (vidx == mfaces[fidx].f0) {
     vstart = mfaces[fidx].f1;
     v2 = mfaces[fidx].f2;
@@ -104,16 +138,23 @@ static void analyze_faces_rec(const face_t *mfaces, int vidx, int pfidx,
   vfaces[j] = -1;
   rev_orient = 0;
   ffidx = fidx;
+  cur_degen = (vidx == vstart || vidx == v2 || vstart == v2);
+  vstart_was_in_list = 0;
+  vtx_in_list_or_add(&vlist,vstart); /* list empty, so always added */
+  v2_was_in_list = vtx_in_list_or_add(&vlist,v2);
   while (nf_left > 0) { /* process the remaining faces */
     for (j=0; j<nf; j++) { /* search for face that shares v2 */
       fidx = vfaces[j];
       if (fidx == -1) continue; /* face already counted */
+      new_degen = (mfaces[fidx].f0 == mfaces[fidx].f1 ||
+                   mfaces[fidx].f1 == mfaces[fidx].f2 ||
+                   mfaces[fidx].f2 == mfaces[fidx].f0);
       if (v2 == mfaces[fidx].f0) {
         if (vidx == mfaces[fidx].f2) { /* same orientation as first face */
           v2 = mfaces[fidx].f1;
           if (rev_orient) {
             cface_orient = -fface_orient;
-            st->minfo.oriented = 0;
+            if (!(new_degen || cur_degen)) st->minfo.oriented = 0;
           } else {
             cface_orient = fface_orient;
           }
@@ -121,17 +162,17 @@ static void analyze_faces_rec(const face_t *mfaces, int vidx, int pfidx,
           v2 = mfaces[fidx].f2; /* do as if face orient was opposite */
           if (!rev_orient) {
             cface_orient = -fface_orient;
-            st->minfo.oriented = 0;
+            if (!(new_degen || cur_degen)) st->minfo.oriented = 0;
           } else {
             cface_orient = fface_orient;
           }
         }
       } else if (v2 == mfaces[fidx].f1) {
         if (vidx == mfaces[fidx].f0) { /* same orientation as first face */
-          v2 = mfaces[fidx].f2;
+          v2 = mfaces[fidx].f2; /* do as if face orient was opposite */
           if (rev_orient) {
             cface_orient = -fface_orient;
-            st->minfo.oriented = 0;
+            if (!(new_degen || cur_degen)) st->minfo.oriented = 0;
           } else {
             cface_orient = fface_orient;
           }
@@ -139,7 +180,7 @@ static void analyze_faces_rec(const face_t *mfaces, int vidx, int pfidx,
           v2 = mfaces[fidx].f0; /* do as if face orient was opposite */
           if (!rev_orient) {
             cface_orient = -fface_orient;
-            st->minfo.oriented = 0;
+            if (!(new_degen || cur_degen)) st->minfo.oriented = 0;
           } else {
             cface_orient = fface_orient;
           }
@@ -149,7 +190,7 @@ static void analyze_faces_rec(const face_t *mfaces, int vidx, int pfidx,
           v2 = mfaces[fidx].f0;
           if (rev_orient) {
             cface_orient = -fface_orient;
-            st->minfo.oriented = 0;
+            if (!(new_degen || cur_degen)) st->minfo.oriented = 0;
           } else {
             cface_orient = fface_orient;
           }
@@ -157,7 +198,7 @@ static void analyze_faces_rec(const face_t *mfaces, int vidx, int pfidx,
           v2 = mfaces[fidx].f1; /* do as if face orient was opposite */
           if (!rev_orient) {
             cface_orient = -fface_orient;
-            st->minfo.oriented = 0;
+            if (!(new_degen || cur_degen)) st->minfo.oriented = 0;
           } else {
             cface_orient = fface_orient;
           }
@@ -169,7 +210,8 @@ static void analyze_faces_rec(const face_t *mfaces, int vidx, int pfidx,
       if (st->face_orientation[fidx] == 0) { /* not yet oriented */
         st->face_orientation[fidx] = cface_orient;
       } else if (st->face_orientation[fidx] != cface_orient) {
-        st->minfo.orientable = 0; /* can not get consistent orientation */
+        /* can not get consistent orientation */
+        if (!(new_degen || cur_degen)) st->minfo.orientable = 0;
         fface_orient = cface_orient; /* take new orientation */
       }
       /* Recursively analyze from new vertex */
@@ -180,46 +222,46 @@ static void analyze_faces_rec(const face_t *mfaces, int vidx, int pfidx,
       }
       vfaces[j] = -1; /* mark face as counted */
       nf_left--;  /* goto search for face that shares new v2 */
+      v2_was_in_list = vtx_in_list_or_add(&vlist,v2);
+      if (v2_was_in_list) {
+        if (v2 == vstart) vstart_was_in_list = 1;
+        /* v2 appearing more than once is only admissible in a manifold if the
+         * triangle is degenerate or if it is the last triangle and it closes
+         * a cycle */
+        if (!new_degen && !(nf_left == 0 && v2 == vstart)) {
+          st->minfo.manifold = 0;
+        }
+      }
+      cur_degen = new_degen;
       break;
     }
-    if (j == nf) { /* there is no triangle that share's v2 ! */
+    if (j == nf) { /* none of unvisited triangles share's v2! */
       /* vertex vidx can be at a border or there is really a non-manifold */
-      if (rev_orient) { /* we already reversed orientation => non-manifold */
+      if (rev_orient || v2 == vstart) {
+        /* already reversed orientation or completed a disk => non-manifold */
         st->minfo.manifold = 0;
-        st->minfo.closed = 0;
+        /* closedness is not affected if we just closed a cycle or if vstart
+         * and v2 were already visited the last time they were tested. */
+        if (!(v2 == vstart || (vstart_was_in_list && v2_was_in_list))) {
+          st->minfo.closed = 0;
+        }
         /* Restart with first not yet counted triangle (always one) */
         for (j=0; j<nf; j++) {
           fidx = vfaces[j];
           if (fidx != -1) break;
         }
         assert(fidx >= 0);
-        vfaces[j] = -1;
-        nf_left--;
+        if (rev_orient) rev_orient = 0; /* restore original orientation */
         /* Get new first face vertices */
-        if (vidx == mfaces[fidx].f0) { /* Orientation matters here ? */
-          if (!rev_orient) {
-            vstart = mfaces[fidx].f1;
-            v2 = mfaces[fidx].f2;
-          } else {
-            vstart = mfaces[fidx].f2;
-            v2 = mfaces[fidx].f1;
-          }
+        if (vidx == mfaces[fidx].f0) {
+          vstart = mfaces[fidx].f1;
+          v2 = mfaces[fidx].f2;
         } else if (vidx == mfaces[fidx].f1) {
-          if (!rev_orient) {
-            vstart = mfaces[fidx].f2;
-            v2 = mfaces[fidx].f0;
-          } else {
-            vstart = mfaces[fidx].f0;
-            v2 = mfaces[fidx].f2;
-          }
+          vstart = mfaces[fidx].f2;
+          v2 = mfaces[fidx].f0;
         } else { /* vidx == mfaces[fidx].f2 */
-          if (!rev_orient) {
-            vstart = mfaces[fidx].f0;
-            v2 = mfaces[fidx].f1;
-          } else {
-            vstart = mfaces[fidx].f1;
-            v2 = mfaces[fidx].f0;
-          }
+          vstart = mfaces[fidx].f0;
+          v2 = mfaces[fidx].f1;
         }
         /* Get and mark orientation of new first face */
         fface_orient = st->face_orientation[fidx];
@@ -238,20 +280,30 @@ static void analyze_faces_rec(const face_t *mfaces, int vidx, int pfidx,
           (st->n_visited_vertices)++;
           analyze_faces_rec(mfaces,v2,fidx,st);
         }
+        ffidx = fidx;
+        vfaces[j] = -1;
+        nf_left--;
+        cur_degen = (vidx == vstart || vidx == v2 || vstart == v2);
+        vstart_was_in_list = vtx_in_list_or_add(&vlist,vstart);
+        v2_was_in_list = vtx_in_list_or_add(&vlist,v2);
       } else {
         /* we reverse scanning orientation and continue from the other side */
         rev_orient = 1;
         tmpi = v2;
         v2 = vstart;
         vstart = tmpi;
+        tmpi = v2_was_in_list;
+        v2_was_in_list = vstart_was_in_list;
+        vstart_was_in_list = tmpi;
         /* re-take original orientation */
         fface_orient = st->face_orientation[ffidx];
       }
     }
   }
-  if (v2 != vstart) { /* last vertex is not the same as first one */
+  if (!(v2 == vstart || (vstart_was_in_list && v2_was_in_list))) {
     st->minfo.closed = 0;
   }
+  free(vlist.vtcs);
 }
 
 /* Walks the vertex tree rooted at the vertex with index vidx. The vertex tree
@@ -355,12 +407,16 @@ struct face_list *faces_of_vertex(const struct model *m)
     fl[v0].face =
       xa_realloc(fl[v0].face,(fl[v0].n_faces+1)*sizeof(*(fl->face)));
     fl[v0].face[fl[v0].n_faces++] = j;
-    fl[v1].face =
-      xa_realloc(fl[v1].face,(fl[v1].n_faces+1)*sizeof(*(fl->face)));
-    fl[v1].face[fl[v1].n_faces++] = j;
-    fl[v2].face =
-      xa_realloc(fl[v2].face,(fl[v2].n_faces+1)*sizeof(*(fl->face)));
-    fl[v2].face[fl[v2].n_faces++] = j;
+    if (v1 != v0) { /* avoid double inclusion in degenerate cases */
+      fl[v1].face =
+        xa_realloc(fl[v1].face,(fl[v1].n_faces+1)*sizeof(*(fl->face)));
+      fl[v1].face[fl[v1].n_faces++] = j;
+    }
+    if (v2 != v0 && v2 != v1) { /* avoid double inclusion in degenerate cases */
+      fl[v2].face =
+        xa_realloc(fl[v2].face,(fl[v2].n_faces+1)*sizeof(*(fl->face)));
+      fl[v2].face[fl[v2].n_faces++] = j;
+    }
   }
   return fl;
 }
