@@ -18,7 +18,7 @@ public:
   
 public slots: 
     void aslot();
-  void setLine();
+  void setLine(int state);
   void transfer(double dist,double *rawmat);
   /*     void setFill(); */
   

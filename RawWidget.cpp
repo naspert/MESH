@@ -18,7 +18,6 @@ RawWidget::RawWidget(model *raw_model, QWidget *parent, const char *name)
   model_list=0;
   colormap=HSVtoRGB();
   raw_model2=raw_model;
-  line_fill_state=0;
   move_state=0;
  
   center.x = 0.5*(raw_model2->bBox[1].x + raw_model2->bBox[0].x);
@@ -63,16 +62,13 @@ for(i=0;i<16;i++)
   updateGL();
 }
 
-void RawWidget::setLine()
+void RawWidget::setLine(int state)
 {
-  if(line_fill_state==0){
+
+  if(state==2)
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    line_fill_state=1;
-  }
-  else {
+  if(state==1 || state==0)
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-    line_fill_state=0;
-  }
   updateGL();
 }
 

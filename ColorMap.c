@@ -12,12 +12,12 @@ double** HSVtoRGB()
   double f,p,q,t,r,g,b,h,hue;
   int i,j=0;
 
-  colormap=(double **)malloc(16*sizeof(double*));
-  for(i=0;i<16;i++){
+  colormap=(double **)malloc(8*sizeof(double*));
+  for(i=0;i<8;i++){
     colormap[i]=(double *)malloc(3*sizeof(double));
   }
 
-  for(h=0.0;h<240.0;h=h+240.0/16.0){
+  for(h=0.0;h<240.0;h=h+240.0/8.0){
     hue=h/60.0;
     i=floor(hue);
     f=hue-i;
@@ -33,9 +33,9 @@ double** HSVtoRGB()
     case 5:r=1; g=p; b=q;break;
     
     }
-    colormap[15-j][0]=r;
-    colormap[15-j][1]=g;
-    colormap[15-j][2]=b;
+    colormap[7-j][0]=r;
+    colormap[7-j][1]=g;
+    colormap[7-j][2]=b;
     j++;  
   }
 
