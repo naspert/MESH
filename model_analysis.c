@@ -1,4 +1,4 @@
-/* $Id: model_analysis.c,v 1.19 2002/03/27 13:35:38 dsanta Exp $ */
+/* $Id: model_analysis.c,v 1.20 2002/03/28 06:42:00 dsanta Exp $ */
 
 
 /*
@@ -186,27 +186,28 @@ static void orient_model(struct model *m, signed char *face_orientation)
   }
 }
 
+/* Grows the storage space for list->vtcs and adjusts *sz accordingly. */
+static void vtx_list_grow(struct vtx_list *list, int *sz)
+{
+  *sz += 2;
+  list->vtcs = xa_realloc(list->vtcs,*sz*sizeof(*(list->vtcs)));
+}
+
 /* Searches for vertex index v in list. If not found v is added to
  * list. Returns zero if not-found and non-zero otherwise. list->vtcs storage
  * must be large enough for v to be added. The current size of the list buffer
  * is given in *sz and adjusted if necessary. */
-static int vtx_in_list_or_add(struct vtx_list *list, int v, int *sz)
+static INLINE int vtx_in_list_or_add(struct vtx_list *list, int v, int *sz)
 {
   int i;
   i = 0;
-  while (i < list->n_elems && list->vtcs[i] != v) {
-    i++;
+  while (i < list->n_elems) {
+    if (list->vtcs[i++] == v) return 1; /* already in list */
   }
-  if (i == list->n_elems) {
-    if (*sz == list->n_elems) { /* need more storage */
-      *sz += 2;
-      list->vtcs = xa_realloc(list->vtcs,*sz*sizeof(*(list->vtcs)));
-    }
-    list->vtcs[list->n_elems++] = v;
-    return 0;
-  } else {
-    return 1;
-  }
+  /* not in list */
+  if (*sz == list->n_elems) vtx_list_grow(list,sz);
+  list->vtcs[list->n_elems++] = v;
+  return 0;
 }
 
 /* Returns the indices of the vertices if face, that are not center_vidx, in
@@ -233,44 +234,41 @@ static void get_ordered_vtcs(const face_t *face, int center_vidx,
 
 /* Given the list, vfaces, of faces incident on the vertex center_vidx and not
  * yet visited, it finds the first face that has the edge from center_vidx to
- * *outer_vidx. The length of the vfaces list is vfaces_len. The return value
- * is the index of the face found, or -1 if there is none. Any negative entry
- * in vfaces is skipped. The entry in vfaces corresponding to the face found
- * is set to -1 before returning (i.e. it is marked as visited). The vertex of
- * the found face that is not on the specifed edge is returned in
- * *outer_vidx. The faces of the model are given in the mfaces array. */
-static int find_face_with_edge(const face_t *mfaces, int *vfaces,
-                               int vfaces_len, int center_vidx,
-                               int *outer_vidx)
+ * *outer_vidx. The length of the vfaces list is *vfaces_len. The return value
+ * is the index of the face found, or -1 if there is none. The entry in vfaces
+ * corresponding to the face found is removed from *vfaces and *vfaces_len is
+ * adjusted accordingly. The vertex of the found face that is not on the
+ * specifed edge is returned in *outer_vidx. The faces of the model are given
+ * in the mfaces array. */
+static INLINE int find_face_with_edge(const face_t *mfaces, int *vfaces,
+                                      int *vfaces_len, int center_vidx,
+                                      int *outer_vidx)
 {
-  int i,fidx;
+  int i,maxi,fidx;
   int out_vidx;
   const face_t *face;
   
-  fidx = 0; /* keep compiler happy */
+  /* when we find one at i we exchange i with last and remove last */
   out_vidx = *outer_vidx;
-  for (i=0; i<vfaces_len; i++) {
+  for (i=0, maxi=*vfaces_len; i<maxi; i++) {
     fidx = vfaces[i];
-    if (fidx < 0) continue; /* already visited face */
     face = &mfaces[fidx];
     if (out_vidx == face->f0) {
       *outer_vidx = (center_vidx == face->f2) ? face->f1 : face->f2;
-      break; /* done searching */
+      vfaces[i] = vfaces[--(*vfaces_len)];
+      return fidx;
     } else if (out_vidx == face->f1) {
       *outer_vidx = (center_vidx == face->f0) ? face->f2 : face->f0;
-      break; /* done searching */
+      vfaces[i] = vfaces[--(*vfaces_len)];
+      return fidx;
     } else if (out_vidx == face->f2) {
       *outer_vidx = (center_vidx == face->f1) ? face->f0 : face->f1;
-      break; /* done searching */
+      vfaces[i] = vfaces[--(*vfaces_len)];
+      return fidx;
     }
     /* not an adjacent face => continue searching */
   }
-  if (i >= vfaces_len) {
-    fidx = -1; /* no adjacent face found */
-  } else {
-    vfaces[i] = -1; /* mark face as visited */
-  }
-  return fidx;
+  return -1; /* no adjacent face found */
 }
 
 /* Performs local analysis of the faces incident on vertex vidx. The faces of
@@ -283,14 +281,13 @@ static void get_vertex_topology(const face_t *mfaces, int vidx,
                                 struct topology *ltop,
                                 struct vtx_list *vlist)
 {
-  int j;           /* loop counter */
   int nf;          /* number of faces incident on current vertex */
-  int nf_left;     /* number of not yet processed faces in vfaces */
   int fidx;        /* current face index */
   int v2;          /* vertex on which next face should be incident */
   int vstart;      /* starting vertex, to check for closed surface */
   int rev_orient;  /* reversed processing orientation flag */
   int *vfaces;     /* list of faces incident on current vertex */
+  int n_vfaces;    /* number of faces in vfaces */
   int v2_was_in_list; /* flag: v2 already visited when last encountered */
   int vstart_was_in_list; /* same as above but for vstart */
   int vtx_buf_sz;  /* size of the vertex list buffer */
@@ -304,13 +301,12 @@ static void get_vertex_topology(const face_t *mfaces, int vidx,
     vlist->vtcs = NULL;
     return;
   }
-  nf_left = nf-1;
-  fidx = flist->face[nf_left];
-  vfaces = xa_malloc(sizeof(*vfaces)*nf);
-  memcpy(vfaces,flist->face,sizeof(*vfaces)*nf_left);
-  vfaces[nf_left] = -1;
+  n_vfaces = nf-1;
+  fidx = flist->face[n_vfaces];
+  vfaces = xa_malloc(sizeof(*(vfaces))*n_vfaces);
+  memcpy(vfaces,flist->face,sizeof(*(vfaces))*n_vfaces);
   /* do typical size allocation */
-  vtx_buf_sz = nf+1;
+  vtx_buf_sz = nf;
   vlist->vtcs = xa_realloc(vlist->vtcs,sizeof(*(vlist->vtcs))*vtx_buf_sz);
   /* Get first face vertices */
   assert(fidx>=0);
@@ -320,17 +316,16 @@ static void get_vertex_topology(const face_t *mfaces, int vidx,
   vstart_was_in_list = 0; /* list empty, so vstart always added */
   vtx_in_list_or_add(vlist,vstart,&vtx_buf_sz);
   v2_was_in_list = vtx_in_list_or_add(vlist,v2,&vtx_buf_sz);
-  while (nf_left > 0) { /* process the remaining faces */
-    fidx = find_face_with_edge(mfaces,vfaces,nf,vidx,&v2);
+  while (n_vfaces > 0) { /* process the remaining faces */
+    fidx = find_face_with_edge(mfaces,vfaces,&n_vfaces,vidx,&v2);
     if (fidx >= 0) { /* found an adjacent face */
-      nf_left--;
       v2_was_in_list = vtx_in_list_or_add(vlist,v2,&vtx_buf_sz);
       if (v2_was_in_list) {
         if (v2 == vstart) vstart_was_in_list = 1;
         /* v2 appearing more than once is only admissible in a manifold if the
          * triangle is degenerate or if it is the last triangle and it closes
          * a cycle */
-        if (!(nf_left == 0 && v2 == vstart) && !is_degenerate(mfaces[fidx])) {
+        if (!(n_vfaces == 0 && v2 == vstart) && !is_degenerate(mfaces[fidx])) {
           ltop->manifold = 0;
         }
       }
@@ -345,13 +340,9 @@ static void get_vertex_topology(const face_t *mfaces, int vidx,
           ltop->closed = 0;
         }
         /* Restart with first not yet counted triangle (always one) */
-        for (j=nf-2; j>=0; j--) {
-          fidx = vfaces[j];
-          if (fidx >= 0) break;
-        }
+        assert(n_vfaces > 0);
+        fidx = vfaces[--n_vfaces];
         assert(fidx >= 0);
-        vfaces[j] = -1;
-        nf_left--;
         rev_orient = 0; /* restore original orientation */
         /* Get new first face vertices */
         get_ordered_vtcs(&mfaces[fidx],vidx,&vstart,&v2);
@@ -663,9 +654,10 @@ static char * model_topology(int n_vtcs, const face_t *mfaces,
   next_vidx = 0; /* keep compiler happy */
 
   n_visited_vertices = 0;
+  cur.vidx = 0;
   while (n_visited_vertices < n_vtcs) {
     /* Find next unvisited vertex (always one) */
-    for (cur.vidx=0; cur.vidx<n_vtcs; cur.vidx++) {
+    for (; cur.vidx<n_vtcs; cur.vidx++) {
       if (!visited_vtcs[cur.vidx]) break;
     }
     assert(cur.vidx<n_vtcs);
