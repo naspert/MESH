@@ -1,4 +1,4 @@
-/* $Id: model_analysis.c,v 1.15 2002/03/26 18:31:31 dsanta Exp $ */
+/* $Id: model_analysis.c,v 1.16 2002/03/27 08:23:15 dsanta Exp $ */
 
 
 /*
@@ -257,7 +257,7 @@ static void analyze_faces_rec(const face_t *mfaces, int vidx, int pfidx,
         continue; /* non-adjacent face => test next */
       }
       /* Update oriented state */
-      cur_degen = is_degenerate(&mfaces[fidx]);
+      new_degen = is_degenerate(&mfaces[fidx]);
       if (cface_orient != fface_orient &&
           !(new_degen || cur_degen)) st->minfo.oriented = 0;
       /* Check that we can orient face in a consistent manner */
