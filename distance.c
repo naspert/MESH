@@ -1,3 +1,5 @@
+/* $Id: distance.c,v 1.2 2001/03/26 10:59:58 jacquet Exp $ */
+
 #include <stdio.h>
 #include <math.h>
 
@@ -148,12 +150,10 @@ int i,j;
 
    for(i=0;i<sample1->nbsamples;i++) {
 
-     /*printf("%lf %lf %lf\n",point.x,point.y,point.z);
-     printf("%lf %lf %lf\n",sample1->sample[i].x,sample1->sample[i].y,sample1->sample[i].z);
-     */
+
      d=sqrt((point.x-sample1->sample[i].x)*(point.x-sample1->sample[i].x)+(point.y-sample1->sample[i].y)*(point.y-sample1->sample[i].y)+(point.z-sample1->sample[i].z)*(point.z-sample1->sample[i].z));
 
-     /*printf("d= %lf\n",d);*/
+
      if(j==0)
        dmin=d;
      else if(d<dmin)
@@ -161,7 +161,7 @@ int i,j;
    }
    free(sample1->sample);
  }
- /*printf("dmin= %lf\n",dmin);*/
+
 return(dmin);  
 }
 
@@ -221,6 +221,7 @@ for(i=0;i<raw_model1->nbfaces;i++) {
    printf("face numero %d: dmax= %lf\n",i+1,dmax);
    dmax=0;
    free(sample2->sample);
+   free(sample2);
    }
 
 }
