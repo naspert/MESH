@@ -1,4 +1,4 @@
-/* $Id: model_in_ply.c,v 1.1 2002/08/15 15:39:03 aspert Exp $ */
+/* $Id: model_in_ply.c,v 1.2 2002/08/16 06:52:15 aspert Exp $ */
 
 /*
  *
@@ -195,14 +195,17 @@ int read_ply_tmesh(struct model **tmesh_ref, struct file_data *data)
                   tmesh->num_faces);
 #endif
         } else if (strcmp(stmp, "edge") == 0) {
-          fprintf(stderr, "'edge' field not supported !\n");
+          fprintf(stderr, "[Warning] 'edge' field not supported !\n");
+        } else if (strcmp(stmp, "material") == 0)
+          fprintf(stderr, "[Warning] 'material' field not supported !\n");
         } else {
-          rcode = MESH_CORRUPTED;
+          fprintf(stderr, "[Warning] Unrecognized 'element' field found."
+                  " Skipping...\n");
         }
       }
     } else
       rcode = MESH_CORRUPTED;
-  } while (rcode == 1 && (tmesh->num_faces == 0 || tmesh->num_vert == 0));
+  } while (rcode >= 0 && (tmesh->num_faces == 0 || tmesh->num_vert == 0));
 
   /* Ignore everything else from the header */
   if ((c = find_string(data, "end_header")) == EOF)
@@ -216,7 +219,8 @@ int read_ply_tmesh(struct model **tmesh_ref, struct file_data *data)
     rcode = MESH_NO_MEM;
   else {
     /* Read vertices */
-    c = read_ply_vertices(tmesh->vertices, data, tmesh->num_vert, &bbmin, &bbmax);
+    c = read_ply_vertices(tmesh->vertices, data, tmesh->num_vert, 
+                          &bbmin, &bbmax);
     if (c != 0)
       rcode = c;
     
