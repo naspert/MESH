@@ -27,6 +27,7 @@ ScreenWidget::ScreenWidget( model *raw_model1,model *raw_model2,double dmoymin, 
   m->insertItem( "&Help", help );
   help->insertSeparator();
   help->insertItem( "&Key utilities", this, SLOT(about()),CTRL+Key_H);
+  help->insertItem( "&Bug", this, SLOT(about2()));
 
 
   // Create the GUI
@@ -88,6 +89,13 @@ void ScreenWidget::about()
 			"Key F3: passage en mode SYNCHRO/DESYNCHRO\n");
 }
 
+void ScreenWidget::about2()
+{
+    QMessageBox::about( this, "Bug",
+			"if you note a bug, please join N.ASPERT\n"
+			"Nicolas.Aspert@epfl.ch\n"
+			"or use Metro");
+}
 
 // void ScreenWidget::keyPressEvent(QKeyEvent *k)
 // {

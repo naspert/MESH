@@ -1,3 +1,5 @@
+/* $Id */
+
 #ifndef INIT_H
 #define INIT_H
 
@@ -8,6 +10,7 @@
 #include <qpushbutton.h>
 #include <qfiledialog.h>
 #include <qhbox.h>
+#include <qmessagebox.h>
 
 class InitWidget : public QWidget
 {
@@ -21,8 +24,10 @@ public slots:
     void load1();
     void load2();
     void collect();
+    void about();
     
 signals:
+    void exit();
 
 private:
 QLineEdit *textEd1, *textEd2, *textEd3; 

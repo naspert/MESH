@@ -1,4 +1,4 @@
-/* $Id: ScreenWidget.h,v 1.5 2001/06/13 09:48:32 jacquet Exp $ */
+/* $Id: ScreenWidget.h,v 1.6 2001/06/13 14:13:37 jacquet Exp $ */
 #ifndef SCREENWIDGET_H
 #define SCREENWIDGET_H
 
@@ -31,6 +31,7 @@ public:
 
   public slots:
     void about();
+    void about2();
 
  private:
   QString filename;  

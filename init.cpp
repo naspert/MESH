@@ -1,3 +1,6 @@
+/* $Id */
+/* $Id */
+
 #include <init.h>
 
 InitWidget::InitWidget(QWidget *parent, const char *name) 
@@ -21,10 +24,10 @@ InitWidget::InitWidget(QWidget *parent, const char *name)
   samplethin->insertItem("0.05");
   samplethin->insertItem("0.02");
   samplethin->insertItem("0.01");
-  connect(samplethin, SIGNAL(selected(const QString&)), textEd3, SLOT(setText(const QString&)));
+  connect(samplethin, SIGNAL(highlighted(const QString&)), textEd3, SLOT(setText(const QString&)));
   QPushButton *OK = new QPushButton("OK",this);
   connect(OK, SIGNAL(clicked()), this, SLOT(collect()));
-  connect(OK, SIGNAL(clicked()), qApp, SLOT(closeAllWindows()));
+  connect(this, SIGNAL(exit()), qApp, SLOT(closeAllWindows()));
 
 
   QGridLayout *bigGrid = new QGridLayout( this, 4, 1, 20 );
@@ -76,13 +79,25 @@ void InitWidget::load2()
 void InitWidget::collect()
 {
 //   QString n;
-  
+
   m=textEd1->text();
   mesh1=(char *)n.latin1();
   n=textEd2->text();
   mesh2=(char*)n.latin1();
   o=textEd3->text();
   thin=(char*)n.latin1();
+  if(m=="first mesh" || n=="second mesh" || o=="samplethin"){
+    about();
+  }
+  else
+    emit(exit());
+    
   
 }
   
+void InitWidget::about()
+{
+  QMessageBox::about(this,"ERROR",
+		     "vous devez remplir tous les chanps\n"
+		     "mais c'est pas vrai");
+}

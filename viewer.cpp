@@ -1,4 +1,4 @@
-/* $Id: viewer.cpp,v 1.9 2001/06/13 09:46:56 jacquet Exp $ */
+/* $Id: viewer.cpp,v 1.10 2001/06/13 14:13:38 jacquet Exp $ */
 
 #include <qapplication.h>
 #include <ScreenWidget.h>
@@ -116,7 +116,9 @@ int main( int argc, char **argv )
   bbox1.z=max(raw_model1->bBox[1].z,raw_model2->bBox[1].z);
 
   /* calcul de la taille de la grille */
-  if(raw_model2->num_faces<1000)
+  if(raw_model2->num_faces<100)
+    facteur=5;
+  else if(raw_model2->num_faces<1000)
     facteur=10;
   else if(raw_model2->num_faces<10000)
     facteur=20;

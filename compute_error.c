@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.5 2001/06/13 09:46:56 jacquet Exp $ */
+/* $Id: compute_error.c,v 1.6 2001/06/13 14:13:38 jacquet Exp $ */
 
 #include <compute_error.h>
 
@@ -495,13 +495,19 @@ cell=(cellules *)malloc((raw_model->num_faces)*sizeof(cellules));
      m=(int)floor((sample1->sample[j].x-bbox0.x)/ccube);
      n=(int)floor((sample1->sample[j].y-bbox0.y)/ccube);
      o=(int)floor((sample1->sample[j].z-bbox0.z)/ccube);
-
+     
      if(m==(int)grille.x)
        m=(int)grille.x-1;
      if(n==(int)grille.y)
        n=(int)grille.y-1;
      if(o==(int)grille.z)
        o=(int)grille.z-1;
+     if(m==-1)
+       m=0;
+     if(n==-1)
+       n=0;
+     if(o==-1)
+       o=0;
 
      cellule=m+n*grille.x+o*grille.y*grille.z;
 

@@ -197,7 +197,7 @@ void RawWidget::rebuild_list(double **colormap,model *raw_model) {
     glNewList(list, GL_COMPILE);*/
   glBegin(GL_TRIANGLES);
   
-  if(raw_model2->face_normals!=NULL){
+  if(raw_model->normals!=NULL){
     for (i=0; i<raw_model->num_faces; i++) {
       cur_face = &(raw_model->faces[i]);
       glColor3f(1.0,1.0,1.0);
@@ -345,14 +345,11 @@ void RawWidget::keyPressEvent(QKeyEvent *k)
     glGetIntegerv(GL_POLYGON_MODE,&state);
     if(state==GL_FILL) {
       glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-      printf("FILL->LINE\n");
       glDraw();
     }
     else if(state==GL_LINE) {
       glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
       glGetIntegerv(GL_POLYGON_MODE,&state);
-      printf("LINE->FILL\n");
-      printf("state: %d\n",state);
       glDraw(); 
     } else {
       printf("Uh ?\n");
