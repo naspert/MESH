@@ -1,4 +1,4 @@
-/* $Id: model_in_ply.c,v 1.12 2002/08/27 07:46:03 aspert Exp $ */
+/* $Id: model_in_ply.c,v 1.13 2002/08/27 13:09:00 aspert Exp $ */
 
 /*
  *
@@ -527,7 +527,8 @@ static int read_ply_faces(face_t *faces, struct file_data *data,
 {
   int i, j, f0, f1, f2;
   int rcode=0;
-  int tmp=0;
+  t_uint8 nvert=0;
+  int tmp_int=0;
 
   for (i=0; i<n_faces && rcode >=0; i++) {
     for (j=0; j<n_f_prop && rcode >=0; j++) {
@@ -537,16 +538,17 @@ static int read_ply_faces(face_t *faces, struct file_data *data,
         else {
 	  if (is_bin)
 	    rcode = read_ply_property(data, face_prop[j].type_list, 
-				      swap_bytes, &tmp);
+				      swap_bytes, &nvert);
 	  else {
-	    if (int_scanf(data, &tmp) != 1) {
+	    if (int_scanf(data, &tmp_int) != 1) {
 	      rcode = MESH_CORRUPTED;
 	      break;
 	    }
+            nvert = (t_uint8)tmp_int;
 	  }
-          if (tmp != 3) { /* Non triangular mesh -> bail out */
+          if (nvert != 3) { /* Non triangular mesh -> bail out */
 #ifdef DEBUG
-            printf("[read_bin_ply_faces] found a %d face\n", tmp);
+            printf("[read_bin_ply_faces] found a %d face\n", nvert);
 #endif
             rcode = MESH_NOT_TRIAG;
             break;
