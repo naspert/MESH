@@ -1,4 +1,4 @@
-/* $Id: model_in_ply.c,v 1.14 2002/08/30 07:56:03 aspert Exp $ */
+/* $Id: model_in_ply.c,v 1.15 2002/08/30 09:10:48 aspert Exp $ */
 
 
 /*
@@ -831,6 +831,10 @@ int read_ply_tmesh(struct model **tmesh_ref, struct file_data *data)
     *tmesh_ref = tmesh;
     rcode = 1;
   }
-
+  if (vertex_prop != NULL)
+    free(vertex_prop);
+  if (face_prop != NULL)
+    free(face_prop);
+  
   return rcode;
 }
