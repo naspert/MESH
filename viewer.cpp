@@ -1,4 +1,4 @@
-/* $Id: viewer.cpp,v 1.41 2001/08/20 12:07:25 dsanta Exp $ */
+/* $Id: viewer.cpp,v 1.42 2001/08/21 15:41:48 dsanta Exp $ */
 
 #include <time.h>
 #include <string.h>
@@ -75,6 +75,10 @@ static void parse_args(int argc, char **argv, struct args *pargs)
       } else if (strcmp(argv[i],"-q") == 0) { /* quiet */
         pargs->quiet = 1;
       } else if (strcmp(argv[i],"-f") == 0) { /* sampling freq */
+        if (argc <= i+1) {
+          fprintf(stderr,"ERROR: missing argument for -f option\n");
+          exit(1);
+        }
         pargs->sampling_freq = strtol(argv[++i],&endptr,10);
         if (argv[i][0] == '\0' || *endptr != '\0' || pargs->sampling_freq < 0) {
           fprintf(stderr,"ERROR: invalid number for -f option\n");
