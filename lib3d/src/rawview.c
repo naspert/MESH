@@ -1,4 +1,4 @@
-/* $Id: rawview.c,v 1.4 2002/02/01 08:32:11 aspert Exp $ */
+/* $Id: rawview.c,v 1.5 2002/02/05 09:27:39 aspert Exp $ */
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -570,6 +570,11 @@ void ps_grab() {
 /* **************************** */
 void norm_key_pressed(unsigned char key, int x, int y) {
   switch(key) {
+  case 'i':
+  case 'I':
+    fprintf(stderr, "\nModel Info :\n %d vertices and %d triangles\n\n", 
+            raw_model->num_vert, raw_model->num_faces);
+    break;
   case 'q':
   case 'Q':
     free_raw_model(raw_model);
@@ -898,18 +903,31 @@ void sp_key_pressed(int key, int x, int y) {
 /* ************************************************************ */
 int main(int argc, char **argv) {
 
-  int i;
+  int i, rcode=0;
   char *title;
   const char s_title[]="Raw Mesh Viewer v3.0 - ";
+  FILE *pf;
 
   assert(sizeof(vertex_t) == 3*sizeof(float));
   if (argc != 2) {
-    printf("Usage:%s file.raw\n", argv[0]);
+    printf("Usage:%s file.[raw, wrl]\n", argv[0]);
     exit(-1);
   }
 
   in_filename = argv[1]; 
-  raw_model = read_raw_model(in_filename);
+  pf = fopen(in_filename, "r");
+  if (pf == NULL) {
+    fprintf(stderr, "Unable to open file %s\n", in_filename);
+    exit(-1);
+  }
+
+  rcode = read_model(&raw_model, pf, MESH_FF_AUTO, 0);
+  if (rcode <= 0) {
+    fprintf(stderr, "Unable to read model - error code %d\n", rcode);
+    fclose(pf);
+    exit(-1);
+  }  
+  fclose(pf);
 
   if (raw_model->builtin_normals == 1) {
     normals_done = 1;
