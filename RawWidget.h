@@ -1,4 +1,4 @@
-/* $Id: RawWidget.h,v 1.21 2001/10/25 12:30:45 aspert Exp $ */
+/* $Id: RawWidget.h,v 1.22 2001/11/06 17:13:42 dsanta Exp $ */
 #ifndef RAWWIDGET_H
 #define RAWWIDGET_H
 
@@ -35,7 +35,8 @@ public:
   RawWidget(struct model_error *model, int renderType, QWidget *parent=0, 
 	    const char *name=0); // Constructor
   ~RawWidget(); // Destructor
-
+  QSize sizeHint() const;
+  QSize minimumSizeHint() const;
   
 public slots: 
   void setLine(bool state);
@@ -43,7 +44,6 @@ public slots:
   void switchSync(bool state);
   void transfer(double dist,double *mvmat);
   void switchDisplayedInfo(int state);
-
   
 signals:
   void transfervalue(double,double*);

@@ -1,4 +1,4 @@
-/* $Id: RawWidget.cpp,v 1.30 2001/10/25 12:30:45 aspert Exp $ */
+/* $Id: RawWidget.cpp,v 1.31 2001/11/06 17:13:42 dsanta Exp $ */
 
 #include <RawWidget.h>
 #include <qmessagebox.h>
@@ -15,9 +15,8 @@ RawWidget::RawWidget(struct model_error *model, int renderType,
   int i;
   vertex_t center;
 
-  // Fixed size widget
-  setMinimumSize(512, 512);
-  setMaximumSize(512, 512);
+  // Get as big as possible screen space
+  setSizePolicy(QSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding));
 
   // 0 is not a valid display list index
   model_list = 0;
@@ -59,6 +58,14 @@ RawWidget::RawWidget(struct model_error *model, int renderType,
 
 
 
+}
+
+QSize RawWidget::sizeHint() const {
+  return QSize(512,512);
+}
+
+QSize RawWidget::minimumSizeHint() const {
+  return QSize(256,256);
 }
 
 RawWidget::~RawWidget() {

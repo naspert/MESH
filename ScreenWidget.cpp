@@ -1,6 +1,8 @@
-/* $Id: ScreenWidget.cpp,v 1.23 2001/11/06 10:15:37 dsanta Exp $ */
+/* $Id: ScreenWidget.cpp,v 1.24 2001/11/06 17:13:42 dsanta Exp $ */
 #include <ScreenWidget.h>
 
+#include <qhbox.h>
+#include <qhbuttongroup.h>
 #include <RawWidget.h>
 #include <ColorMapWidget.h>
 #include <compute_error.h>
@@ -14,8 +16,7 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   QPushButton *syncBut, *lineSwitch1, *lineSwitch2;
   QMenuBar *mainBar;
   QPopupMenu *fileMenu, *helpMenu;
-  QFrame *frameModel1, *frameModel2;
-  QHBoxLayout *hLay1, *hLay2;
+  QHBox *frameModel1, *frameModel2;
   QGridLayout *bigGrid;
   RawWidget *glModel1, *glModel2;
   ColorMapWidget *errorColorBar;
@@ -24,10 +25,7 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   QButtonGroup *radGrp=NULL;
   bool drawCurv=FALSE;
 
-  setMinimumSize( 1070, 540 );
-  setMaximumSize( 1070, 540 );
-  
-
+  setCaption("Mesh: visualization");
   model_data = model1;
 
   fileQuitAction = new QAction( "Quit", "Quit", CTRL+Key_Q, this, "quit" );
@@ -54,11 +52,11 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   // --------------
 
   // Create frames to put around the OpenGL widgets
-  frameModel1 = new QFrame(this, "frameModel1");
+  frameModel1 = new QHBox(this, "frameModel1");
   frameModel1->setFrameStyle(QFrame::Sunken | QFrame::Panel);
   frameModel1->setLineWidth(2);
 
-  frameModel2 = new QFrame(this, "frameModel2");
+  frameModel2 = new QHBox(this, "frameModel2");
   frameModel2->setFrameStyle(QFrame::Sunken | QFrame::Panel);
   frameModel2->setLineWidth(2);
 
@@ -80,16 +78,6 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   errorColorBar = new ColorMapWidget(model1->min_verror,
 				     model1->max_verror, this, 
 				     "errorColorBar");
-
-
-
-
-  // Put the 1st GL widget inside the frame
-  hLay1 = new QHBoxLayout(frameModel1, 2, 2, "hLay1");
-  hLay1->addWidget(glModel1, 1);
-  // Put the 2nd GL widget inside the frame
-  hLay2 = new QHBoxLayout(frameModel2, 2, 2, "hLay2");
-  hLay2->addWidget(glModel2, 1);
 
   // This is to synchronize the viewpoints of the two models
   // We need to pass the viewing matrix from one RawWidget
@@ -131,7 +119,8 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   connect(glModel2, SIGNAL(toggleLine()),lineSwitch2, SLOT(toggle()));
 
   if (drawCurv) {
-    radGrp = new QButtonGroup(1, Qt::Vertical, this);
+    radGrp = new QHButtonGroup(this);
+    radGrp->layout()->setMargin(3);
     erBut = new QRadioButton("Haus. error", radGrp);
     erBut->setChecked(TRUE);
     kmBut = new QRadioButton("km error", radGrp);
@@ -152,26 +141,31 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   }
 
   // Build the topmost grid layout
-  if (drawCurv)
-    bigGrid = new QGridLayout (this, 6, 3, 5);
-  else
-    bigGrid = new QGridLayout (this, 5, 3, 5);
-
-  bigGrid->addWidget(errorColorBar, 1, 0);
-  bigGrid->addWidget(frameModel1, 1, 1);
-  bigGrid->addWidget(frameModel2, 1, 2);
-  bigGrid->addWidget(lineSwitch1, 2, 1, Qt::AlignCenter);
-  bigGrid->addWidget(lineSwitch2, 2, 2, Qt::AlignCenter);
+  bigGrid = new QGridLayout (this, 3, 7, 5);
+  bigGrid->setMenuBar(mainBar);
+  bigGrid->addWidget(errorColorBar, 0, 0);
+  bigGrid->addMultiCellWidget(frameModel1, 0, 0, 1, 3);
+  bigGrid->addMultiCellWidget(frameModel2, 0, 0, 4, 6);
+  bigGrid->addWidget(lineSwitch1, 1, 2, Qt::AlignCenter);
+  bigGrid->addWidget(lineSwitch2, 1, 5, Qt::AlignCenter);
+  bigGrid->addMultiCellWidget(syncBut, 1, 1, 3, 4, Qt::AlignCenter);
   if (drawCurv) {
-    bigGrid->addWidget(radGrp, 3, 1);
-    bigGrid->addWidget(syncBut, 4, 1, Qt::AlignCenter);
-    bigGrid->addWidget(quitBut, 5, 1, Qt::AlignCenter);
-  } else {
-    bigGrid->addWidget(syncBut, 3, 1, Qt::AlignCenter);
-    bigGrid->addWidget(quitBut, 4, 1, Qt::AlignCenter);
+    bigGrid->addWidget(radGrp, 2, 2, Qt::AlignCenter);
   }
-  
+  bigGrid->addMultiCellWidget(quitBut, 2, 2, 3, 4, Qt::AlignCenter);
 
+  // Now set a sensible default widget size
+  QSize prefSize = layout()->sizeHint();
+  QSize screenSize = QApplication::desktop()->size();
+  double p = 0.95; // max proportion of screen to use
+
+  if (prefSize.width() > p*screenSize.width()) {
+    prefSize.setWidth((int)(p*screenSize.width()));
+  }
+  if (prefSize.height() > p*screenSize.height()) {
+    prefSize.setHeight((int)(p*screenSize.height()));
+  }
+  resize(prefSize.width(),prefSize.height());
 }
 
 void ScreenWidget::aboutKeys()

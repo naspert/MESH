@@ -18,7 +18,7 @@ public:
 
 
 private:
-  QVBoxLayout *layout;
+  QGridLayout *layout;
   QTextView *view;
   QPushButton *butClose;
 };

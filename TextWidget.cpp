@@ -5,20 +5,18 @@ TextWidget::TextWidget(QWidget *parent, const char *name)
   : QWidget(parent, name) {
   QFont font(QApplication::font());
 
-  layout = new QVBoxLayout(this);
-  layout->setResizeMode(QLayout::FreeResize);
+  layout = new QGridLayout(this,2,1);
   view = new QTextView(this);
   view->setTextFormat(Qt::PlainText);
   font.setFamily("courier");
   view->setFont(font);
-  layout->addWidget(view);
+  layout->addWidget(view,0,0);
   butClose = new QPushButton("Close", this);
-  butClose->setSizePolicy(QSizePolicy(QSizePolicy::Maximum,
-                                      QSizePolicy::Minimum));
-  layout->addWidget(butClose);
+  layout->addWidget(butClose,1,0,Qt::AlignCenter);
 
   connect(butClose, SIGNAL(clicked()), this, SLOT(close()));
 
+  setCaption("Mesh execution log");
 }
 
 QSize TextWidget::sizeHint() const {
