@@ -1,4 +1,4 @@
-/* $Id: model_analysis.c,v 1.24 2002/03/29 13:34:46 dsanta Exp $ */
+/* $Id: model_analysis.c,v 1.25 2002/03/29 17:15:49 dsanta Exp $ */
 
 
 /*
@@ -856,21 +856,37 @@ struct face_list *faces_of_vertex(const struct model *m)
   int v0,v1,v2;         /* current triangle's vertex indices */
   struct face_list *fl; /* the face list to return */
 
+  /* NOTE: we do a two scan allocation, first gather the required sizes and
+   * then allocate storage. It is much faster than a single scan, since the
+   * number of calls to memory allocation routines is greatly reduced. In
+   * addition the obtained memory arrangement is more compact. */
+
   fl = xa_calloc(m->num_vert,sizeof(*fl));
+  /* First scan: count number of incident faces per vertex */
   for (j=0, jmax=m->num_faces; j<jmax; j++) {
     v0 = m->faces[j].f0;
     v1 = m->faces[j].f1;
     v2 = m->faces[j].f2;
     /* degenerate faces not included */
     if (v0 == v1 || v0 == v2 || v1 == v2) continue;
-    fl[v0].face =
-      xa_realloc(fl[v0].face,(fl[v0].n_faces+1)*sizeof(*(fl->face)));
+    fl[v0].n_faces++;
+    fl[v1].n_faces++;
+    fl[v2].n_faces++;
+  }
+  /* Allocate storage for each vertex */
+  for (j=0, jmax=m->num_vert; j<jmax; j++) {
+    fl[j].face = xa_malloc(fl[j].n_faces*sizeof(*(fl->face)));
+    fl[j].n_faces = 0;
+  }
+  /* Second scan: fill list of incident faces */
+  for (j=0, jmax=m->num_faces; j<jmax; j++) {
+    v0 = m->faces[j].f0;
+    v1 = m->faces[j].f1;
+    v2 = m->faces[j].f2;
+    /* degenerate faces not included */
+    if (v0 == v1 || v0 == v2 || v1 == v2) continue;
     fl[v0].face[fl[v0].n_faces++] = j;
-    fl[v1].face =
-      xa_realloc(fl[v1].face,(fl[v1].n_faces+1)*sizeof(*(fl->face)));
     fl[v1].face[fl[v1].n_faces++] = j;
-    fl[v2].face =
-      xa_realloc(fl[v2].face,(fl[v2].n_faces+1)*sizeof(*(fl->face)));
     fl[v2].face[fl[v2].n_faces++] = j;
   }
   return fl;
