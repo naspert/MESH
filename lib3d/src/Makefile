@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.36 2002/05/13 13:50:47 aspert Exp $
+# $Id: Makefile,v 1.37 2002/05/27 15:17:17 aspert Exp $
 
 
 OS := $(shell uname -s)
@@ -12,8 +12,8 @@ TARGETS = torus cone dirac compare_curv
 GSL_TARGETS = maps_lsq
 ifeq ($(OS), Linux)
 CC = gcc
-XTRA_CFLAGS = -g  -pipe -ansi -pedantic -Wall -DREAD_TIME #-DDONT_USE_ZLIB \
-	-D__DONT_USE_DISPLAY_LISTS_	
+XTRA_CFLAGS = -g  -pipe -ansi -pedantic -Wall -DREAD_TIME  # \
+	-D__BUTTERFLY_CREASE_DEBUG -D__DONT_USE_DISPLAY_LISTS_ -DDONT_USE_ZLIB
 
 
 GL_VENDOR := $(shell $(GLXINFO)|grep "OpenGL vendor"|cut -d\: -f2|cut -d\  -f2)
@@ -97,7 +97,8 @@ isoca: $(OBJDIR)/isoca.o $(OBJDIR)/subdiv.o $(BASE_OBJECTS)
 	$(CC) -o $(BINDIR)/$@ $^ $(BASE_LDFLAGS) 
 
 subdiv : $(OBJDIR)/subdiv_main.o $(OBJDIR)/subdiv.o \
-	$(OBJDIR)/subdiv_methods.o $(BASE_OBJECTS)
+	$(OBJDIR)/subdiv_sph.o $(OBJDIR)/subdiv_butterfly.o \
+	$(OBJDIR)/subdiv_loop.o $(BASE_OBJECTS)
 	$(CC) -o $(BINDIR)/$@ $^ $(BASE_LDFLAGS) 
 
 rawview_d : $(GL_OBJECTS) lib3d libimage
