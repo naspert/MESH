@@ -1,3 +1,4 @@
+/* $Id: ScreenWidget.cpp,v 1.9 2001/08/07 09:22:20 aspert Exp $ */
 #include <ScreenWidget.h>
 
 ScreenWidget::ScreenWidget(model *raw_model1, model *raw_model2, 
