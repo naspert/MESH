@@ -1,10 +1,26 @@
-/* $Id: subdiv_butterfly.c,v 1.2 2002/05/27 15:52:48 aspert Exp $ */
+/* $Id: subdiv_butterfly.c,v 1.3 2002/06/04 08:46:04 aspert Exp $ */
 
 #include <3dmodel.h>
 #include <normals.h>
 #include <geomutils.h>
 #include <subdiv_methods.h>
 #include <assert.h>
+
+/* These are parameters for Butterfly subdivision */
+# define _Q_     0.75
+# define _2W_    0.0           /* w = 0.0 gives better results
+                                * ... 1.0/16.0 could be another
+                                * possible choice for w */
+# define _M1_12 -0.0833333333333 /* -1.0/12.0 */
+# define _5_12   0.4166666666666 /* 5.0/12.0 */
+
+/* Precomputed regular stencil */
+const static float reg_sten[6] = {0.25 - _2W_,  
+                                  0.125 + _2W_, -0.125 - _2W_, 
+                                  _2W_, -0.125 - _2W_, 0.125 + _2W_};
+const static float sten_4[4] = {0.375, 0.0, -0.125, 0.0};
+const static float sten_3[3] = {_5_12, _M1_12, _M1_12};
+
 /* 
  * Builds a Butterfly subd. mask of size n for irregular vertices.
  * The array must be pre-malloc'ed !
@@ -20,7 +36,7 @@ void make_sub_mask(float *mask, int n) {
   case 4:
     memcpy(mask, sten_4, 4*sizeof(float));
     break;
-  default:
+  default: /* n = 5, 7, 8, ... */
     inv_n = 1.0/(float)n;
     for (j=0; j<n; j++) 
       mask[j] = (0.25 + cos(2*M_PI*j*inv_n) +
@@ -92,7 +108,7 @@ void compute_midpoint_butterfly(struct ring_info *rings,
 
 
 
-    __add_prod_v(__QS, (raw_model->vertices[center]), p, p);
+    __add_prod_v(_Q_, (raw_model->vertices[center]), p, p);
 
 
     
@@ -103,13 +119,10 @@ void compute_midpoint_butterfly(struct ring_info *rings,
     }
 
 
-    __add_prod_v(__QT, raw_model->vertices[center2], r, r); 
+    __add_prod_v(_Q_, raw_model->vertices[center2], r, r);
 
-
-    __prod_v(0.5, r, r);
-    __prod_v(0.5, p, p);
     __add_v(p, r, p);
-
+    __prod_v(0.5, p, p);
     
     free(s);
     free(t);
@@ -127,7 +140,7 @@ void compute_midpoint_butterfly(struct ring_info *rings,
                    raw_model->vertices[ring.ord_vert[(v1+j)%6]], p, p);
     }
 
-    __add_prod_v(__QS, raw_model->vertices[center], p, p);
+    __add_prod_v(_Q_, raw_model->vertices[center], p, p);
 
 
     /* Apply stencil to end vertex_t */
@@ -136,7 +149,7 @@ void compute_midpoint_butterfly(struct ring_info *rings,
                    raw_model->vertices[ring_op.ord_vert[(v2+j)%6]], p, p);
     }
 
-    __add_prod_v(__QT, raw_model->vertices[center2], p, p);
+    __add_prod_v(_Q_, raw_model->vertices[center2], p, p);
 
 
     __prod_v(0.5, p, p);
@@ -151,7 +164,7 @@ void compute_midpoint_butterfly(struct ring_info *rings,
                    p);
     }
 
-    __add_prod_v(__QS, raw_model->vertices[center], p, p);
+    __add_prod_v(_Q_, raw_model->vertices[center], p, p);
 
     free(s);
   } else if (n==6 && m!=6) {
@@ -166,7 +179,7 @@ void compute_midpoint_butterfly(struct ring_info *rings,
                    p);
     }
 
-    __add_prod_v(__QT, raw_model->vertices[center2], p, p);
+    __add_prod_v(_Q_, raw_model->vertices[center2], p, p);
 
     free(t);
   } 
@@ -249,52 +262,7 @@ void compute_midpoint_butterfly_crease(struct ring_info *rings, int center,
   
   } else if (ring.type == 1) {
     if (ring.size == 4 && ring_op.size == 6) {/* regular crease-int. */
-#ifdef __BUTTERFLY_CREASE_DEBUG
-      fprintf(stderr, "reg. int-crease %d %d\n", center2, center);
-#endif
-      s = (float*)malloc(4*sizeof(float));
-      s[0] = -0.0625;
-      s[3] = s[0];
-      if (v1 == 1) {
-	s[1] = -0.125;
-	s[2] = 0.0625;
-      } else if (v1 == 2) { 
-	s[1] = 0.0625;
-	s[2] = -0.125;
-      } else
-	fprintf(stderr, "Strange v1 = %d\n", v1);
-      prod_v(0.125, &(raw_model->vertices[center]), vout);
-#ifdef __BUTTERFLY_CREASE_DEBUG
-      fprintf(stderr, "1/8 * vert[%d]\n", center);
-#endif
-      for (i=0; i<4; i++) {
-	add_prod_v(s[i], &(raw_model->vertices[ring.ord_vert[i]]), vout, vout);
-#ifdef __BUTTERFLY_CREASE_DEBUG
-      fprintf(stderr, "%f * vert[%d]\n", s[i], ring.ord_vert[i]);
-#endif
-      }
-      free(s);
-      s = (float*)malloc(6*sizeof(float));
-      s[v2] = 0.25;
-      s[(v2+1)%6] = 0.125;
-      s[(v2+2)%6] = -0.0625;
-      s[(v2+3)%6] = 0.0;
-      s[(v2+4)%6] = -0.125;
-      s[(v2+5)%6] = 0.125;
-      prod_v(0.75, &(raw_model->vertices[center2]), &p);
-#ifdef __BUTTERFLY_CREASE_DEBUG
-      fprintf(stderr, "3/4 * vert[%d]\n", center2);
-#endif
-      for (i=0; i<6; i++) {
-	add_prod_v(s[i], &(raw_model->vertices[ring_op.ord_vert[i]]), 
-		   &p, &p);
-#ifdef __BUTTERFLY_CREASE_DEBUG
-      fprintf(stderr, "%f * vert[%d]\n", s[i], ring_op.ord_vert[i]);
-#endif
-      }
-      add_v(&p, vout, vout);
-      free(s);
-      return;
+
     } else if (ring.size != 4 && ring_op.size != 6) { /* extr. crease
                                                        * - extr. int */
       s = (float*)malloc(n*sizeof(float));
@@ -333,54 +301,7 @@ void compute_midpoint_butterfly_crease(struct ring_info *rings, int center,
       abort();
   } else { /* ring_op.type == 1 */
     if (ring_op.size == 4 && ring.size == 6) {/* regular crease-int. */
-#ifdef __BUTTERFLY_CREASE_DEBUG
-      fprintf(stderr, "reg. int-crease %d %d\n", center, center2);
-#endif
-      s = (float*)malloc(4*sizeof(float));
-      s[0] = -0.0625;
-      s[3] = s[0];
-      if (v2 == 1) {
-	s[1] = -0.125;
-	s[2] = 0.0625;
-      } else if (v2 == 2) { 
-	s[1] = 0.0625;
-	s[2] = -0.125;
-      } else 
-	fprintf(stderr, "Strange v2 = %d\n", v2);
 
-      prod_v(0.125, &(raw_model->vertices[center2]), vout);
-#ifdef __BUTTERFLY_CREASE_DEBUG
-      fprintf(stderr, "1/8 * vert[%d]\n", center2);
-#endif
-      for (i=0; i<4; i++) {
-	add_prod_v(s[i], &(raw_model->vertices[ring_op.ord_vert[i]]), 
-		   vout, vout);
-#ifdef __BUTTERFLY_CREASE_DEBUG
-	fprintf(stderr, "%f * vert[%d]\n", s[i], ring_op.ord_vert[i]);
-#endif
-      }
-      free(s);
-      s = (float*)malloc(6*sizeof(float));
-      s[v1] = 0.25;
-      s[(v1+1)%6] = 0.125;
-      s[(v1+2)%6] = -0.0625;
-      s[(v1+3)%6] = 0.0;
-      s[(v1+4)%6] = -0.125;
-      s[(v1+5)%6] = 0.125;
-      prod_v(0.75, &(raw_model->vertices[center]), &p);
-#ifdef __BUTTERFLY_CREASE_DEBUG
-      fprintf(stderr, "3/4 * vert[%d]\n", center);
-#endif
-      for (i=0; i<6; i++) {
-	add_prod_v(s[i], &(raw_model->vertices[ring.ord_vert[i]]), 
-		   &p, &p);
-#ifdef __BUTTERFLY_CREASE_DEBUG
-	fprintf(stderr, "%f * vert[%d]\n", s[i], ring.ord_vert[i]);
-#endif
-      }
-      add_v(&p, vout, vout);
-      free(s);
-      return;
     } else if (ring_op.size != 4 && ring.size != 6) { /* extr. crease */
 #ifdef __BUTTERFLY_CREASE_DEBUG
       fprintf(stderr, "extr. crease %d\n", center2);
