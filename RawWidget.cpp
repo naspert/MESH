@@ -1,4 +1,4 @@
-/* $Id: RawWidget.cpp,v 1.51 2002/03/11 18:23:00 dsanta Exp $ */
+/* $Id: RawWidget.cpp,v 1.52 2002/03/11 18:34:55 dsanta Exp $ */
 
 #include <RawWidget.h>
 #include <qmessagebox.h>
@@ -258,11 +258,11 @@ void RawWidget::genErrorTextures() {
   }
   max_n = 1<<ceilLog2(max_n); // round (towards infinity) to power of two
   // Test if OpenGL implementation can deal with maximum texture size
-  glTexImage2D(GL_PROXY_TEXTURE_2D,0,internalformat,max_n+2,max_n+2,1,GL_RGB,
-               GL_UNSIGNED_BYTE,NULL);
-  glGetTexLevelParameteriv(GL_PROXY_TEXTURE_2D, 0,GL_TEXTURE_WIDTH, &tw);
+  // Unfortunately GL_PROXY_TEXTURE_2D fails on IRIX 6.2 for some SGI
+  // machines, so use older GL_MAX_TEXTURE_SIZE method.
+  glGetIntegerv(GL_MAX_TEXTURE_SIZE,&tw);
   checkGlErrors("error texture size check");
-  if (tw == 0) {
+  if (tw < max_n) {
     QString tmps;
     tmps.sprintf("The OpenGL implementation does not support\n"
                  "the required texture size (%ix%i).\n"
