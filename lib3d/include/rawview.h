@@ -1,6 +1,13 @@
-/* $Id: rawview.h,v 1.3 2002/06/05 09:30:55 aspert Exp $ */
+/* $Id: rawview.h,v 1.4 2002/10/16 12:35:02 aspert Exp $ */
+
+
+#ifdef _WIN32
+#include <windows.h>
+#endif
 
 #include <GL/gl.h>
+#include <GL/glu.h>
+#include <GL/glut.h>
 
 #ifndef _RAWVIEW_PROTO_
 #define _RAWVIEW_PROTO_

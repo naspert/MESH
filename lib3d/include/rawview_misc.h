@@ -1,8 +1,5 @@
-/* $Id: rawview_misc.h,v 1.5 2002/09/12 11:55:40 aspert Exp $ */
+/* $Id: rawview_misc.h,v 1.6 2002/10/16 12:35:02 aspert Exp $ */
 
-#include <GL/gl.h>
-#include <GL/glu.h>
-#include <GL/glut.h>
 #include <3dutils.h>
 #include <rawview.h>
 #include <gl2ps.h>
