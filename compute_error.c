@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.26 2001/08/09 15:56:24 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.27 2001/08/10 09:59:42 dsanta Exp $ */
 
 #include <compute_error.h>
 
@@ -122,6 +122,7 @@ struct triangle_info {
   vertex normal;       /* The (unit length) normal of the ABC triangle
                         * (orinted with the right hand rule turning from AB to
                         * AC). */
+  double s_area;       /* The surface area of the triangle */
 };
 
 /* Statistics of dist_pt_surf() function */
@@ -166,6 +167,32 @@ static void realloc_triag_sample_error(struct triag_sample_error *tse, int n)
   }
 }
 
+/* Computes the vertex normals assuming an oriented model. The triangle
+ * information already present in tl are used to speed up the calculation. If
+ * the model is not oriented, the resulting normals will be incorrect. */
+static void calc_normals_as_oriented_model(model *m,
+                                           const struct triangle_list *tl)
+{
+  int k,kmax;
+  vertex *n;
+
+  /* initialize all normals to zero */
+  m->normals = xrealloc(m->normals,m->num_vert*sizeof(*(m->normals)));
+  memset(m->normals,0,m->num_vert*sizeof(*(m->normals)));
+  /* add face normals to vertices, weighted by face area */
+  for (k=0, kmax=m->num_faces; k < kmax; k++) {
+    n = &(tl->triangles[k].normal);
+    prod_v(tl->triangles[k].s_area,n,n);
+    add_v(n,&(m->normals[m->faces[k].f0]),&(m->normals[m->faces[k].f0]));
+    add_v(n,&(m->normals[m->faces[k].f1]),&(m->normals[m->faces[k].f1]));
+    add_v(n,&(m->normals[m->faces[k].f2]),&(m->normals[m->faces[k].f2]));
+  }
+  /* normalize final normals */
+  for (k=0, kmax=m->num_vert; k<kmax; k++) {
+    normalize_v(&(m->normals[k]));
+  }
+}
+
 /* --------------------------------------------------------------------------*
  *                            Local functions                                *
  * --------------------------------------------------------------------------*/
@@ -177,6 +204,7 @@ static void init_triangle(const vertex *a, const vertex *b, const vertex *c,
 {
   vertex ab,ac,bc;
   vertex da,db;
+  double dc_len_sqr;
 
   /* Get the vertices in the proper ordering (the orientation is not
    * changed). C should be the vertex with an angle of 90 degrees or more, if
@@ -221,7 +249,8 @@ static void init_triangle(const vertex *a, const vertex *b, const vertex *c,
   add_v(&da,&(t->ab),&db);
   add_v(&da,&(t->ac),&(t->dc));
   /* Get the D relative lengths */
-  t->dc_1_len_sqr = 1/norm2_v(&(t->dc));
+  dc_len_sqr = norm2_v(&(t->dc));
+  t->dc_1_len_sqr = 1/dc_len_sqr;
   /* Get max coords of DA and DB */
   if (fabs(da.x) > fabs(da.y)) {
     if (fabs(da.x) >= fabs(da.z)) {
@@ -260,6 +289,8 @@ static void init_triangle(const vertex *a, const vertex *b, const vertex *c,
   /* Get the triangle normal (normalized) */
   crossprod_v(&(t->ab),&(t->ac),&(t->normal));
   normalize_v(&(t->normal));
+  /* Get surface area */
+  t->s_area = sqrt(t->ab_len_sqr*dc_len_sqr)/2;
 }
 
 /* Compute the square of the distance between point 'p' and triangle 't' in 3D
@@ -412,8 +443,9 @@ static struct triangle_list* model_to_triangle_list(const model *m)
     face_i = &(m->faces[i]);
     init_triangle(&(m->vertices[face_i->f0]),&(m->vertices[face_i->f1]),
                   &(m->vertices[face_i->f2]),&(triags[i]));
-    tl->area += sqrt(triags[i].ab_len_sqr*norm2_v(&(triags[i].dc)))/2;
+    tl->area += triags[i].s_area;
   }
+
   return tl;
 }
 
@@ -911,9 +943,10 @@ struct face_list *faces_of_vertex(model *m)
 }
 
 /* See compute_error.h */
-void dist_surf_surf(const model *m1, const model *m2, int n_spt,
+void dist_surf_surf(const model *m1, model *m2, int n_spt,
                     struct face_error *fe_ptr[],
-                    struct dist_surf_surf_stats *stats, int quiet)
+                    struct dist_surf_surf_stats *stats, int calc_normals,
+                    int quiet)
 {
   vertex bbox2_min,bbox2_max; /* min and max coords of bounding box of m2 */
   struct triangle_list *tl2;  /* triangle list for m2 */
@@ -1014,6 +1047,11 @@ void dist_surf_surf(const model *m1, const model *m2, int n_spt,
   /* Finalize overall statistics */
   stats->mean_dist /= stats->m1_area;
   stats->rms_dist = sqrt(stats->rms_dist/stats->m1_area);
+
+  /* Do normals for model 2 if requested and not yet present */
+  if (calc_normals && m2->normals == NULL && m2->face_normals == NULL) {
+    calc_normals_as_oriented_model(m2,tl2);
+  }
 
   /* free temporary storage */
   free(tl2->triangles);

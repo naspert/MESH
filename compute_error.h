@@ -1,4 +1,4 @@
-/* $Id: compute_error.h,v 1.8 2001/08/08 14:31:33 dsanta Exp $ */
+/* $Id: compute_error.h,v 1.9 2001/08/10 10:00:22 dsanta Exp $ */
 #include <3dmodel.h>
 
 #ifndef _COMPUTE_ERROR_PROTO
@@ -66,10 +66,17 @@ struct face_list *faces_of_vertex(model *m);
  * sampled using n_spt samples in each direction. The per face (of m1) error
  * metrics are returned in a new array (of length m1->num_faces) allocated at
  * *fe_ptr. The overall distance metrics and other statistics are returned in
- * stats. If quiet is zero a progress meter is displayed in stdout. */
-void dist_surf_surf(const model *m1, const model *m2, int n_spt,
+ * stats. Optionally, if calc_normals is non-zero and m2 has no normals or
+ * face normals, the normals will be calculated and added to m2 (only normals,
+ * not face normals). The normals are calculated assuming that the model m2 is
+ * oriented, if it is not the case the resulting normals can be
+ * incorrect. Information already used to calculate the distance is reused to
+ * compute the normals, so it is very fast. If quiet is zero a progress meter
+ * is displayed in stdout. */
+void dist_surf_surf(const model *m1, model *m2, int n_spt,
                     struct face_error *fe_ptr[],
-                    struct dist_surf_surf_stats *stats, int quiet);
+                    struct dist_surf_surf_stats *stats, int calc_normals,
+                    int quiet);
 
 END_DECL
 #undef END_DECL

@@ -1,4 +1,4 @@
-/* $Id: viewer.cpp,v 1.31 2001/08/10 08:24:11 aspert Exp $ */
+/* $Id: viewer.cpp,v 1.32 2001/08/10 09:59:42 dsanta Exp $ */
 
 #include <time.h>
 #include <string.h>
@@ -20,6 +20,7 @@ struct args {
   int  no_gui;    /* text only flag */
   int quiet;      /* do not display extra info flag*/
   int sampling_freq; /* sampling frequency */
+  int oriented_m2; /* Flag indicating that model 2 is oriented */
 };
 
 /* Prints usage information to the out stream */
@@ -44,7 +45,7 @@ static void print_usage(FILE *out)
   fprintf(out,"\n");
   fprintf(out,"  -q\tQuiet, do not print progress meter.\n");
   fprintf(out,"\n");
-  fprintf(out,"  -t\tDisplay only textual results, do not displaythe GUI.\n");
+  fprintf(out,"  -t\tDisplay only textual results, do not display the GUI.\n");
   fprintf(out,"\n");
   fprintf(out,"  -f n\tSet the sampling frequency to n. The triangles of\n");
   fprintf(out,"      \tthe first model are sampled in order to calculate\n");
@@ -54,6 +55,18 @@ static void print_usage(FILE *out)
   fprintf(out,"      \thigher the sampling frequency, the more accurate the\n");
   fprintf(out,"      \tapproximation, but the longer the execution time.\n");
   fprintf(out,"      \tIt is 10 by default.\n");
+  fprintf(out,"\n");
+  fprintf(out,"  -om2\tConsiders the model 2 as propely oriented for\n");
+  fprintf(out,"      \tcomputing normals. If the results are displayed in\n");
+  fprintf(out,"      \tthe GUI and the model file does not have vertex\n");
+  fprintf(out,"      \tnormals nor face normals, a very fast algorithm\n");
+  fprintf(out,"      \tis used to compute the normals. If this option is\n");
+  fprintf(out,"      \tspecified and the model is not properly oriented\n");
+  fprintf(out,"      \tan incorrect display will result, but a full\n");
+  fprintf(out,"      \tcomputation of the normals can be forced in\n");
+  fprintf(out,"      \tthe GUI to correct the display. The face orientation\n");
+  fprintf(out,"      \tis taken to be counter-clockwise, but can be\n");
+  fprintf(out,"      \treversed in the GUI.\n");
 }
 
 /* Initializes *pargs to default values and parses the command line arguments
@@ -81,6 +94,8 @@ static void parse_args(int argc, char **argv, struct args *pargs)
           fprintf(stderr,"ERROR: invalid number for -f option\n");
           exit(1);
         }
+      } else if (strcmp(argv[i],"-om2") == 0) { /* model 2 is oriented */
+        pargs->oriented_m2 = 1;
       } else { /* unrecognized option */
         fprintf(stderr,
                 "ERROR: unknown option in command line, use -h for help\n");
@@ -153,8 +168,8 @@ int main( int argc, char **argv )
 
   /* Compute the distance from one model to the other */
   start_time = clock();
-  dist_surf_surf(raw_model1, raw_model2, pargs.sampling_freq, &fe,&stats,
-                 pargs.quiet);
+  dist_surf_surf(raw_model1,raw_model2,pargs.sampling_freq,&fe,&stats,
+                 pargs.oriented_m2&&(!pargs.no_gui),pargs.quiet);
 
   /* Print results */
   bbox1_diag = dist(raw_model1->bBox[0], raw_model1->bBox[1]);
