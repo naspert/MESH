@@ -1,4 +1,4 @@
-/* $Id: mesh_run.c,v 1.8 2002/02/10 15:45:04 dsanta Exp $ */
+/* $Id: mesh_run.c,v 1.9 2002/02/10 17:57:51 dsanta Exp $ */
 
 #include <time.h>
 #include <string.h>
@@ -67,7 +67,7 @@ void mesh_run(const struct args *args, struct model_error *model1,
   struct dist_surf_surf_stats stats_rev;
   double bbox1_diag,bbox2_diag;
   struct model_info *m1info,*m2info;
-  double abs_sampling_step;
+  double abs_sampling_step,abs_sampling_dens;
 
   /* Read models from input files */
   memset(model1,0,sizeof(*model1));
@@ -103,6 +103,7 @@ void mesh_run(const struct args *args, struct model_error *model1,
   }
   /* Adjust sampling step size */
   abs_sampling_step = args->sampling_step*bbox2_diag;
+  abs_sampling_dens = 1/(abs_sampling_step*abs_sampling_step);
 
   /* Print available model information */
   outbuf_printf(out,"\n                      Model information\n\n");
@@ -129,7 +130,7 @@ void mesh_run(const struct args *args, struct model_error *model1,
   outbuf_flush(out);
 
   /* Compute the distance from one model to the other */
-  dist_surf_surf(model1->mesh,model2->mesh,abs_sampling_step,
+  dist_surf_surf(model1->mesh,model2->mesh,abs_sampling_dens,
                  &fe,&stats,!args->no_gui,(args->quiet ? NULL : progress));
 
   /* Print results */
@@ -153,7 +154,7 @@ void mesh_run(const struct args *args, struct model_error *model1,
 
   if (args->do_symmetric) { /* Invert models and recompute distance */
     outbuf_printf(out,"       Distance from model 2 to model 1\n\n");
-    dist_surf_surf(model2->mesh,model1->mesh,abs_sampling_step,
+    dist_surf_surf(model2->mesh,model1->mesh,abs_sampling_dens,
                    &fe_rev,&stats_rev,0,(args->quiet ? NULL : progress));
     free_face_error(fe_rev);
     fe_rev = NULL;
@@ -190,32 +191,43 @@ void mesh_run(const struct args *args, struct model_error *model1,
   }
 
 
-  outbuf_printf(out,
-                "               \t       Absolute\t   %% BBox diag model 2\n");
-  outbuf_printf(out,"Sampling step: \t%15g\t%22g\n",abs_sampling_step,
-                abs_sampling_step/bbox2_diag*100);
-  outbuf_printf(out,"\n");
+  outbuf_printf(out,"               \t       Absolute\t   %% BBox diag\t     "
+                "Expected samples\n"
+                "               \t               \t       model 2\t   "
+                "model 1\tmodel 2\n");
   if (!args->do_symmetric) {
-    outbuf_printf(out,"        \t    Total\tAvg. / triangle\t"
-           "      Avg. / triangle\n"
-           "        \t         \t     of model 1\t"
-           "           of model 2\n");
-    outbuf_printf(out,"Samples:\t%9d\t%15.2f\t%21.2f\n",stats.m1_samples,
+    outbuf_printf(out,"Sampling step: \t%15g\t%14g\t%10d\t%7d\n",
+                  abs_sampling_step,abs_sampling_step/bbox2_diag*100,
+                  (int)(stats.m1_area*abs_sampling_dens),0);
+    outbuf_printf(out,"\n");
+    outbuf_printf(out,"        \t    Total\t    Avg. / triangle\t\t"
+                  "Tot (%%) area of\n"
+                  "        \t         \tmodel 1 \tmodel 2 \t"
+                  "sampled triang.\n");
+    outbuf_printf(out,"Samples:\t%9d\t%7.2g\t%15.2g\t%18.2f\n",stats.m1_samples,
                   ((double)stats.m1_samples)/model1->mesh->num_faces,
-                  ((double)stats.m1_samples)/model2->mesh->num_faces);
+                  ((double)stats.m1_samples)/model2->mesh->num_faces,
+                  stats.st_m1_area/stats.m1_area*100.0);
   } else {
-    outbuf_printf(out,"                 \t    Total\tAvg. / triangle\t"
-                  "      Avg. / triangle\n"
-                  "                 \t         \t     of model 1\t"
-                  "           of model 2\n");
-    outbuf_printf(out,"Samples (1 to 2):\t%9d\t%15.2f\t%21.2f\n",
+    outbuf_printf(out,"Sampling step: \t%15g\t%14g\t%10d\t%7d\n",
+                  abs_sampling_step,abs_sampling_step/bbox2_diag*100,
+                  (int)(stats.m1_area*abs_sampling_dens),
+                  (int)(stats.m2_area*abs_sampling_dens));
+    outbuf_printf(out,"\n");
+    outbuf_printf(out,"        \t    Total\t    Avg. / triangle\t\t"
+                  "Tot (%%) area of\n"
+                  "        \t         \tmodel 1 \tmodel 2 \t"
+                  "sampled triang.\n");
+    outbuf_printf(out,"Samples (1->2):\t%9d\t%7.2g\t%15.2g\t%18.2f\n",
                   stats.m1_samples,
                   ((double)stats.m1_samples)/model1->mesh->num_faces,
-                  ((double)stats.m1_samples)/model2->mesh->num_faces);
-    outbuf_printf(out,"Samples (2 to 1):\t%9d\t%15.2f\t%21.2f\n",
+                  ((double)stats.m1_samples)/model2->mesh->num_faces,
+                  stats.st_m1_area/stats.m1_area*100.0);
+    outbuf_printf(out,"Samples (2->1):\t%9d\t%7.2g\t%15.2g\t%18.2f\n",
                   stats_rev.m1_samples,
                   ((double)stats_rev.m1_samples)/model1->mesh->num_faces,
-                  ((double)stats_rev.m1_samples)/model2->mesh->num_faces);
+                  ((double)stats_rev.m1_samples)/model2->mesh->num_faces,
+                  stats_rev.st_m1_area/stats_rev.m1_area*100.0);
   }
   outbuf_printf(out,"\n");
   if (!args->do_symmetric) {

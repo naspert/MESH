@@ -1,4 +1,4 @@
-/* $Id: mesh.cpp,v 1.14 2002/02/06 14:56:42 dsanta Exp $ */
+/* $Id: mesh.cpp,v 1.15 2002/02/10 17:57:51 dsanta Exp $ */
 
 #include <time.h>
 #include <string.h>
@@ -46,13 +46,14 @@ static void print_usage(FILE *out)
   fprintf(out,"      \tthe bounding box diagonal of the second model. The\n");
   fprintf(out,"      \ttriangles of the first model are sampled, in order\n");
   fprintf(out,"      \tto calculate an approximation of the distance, so\n");
-  fprintf(out,"      \tthat the maximum distance between samples in any\n");
-  fprintf(out,"      \ttriangle is no more than s. Each triangle of the\n");
-  fprintf(out,"      \tfirst model gets at least one sample, whatever the\n");
-  fprintf(out,"      \tsampling step. The default is 0.5.\n\n");
-  fprintf(out,"\n");
+  fprintf(out,"      \tthat the sampling density (number of samples per\n");
+  fprintf(out,"      \tunit surface) is 1/(s^2) (i.e. one sample per square\n");
+  fprintf(out,"      \tof side length s). A probabilistic model is used so\n");
+  fprintf(out,"      \tthat the resulting number is as close as possible to\n");
+  fprintf(out,"      \tthe target. The default is 0.5\n\n");
   fprintf(out,"  -wlog\tDisplay textual results in a window instead of on\n");
-  fprintf(out,"standard output. Not compatible with the -t option.\n");
+  fprintf(out,"       \tstandard output. Not compatible with the -t option.\n");
+  fprintf(out,"\n");
 }
 
 /* Initializes *pargs to default values and parses the command line arguments
