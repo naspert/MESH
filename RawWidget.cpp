@@ -1,4 +1,4 @@
-/* $Id: RawWidget.cpp,v 1.11 2001/08/10 08:24:13 aspert Exp $ */
+/* $Id: RawWidget.cpp,v 1.12 2001/08/10 10:03:48 dsanta Exp $ */
 #include <RawWidget.h>
 
 // 
@@ -31,7 +31,7 @@ RawWidget::RawWidget(model *raw_model, int renderType,
 
   // Initialize the state
   move_state=0;
-
+  computed_normals = 0;
 
   // Compute the center of the bounding box of the model
   center.x = 0.5*(rawModelStruct->bBox[1].x + rawModelStruct->bBox[0].x);
@@ -77,7 +77,7 @@ void RawWidget::setLine() {
 
   glGetIntegerv(GL_POLYGON_MODE,&line_state);
   if (line_state==GL_FILL) {
-      glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     printf("FILL->LINE\n");
     glDraw();
   }
@@ -91,16 +91,7 @@ void RawWidget::setLine() {
 }
 
 void RawWidget::setLight() {
-
   GLboolean light_state;
-  GLfloat amb[] = {0.5, 0.5, 0.5, 1.0};
-  GLfloat dif[] = {0.5, 0.5, 0.5, 1.0};
-  GLfloat spec[] = {0.5, 0.5, 0.5, 0.5};
-  GLfloat ldir[] = {0.0, 0.0, 0.0, 0.0};
-  GLfloat amb_light[] = {0.6, 0.6, 0.6, 1.0};
-  GLfloat lpos[] = {0.0, 0.0, -distance, 0.0} ;
-  info_vertex *curv; /* used for normal computation */
-  int i;
 
   // Get state from renderer
   if (renderFlag == RW_LIGHT_TOGGLE) {
@@ -109,55 +100,18 @@ void RawWidget::setLight() {
     if (light_state==GL_FALSE){ // We are now switching to lighted mode
       if (rawModelStruct->normals !=NULL){// Are these ones computed ?
 	glEnable(GL_LIGHTING);
-	glLightfv(GL_LIGHT0, GL_AMBIENT, amb); 
-	glLightfv(GL_LIGHT0, GL_DIFFUSE, dif);
-	glLightfv(GL_LIGHT0, GL_SPECULAR, spec);
-	glLightfv(GL_LIGHT0, GL_POSITION, lpos);  
-	glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, ldir);  
-	glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
-	glLightModelfv(GL_LIGHT_MODEL_AMBIENT,amb_light);
-	glEnable(GL_LIGHT0);
-	glFrontFace(GL_CCW);
       } else {// Attempt to compute normals
-	if (rawModelStruct->area==NULL)
-	  rawModelStruct->area = 
-	    (double*)malloc(rawModelStruct->num_faces*sizeof(double));
-	curv = 
-	  (info_vertex*)malloc(rawModelStruct->num_vert*sizeof(info_vertex));
-	if (rawModelStruct->face_normals==NULL)
-	  rawModelStruct->face_normals = compute_face_normals(rawModelStruct, 
-							      curv);
-	if (rawModelStruct->face_normals==NULL) {// No way...
-	  fprintf(stderr, "Unable to compute normals\n");
-	  free(rawModelStruct->area);
-	  glDisable(GL_LIGHTING); // Just to be sure
-	}
-	else { // Compute a normal for each vertex
-	  compute_vertex_normal(rawModelStruct, curv, 
-				rawModelStruct->face_normals);
-	  
-	  for (i=0; i<rawModelStruct->num_vert; i++) 
-	    free(curv[i].list_face);
-	  free(curv);	
-	  free(rawModelStruct->face_normals);
-	  free(rawModelStruct->area);
-	  
-	  glEnable(GL_LIGHTING);
-	  glLightfv(GL_LIGHT0, GL_AMBIENT, amb); 
-	  glLightfv(GL_LIGHT0, GL_DIFFUSE, dif);
-	  glLightfv(GL_LIGHT0, GL_SPECULAR, spec);
-	  glLightfv(GL_LIGHT0, GL_POSITION, lpos);  
-	  glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, ldir);  
-	  glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
-	  glLightModelfv(GL_LIGHT_MODEL_AMBIENT,amb_light);
-	  glEnable(GL_LIGHT0);
-	  glFrontFace(GL_CCW);
-	}
+        if (compute_normals()) {
+          glEnable(GL_LIGHTING);
+          // rebuild display list to include normals
+          rebuild_list();
+        } else {
+          glDisable(GL_LIGHTING); // Just to be sure
+        }
       }
     }
     else if (light_state==GL_TRUE){// We are now switching to wireframe mode
       glDisable(GL_LIGHTING);
-      glFrontFace(GL_CCW);
     }
     glDraw();
   }
@@ -183,6 +137,11 @@ void RawWidget::resizeGL(int width ,int height) {
 
 // Initializations for the renderer
 void RawWidget::initializeGL() { 
+  static const GLfloat amb[] = {0.5, 0.5, 0.5, 1.0};
+  static const GLfloat dif[] = {0.5, 0.5, 0.5, 1.0};
+  static const GLfloat spec[] = {0.5, 0.5, 0.5, 0.5};
+  static const GLfloat amb_light[] = {0.6, 0.6, 0.6, 1.0};
+
   glDepthFunc(GL_LESS);
   glEnable(GL_DEPTH_TEST);
   glShadeModel(GL_SMOOTH);
@@ -190,6 +149,12 @@ void RawWidget::initializeGL() {
 
   glClearColor(0.0, 0.0, 0.0, 0.0);
 
+  glLightfv(GL_LIGHT0, GL_AMBIENT, amb); 
+  glLightfv(GL_LIGHT0, GL_DIFFUSE, dif);
+  glLightfv(GL_LIGHT0, GL_SPECULAR, spec);
+  glLightModelfv(GL_LIGHT_MODEL_AMBIENT,amb_light);
+  glEnable(GL_LIGHT0);
+  glFrontFace(GL_CCW);
 
   rebuild_list();
   glEndList();
@@ -207,8 +172,12 @@ void RawWidget::initializeGL() {
 // clears the buffers, computes correct transformation matrix
 // and calls the model's display list
 void RawWidget::display(double distance) {
+  GLfloat lpos[] = {-1.0, 1.0, 1.0, 0.0} ;
+
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glLoadIdentity();
+  /* Set the light position relative to eye point */
+  glLightfv(GL_LIGHT0, GL_POSITION, lpos);  
   glTranslated(0.0, 0.0, -distance); /* Translate the object along z axis */
   glMultMatrixd(mvmatrix); /* Perform rotation */
   glCallList(model_list);
@@ -313,6 +282,53 @@ void RawWidget::rebuild_list() {
 
 }
 
+// Computes the normals of the model. The retunr value is one for success or
+// zero for failure. In case of failure the current normals ae left untouched
+// (however the face normals are deleted)
+int RawWidget::compute_normals(void) {
+  info_vertex *curv;
+  int i;
+
+  computed_normals = 1;
+  rawModelStruct->area =
+    (double*)realloc(rawModelStruct->area,
+                     rawModelStruct->num_faces*sizeof(double));
+  curv = 
+    (info_vertex*)malloc(rawModelStruct->num_vert*sizeof(info_vertex));
+  if (rawModelStruct->face_normals==NULL)
+    rawModelStruct->face_normals = compute_face_normals(rawModelStruct, 
+                                                        curv);
+  if (rawModelStruct->face_normals == NULL) {
+    free(rawModelStruct->area);
+    return 0; // failure
+  }
+  else { // Compute a normal for each vertex
+	    
+#ifdef __RAW_WID_DEBUG
+    for (i=0; i<rawModelStruct->num_vert; i++) {
+      printf("[RawWidget]: nf=%d curv[%d].list_face[0] = %d\n", 
+             curv[i].num_faces, 
+             i, curv[i].list_face[0]);
+      printf("[RawWidget]: curv[%d].list_face = 0x%x\n", i, 
+             (unsigned int)curv[i].list_face);
+    }
+    printf("[RawWidget]: curv=0x%x\n", (unsigned int)curv);
+#endif
+    free(rawModelStruct->normals);
+    rawModelStruct->normals = NULL;
+    compute_vertex_normal(rawModelStruct, curv, 
+                          rawModelStruct->face_normals);
+    for (i=0; i<rawModelStruct->num_vert; i++) 
+      free(curv[i].list_face);
+    free(curv);	
+    free(rawModelStruct->face_normals);
+    free(rawModelStruct->area);
+    rawModelStruct->face_normals = NULL;
+    rawModelStruct->area = NULL;
+    return 1; // success
+  }
+}
+
 
 /* ************************************************************ */
 /* Here is the callback function when mouse buttons are pressed */
@@ -390,105 +406,18 @@ void RawWidget::mouseMoveEvent(QMouseEvent *event) {
 }
 
 void RawWidget::keyPressEvent(QKeyEvent *k) {
-  GLint line_state;
   GLboolean light_state;
-  GLfloat amb[] = {0.5, 0.5, 0.5, 1.0};
-  GLfloat dif[] = {0.5, 0.5, 0.5, 1.0};
-  GLfloat spec[] = {0.5, 0.5, 0.5, 0.5};
-  GLfloat ldir[] = {0.0, 0.0, 0.0, 0.0};
-  GLfloat amb_light[] = {0.6, 0.6, 0.6, 1.0};
-  GLfloat lpos[] = {0.0, 0.0, -distance, 0.0} ;
-  info_vertex *curv;
   int i;
   
   switch(k->key()) {
   case Key_F1:
-    glGetIntegerv(GL_POLYGON_MODE, &line_state);
-    if (line_state==GL_FILL) {
-      glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-      glDraw();
-    }
-    else if (line_state==GL_LINE) {
-      glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-      glDraw(); 
-    } else 
-      printf("Invalid value in GL_POLYGON_MODE : %d\n", line_state);
+    setLine();
     break;
   case Key_F2:
-    if (renderFlag == RW_LIGHT_TOGGLE) {
-      light_state = glIsEnabled(GL_LIGHTING);
-      if (light_state==GL_FALSE){
-	if (rawModelStruct->normals !=NULL){	
-	  glEnable(GL_LIGHTING);
-	  glLightfv(GL_LIGHT0, GL_AMBIENT, amb); 
-	  glLightfv(GL_LIGHT0, GL_DIFFUSE, dif);
-	  glLightfv(GL_LIGHT0, GL_SPECULAR, spec);
-	  glLightfv(GL_LIGHT0, GL_POSITION, lpos);  
-	  glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, ldir);  
-	  glLightModelfv(GL_LIGHT_MODEL_AMBIENT,amb_light);
-	  glEnable(GL_LIGHT0);
-	  glFrontFace(GL_CCW);
-	} else { // Attempt to compute normals
-	  if (rawModelStruct->area==NULL)
-	    rawModelStruct->area = 
-	      (double*)malloc(rawModelStruct->num_faces*sizeof(double));
-	  curv = 
-	    (info_vertex*)malloc(rawModelStruct->num_vert*sizeof(info_vertex));
-	  if (rawModelStruct->face_normals==NULL)
-	  rawModelStruct->face_normals = compute_face_normals(rawModelStruct, 
-							      curv);
-	  if (rawModelStruct->face_normals == NULL) {
-	    fprintf(stderr, "Unable to compute normals\n");
-	    free(rawModelStruct->area);
-	    glDisable(GL_LIGHTING); // Just to be sure
-	  }
-	  else { // Compute a normal for each vertex
-	    
-#ifdef __RAW_WID_DEBUG
-	    for (i=0; i<rawModelStruct->num_vert; i++) {
-	      printf("[RawWidget]: nf=%d curv[%d].list_face[0] = %d\n", 
-		     curv[i].num_faces, 
-		     i, curv[i].list_face[0]);
-	      printf("[RawWidget]: curv[%d].list_face = 0x%x\n", i, 
-		     (unsigned int)curv[i].list_face);
-	    }
-	    printf("[RawWidget]: curv=0x%x\n", (unsigned int)curv);
-#endif
-	    
-	    compute_vertex_normal(rawModelStruct, curv, 
-				  rawModelStruct->face_normals);
-	    for (i=0; i<rawModelStruct->num_vert; i++) 
-	      free(curv[i].list_face);
-	    free(curv);	
-	    free(rawModelStruct->face_normals);
-	    free(rawModelStruct->area);
-	    
-	    glEnable(GL_LIGHTING);
-	    glLightfv(GL_LIGHT0, GL_AMBIENT, amb); 
-	    glLightfv(GL_LIGHT0, GL_DIFFUSE, dif);
-	    glLightfv(GL_LIGHT0, GL_SPECULAR, spec);
-	    glLightfv(GL_LIGHT0, GL_POSITION, lpos);  
-	    glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, ldir);  
-	    glLightModelfv(GL_LIGHT_MODEL_AMBIENT,amb_light);
-	    glEnable(GL_LIGHT0);
-	    glFrontFace(GL_CCW);
-	  }
-	}
-      }
-      else if (light_state==GL_TRUE){
-	glDisable(GL_LIGHTING);
-	glFrontFace(GL_CCW);
-      }
-      glDraw();
-    }
+    setLight();
     break;
   case Key_F3:
-    if (move_state==0) {
-      move_state=1;
-      emit(transfervalue(distance,mvmatrix));
-    }
-    else
-      move_state=0;
+    switchSync(!move_state);
     break;
   case Key_F4:
     if (renderFlag == RW_LIGHT_TOGGLE) {
@@ -503,6 +432,19 @@ void RawWidget::keyPressEvent(QKeyEvent *k) {
 	glDraw();
       }
     }
+    break;
+  case Key_F5:
+    if (computed_normals) {
+      fprintf(stderr,"Normals have already been computed (or attempted to)\n");
+      break;
+    }
+    free(rawModelStruct->face_normals); // force calculation of new normals
+    rawModelStruct->face_normals = NULL;
+    if (compute_normals()) {
+      rebuild_list(); // rebuild display list to include new normals
+      glDraw();
+    }
+    break;
   default:
     break;
   }

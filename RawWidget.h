@@ -1,4 +1,4 @@
-/* $Id: RawWidget.h,v 1.10 2001/08/10 08:24:14 aspert Exp $ */
+/* $Id: RawWidget.h,v 1.11 2001/08/10 10:03:48 dsanta Exp $ */
 #ifndef RAWWIDGET_H
 #define RAWWIDGET_H
 
@@ -54,6 +54,7 @@ private:
 // functions 
   void display(double distance);
   void rebuild_list();
+  int compute_normals(void);
 
 
 // vars
@@ -72,7 +73,7 @@ private:
   int right_button_state;
 
   int move_state;
-
+  int computed_normals; // flag if normals have been computed or loaded
 
 
 };
