@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.15 2001/09/13 13:16:44 aspert Exp $
+# $Id: Makefile,v 1.16 2001/09/25 07:57:25 aspert Exp $
 
 #CC = /home/sun1/aspert/gcc/bin/gcc
 CC = gcc
@@ -13,14 +13,14 @@ HPGLDIR = /usr/GL/hp
 
 INCLFLAGS = -I../include
 GLINCLFLAGS = -I$(HPGLDIR)/include -I$(GLDIR)/include
-XTRA_CFLAGS = -g  -Wall -O2  -ansi 
+XTRA_CFLAGS = -g  -Wall -O2  -ansi
 
 BASE_CFLAGS = $(INCLFLAGS) $(XTRA_CFLAGS) 
 GL_CFLAGS = $(INCLFLAGS) $(GLINCLFLAGS) $(XTRA_CFLAGS) 
 
-BASE_LIBFLAGS = -L$(LIBDIR) -lm
+BASE_LIBFLAGS = -L$(LIBDIR) -lm 
 GL_LIBFLAGS = -L$(LIBDIR) -L$(HPGLDIR)/lib -L$(GLDIR)/lib -lglut -lGLU -lGL \
-	-lXmu -lXext -lX11 -lXi -l3d -limage -lm
+	-lXmu -lXext -lX11 -lXi -l3d -limage -lm 
 
 STATIC_GLFLAGS =   -L$(LIBDIR) -L$(GLDIR)/lib -lglut -lGLU -lGL -lXmu -lXext \
 	-lX11 -lXi -lm 
@@ -31,7 +31,8 @@ GL_LDFLAGS = -g $(GL_LIBFLAGS)
 
 default : rawview3
 
-all: dirs rawview3 torus butterfly subdiv_sph
+all: dirs rawview3 torus cone isoca butterfly loop subdiv_sph maps_lsq \
+	compare_curv
 
 clean : 
 	rm -f $(OBJDIR)/*.o $(BINDIR)/* $(LIBDIR)/*
@@ -48,7 +49,18 @@ torus : $(OBJDIR)/torus.o lib3d
 butterfly : $(OBJDIR)/butterfly.o lib3d
 	$(CC) -o $(BINDIR)/$@ $< $(BASE_LDFLAGS) -l3d
 
+
+isoca : $(OBJDIR)/isoca.o lib3d
+	$(CC) -o $(BINDIR)/$@ $< $(BASE_LDFLAGS) -l3d
+
+
+maps_lsq : $(OBJDIR)/maps_lsq.o lib3d
+	$(CC) -o $(BINDIR)/$@ $< $(BASE_LDFLAGS) -l3d -lgsl -lgslcblas
+
 loop : $(OBJDIR)/loop.o lib3d
+	$(CC) -o $(BINDIR)/$@ $< $(BASE_LDFLAGS) -l3d
+
+compare_curv : $(OBJDIR)/compare_curv.o lib3d
 	$(CC) -o $(BINDIR)/$@ $< $(BASE_LDFLAGS) -l3d
 
 subdiv_sph : $(OBJDIR)/subdiv_sph.o lib3d
