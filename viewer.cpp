@@ -1,4 +1,4 @@
-/* $Id: viewer.cpp,v 1.28 2001/08/08 13:32:40 dsanta Exp $ */
+/* $Id: viewer.cpp,v 1.29 2001/08/09 12:43:57 aspert Exp $ */
 
 #include <time.h>
 #include <string.h>
@@ -22,7 +22,7 @@ int main( int argc, char **argv )
   clock_t start_time;
   char *in_filename1, *in_filename2;
   model *raw_model1, *raw_model2;
-  double sampling_step,superdmax=0,superdmin=DBL_MAX;
+  double sampling_step;
   double dmoy,dmoymax=0,dmoymin=DBL_MAX;
   struct face_list *vfl;
   int i,j,k;
@@ -32,6 +32,7 @@ int main( int argc, char **argv )
   struct face_error *fe = NULL;
   struct dist_surf_surf_stats stats;
   double bbox1_diag,bbox2_diag;
+  double *tmp_error;
 
   /* affichage de la fenetre graphique */
   QApplication::setColorSpec( QApplication::CustomColor );
@@ -110,36 +111,37 @@ int main( int argc, char **argv )
    raw_model2->error=(int *)calloc(raw_model2->num_vert,sizeof(int));
 
 
-   for(i=0;i<raw_model1->num_vert;i++){
-     dmoy=0;
-     surfacemoy=0;
-     for(j=0;j<vfl[i].n_faces;j++){
-       dmoy+=fe[vfl[i].face[j]].mean_error;
-       surfacemoy+=fe[vfl[i].face[j]].face_area;
+
+   tmp_error = (double*)malloc(raw_model1->num_vert*sizeof(double));
+
+   for(i=0; i<raw_model1->num_vert; i++){
+     dmoy = 0;
+     surfacemoy = 0;
+     for(j=0; j<vfl[i].n_faces; j++) {
+       dmoy += fe[vfl[i].face[j]].mean_error*fe[vfl[i].face[j]].face_area;
+       surfacemoy += fe[vfl[i].face[j]].face_area;
      }
-     dmoy/=surfacemoy/*nbfaces[i]*/;
+     dmoy /= surfacemoy;
+     tmp_error[i] = dmoy;
+
      if(dmoy>dmoymax)
-       dmoymax=dmoy;
+       dmoymax = dmoy;
+
      if(dmoy<dmoymin)
-       dmoymin=dmoy;
+       dmoymin = dmoy;
    }
    
    for(i=0;i<raw_model1->num_vert;i++){
-     surfacemoy=0;
-     dmoy=0;
-     for(j=0;j<vfl[i].n_faces;j++){
-       dmoy+=fe[vfl[i].face[j]].mean_error;
-       surfacemoy+=fe[vfl[i].face[j]].face_area;
-     }
-     dmoy/=surfacemoy/*nbfaces[i]*/;
-     raw_model1->error[i]=(int)floor(7*(dmoy-dmoymin)/(dmoymax-dmoymin));
+     raw_model1->error[i] = 
+       (int)floor(7*(tmp_error[i] - dmoymin)/(dmoymax - dmoymin));
      if(raw_model1->error[i]<0)
        raw_model1->error[i]=0;
    }
    
+   free(tmp_error);
+
    
-   
-   ScreenWidget c(raw_model1,raw_model2,superdmin,superdmax);
+   ScreenWidget c(raw_model1, raw_model2, dmoymin, dmoymax);
    a.setMainWidget( &c );
    c.show(); 
    a.exec();

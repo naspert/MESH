@@ -1,4 +1,4 @@
-/* $Id: ColorMapWidget.cpp,v 1.5 2001/08/07 08:58:48 aspert Exp $ */
+/* $Id: ColorMapWidget.cpp,v 1.6 2001/08/09 12:43:55 aspert Exp $ */
 #include <ColorMapWidget.h>
 
 
@@ -7,9 +7,9 @@
 ColorMapWidget::ColorMapWidget(double dmoymin, double dmoymax, 
 			       QWidget *parent, 
 			       const char *name):QWidget(parent,name) {
-  setMinimumSize( 70, 512 );
-  setMaximumSize( 70, 512 );
-  setBackgroundColor( black );
+  setMinimumSize(80, 512);
+  setMaximumSize(80, 512);
+  setBackgroundColor(Qt::black);
 
   colormap = HSVtoRGB();
   dmax = dmoymax;
@@ -37,7 +37,7 @@ void ColorMapWidget::paintEvent(QPaintEvent *) {
     p.drawRect(10, i*64, 20, 64);
     p.setPen(Qt::white);
     p.setFont(QFont("courier", 8));
-    res = dmax - (dmax - dmin)*i/7;
+    res = dmax - i*(dmax - dmin)/7.0;
     tmpDisplayedText.sprintf( "%5f",res);
     p.drawText(35, (i+1)*64, tmpDisplayedText);
   }

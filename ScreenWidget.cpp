@@ -1,4 +1,4 @@
-/* $Id: ScreenWidget.cpp,v 1.10 2001/08/09 10:02:56 aspert Exp $ */
+/* $Id: ScreenWidget.cpp,v 1.11 2001/08/09 12:43:56 aspert Exp $ */
 #include <ScreenWidget.h>
 
 ScreenWidget::ScreenWidget(model *raw_model1, model *raw_model2, 
@@ -83,10 +83,11 @@ ScreenWidget::ScreenWidget(model *raw_model1, model *raw_model2,
 
 void ScreenWidget::aboutKeys()
 {
-    QMessageBox::about( this, "Key utilities",
-			"Key F1: passage en mode LINE/FILL\n"
-			"Key F2: passage en mode LIGHT/NO LIGHT\n"
-			"Key F3: passage en mode SYNCHRO/DESYNCHRO\n");
+    QMessageBox::about( this, "Key bindings",
+			"F1: Toggle Wireframe/Fill\n"
+			"F2: Toggle Light/No light\n"
+			"F3: Toggle viewpoint synchronization\n"
+			"F4: Invert normals (if applicable)" );
 }
 
 void ScreenWidget::aboutBugs()
