@@ -1,14 +1,58 @@
-/* $Id: mesh_run.c,v 1.5 2002/01/15 17:02:06 aspert Exp $ */
+/* $Id: mesh_run.c,v 1.6 2002/02/04 16:11:05 dsanta Exp $ */
 
 #include <time.h>
 #include <string.h>
 #include <xalloc.h>
 #include <model_analysis.h>
 #include <compute_error.h>
-#include <3dmodel_io.h>
+#include <model_in.h>
 #include <geomutils.h>
 
 #include <mesh_run.h>
+
+/* Reads a model from file 'fname' and returns the model read. If an error
+ * occurs a message is printed and the program exists. */
+static struct model *read_model_file(const char *fname)
+{
+  int rcode;
+  struct model *m;
+  const char *errstr;
+  
+  rcode = read_fmodel(&m,fname,MESH_FF_AUTO,1);
+  if (rcode <= 0) {
+    switch (rcode) {
+    case 0:
+      errstr = "no models in file";
+      break;
+    case MESH_NO_MEM:
+      errstr = "no memory";
+      break;
+    case MESH_CORRUPTED:
+      errstr = "corrupted file or I/O error";
+      break;
+    case MESH_MODEL_ERR:
+      errstr = "model error";
+      break;
+    case MESH_NOT_TRIAG:
+      errstr = "not a triangular mesh model";
+      break;
+    case MESH_BAD_FF:
+      errstr = "unrecognized file format";
+      break;
+    case MESH_BAD_FNAME:
+      errstr = strerror(errno);
+      break;
+    default:
+      errstr = "unknown error";
+    }
+    fprintf(stderr,"ERROR: %s: %s\n",fname,errstr);
+    exit(1);
+  } else if (m->num_faces == 0) {
+    fprintf(stderr,"ERROR: %s: empty model (no faces)\n",fname);
+    exit(1);
+  }
+  return m;
+}
 
 /* see mesh_run.h */
 void mesh_run(const struct args *args, struct model_error *model1,
@@ -30,8 +74,8 @@ void mesh_run(const struct args *args, struct model_error *model1,
   memset(model2,0,sizeof(*model2));
   m1info = (struct model_info*) xa_malloc(sizeof(*m1info));
   m2info = (struct model_info*) xa_malloc(sizeof(*m2info));
-  model1->mesh = read_raw_model(args->m1_fname);
-  model2->mesh = read_raw_model(args->m2_fname);
+  model1->mesh = read_model_file(args->m1_fname);
+  model2->mesh = read_model_file(args->m2_fname);
 
   /* Analyze models (we don't need normals for model 1, so we don't request
    * for it to be oriented). */

@@ -1,4 +1,4 @@
-/* $Id: mesh.cpp,v 1.12 2002/01/15 17:02:06 aspert Exp $ */
+/* $Id: mesh.cpp,v 1.13 2002/02/04 16:11:05 dsanta Exp $ */
 
 #include <time.h>
 #include <string.h>
@@ -20,7 +20,10 @@ static void print_usage(FILE *out)
   fprintf(out,"\n");
   fprintf(out,"The program measures the distance from the 3D model in\n");
   fprintf(out,"file1 to the one in file2. The models must be given as\n");
-  fprintf(out,"triangular meshes in RAW format, optionally with normals.\n");
+  fprintf(out,"triangular meshes in RAW or VRML2 formats, optionally with\n");
+  fprintf(out,"normals. The VRML parser reads IndexedFaceSets nodes only,\n");
+  fprintf(out,"ignoring all transformations, and does not support DEF/USE\n");
+  fprintf(out,"tags. The file type is autodetected.\n");
   fprintf(out,"After the distance is calculated the result is displayed\n");
   fprintf(out,"as overall measures in text form and as a detailed distance\n");
   fprintf(out,"map in graphical form.\n");

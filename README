@@ -31,16 +31,19 @@ in 'C:\Program Files\Qt', but for instance in 'C:\Qt'). We provide the
 Micro$oft Visual C++ 6 dsp and dsw files needed to build the program.
 
 * Input data format 
-The input file format for the triangular meshes is a raw ASCII format, which
-describes the vertices, the vertex connectivity and optionally the vertex
-normals. The first line should contain two or three decimal numbers with the
-number of vertices, the number of triangles and the number of vertex normals
-(if they are present). If the vertex normals are present, their number must
-equal the number of vertices. Follow the X, Y, Z affine coordinates for each
-vertex and then the indices of the three vertices of each triangular face. The
-vertex indices are zero based. If the vertex normals are given follows the X,
-Y, Z affine coordinates of the vertex normal vectors, in the same order as
-the vertices. The normal vectors should all be normalized.
+The input file format for the triangular meshes is a raw ASCII format or
+VRML2. The raw ASCII format describes the vertices, the vertex connectivity
+and optionally the vertex normals. The first line should contain two or three
+decimal numbers with the number of vertices, the number of triangles and the
+number of vertex normals (if they are present). If the vertex normals are
+present, their number must equal the number of vertices. Follow the X, Y, Z
+affine coordinates for each vertex and then the indices of the three vertices
+of each triangular face. The vertex indices are zero based. If the vertex
+normals are given follows the X, Y, Z affine coordinates of the vertex normal
+vectors, in the same order as the vertices. The normal vectors should all be
+normalized. The VRML2 parser reads IndexedFaceSet nodes, ignoring all
+transformations, and does not support DEF/USE tags. Only triangular meshes are
+accepted.
 
 Please report any bugs to:
 
