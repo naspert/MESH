@@ -1,4 +1,4 @@
-/* $Id: RawWidget.cpp,v 1.28 2001/10/01 16:49:58 dsanta Exp $ */
+/* $Id: RawWidget.cpp,v 1.29 2001/10/01 17:33:44 dsanta Exp $ */
 
 #include <RawWidget.h>
 #include <qmessagebox.h>
@@ -97,15 +97,16 @@ void RawWidget::setLine(bool state) {
   glGetIntegerv(GL_POLYGON_MODE,line_state);
   if (line_state[0]==GL_FILL && line_state[1]==GL_FILL && state==TRUE) {
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    updateGL();
   } else if (line_state[0]==GL_LINE && line_state[1]==GL_LINE && 
 	     state==FALSE) {
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-    updateGL();
   } else {
     printf("Invalid state value found for GL_POLYGON_MODE: %d %d\n",
            line_state[0],line_state[1]);
+    return;
   }
+  check_gl_errors("setLine(bool)");
+  updateGL();
 }
 
 void RawWidget::setLight() {
@@ -126,6 +127,7 @@ void RawWidget::setLight() {
     else if (light_state==GL_TRUE){// We are now switching to wireframe mode
       glDisable(GL_LIGHTING);
     }
+    check_gl_errors("setLight()");
     updateGL();
   }
 }
@@ -162,6 +164,7 @@ void RawWidget::switchDisplayedInfo(int state) {
 // display callback
 void RawWidget::paintGL() {
   display(distance);
+  check_gl_errors("paintGL()");
 }
 
 // resize callback
@@ -173,7 +176,7 @@ void RawWidget::resizeGL(int width ,int height) {
 		 10.0*distance);
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
-  
+  check_gl_errors("resizeGL()");
 }
 
 // Initializations for the renderer
@@ -199,7 +202,6 @@ void RawWidget::initializeGL() {
   glFrontFace(GL_CCW);
 
   rebuild_list();
-  glEndList();
   
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
@@ -220,6 +222,7 @@ void RawWidget::initializeGL() {
       fprintf(stderr,"ERROR: normals where not computed!\n");
     }
   }
+  check_gl_errors("initializeGL()");
 }
 
 
@@ -257,6 +260,9 @@ void RawWidget::rebuild_list() {
   int i,cidx;
   float drange;
   face_t *cur_face;
+  GLenum glerr;
+
+  check_gl_errors("rebuild_list() start");
 
   // Get a display list, if we don't have one yet.
   if (model_list == 0) {
@@ -496,9 +502,22 @@ void RawWidget::rebuild_list() {
     break;
     default:
       fprintf(stderr, "Invalid render flag found !!\n");
-      break;
+      return;
     }
   }
+  // Check for errors in display list generation
+  while ((glerr = glGetError()) != GL_NO_ERROR) {
+    if (glerr == GL_OUT_OF_MEMORY) {
+      QMessageBox::critical(this,"GL error",
+                            "Out of memory generating display list.\n"
+                            "Cannot display");
+      glDeleteLists(model_list,1);
+      model_list = 0;
+    } else {
+      fprintf(stderr,"ERROR: OpenGL error while generating display list:\n%s",
+              gluErrorString(glerr));
+    }
+  };
 }
 
 /* ************************************************************ */
@@ -567,6 +586,7 @@ void RawWidget::mouseMoveEvent(QMouseEvent *event) {
     glPopMatrix(); /* Reload previous transform context */
     updateGL();
   }
+  check_gl_errors("keyPressEvent(QMouseEvent)");
 
   if(move_state==1)
     emit(transfervalue(distance, mvmatrix));
@@ -619,4 +639,11 @@ void RawWidget::keyPressEvent(QKeyEvent *k) {
   }
 }
 
-
+// Check the OpenGl error state
+void RawWidget::check_gl_errors(const char* where) {
+  GLenum glerr;
+  while ((glerr = glGetError()) != GL_NO_ERROR) {
+    fprintf(stderr,"ERROR: at %s start: OpenGL: %s\n",where,
+            gluErrorString(glerr));
+  };
+}
