@@ -1,4 +1,4 @@
-/* $Id: normals.c,v 1.39 2003/03/12 14:54:22 aspert Exp $ */
+/* $Id: normals.c,v 1.40 2003/06/12 16:20:36 aspert Exp $ */
 #include <3dmodel.h>
 #include <geomutils.h>
 #include <normals.h>
@@ -500,6 +500,7 @@ static void build_normals(const struct model *raw_model,
 }
 
 /* Compute consistent normals for each face of the model */
+/* "build_star_global" has to be called *before* entering this */
 vertex_t* compute_face_normals(const struct model* raw_model, 
 			       struct ring_info *ring) {
   
@@ -510,7 +511,6 @@ vertex_t* compute_face_normals(const struct model* raw_model,
   clock_t start;
 #endif
 
-  build_star_global(raw_model, ring);
 
   /* Compute spanning tree of the dual graph */
 

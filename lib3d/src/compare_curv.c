@@ -1,4 +1,4 @@
-/* $Id: compare_curv.c,v 1.13 2003/03/04 16:29:05 aspert Exp $ */
+/* $Id: compare_curv.c,v 1.14 2003/06/12 16:20:35 aspert Exp $ */
 #include <3dutils.h>
 #include <ring.h>
 #include <curvature.h>
@@ -38,13 +38,14 @@ int main(int argc, char **argv) {
     malloc(raw_model1->num_vert*sizeof(struct info_vertex));
   ring1 = (struct ring_info*)
     malloc(raw_model1->num_vert*sizeof(struct ring_info));
-  
+  build_star_global(raw_model1, ring1);
   raw_model1->face_normals = compute_face_normals(raw_model1, ring1);
 
   info2 = (struct info_vertex*)
     malloc(raw_model2->num_vert*sizeof(struct info_vertex));
   ring2 = (struct ring_info*)
     malloc(raw_model2->num_vert*sizeof(struct ring_info));
+  build_star_global(raw_model2, ring2);
   raw_model2->face_normals = compute_face_normals(raw_model2, ring2);
 
   printf("Computing vertex normals...\n");

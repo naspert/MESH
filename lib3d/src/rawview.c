@@ -1,4 +1,4 @@
-/* $Id: rawview.c,v 1.41 2003/04/28 06:20:08 aspert Exp $ */
+/* $Id: rawview.c,v 1.42 2003/06/12 16:20:36 aspert Exp $ */
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -262,6 +262,13 @@ static void norm_key_pressed(unsigned char key, int x, int y)
     verbose_printf(gl_ctx.verbose, "Dumping viewing info\n");
     coord_grab(&gl_ctx);
     break;
+  case 'f':
+  case 'F': /* laplacian smoothing */
+    verbose_printf(gl_ctx.verbose, "Laplacian smoothing\n");
+    do_laplacian_smoothing(&gl_ctx);
+    rebuild_list(&gl_ctx, &dl_idx);
+    glutPostRedisplay();
+    break;
   case 'g':
   case 'G': /* Enable Gaussian curvature display */
     if (gl_ctx.disp_curv != 1) {
@@ -362,6 +369,7 @@ static void norm_key_pressed(unsigned char key, int x, int y)
     if (gl_ctx.info != NULL)
       free(gl_ctx.info);
 
+    free(gl_ctx.in_filename);
     __free_raw_model(gl_ctx.raw_model);
     exit(0);
     break;
@@ -624,7 +632,7 @@ int main(int argc, char **argv)
 
   int i, rcode=0;
   char *title=NULL;
-  const char s_title[]="Raw Mesh Viewer $Revision: 1.41 $ - ";
+  const char s_title[]="Raw Mesh Viewer $Revision: 1.42 $ - ";
   vertex_t center;
   struct model* raw_model;
 
@@ -708,8 +716,6 @@ int main(int argc, char **argv)
   
   /* Init display lists indices */
   memset(&dl_idx, 0, sizeof(struct display_lists_indices));
-
-  /* Init subdiv function structure */
 
   /* Init the rendering window */
   glutInit(&argc, argv);

@@ -1,4 +1,4 @@
-/* $Id: rawview_utils.c,v 1.8 2003/04/08 13:54:29 aspert Exp $ */
+/* $Id: rawview_utils.c,v 1.9 2003/06/12 16:20:36 aspert Exp $ */
 #include <3dutils.h>
 #include <rawview.h>
 #include <rawview_misc.h>
@@ -141,7 +141,7 @@ int do_normals(struct model* raw_model, int verbose)
 
   tmp = (struct ring_info*)
     malloc(raw_model->num_vert*sizeof(struct ring_info));
-  
+  build_star_global(raw_model, tmp);
   raw_model->face_normals = compute_face_normals(raw_model, tmp);
   
   if (raw_model->face_normals != NULL){
@@ -249,5 +249,37 @@ int do_curvature(struct gl_render_context *gl_ctx)
       gl_ctx->min_km = gl_ctx->info[i].mean_curv;
   }
 
+  return 0;
+}
+
+int do_laplacian_smoothing(struct gl_render_context *gl_ctx) 
+{
+  struct ring_info *rings;
+  struct model *raw_model = gl_ctx->raw_model;
+  vertex_t *new_vert, tmp;
+  int i, j;
+
+  rings = 
+    (struct ring_info*)malloc(raw_model->num_vert*sizeof(struct ring_info));
+  new_vert =  (vertex_t*)malloc(raw_model->num_vert*sizeof(vertex_t));
+
+  build_star_global(raw_model, rings);
+  for (i=0; i<raw_model->num_vert; i++) {
+    tmp.x = tmp.y = tmp.z = 0.0;
+    for (j=0; j<rings[i].size; j++) 
+      __add_v(raw_model->vertices[rings[i].ord_vert[j]], tmp, tmp);
+    
+    __prod_v(1.0/(float)rings[i].size, tmp, new_vert[i]);
+
+  }
+  memcpy(raw_model->vertices, new_vert, 
+         raw_model->num_vert*sizeof(vertex_t));
+  
+  for (j=0; j<raw_model->num_vert; j++) {
+    free(rings[j].ord_vert);
+    free(rings[j].ord_face);
+  }
+  free(new_vert);
+  free(rings);
   return 0;
 }

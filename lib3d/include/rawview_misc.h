@@ -1,4 +1,4 @@
-/* $Id: rawview_misc.h,v 1.8 2003/02/18 13:49:32 aspert Exp $ */
+/* $Id: rawview_misc.h,v 1.9 2003/06/12 16:20:35 aspert Exp $ */
 
 #include <3dutils.h>
 #include <rawview.h>
@@ -30,6 +30,7 @@ extern "C" {
                        struct display_lists_indices*);
   void destroy_tree(struct face_tree**, int);
   int do_curvature(struct gl_render_context*);
+  int do_laplacian_smoothing(struct gl_render_context*);
   
 #ifdef __cplusplus
 }

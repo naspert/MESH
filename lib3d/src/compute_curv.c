@@ -1,4 +1,4 @@
-/* $Id: compute_curv.c,v 1.1 2003/05/09 11:45:37 aspert Exp $ */
+/* $Id: compute_curv.c,v 1.2 2003/06/12 16:20:36 aspert Exp $ */
 #include <3dutils.h>
 #include <model_in.h>
 #include <ring.h>
@@ -36,7 +36,7 @@ int main(int argc, char **argv) {
     malloc(raw_model->num_vert*sizeof(struct info_vertex));
   ring = (struct ring_info*)
     malloc(raw_model->num_vert*sizeof(struct ring_info));
-  
+  build_star_global(raw_model, ring);
   raw_model->face_normals = compute_face_normals(raw_model, ring);
 
   printf("Computing vertex normals...\n");

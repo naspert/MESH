@@ -1,4 +1,4 @@
-/* $Id: subdiv_main.c,v 1.12 2003/04/28 06:20:08 aspert Exp $ */
+/* $Id: subdiv_main.c,v 1.13 2003/06/12 16:20:37 aspert Exp $ */
 #include <3dutils.h>
 #include <subdiv.h>
 #include <subdiv_methods.h>
@@ -56,7 +56,7 @@ int main(int argc, char **argv) {
   if (sub_method == -1) {
     fprintf(stderr, "Invalid subdivision method\n");
     fprintf(stderr, 
-	    "Usage: subdiv [-sph, -but, -loop, -ksqrt3][-bin]"
+	    "Usage: subdiv [-sph_or, -sph_alt, -but, -loop, -ksqrt3][-bin]"
             " infile outfile n_lev\n");
     exit(1);
   }
