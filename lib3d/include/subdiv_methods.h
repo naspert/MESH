@@ -1,4 +1,4 @@
-/* $Id: subdiv_methods.h,v 1.5 2002/02/13 12:02:40 aspert Exp $ */
+/* $Id: subdiv_methods.h,v 1.6 2002/02/14 07:44:30 aspert Exp $ */
 
 
 #ifndef __SUBDIV_METHODS_PROTO
@@ -24,8 +24,10 @@
 # define _5_12   0.4166666666666 /* 5.0/12.0 */
 
 /* Precomputed regular stencil */
-const static float r_sten[6] = {0.25 - __2W,  0.125 + __2W, -0.125 - __2W, 
-                                __2W, -0.125 - __2W, 0.125 + __2W};
+const static float reg_sten[6] = {0.25 - __2W,  0.125 + __2W, -0.125 - __2W, 
+                                  __2W, -0.125 - __2W, 0.125 + __2W};
+const static float sten_3[3] = {_5_12, _M1_12, _M1_12};
+const static float sten_4[4] = { 0.375, 0.0, -0.125, 0.0};
 
 # ifdef __cplusplus
 extern "C" {

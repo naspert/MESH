@@ -1,4 +1,4 @@
-/* $Id: subdiv_methods.c,v 1.8 2002/02/13 12:02:41 aspert Exp $ */
+/* $Id: subdiv_methods.c,v 1.9 2002/02/14 07:44:30 aspert Exp $ */
 #include <3dmodel.h>
 #include <geomutils.h>
 #include <subdiv_methods.h>
@@ -148,15 +148,10 @@ void make_sub_mask(float *mask, int n) {
 
   switch(n) {
   case 3:
-    mask[0] = _5_12;
-    mask[1] = _M1_12;
-    mask[2] = mask[1];
+    memcpy(mask, sten_3, 3*sizeof(float));
     break;
   case 4:
-    mask[0] = 0.375;
-    mask[1] = 0.0;
-    mask[2] = -0.125;
-    mask[3] = 0.0;
+    memcpy(mask, sten_4, 4*sizeof(float));
     break;
   default:
     for (j=0; j<n; j++) 
@@ -166,7 +161,8 @@ void make_sub_mask(float *mask, int n) {
   }
 }
 
-void compute_midpoint_butterfly(struct ring_info *rings, int center,  int v1, 
+void compute_midpoint_butterfly(struct ring_info *rings, 
+                                int center, int v1, 
 				struct model *raw_model, vertex_t *vout) {
   float *s, *t;
   int j;
@@ -268,7 +264,8 @@ void compute_midpoint_butterfly(struct ring_info *rings, int center,  int v1,
 
     /* Apply stencil to 1st vertex_t */
     for (j=0; j<6; j++) 
-      add_prod_v(r_sten[j], &(raw_model->vertices[ring.ord_vert[(v1+j)%6]]), 
+      add_prod_v(reg_sten[j], 
+                 &(raw_model->vertices[ring.ord_vert[(v1+j)%6]]), 
                  &p, &p);
 
     add_prod_v(__QS, &(raw_model->vertices[center]), &p, &p);
@@ -276,7 +273,8 @@ void compute_midpoint_butterfly(struct ring_info *rings, int center,  int v1,
 
     /* Apply stencil to end vertex_t */
     for (j=0; j<6; j++) 
-      add_prod_v(r_sten[j], &(raw_model->vertices[ring_op.ord_vert[(v2+j)%6]]),
+      add_prod_v(reg_sten[j], 
+                 &(raw_model->vertices[ring_op.ord_vert[(v2+j)%6]]),
                  &p, &p);
 
     add_prod_v(__QS, &(raw_model->vertices[center2]), &p, &p);
@@ -312,7 +310,8 @@ void compute_midpoint_butterfly(struct ring_info *rings, int center,  int v1,
     p.z = 0.0;
 
     for (j=0; j<m; j++) 
-      add_prod_v(t[j], &(raw_model->vertices[ring_op.ord_vert[(v2+j)%m]]), &p,
+      add_prod_v(t[j], 
+                 &(raw_model->vertices[ring_op.ord_vert[(v2+j)%m]]), &p,
 		 &p);
 
 
@@ -398,7 +397,8 @@ void compute_midpoint_butterfly_crease(struct ring_info *rings, int center,
 #ifdef __BUTTERFLY_CREASE_DEBUG
     fprintf(stderr, "Regular edge %d %d\n", center, center2);
 #endif
-    add_v(&(raw_model->vertices[center]), &(raw_model->vertices[center2]), &p);
+    add_v(&(raw_model->vertices[center]), 
+          &(raw_model->vertices[center2]), &p);
     prod_v(0.5625, &p, &p);
 
 #ifdef __BUTTERFLY_CREASE_DEBUG
