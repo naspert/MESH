@@ -1,4 +1,4 @@
-/* $Id: model_analysis.c,v 1.17 2002/03/27 08:52:43 dsanta Exp $ */
+/* $Id: model_analysis.c,v 1.18 2002/03/27 10:03:18 dsanta Exp $ */
 
 
 /*
@@ -416,10 +416,12 @@ static void free_adj_face_list(struct adj_faces *aflist, int n_faces)
 
 /* Builds and returns the list of adjacent faces for each face in the
  * model. n_faces is the number of faces, mfaces the array of faces of the
- * model, and flist the list of faces incident on each vertex. Degenerate
- * faces are skipped. The returned array is of length n_faces. */
+ * model, and flist the list of faces incident on each vertex. manifold_vtcs
+ * flags, for each vertex, if it is manifold or not. Degenerate faces are
+ * skipped. The returned array is of length n_faces. */
 static struct adj_faces * find_adjacent_faces(const face_t *mfaces, int n_faces,
-                                              const struct face_list *flist)
+                                              const struct face_list *flist,
+                                              const char *manifold_vtcs)
 {
   struct adj_faces *aflist;
   int k,i;
@@ -445,6 +447,7 @@ static struct adj_faces * find_adjacent_faces(const face_t *mfaces, int n_faces,
       if (mfaces[adj_fidx].f0 == f1 || mfaces[adj_fidx].f1 == f1 ||
           mfaces[adj_fidx].f2 == f1) { /* adjacent on f0-f1 */
         add_adj_face(&aflist[k],0,adj_fidx);
+        if (manifold_vtcs[f0]) break; /* can have only one adjacent face */
       }
     }
     /* Find faces adjacent on the f1-f2 edge */
@@ -455,6 +458,7 @@ static struct adj_faces * find_adjacent_faces(const face_t *mfaces, int n_faces,
       if (mfaces[adj_fidx].f0 == f2 || mfaces[adj_fidx].f1 == f2 ||
           mfaces[adj_fidx].f2 == f2) { /* adjacent on f1-f2 */
         add_adj_face(&aflist[k],1,adj_fidx);
+        if (manifold_vtcs[f1]) break; /* can have only one adjacent face */
       }
     }
     /* Find faces adjacent on the f2-f0 edge */
@@ -465,6 +469,7 @@ static struct adj_faces * find_adjacent_faces(const face_t *mfaces, int n_faces,
       if (mfaces[adj_fidx].f0 == f0 || mfaces[adj_fidx].f1 == f0 ||
           mfaces[adj_fidx].f2 == f0) { /* adjacent on f2-f0 */
         add_adj_face(&aflist[k],2,adj_fidx);
+        if (manifold_vtcs[f2]) break; /* can have only one adjacent face */
       }
     }
   }
@@ -544,13 +549,15 @@ static signed char get_orientation(const face_t *new_face,
 }
 
 /* Evaluates the orientation of the model given by the faces in mfaces, the
- * number of faces n_faces and the list of incident faces for each vertext
- * flist. The results is returned in the following fields of minfo: oriented
- * and orientable. The orientation of each face is returned as a malloc'ed
- * array of length n_faces. A negative entry means that the orientation of the
+ * number of faces n_faces and the list of incident faces for each vertex
+ * flist. manifold_vtcs flags, for each vertex, if it is manifold or not. The
+ * results is returned in the following fields of minfo: oriented and
+ * orientable. The orientation of each face is returned as a malloc'ed array
+ * of length n_faces. A negative entry means that the orientation of the
  * corresponding face needs to be reversed. */
 static signed char * model_orientation(const face_t *mfaces, int n_faces,
                                        const struct face_list *flist,
+                                       const char *manifold_vtcs,
                                        struct model_info *minfo)
 {
   struct adj_faces *aflist;
@@ -567,7 +574,7 @@ static signed char * model_orientation(const face_t *mfaces, int n_faces,
   } cur;
 
   /* Initialize */
-  aflist = find_adjacent_faces(mfaces,n_faces,flist);
+  aflist = find_adjacent_faces(mfaces,n_faces,flist,manifold_vtcs);
   face_orientation = xa_calloc(n_faces,sizeof(*face_orientation));
   stack_init(&stack,sizeof(cur));
   minfo->orientable = 1;
@@ -627,15 +634,17 @@ static signed char * model_orientation(const face_t *mfaces, int n_faces,
 /* Evaluates the topology of the model given by the faces in mfaces, the list
  * of incident faces for each vertex flist and the number of vertices
  * n_vtcs. The result is returned in the following fields of minfo: manifold,
- * closed and n_disjoint_parts. */
-static void model_topology(int n_vtcs, const face_t *mfaces,
-                           const struct face_list *flist,
-                           struct model_info *minfo)
+ * closed and n_disjoint_parts. It returns a malloc'ed array indicating which
+ * vertices are manifold. */
+static char * model_topology(int n_vtcs, const face_t *mfaces,
+                             const struct face_list *flist,
+                             struct model_info *minfo)
 {
   struct vtx_list *vlist; /* for each vertex, the list of vertices sharing an
                            * edge with them. */
   struct stack stack;     /* stack to walk vertex tree */
   char *visited_vtcs;     /* array to mark visited vertices */
+  char *manifold_vtcs;    /* array flagging manifold vertices */
   int n_visited_vertices; /* number of already visited vertices */
   int next_vidx;          /* the index of the next vertex to visit */
   struct topology vtx_top;/* local vertex toppology */
@@ -651,6 +660,7 @@ static void model_topology(int n_vtcs, const face_t *mfaces,
   stack_init(&stack,sizeof(cur));
   vlist = xa_calloc(n_vtcs,sizeof(*vlist));
   visited_vtcs = xa_calloc(n_vtcs,sizeof(*visited_vtcs));
+  manifold_vtcs = xa_malloc(n_vtcs*sizeof(*manifold_vtcs));
   next_vidx = 0; /* keep compiler happy */
 
   n_visited_vertices = 0;
@@ -667,6 +677,7 @@ static void model_topology(int n_vtcs, const face_t *mfaces,
     get_vertex_topology(mfaces,cur.vidx,flist,&vtx_top,vlist);
     minfo->manifold = minfo->manifold && vtx_top.manifold;
     minfo->closed = minfo->closed && vtx_top.closed;
+    manifold_vtcs[cur.vidx] = minfo->manifold;
     if (vlist[cur.vidx].n_elems != 0) { /* vertex is not alone */
       minfo->n_disjoint_parts++;
       cur.lpos = 0;
@@ -682,6 +693,7 @@ static void model_topology(int n_vtcs, const face_t *mfaces,
           get_vertex_topology(mfaces,next_vidx,flist,&vtx_top,vlist);
           minfo->manifold = minfo->manifold && vtx_top.manifold;
           minfo->closed = minfo->closed && vtx_top.closed;
+          manifold_vtcs[next_vidx] = minfo->manifold;
           cur.lpos++;
           stack_push(&stack,&cur);
           cur.vidx = next_vidx;
@@ -701,6 +713,7 @@ static void model_topology(int n_vtcs, const face_t *mfaces,
   stack_fini(&stack);
   free(visited_vtcs);
   free(vlist);
+  return manifold_vtcs;
 }
 
 /* --------------------------------------------------------------------------*
@@ -713,6 +726,7 @@ void analyze_model(struct model *m, const struct face_list *flist,
 {
   signed char *face_orientation; /* the face orientation map */
   struct face_list *flist_local; /* the locally generated flist, if any */
+  char *manifold_vtcs;           /* array flagging manifold vertices */
 
   /* Initialize */
   memset(info,0,sizeof(*info));
@@ -724,8 +738,9 @@ void analyze_model(struct model *m, const struct face_list *flist,
   }
 
   /* Make topology and orientation analysis */
-  model_topology(m->num_vert,m->faces,flist,info);
-  face_orientation = model_orientation(m->faces,m->num_faces,flist,info);
+  manifold_vtcs = model_topology(m->num_vert,m->faces,flist,info);
+  face_orientation = model_orientation(m->faces,m->num_faces,flist,
+                                       manifold_vtcs,info);
 
   /* Save original oriented state */
   info->orig_oriented = info->oriented;
@@ -737,6 +752,7 @@ void analyze_model(struct model *m, const struct face_list *flist,
 
   /* Free memory */
   free(face_orientation);
+  free(manifold_vtcs);
   free_face_lists(flist_local,m->num_vert);
 }
 
