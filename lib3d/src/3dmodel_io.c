@@ -1,4 +1,4 @@
-/* $Id: 3dmodel_io.c,v 1.12 2001/07/02 12:50:03 aspert Exp $ */
+/* $Id: 3dmodel_io.c,v 1.13 2001/07/06 12:56:37 aspert Exp $ */
 #include <3dmodel.h>
 
 
@@ -68,6 +68,10 @@ model* alloc_read_model(FILE *pf, int nvert, int nfaces, int nnorms, int nfnorms
   raw_model->faces = (face*)malloc(nfaces*sizeof(face));
   raw_model->vertices = (vertex*)malloc(nvert*sizeof(vertex));
 
+  raw_model->normals = NULL;
+  raw_model->face_normals = NULL;
+  raw_model->area = NULL;
+  
   raw_model->bBox[0].x = FLT_MAX;
   raw_model->bBox[0].y = FLT_MAX;
   raw_model->bBox[0].z = FLT_MAX;
@@ -85,10 +89,9 @@ model* alloc_read_model(FILE *pf, int nvert, int nfaces, int nnorms, int nfnorms
     raw_model->normals = (vertex*)malloc(nnorms*sizeof(vertex));
     raw_model->builtin_normals = 1;
   }
-  else {
-    raw_model->normals = NULL;
+  else 
     raw_model->builtin_normals = 0;
-  }
+  
 
   for (i=0; i<nvert; i++) {
     fscanf(pf,"%lf %lf %lf",&x, &y, &z);
@@ -135,7 +138,7 @@ model* alloc_read_model(FILE *pf, int nvert, int nfaces, int nnorms, int nfnorms
     }
   }
   
-  raw_model->area = NULL;
+
   return raw_model;
 }
 
