@@ -1,4 +1,4 @@
-/* $Id: ColorMap.c,v 1.6 2001/08/17 08:59:47 dsanta Exp $ */
+/* $Id: ColorMap.c,v 1.7 2001/09/05 09:55:46 dsanta Exp $ */
 #include <ColorMap.h>
 #include <xalloc.h>
 
@@ -61,9 +61,9 @@ double** HSVtoRGB(void)
       break;
     }
 
-    colormap[7-j][0] = r;
-    colormap[7-j][1] = g;
-    colormap[7-j][2] = b;
+    colormap[7-j][0] = max(min(r,1.0),0.0);
+    colormap[7-j][1] = max(min(g,1.0),0.0);
+    colormap[7-j][2] = max(min(b,1.0),0.0);
     j++;  
   }
 
