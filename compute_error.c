@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.58 2001/09/11 08:12:04 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.59 2001/09/11 09:49:25 dsanta Exp $ */
 
 #include <compute_error.h>
 
@@ -225,9 +225,11 @@ static void free_triag_sample_error(struct triag_sample_error *tse)
   tse->err_lin = NULL;
 }
 
-/* Computes the vertex normals assuming an oriented model. The triangle
- * information already present in tl are used to speed up the calculation. If
- * the model is not oriented, the resulting normals will be incorrect. */
+/* Computes the normalized vertex normals assuming an oriented model. The
+ * triangle information already present in tl are used to speed up the
+ * calculation. If the model is not oriented, the resulting normals will be
+ * incorrect. Vertices that belong to no triangles or to degenerate ones only
+ * have a (0,0,0) normal vector set. */
 static void calc_normals_as_oriented_model(model *m,
                                            const struct triangle_list *tl)
 {
@@ -247,7 +249,10 @@ static void calc_normals_as_oriented_model(model *m,
   }
   /* normalize final normals */
   for (k=0, kmax=m->num_vert; k<kmax; k++) {
-    normalize_v(&(m->normals[k]));
+    /* skip vertices which have no triangles or only degenerated ones */
+    if (m->normals[k].x != 0 || m->normals[k].y != 0 || m->normals[k].z != 0) {
+      normalize_v(&(m->normals[k]));
+    }
   }
 }
 
