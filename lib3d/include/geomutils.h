@@ -1,4 +1,4 @@
-/* $Id: geomutils.h,v 1.8 2001/08/02 09:59:19 aspert Exp $ */
+/* $Id: geomutils.h,v 1.9 2001/08/07 15:22:48 dsanta Exp $ */
 #include <3dmodel.h>
 
 #ifndef _GEOMUTILS_PROTO_
@@ -200,6 +200,8 @@ extern "C" {
 
     return (norm_v(&h)*sqrt(nu2)*0.5);
   }
+
+#undef INLINE
 #endif /* INLINE */
 #ifdef __cplusplus
 }
