@@ -1,4 +1,4 @@
-/* $Id: normals.c,v 1.4 2001/06/27 09:20:01 aspert Exp $ */
+/* $Id: normals.c,v 1.5 2001/06/29 14:16:19 aspert Exp $ */
 #include <3dmodel.h>
 #include <geomutils.h>
 
@@ -47,12 +47,6 @@ ring_info build_star2(model *raw_model, int v) {
       num_edges ++;
       edge_list = (edge_v*)realloc(edge_list, num_edges*sizeof(edge_v));
 
-#ifdef NORM_DEBUG
-      if (edge_list == NULL) {
-	printf("realloc failed %d\n", i);
-	exit(-1);
-      }
-#endif
 
       edge_list[num_edges-1].v0 = raw_model->faces[i].f0;
       edge_list[num_edges-1].v1 = raw_model->faces[i].f1;      
