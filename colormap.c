@@ -1,4 +1,4 @@
-/* $Id: colormap.c,v 1.5 2002/05/08 12:05:27 aspert Exp $ */
+/* $Id: colormap.c,v 1.6 2002/06/06 11:56:45 aspert Exp $ */
 
 
 /*
@@ -137,7 +137,7 @@ float** colormap_gs(int len)
     cmap[i] = cmap[i-1]+3;
   }
 
-  step = 1.0/(float)(len-1);
+  step = 1/(float)(len-1);
   for (i=0; i<len ; i++) 
     cmap[i][0] = cmap[i][1] = cmap[i][2] = step*(len - 1 - i);
   
