@@ -1,4 +1,4 @@
-/* $Id: geomutils.c,v 1.2 2001/03/26 12:17:28 aspert Exp $ */
+/* $Id: geomutils.c,v 1.3 2001/03/28 07:57:01 aspert Exp $ */
 #include <3dmodel.h>
 
 /* Computes the normalized cross product between vectors p2p1 and p3p1 */
@@ -92,14 +92,8 @@ void normalize(vertex *v) {
 
 /* Returns 1 if p is inside the circle defined by center & r */
 int inside(vertex p, vertex center, double r) {
-    vertex tmp;
-
-    tmp.x = p.x - center.x;
-    tmp.y = p.y - center.y;
-    tmp.z = p.z - center.z;
-
-    
-    if (norm(tmp) < r)
+ 
+    if (dist(center, p) < r)
 	return 1;
     else 
 	return 0;
