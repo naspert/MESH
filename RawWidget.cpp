@@ -13,13 +13,13 @@ RawWidget::RawWidget(model *raw_model, QWidget *parent, const char *name)
   
   setMinimumSize( 500, 500 );
   setMaximumSize( 500, 500 );
-  
   FOV = 40;
   model_list=0;
   colormap=HSVtoRGB();
   raw_model2=raw_model;
   move_state=0;
- 
+  line_state=0;
+  light_mode=0;
   center.x = 0.5*(raw_model2->bBox[1].x + raw_model2->bBox[0].x);
   center.y = 0.5*(raw_model2->bBox[1].y + raw_model2->bBox[0].y);
   center.z = 0.5*(raw_model2->bBox[1].z + raw_model2->bBox[0].z);
@@ -40,36 +40,91 @@ RawWidget::RawWidget(model *raw_model, QWidget *parent, const char *name)
 
 void RawWidget::aslot()
 {
-  if(move_state==0)
+  if(move_state==0){
     move_state=1;
+    emit transfervalue(distance,mvmatrix);
+  }
   else
     move_state=0;
-  emit transfervalue(distance,mvmatrix);
 }
+
 
 void RawWidget::transfer(double dist,double *mvmat)
 {
-int i;
 
-distance=dist;
-
-for(i=0;i<16;i++)
-  mvmatrix[i]=mvmat[i];
-//   glMatrixMode(GL_MODELVIEW);
-//   glLoadIdentity();
-//   glMultMatrixd(mvmatrix);
- 
-  updateGL();
+  distance=dist;
+  memcpy(mvmatrix, mvmat, 16*sizeof(double)); 
+  glDraw();
 }
 
-void RawWidget::setLine(int state)
+void RawWidget::setLine()
 {
 
-  if(state==2)
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-  if(state==1 || state==0)
+  printf("\nsetline: appel no %d\n",j);
+  j++;
+  glGetIntegerv(GL_POLYGON_MODE,&state);
+  if(state==GL_FILL) {
+      glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    printf("FILL->LINE\n");
+    glDraw();
+  }
+  else if(state==GL_LINE) {
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-  updateGL();
+    glGetIntegerv(GL_POLYGON_MODE,&state);
+    printf("LINE->FILL\n");
+    printf("state: %d\n",state);
+    glDraw(); 
+  } else {
+    printf("Uh ?\n");
+  }
+}
+
+void RawWidget::setLight()
+{
+  GLfloat amb[] = {0.5, 0.5, 0.5, 1.0};
+  GLfloat dif[] = {0.5, 0.5, 0.5, 1.0};
+  GLfloat spec[] = {0.5, 0.5, 0.5, 0.5};
+  GLfloat ldir[] = {0.0, 0.0, 0.0, 0.0};
+//   GLfloat mat_spec[] = {0.3, 0.7, 0.5, 0.5};
+  GLfloat amb_light[] = {0.6, 0.6, 0.6, 1.0};
+//   GLfloat shine[] = {0.6};
+  GLfloat lpos[] = {0.0, 0.0, -distance, 0.0} ;
+
+  
+  light_state=glIsEnabled(GL_LIGHTING);
+  if(light_state==FALSE){
+    if(raw_model2->face_normals !=NULL){
+//       printf("light state= %d\n",light_mode);
+
+      glEnable(GL_LIGHTING);
+      glLightfv(GL_LIGHT0, GL_AMBIENT, amb); 
+      glLightfv(GL_LIGHT0, GL_DIFFUSE, dif);
+      glLightfv(GL_LIGHT0, GL_SPECULAR, spec);
+      glLightfv(GL_LIGHT0, GL_POSITION, lpos);  
+      glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, ldir);  
+      glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
+      glLightModelfv(GL_LIGHT_MODEL_AMBIENT,amb_light);
+//       glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, mat_spec);
+//       glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, shine);
+      glEnable(GL_LIGHT0);
+      //     glColor3f(1.0, 1.0, 1.0);
+      glFrontFace(GL_CCW);
+//       glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+//       light_mode=1;
+    } else {
+//       printf("light state= %d\n",light_mode);
+      light_mode=0;
+      printf("Unable to compute normals... non_manifold model\n");
+    }
+  }
+  else if(light_state==TRUE){
+//     printf("light state= %d\n",light_mode);
+//     light_mode=0;
+    glDisable(GL_LIGHTING);
+    glFrontFace(GL_CCW);
+//     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+  }
+  glDraw();
 }
 
 
@@ -91,15 +146,16 @@ void RawWidget::resizeGL(int width ,int height)
 }
 
 void RawWidget::initializeGL()
-{
+{ 
   glDepthFunc(GL_LESS);
   glEnable(GL_DEPTH_TEST);
   glShadeModel(GL_SMOOTH);
 //   glShadeModel(GL_FLAT);
+
   glClearColor(0.0, 0.0, 0.0, 0.0);
   /*glColor3f(1.0, 1.0, 1.0); Settings for wireframe model */
-  glFrontFace(GL_CCW);
-  glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+//   glFrontFace(GL_CCW);
+//   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
   model_list=glGenLists(1);
   glNewList(model_list, GL_COMPILE);
@@ -141,35 +197,66 @@ void RawWidget::rebuild_list(double **colormap,model *raw_model) {
     glNewList(list, GL_COMPILE);*/
   glBegin(GL_TRIANGLES);
   
+  if(raw_model2->face_normals!=NULL){
+    for (i=0; i<raw_model->num_faces; i++) {
+      cur_face = &(raw_model->faces[i]);
 
-  for (i=0; i<raw_model->num_faces; i++) {
-    cur_face = &(raw_model->faces[i]);
-
- glColor3f(colormap[raw_model->error[cur_face->f0]][0],
-	      colormap[raw_model->error[cur_face->f0]][1],
-	      colormap[raw_model->error[cur_face->f0]][2]);    
-    
-    glVertex3d(raw_model->vertices[cur_face->f0].x,
-	       raw_model->vertices[cur_face->f0].y,
- 	       raw_model->vertices[cur_face->f0].z); 
-    glColor3f(colormap[raw_model->error[cur_face->f1]][0],
-	      colormap[raw_model->error[cur_face->f1]][1],
-	      colormap[raw_model->error[cur_face->f1]][2]);
-    
-    glVertex3d(raw_model->vertices[cur_face->f1].x,
- 	       raw_model->vertices[cur_face->f1].y,
-	       raw_model->vertices[cur_face->f1].z); 
-   
-    
-     glColor3f(colormap[raw_model->error[cur_face->f2]][0],
-	      colormap[raw_model->error[cur_face->f2]][1],
-	      colormap[raw_model->error[cur_face->f2]][2]);
-
-    glVertex3d(raw_model->vertices[cur_face->f2].x,
-		raw_model->vertices[cur_face->f2].y,
-		raw_model->vertices[cur_face->f2].z); 
-   
-  }
+      glColor3f(colormap[raw_model->error[cur_face->f0]][0],
+		colormap[raw_model->error[cur_face->f0]][1],
+		colormap[raw_model->error[cur_face->f0]][2]);        
+      glNormal3d(raw_model->normals[cur_face->f0].x,
+		 raw_model->normals[cur_face->f0].y,
+		 raw_model->normals[cur_face->f0].z);
+      glVertex3d(raw_model->vertices[cur_face->f0].x,
+		 raw_model->vertices[cur_face->f0].y,
+		 raw_model->vertices[cur_face->f0].z); 
+      
+      glColor3f(colormap[raw_model->error[cur_face->f1]][0],
+		colormap[raw_model->error[cur_face->f1]][1],
+		colormap[raw_model->error[cur_face->f1]][2]);
+      glNormal3d(raw_model->normals[cur_face->f1].x,
+	       raw_model->normals[cur_face->f1].y,
+		 raw_model->normals[cur_face->f1].z);  
+      glVertex3d(raw_model->vertices[cur_face->f1].x,
+		 raw_model->vertices[cur_face->f1].y,
+		 raw_model->vertices[cur_face->f1].z); 
+      
+      glColor3f(colormap[raw_model->error[cur_face->f2]][0],
+		colormap[raw_model->error[cur_face->f2]][1],
+		colormap[raw_model->error[cur_face->f2]][2]);
+      glNormal3d(raw_model->normals[cur_face->f2].x,
+		 raw_model->normals[cur_face->f2].y,
+		 raw_model->normals[cur_face->f2].z); 
+      glVertex3d(raw_model->vertices[cur_face->f2].x,
+	       raw_model->vertices[cur_face->f2].y,
+		 raw_model->vertices[cur_face->f2].z);       
+    }
+  } else {
+    for (i=0; i<raw_model->num_faces; i++) {
+      cur_face = &(raw_model->faces[i]);
+      
+      glColor3f(colormap[raw_model->error[cur_face->f0]][0],
+		colormap[raw_model->error[cur_face->f0]][1],
+		colormap[raw_model->error[cur_face->f0]][2]);  
+      glVertex3d(raw_model->vertices[cur_face->f0].x,
+		 raw_model->vertices[cur_face->f0].y,
+		 raw_model->vertices[cur_face->f0].z); 
+      
+      glColor3f(colormap[raw_model->error[cur_face->f1]][0],
+		colormap[raw_model->error[cur_face->f1]][1],
+		colormap[raw_model->error[cur_face->f1]][2]);
+      glVertex3d(raw_model->vertices[cur_face->f1].x,
+		 raw_model->vertices[cur_face->f1].y,
+		 raw_model->vertices[cur_face->f1].z); 
+      
+      glColor3f(colormap[raw_model->error[cur_face->f2]][0],
+		colormap[raw_model->error[cur_face->f2]][1],
+		colormap[raw_model->error[cur_face->f2]][2]);
+      glVertex3d(raw_model->vertices[cur_face->f2].x,
+		 raw_model->vertices[cur_face->f2].y,
+		 raw_model->vertices[cur_face->f2].z);       
+    }
+  }    
   glEnd();
   /*glEndList();*/
 }
@@ -227,11 +314,11 @@ void RawWidget::mouseMoveEvent(QMouseEvent *event)
     glMultMatrixd(mvmatrix); 
     glGetDoublev(GL_MODELVIEW_MATRIX, mvmatrix); 
     glPopMatrix(); 
-    updateGL();
+    glDraw();
   }
   else if (middle_button_state == 1) {
     distance += dy*dstep;
-    updateGL();
+    glDraw();
   }
   else if (right_button_state == 1) { 
     dpsi = -dx*0.5;
@@ -241,7 +328,7 @@ void RawWidget::mouseMoveEvent(QMouseEvent *event)
     glMultMatrixd(mvmatrix);
     glGetDoublev(GL_MODELVIEW_MATRIX, mvmatrix); /* Get the final matrix */
     glPopMatrix(); /* Reload previous transform context */
-    updateGL(); 
+    glDraw(); 
   }
 
   if(move_state==1)
@@ -251,10 +338,68 @@ void RawWidget::mouseMoveEvent(QMouseEvent *event)
 
 }
 
-void RawWidget::keyPressEvent(QKeyEvent *event)
+void RawWidget::keyPressEvent(QKeyEvent *k)
 {
-  printf("%d ",event->key());
-  event->accept();
+  GLfloat amb[] = {0.5, 0.5, 0.5, 1.0};
+  GLfloat dif[] = {0.5, 0.5, 0.5, 1.0};
+  GLfloat spec[] = {0.5, 0.5, 0.5, 0.5};
+  GLfloat ldir[] = {0.0, 0.0, 0.0, 0.0};
+//   GLfloat mat_spec[] = {0.3, 0.7, 0.5, 0.5};
+  GLfloat amb_light[] = {0.6, 0.6, 0.6, 1.0};
+//   GLfloat shine[] = {0.6};
+  GLfloat lpos[] = {0.0, 0.0, -distance, 0.0} ;
+
+  if(k->key()==Key_F1){
+    glGetIntegerv(GL_POLYGON_MODE,&state);
+    if(state==GL_FILL) {
+      glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+      printf("FILL->LINE\n");
+      glDraw();
+    }
+    else if(state==GL_LINE) {
+      glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+      glGetIntegerv(GL_POLYGON_MODE,&state);
+      printf("LINE->FILL\n");
+      printf("state: %d\n",state);
+      glDraw(); 
+    } else {
+      printf("Uh ?\n");
+    }
+  } 
+  if(k->key()==Key_F2){
+    light_state=glIsEnabled(GL_LIGHTING);
+    if(light_state==FALSE){
+      if(raw_model2->face_normals !=NULL){	
+	glEnable(GL_LIGHTING);
+	glLightfv(GL_LIGHT0, GL_AMBIENT, amb); 
+	glLightfv(GL_LIGHT0, GL_DIFFUSE, dif);
+	glLightfv(GL_LIGHT0, GL_SPECULAR, spec);
+	glLightfv(GL_LIGHT0, GL_POSITION, lpos);  
+	glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, ldir);  
+	glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
+	glLightModelfv(GL_LIGHT_MODEL_AMBIENT,amb_light);
+	glEnable(GL_LIGHT0);
+	glFrontFace(GL_CCW);
+      } else {
+	light_mode=0;
+	printf("Unable to compute normals... non_manifold model\n");
+      }
+    }
+    else if(light_state==TRUE){
+    glDisable(GL_LIGHTING);
+    glFrontFace(GL_CCW);
+    }
+    glDraw();
+  }
+  if(k->key()==Key_F3){
+    if(move_state==0){
+      move_state=1;
+      emit transfervalue(distance,mvmatrix);
+    }
+    else
+      move_state=0;
+  }  
+
 }
 
 

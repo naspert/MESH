@@ -6,6 +6,8 @@
 #include <qevent.h>
 #include <ColorMap.h>
 #include <qkeycode.h>
+#include <qnamespace.h>
+
 
 class RawWidget : public QGLWidget 
 { 
@@ -18,8 +20,9 @@ public:
   
 public slots: 
     void aslot();
-  void setLine(int state);
-  void transfer(double dist,double *rawmat);
+  void setLine();
+  void setLight();
+  void transfer(double dist,double *mvmat);
   /*     void setFill(); */
   
 signals:
@@ -47,12 +50,15 @@ private:
   GLdouble mvmatrix[16]; /* Buffer for GL_MODELVIEW_MATRIX */
   GLuint model_list; /* display lists idx storage */
 
-  //  int light_mode = 0;
+  int light_mode;
+  int line_state; /* 0->FILL 1->LINE */
   int left_button_state;
   int middle_button_state;
   int right_button_state;
-  int line_fill_state; /* 0->FILL 1->LINE */
   int move_state;
+  GLint state;
+  GLboolean light_state;
+  int j;
 
 };
 

@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.3 2001/05/30 12:41:33 jacquet Exp $ */
+/* $Id: compute_error.c,v 1.4 2001/06/11 07:25:02 jacquet Exp $ */
 #include <3dmodel.h>
 #include <geomutils.h>
 
@@ -464,15 +464,15 @@ double echantillondist(vertex point,vertex a, vertex b, vertex c,double k)
 /* fonction qui repertorie pour chaque face les cellules avec lesquelles    */
 /*     elle a une intersection                                              */
 /****************************************************************************/
-cellules* liste(model *raw_model,double samplethin,vertex grille,double ccube)
+cellules* liste(model *raw_model,double samplethin,vertex grille,double ccube,vertex bbox0,vertex bbox1)
 {
 cellules *cell;
 int h,i,j,k,m,n,o,cellule,state=0;
 sample *sample1;
-vertex A,B,C,bbox0,bbox1;
+vertex A,B,C;
 
-bbox0=raw_model->bBox[0];
-bbox1=raw_model->bBox[1];
+/* bbox0=raw_model->bBox[0]; */
+/* bbox1=raw_model->bBox[1]; */
 
 
 raw_model->face_normals=(vertex*)malloc(raw_model->num_faces*sizeof(vertex));
@@ -569,13 +569,13 @@ return(tab);
 /****************************************************************************/
 /*     fonction qui calcule la distance d'un point a une surface            */
 /****************************************************************************/
-double pcd(vertex point,model *raw_model,int **repface,vertex grille,double ccube)
+double pcd(vertex point,model *raw_model,int **repface,vertex grille,double ccube,vertex bbox0,vertex bbox1)
 {
 int m,n,o;
 int mmem,nmem,omem;
 int a,b,c;
 int face,cell;
-vertex bbox0,bbox1,A,B,C,normal,test;
+vertex /*bbox0,bbox1,*/A,B,C,normal,test;
 int cellule;
 int i,j=0,k=0,l=0;
 double dist,dmin=201;
@@ -586,8 +586,8 @@ int state=0,state2=0;
 memoire=NULL;
 memoire2=NULL;
 
-bbox0=raw_model->bBox[0];
-bbox1=raw_model->bBox[1];
+/* bbox0=raw_model->bBox[0]; */
+/* bbox1=raw_model->bBox[1]; */
 
 test.x=point.x-bbox0.x;
 test.y=point.y-bbox0.y;

@@ -1,10 +1,17 @@
-/* $Id: viewer.cpp,v 1.7 2001/05/30 15:25:31 jacquet Exp $ */
+/* $Id: viewer.cpp,v 1.8 2001/06/11 07:25:02 jacquet Exp $ */
 
 #include <qapplication.h>
 #include <ScreenWidget.h>
+#include <qevent.h>
+#include <qkeycode.h>
 #include <compute_error.h>
 #define min3(x,y,z) (((x)<(y))?(((x)<(z))?(x):(z)):(((y)<(z))?(y):(z)))
-
+#ifndef min
+#define min(x,y) (((x)>(y))?(y):(x))
+#endif
+#ifndef max
+#define max(x,y) (((x)>(y))?(x):(y))
+#endif
 /*****************************************************************************/
 /*             fonction principale                                           */
 /*****************************************************************************/
@@ -14,11 +21,10 @@ int main( int argc, char **argv )
 {
   char *in_filename1, *in_filename2;
   model *raw_model1, *raw_model2;
-  int nbsamples,samples;
+  int samples;
   cellules *cell;
   double samplethin,dcourant,dmax=0,superdmax=0,dmin=200,superdmin=200;
-  double dmoy,dmoymax=0,dmoymin=200,meanerror=0,meanerror2=0,meansqrterr;
-  double dfacemin=200,dfacemax=0;
+  double dmoy,dmoymax=0,dmoymin=200,meanerror=0;
   int **repface;
   int **list_face;
   int *nbfaces;
@@ -30,6 +36,8 @@ int main( int argc, char **argv )
   vertex bbox0,bbox1;
   double ccube;
   vertex grille;
+  int facteur;
+  info_vertex *curv;
 
   if (argc!=4) {
     printf("nbre d'arg incorrect\n");
@@ -49,20 +57,70 @@ int main( int argc, char **argv )
   /* mise en memoire de chaque point des deux objets */
   raw_model1=read_raw_model(in_filename1);
   raw_model2=read_raw_model(in_filename2);
+
+  bbox0=raw_model1->bBox[0];
+  bbox1=raw_model1->bBox[1];
+  
+  printf("%lf %lf %lf\n",bbox0.x,bbox0.y,bbox0.z);
+  printf("%lf %lf %lf\n",bbox1.x,bbox1.y,bbox1.z);
   
   bbox0=raw_model2->bBox[0];
   bbox1=raw_model2->bBox[1];
+  
+  printf("%lf %lf %lf\n",bbox0.x,bbox0.y,bbox0.z);
+  printf("%lf %lf %lf\n",bbox1.x,bbox1.y,bbox1.z);
+
+  
+//   raw_model1->area = (double*)malloc(raw_model1->num_faces*sizeof(double));
+//   curv = (info_vertex*)malloc(raw_model1->num_vert*sizeof(info_vertex));
+  
+//   raw_model1->face_normals = compute_face_normals(raw_model1,curv);
+  
+//   if (raw_model1->face_normals != NULL){
+//     compute_vertex_normal(raw_model1, curv, raw_model1->face_normals);
+//     for (i=0; i<raw_model1->num_vert; i++) 
+//       free(curv[i].list_face);
+//     free(curv);
+//   }
+
+  raw_model2->area = (double*)malloc(raw_model2->num_faces*sizeof(double));
+  curv = (info_vertex*)malloc(raw_model2->num_vert*sizeof(info_vertex));
+  
+  raw_model2->face_normals = compute_face_normals(raw_model2,curv);
+  
+  if (raw_model2->face_normals != NULL){
+    compute_vertex_normal(raw_model2, curv, raw_model2->face_normals);
+    for (i=0; i<raw_model2->num_vert; i++) 
+      free(curv[i].list_face);
+    free(curv);
+  }
+
+  bbox0.x=min(raw_model1->bBox[0].x,raw_model2->bBox[0].x);
+  bbox0.y=min(raw_model1->bBox[0].y,raw_model2->bBox[0].y);
+  bbox0.z=min(raw_model1->bBox[0].z,raw_model2->bBox[0].z);
+ 
+  bbox1.x=max(raw_model1->bBox[1].x,raw_model2->bBox[1].x);
+  bbox1.y=max(raw_model1->bBox[1].y,raw_model2->bBox[1].y);
+  bbox1.z=max(raw_model1->bBox[1].z,raw_model2->bBox[1].z);
 
   /* calcul de la taille de la grille */
-  ccube=min3(bbox1.x-bbox0.x,bbox1.y-bbox0.y,bbox1.z-bbox0.z)/20;
+  if(raw_model2->num_faces<1000)
+    facteur=10;
+  else if(raw_model2->num_faces<10000)
+    facteur=20;
+  else if(raw_model2->num_faces<100000)
+    facteur=30;
+
+  ccube=min3(bbox1.x-bbox0.x,bbox1.y-bbox0.y,bbox1.z-bbox0.z)/facteur;
 
   grille.x=floor((bbox1.x-bbox0.x)/ccube)+1;
   grille.y=floor((bbox1.y-bbox0.y)/ccube)+1;
   grille.z=floor((bbox1.z-bbox0.z)/ccube)+1;
+
   printf("ccube: %lf grille: %lf %lf %lf\n",ccube,grille.x,grille.y,grille.z);
 
   /* on repertorie pour chaque cellule la liste des faces qu'elle contient */
-  cell=liste(raw_model2,samplethin,grille,ccube);
+  cell=liste(raw_model2,samplethin,grille,ccube,bbox0,bbox1);
   repface=cublist(cell,raw_model2,grille);
   
   nbfaces=(int*)calloc(raw_model1->num_vert,sizeof(int));
@@ -71,6 +129,7 @@ int main( int argc, char **argv )
 
   listoffaces(raw_model1,nbfaces,list_face);
   error_per_face=(double**)malloc(raw_model1->num_faces*sizeof(double*));
+
 
 
   /* on calcule pour chaque echantillon la distance a l'objet2 */ 
@@ -82,7 +141,7 @@ int main( int argc, char **argv )
 		     raw_model1->vertices[raw_model1->faces[i].f2]);
     surfacetot+=triarea;
     error_per_face[i][1]=triarea;
-    /*    printf("surfactriangle: %f ",triarea); */
+    printf("surfactriangle: %f ",triarea); 
     
     mem_err=(double**)malloc((k+1)*sizeof(double*));
     for(j=0;j<k+1;j++)
@@ -93,9 +152,11 @@ int main( int argc, char **argv )
 			raw_model1->vertices[raw_model1->faces[i].f2],
 			samplethin);
     samples=0;
+
     for(j=0;j<k+1;j++){
       for(l=0;l<k+1-j;l++){
-	dcourant=pcd(sample2->sample[samples],raw_model2,repface,grille,ccube);
+	dcourant=pcd(sample2->sample[samples],raw_model2,repface,grille,ccube,bbox0,bbox1);
+
 	if(dcourant>dmax)
 	  dmax=dcourant;
 	if(dcourant<dmin)
@@ -149,8 +210,8 @@ int main( int argc, char **argv )
    for(j=0;j<nbfaces[i];j++){
      dmoy+=error_per_face[list_face[i][j]][0];
      surfacemoy+=error_per_face[list_face[i][j]][1];
-     dmoy/=nbfaces[i];
    }
+   dmoy/=surfacemoy/*nbfaces[i]*/;
    if(dmoy>dmoymax)
      dmoymax=dmoy;
    if(dmoy<dmoymin)
@@ -163,8 +224,8 @@ int main( int argc, char **argv )
    for(j=0;j<nbfaces[i];j++){
      dmoy+=error_per_face[list_face[i][j]][0];
      surfacemoy+=error_per_face[list_face[i][j]][1];
-     dmoy/=nbfaces[i];
    }
+   dmoy/=surfacemoy/*nbfaces[i]*/;
    raw_model1->error[i]=(int)floor(7*(dmoy-dmoymin)/(dmoymax-dmoymin));
    if(raw_model1->error[i]<0)
      raw_model1->error[i]=0;
@@ -172,10 +233,11 @@ int main( int argc, char **argv )
 
  /* affichage de la fenetre graphique */
  QApplication::setColorSpec( QApplication::CustomColor );
- QApplication a( argc, argv );  
+ QApplication a( argc, argv ); 
  
- ScreenWidget w(raw_model1,raw_model2);
- a.setMainWidget( &w );
- w.show();
+ 
+ ScreenWidget b(raw_model1,raw_model2);
+ a.setMainWidget( &b );
+ b.show();
  return a.exec();
 }
