@@ -1,4 +1,4 @@
-/* $Id: model_in.c,v 1.41 2003/06/09 12:43:49 aspert Exp $ */
+/* $Id: model_in.c,v 1.42 2004/04/30 07:42:19 aspert Exp $ */
 
 
 /*
@@ -622,30 +622,32 @@ static int detect_file_format(struct file_data *data)
       else 
         rcode = ferror((FILE*)data->f) ? MESH_CORRUPTED : MESH_BAD_FF;
     }
-  } else if (c == 'p') { /* Probably ply */
-    c = ungetc(c,data);
-    if (c != EOF) {
-      if (string_scanf(data, stmp) == 1 && strcmp(stmp, "ply") == 0) {
-        rcode = MESH_FF_PLY;
-      } else {
-        rcode = ferror((FILE*)data->f) ? MESH_CORRUPTED : MESH_BAD_FF;
-      }
-    } else {
-      rcode = MESH_CORRUPTED;
-    }
-  } else if (c >= '0' && c <= '9') { /* probably raw */
-    c = ungetc(c,data);
-    rcode = (c != EOF) ? MESH_FF_RAW : MESH_CORRUPTED;
-  } else { 
-    /* test for SMF also here before returning */
-    data->pos=1; /* rewind file */
-    if ((c = skip_ws_comm(data)) == EOF) rcode = MESH_BAD_FF;
-
-    if (c == 'v' || c == 'b' || c == 'f' || c == 'c')
-      rcode = MESH_FF_SMF;
-    else 
-      rcode = ferror((FILE*)data->f) ? MESH_CORRUPTED : MESH_BAD_FF;
-
+  } else {
+	 c = skip_ws_comm(data);/* In case the header does not start at 1st column */
+	 if (c == EOF) rcode = MESH_BAD_FF;
+	 if (c == 'p') { /* Probably ply */
+		 c = ungetc(c,data);
+		 if (c != EOF) {
+			if (string_scanf(data, stmp) == 1 && strcmp(stmp, "ply") == 0) {
+				rcode = MESH_FF_PLY;
+			} else {
+				rcode = ferror((FILE*)data->f) ? MESH_CORRUPTED : MESH_BAD_FF;
+			}
+		} else {
+			rcode = MESH_CORRUPTED;
+		}
+	  } else if (c >= '0' && c <= '9') { /* probably raw */
+		c = ungetc(c,data);
+		rcode = (c != EOF) ? MESH_FF_RAW : MESH_CORRUPTED;
+	  } else { 
+		/* test for SMF also here before returning */
+		data->pos=1; /* rewind file */
+		if ((c = skip_ws_comm(data)) == EOF) rcode = MESH_BAD_FF;
+		if (c == 'v' || c == 'b' || c == 'f' || c == 'c')
+			rcode = MESH_FF_SMF;
+		else 
+			rcode = ferror((FILE*)data->f) ? MESH_CORRUPTED : MESH_BAD_FF;
+	}
   }
   return rcode;
 }
