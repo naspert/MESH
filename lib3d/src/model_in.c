@@ -1,4 +1,4 @@
-/* $Id: model_in.c,v 1.46 2004/10/12 15:06:19 aspert Exp $ */
+/* $Id: model_in.c,v 1.47 2004/10/20 12:33:58 aspert Exp $ */
 
 
 /*
@@ -289,7 +289,8 @@ int float_scanf(struct file_data *data, float *out)
     ungetc(c, data);
 
   do {
-    buf[++i] = getc(data);
+    c = getc(data);
+    buf[++i] = c;
   } while ((buf[i] >= '0' && buf[i] <= '9') || buf[i] == 'e' || 
            buf[i] == 'E' || buf[i] == '+' || buf[i] == '-' || 
            buf[i] == '.');
@@ -297,7 +298,8 @@ int float_scanf(struct file_data *data, float *out)
 
   if (i == 1) /* screwed up ! */
     return 0;
-
+  if (c != EOF)
+    ungetc(c, data);
   tmp = (float)atof(buf);
 
 #ifdef DEBUG
