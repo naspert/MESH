@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.91 2002/09/23 16:35:22 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.92 2002/09/23 16:39:26 dsanta Exp $ */
 
 
 /*
@@ -669,7 +669,6 @@ static void init_triangle(const vertex_t *a, const vertex_t *b,
   bc_len_sqr = __norm2_v(bc);
   if (ab_len_sqr <= ac_len_sqr) {
     if (ac_len_sqr <= bc_len_sqr) { /* BC longest side => A to C */
-      assert(bc_len_sqr >= ac_len_sqr && bc_len_sqr >= ab_len_sqr);
       t->c = dv_a;
       t->a = dv_b;
       t->b = dv_c;
@@ -680,7 +679,6 @@ static void init_triangle(const vertex_t *a, const vertex_t *b,
       t->ca_len_sqr = ab_len_sqr;
       t->cb_len_sqr = ac_len_sqr;
     } else { /* AC longest side => B to C */
-      assert(ac_len_sqr >= bc_len_sqr && ac_len_sqr >= ab_len_sqr);
       t->b = dv_a;
       t->c = dv_b;
       t->a = dv_c;
@@ -693,7 +691,6 @@ static void init_triangle(const vertex_t *a, const vertex_t *b,
     }
   } else {
     if (ab_len_sqr <= bc_len_sqr) { /* BC longest side => A to C */
-      assert(bc_len_sqr >= ac_len_sqr && bc_len_sqr >= ab_len_sqr);
       t->c = dv_a;
       t->a = dv_b;
       t->b = dv_c;
@@ -704,7 +701,6 @@ static void init_triangle(const vertex_t *a, const vertex_t *b,
       t->ca_len_sqr = ab_len_sqr;
       t->cb_len_sqr = ac_len_sqr;
     } else { /* AB longest side => C remains C */
-      assert(ab_len_sqr >= ac_len_sqr && ab_len_sqr >= bc_len_sqr);
       t->a = dv_a;
       t->b = dv_b;
       t->c = dv_c;
