@@ -1,4 +1,4 @@
-/* $Id: compute_curvature.c,v 1.3 2001/10/02 08:47:47 aspert Exp $ */
+/* $Id: compute_curvature.c,v 1.4 2001/10/10 12:57:56 aspert Exp $ */
 #include <3dutils.h>
 #include <compute_error.h>
 #include <compute_curvature.h>
@@ -205,7 +205,7 @@ void compute_curvature(const struct model *raw_model,
    for the original model 
 */
 void compute_curvature_error(struct model_error *model1, 
-			     struct model_error *model2) {
+			     struct model_error *model2, FILE *out) {
 
   int i;
   struct info_vertex *info1, *info2;
@@ -297,20 +297,20 @@ void compute_curvature_error(struct model_error *model1,
   model1->mean_kg_error /= model1->mesh->total_area;
 
   /* Print the results */
-  printf("       Curvature difference between model 1 to model 2\n\n");
-  printf("        \t   Absolute\n");
-  printf("Min_K1 :\t%11g\n", model1->min_k1_error);
-  printf("Max_K1 :\t%11g\n", model1->max_k1_error);
-  printf("Min_K2 :\t%11g\n", model1->min_k2_error);
-  printf("Max_K2 :\t%11g\n", model1->max_k2_error);
-  printf("Min_KG :\t%11g\n", model1->min_kg_error);
-  printf("Max_KG :\t%11g\n", model1->max_kg_error);
-  printf("\n\n");
+  fprintf(out, "       Curvature difference between model 1 to model 2\n\n");
+  fprintf(out, "        \t   Absolute\n");
+  fprintf(out, "Min_K1 :\t%11g\n", model1->min_k1_error);
+  fprintf(out, "Max_K1 :\t%11g\n", model1->max_k1_error);
+  fprintf(out, "Min_K2 :\t%11g\n", model1->min_k2_error);
+  fprintf(out, "Max_K2 :\t%11g\n", model1->max_k2_error);
+  fprintf(out, "Min_KG :\t%11g\n", model1->min_kg_error);
+  fprintf(out, "Max_KG :\t%11g\n", model1->max_kg_error);
+  fprintf(out, "\n\n");
   
-  printf("       \t   Mean\n");
-  printf("K1    :\t%11g\n", model1->mean_k1_error);
-  printf("K2    :\t%11g\n", model1->mean_k2_error);
-  printf("KG    :\t%11g\n", model1->mean_kg_error);
+  fprintf(out, "       \t   Mean\n");
+  fprintf(out, "K1    :\t%11g\n", model1->mean_k1_error);
+  fprintf(out, "K2    :\t%11g\n", model1->mean_k2_error);
+  fprintf(out, "KG    :\t%11g\n", model1->mean_kg_error);
   
 }
 

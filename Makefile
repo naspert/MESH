@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.22 2001/09/27 08:56:55 aspert Exp $
+# $Id: Makefile,v 1.23 2001/10/10 12:57:55 aspert Exp $
 
 #
 # If the make variable PROFILE is defined to a non-empty value, profiling
@@ -175,7 +175,7 @@ LIB3D_SLIB = $(addprefix $(LIBDIR)/,lib3d.a)
 # Main targets
 default: clean_moc $(MESH_EXE)
 
-all: dirs clean_moc $(MESH_EXE)
+all: dirs  $(MESH_EXE)
 
 clean: clean_moc
 	-rm -f *.d $(OBJDIR)/*.o $(BINDIR)/* $(LIBDIR)/*

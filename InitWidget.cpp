@@ -1,4 +1,4 @@
-/* $Id: InitWidget.cpp,v 1.9 2001/10/01 16:49:01 dsanta Exp $ */
+/* $Id: InitWidget.cpp,v 1.10 2001/10/10 12:57:55 aspert Exp $ */
 
 #include <InitWidget.h>
 
@@ -11,11 +11,12 @@
 #include <qvalidator.h>
 #include <qcheckbox.h>
 #include <qtimer.h>
-
-#include <stdlib.h>
+#define __USE_POSIX
+#include <stdio.h>
 
 InitWidget::InitWidget(struct args defArgs,
                        struct model_error *m1, struct model_error *m2,
+		       QApplication *app,
                        QWidget *parent, const char *name):
   QWidget( parent, name) {
 
@@ -24,13 +25,15 @@ InitWidget::InitWidget(struct args defArgs,
   QListBox *qlboxSplStep;
   QGridLayout *bigGrid;
   QHBoxLayout *smallGrid1, *smallGrid2, *smallGrid3, *smallGrid4, *smallGrid5;
-  QHBoxLayout *smallGrid6;
+  QHBoxLayout *smallGrid6, *smallGrid7;
 
   /* Initialize */
   pargs = defArgs;
   model1 = m1;
   model2 = m2;
   c = NULL;
+  in_p = NULL;
+  qApp = app;
 
   /* First mesh */
   qledMesh1 = new QLineEdit("", this);
@@ -63,10 +66,14 @@ InitWidget::InitWidget(struct args defArgs,
   chkSymDist = new QCheckBox("Calculate the symmetric distance (double run)",
                              this);
   chkSymDist->setChecked(pargs.do_symmetric);
-
+  
   /* Curvature error checkbox */
   chkCurv = new QCheckBox("Compute curvature error", this);
   chkCurv->setChecked(pargs.do_curvature);
+
+  /* Log window checkbox */
+  chkLogWindow = new QCheckBox("Log output in external window", this);
+  chkLogWindow->setChecked(pargs.do_wlog);
 
   /* OK button */
   OK = new QPushButton("OK",this);
@@ -101,10 +108,17 @@ InitWidget::InitWidget(struct args defArgs,
   smallGrid6 = new QHBoxLayout(bigGrid);
   smallGrid6->addWidget(chkCurv);
   
+  /* Build grid layout for external log window */
+  smallGrid7 = new QHBoxLayout(bigGrid);
+  smallGrid7->addWidget(chkLogWindow);
+
   /* Build grid layout for OK button */
   smallGrid4 = new QHBoxLayout(bigGrid);
   smallGrid4->addSpacing(100);
   smallGrid4->addWidget(OK, 0, 1);
+
+  // Bypass Diego's "QTimer hack" ;-)
+  connect(this, SIGNAL(signalrunDone()), this, SLOT(runDone()));
 }
 
 InitWidget::~InitWidget() {
@@ -134,12 +148,22 @@ void InitWidget::getParameters() {
       QValidator::Acceptable) {
     incompleteFields();
   } else {
-    // Use a timer, so that the current events acan be processed before
+    // Use a timer, so that the current events can be processed before
     // starting the compute intensive work.
-    QTimer::singleShot(0,this,SLOT(meshRun()));
-    hide();
+     QTimer::singleShot(0,this,SLOT(meshRun()));
+     hide();
+
   }
   
+}
+
+void InitWidget::runDone() {
+   if (pargs.do_wlog && in_p!=NULL) {
+     textOut = new TextWidget(in_p);
+//      textOut->openFile(in_p);
+     textOut->show();
+     fclose(in_p);
+   }
 }
   
 void InitWidget::incompleteFields() {
@@ -149,12 +173,45 @@ void InitWidget::incompleteFields() {
 }
 
 void InitWidget::meshRun() {
+  int filedes[2];
+  FILE *out_p=NULL;
+
   pargs.m1_fname = (char *) qledMesh1->text().latin1();
   pargs.m2_fname = (char *) qledMesh2->text().latin1();
   pargs.sampling_step = atof((char*)qledSplStep->text().latin1())/100;
   pargs.do_symmetric = chkSymDist->isChecked() == TRUE;
   pargs.do_curvature = chkCurv->isChecked() == TRUE;
-  mesh_run(&pargs,model1,model2);
-  c = new ScreenWidget(model1, model2);
-  c->show();
+  pargs.do_wlog = chkLogWindow->isChecked() == TRUE;
+
+  if (!pargs.do_wlog) {
+    mesh_run(&pargs,model1,model2, stdout);
+    c = new ScreenWidget(model1, model2);
+    if (qApp != NULL)
+      qApp->setMainWidget(c);
+    c->show();
+  } else {
+    if (pipe(filedes)) {
+      perror("ERROR: unable to create pipe ");
+      exit(1);
+    }
+    if ((out_p = fdopen(filedes[1], "w"))==NULL) {
+      fprintf(stderr, "ERROR: unable to open output stream\n");
+      perror("ERROR ");
+      exit(1);
+    }
+    if ((in_p = fdopen(filedes[0], "r"))==NULL) {
+      fprintf(stderr, "ERROR: unable to open input stream\n");
+      perror("ERROR ");
+      exit(1);
+    }
+    mesh_run(&pargs, model1, model2, out_p);
+    fclose(out_p);
+    c = new ScreenWidget(model1, model2);
+    if (qApp != NULL)
+      qApp->setMainWidget(c);
+    c->show();
+    // This is a trick to bypass Diego's "QTimer hack" ;-)
+    emit signalrunDone();
+  }
+
 }

@@ -1,10 +1,10 @@
-/* $Id: ScreenWidget.cpp,v 1.20 2001/09/27 08:56:56 aspert Exp $ */
+/* $Id: ScreenWidget.cpp,v 1.21 2001/10/10 12:57:55 aspert Exp $ */
 #include <ScreenWidget.h>
 
 
 
 ScreenWidget::ScreenWidget(struct model_error *model1,
-                           struct model_error *model2, 
+                           struct model_error *model2,
 			   QWidget *parent, 
 			   const char *name ):QWidget(parent,name) {
   QAction *fileQuitAction;
@@ -111,7 +111,7 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
 
   quitBut = new QPushButton("Quit", this);
   quitBut->setMinimumSize(20, 30);
-  QObject::connect(quitBut, SIGNAL(clicked()), this, SLOT(close()));
+  connect(quitBut, SIGNAL(clicked()), this, SLOT(close()));
 
 
   // Build the two line/fill toggle buttons
@@ -131,11 +131,11 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
 
   if (drawCurv) {
     radGrp = new QButtonGroup(1, Qt::Vertical, this);
-    erBut = new QRadioButton("error", radGrp);
+    erBut = new QRadioButton("Haus. error", radGrp);
     erBut->setChecked(TRUE);
-    k1But = new QRadioButton("k1", radGrp);
-    k2But = new QRadioButton("k2", radGrp);
-    kgBut = new QRadioButton("kg", radGrp);
+    k1But = new QRadioButton("k1 error", radGrp);
+    k2But = new QRadioButton("k2 error", radGrp);
+    kgBut = new QRadioButton("kg error", radGrp);
     
   // This is only needed to set the button ids to our RW_* values
     radGrp->insert(erBut, RW_COLOR_ERROR);

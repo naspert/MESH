@@ -1,4 +1,4 @@
-/* $Id: mesh_run.h,v 1.2 2001/09/27 08:56:59 aspert Exp $ */
+/* $Id: mesh_run.h,v 1.3 2001/10/10 12:57:56 aspert Exp $ */
 
 #ifndef _MESH_RUN_PROTO
 #define _MESH_RUN_PROTO
@@ -26,6 +26,7 @@ struct args {
                          * diagonal of model 2. */
   int do_symmetric; /* do symmetric error measure */
   int do_curvature;
+  int do_wlog;
 };
 
 /* Runs the mesh program, given the parsed arguments in *args. The models and
@@ -33,7 +34,7 @@ struct args {
  * args->no_gui is zero a QT window is opened to display the visual
  * results. */
 void mesh_run(const struct args *args, struct model_error *model1,
-              struct model_error *model2);
+              struct model_error *model2, FILE *out);
 
 END_DECL
 #undef END_DECL

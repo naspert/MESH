@@ -1,4 +1,4 @@
-/* $Id: mesh.cpp,v 1.7 2001/10/01 16:51:16 dsanta Exp $ */
+/* $Id: mesh.cpp,v 1.8 2001/10/10 12:57:56 aspert Exp $ */
 
 #include <time.h>
 #include <string.h>
@@ -9,6 +9,14 @@
 
 #include <mesh_run.h>
 #include <3dmodel_io.h>
+
+// For some strange reason, this *&(*&( symbol is not defined
+// maybe related to the fact that this is C++ compiled....
+#ifndef __USE_POSIX
+#  define __USE_POSIX
+#endif
+#include <stdio.h>
+
 
 /* Prints usage information to the out stream */
 static void print_usage(FILE *out)
@@ -51,6 +59,8 @@ static void print_usage(FILE *out)
   fprintf(out,"      \tmodels have the same number of vertices. The first\n");
   fprintf(out,"      \tmodel should be the 'modified' one whereas the\n");
   fprintf(out,"      \tsecond should be the 'reference' one\n");
+  fprintf(out,"\n");
+  fprintf(out,"  -log\tDisplay the results into a window (beta)\n");
 }
 
 /* Initializes *pargs to default values and parses the command line arguments
@@ -88,6 +98,9 @@ static void parse_args(int argc, char **argv, struct args *pargs)
       } 
       else if (strcmp(argv[i],"-c") == 0) { /* curvature */
 	pargs->do_curvature = 1;
+      }
+      else if (strcmp(argv[i], "-log") == 0) { /* log into window */
+	pargs->do_wlog = 1;
       } else { /* unrecognized option */
         fprintf(stderr,
                 "ERROR: unknown option in command line, use -h for help\n");
@@ -106,6 +119,10 @@ static void parse_args(int argc, char **argv, struct args *pargs)
     }
     i++; /* next argument */
   }
+  if (pargs->no_gui && pargs->do_wlog) {
+    fprintf(stderr, "ERROR: incompatible options -t and -log\n");
+    exit(1);
+  }
   pargs->sampling_step /= 100; /* convert percent to fraction */
 }
 
@@ -121,9 +138,12 @@ int main( int argc, char **argv )
   struct args pargs;
   QApplication *a;
   InitWidget *b;
-  ScreenWidget *c;
+  ScreenWidget *c; 
+  TextWidget *textOut;
   struct model_error model1,model2;
-  int rcode;
+  int filedes[2], rcode;
+  FILE *out_p=NULL, *in_p=NULL;
+  
 
   /* Initialize application */
   a = NULL;
@@ -133,13 +153,16 @@ int main( int argc, char **argv )
   memset(&model2,0,sizeof(model2));
   i = 0;
   while (i<argc) {
-    if (strcmp(argv[i],"-t") == 0) break; /* text version requested */
-    if (strcmp(argv[i],"-h") == 0) break; /* just asked for command line help */
+    if (strcmp(argv[i],"-t") == 0) /* text version requested */
+      break; 
+    if (strcmp(argv[i],"-h") == 0) /* just asked for command line help */
+      break; 
     i++;
   }
   if (i == argc) { /* no text version requested, initialize QT */
     a = new QApplication( argc, argv );
-    if (a != NULL) a->connect( a, SIGNAL(lastWindowClosed()), a, SLOT(quit()) );
+    if (a != NULL) a->connect( a, SIGNAL(lastWindowClosed()), 
+			       a, SLOT(quit()) );
   } else {
     a = NULL; /* No QT app needed */
   }
@@ -152,15 +175,38 @@ int main( int argc, char **argv )
       fprintf(stderr,"ERROR: missing file name(s) in command line\n");
       exit(1);
     }
-    mesh_run(&pargs,&model1,&model2);
+    if (!pargs.do_wlog)
+      mesh_run(&pargs,&model1,&model2, stdout);
+    else {
+      if (pipe(filedes)) {
+	perror("ERROR: unable to create pipe ");
+	exit(1);
+      }
+      if ((out_p = fdopen(filedes[1], "w"))==NULL) {
+	fprintf(stderr, "ERROR: unable to open output stream\n");
+	exit(1);
+      }
+      if ((in_p = fdopen(filedes[0], "r"))==NULL) {
+	fprintf(stderr, "ERROR: unable to open input stream\n");
+	exit(1);
+      }
+      mesh_run(&pargs,&model1,&model2, out_p);
+      fclose(out_p); /* Output should be finished by here ... */
+    }
   } else {
-    b = new InitWidget(pargs,&model1,&model2);
+    b = new InitWidget(pargs, &model1, &model2, a);
     b->show(); 
   }
   if (a != NULL) {
     if (pargs.m1_fname != NULL || pargs.m2_fname != NULL) {
       c = new ScreenWidget(&model1, &model2);
+      a->setMainWidget(c);
       c->show(); 
+      if (pargs.do_wlog) {
+	textOut = new TextWidget(in_p);
+	textOut->show();
+	fclose(in_p);
+      }
     }
     rcode = a->exec();
   } else {

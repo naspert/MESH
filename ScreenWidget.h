@@ -1,4 +1,4 @@
-/* $Id: ScreenWidget.h,v 1.11 2001/09/27 08:56:57 aspert Exp $ */
+/* $Id: ScreenWidget.h,v 1.12 2001/10/10 12:57:55 aspert Exp $ */
 #ifndef SCREENWIDGET_H
 #define SCREENWIDGET_H
 
@@ -27,7 +27,7 @@ class ScreenWidget : public QWidget {
   Q_OBJECT
 public:
   ScreenWidget(struct model_error *model1, struct model_error *model2,
-               QWidget *parent=0, const char *name=0 );
+	       QWidget *parent=0, const char *name=0 );
 
 signals:
   void actualUpdate(double dmoymin, double dmoymax);
