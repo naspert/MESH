@@ -1,8 +1,8 @@
 /*
- * GL2PS, an OpenGL to Postscript Printing Library, version 0.32
+ * GL2PS, an OpenGL to Postscript Printing Library
  * Copyright (C) 1999-2001  Christophe Geuzaine
  *
- * $Id: gl2ps.h,v 1.1 2001/07/03 09:00:58 aspert Exp $
+ * $Id: gl2ps.h,v 1.2 2001/07/03 12:22:26 aspert Exp $
  *
  * E-mail: Christophe.Geuzaine@AdValvas.be
  * URL: http://www.geuz.org/gl2ps/
@@ -30,7 +30,12 @@
 #include <stdlib.h>
 #include <GL/gl.h>
 
+#define GL2PS_VERSION                    0.4
 #define GL2PS_NONE                       0
+
+/* Output file format */
+
+#define GL2PS_EPS                        1
 
 /* Sorting algorithms */
 
@@ -91,6 +96,8 @@
 #define GL2PS_END_POLYGON_BOUNDARY       4
 #define GL2PS_BEGIN_LINE_STIPPLE         5
 #define GL2PS_END_LINE_STIPPLE           6
+#define GL2PS_SET_POINT_SIZE             7
+#define GL2PS_SET_LINE_WIDTH             8
 
 typedef GLfloat GL2PSrgba[4];
 typedef GLfloat GL2PSxyz[3];
@@ -129,15 +136,14 @@ typedef struct {
 } GL2PSstring;
 
 typedef struct {
-  GLshort type, numverts, boundary;
+  GLshort type, numverts, boundary, dash, width;
   GLfloat depth;
-  GLint dash;
   GL2PSvertex *verts;
   GL2PSstring *text;
 } GL2PSprimitive;
 
 typedef struct {
-  GLint sort, options, colorsize, colormode, buffersize;
+  GLint format, sort, options, colorsize, colormode, buffersize;
   char *title, *producer;
   GLboolean shade, boundary;
   GLfloat *feedback, offset[2];
@@ -156,5 +162,7 @@ GLint  gl2psEndPage(GLvoid);
 GLvoid gl2psText(char *str, char *fontname, GLint size);
 GLvoid gl2psEnable(GLint mode);
 GLvoid gl2psDisable(GLint mode);
+GLvoid gl2psPointSize(GLfloat value);
+GLvoid gl2psLineWidth(GLfloat value);
 
 #endif
