@@ -1,4 +1,4 @@
-/* $Id: final2.c,v 1.3 2001/04/02 07:08:21 jacquet Exp $ */
+/* $Id: final2.c,v 1.4 2001/04/02 10:51:48 jacquet Exp $ */
 
 #include <stdio.h>
 #include <math.h>
@@ -293,10 +293,14 @@ sample *sample1;
 int i,j=0,h=0,l=0;
 int m,n,o;
 int a,b,c;
-int memoire[100];
+int *memoire;
 int cellule,facemin,state=0;
 vertex bbox0,bbox1;
 
+ if((memoire=(int *)malloc(50*sizeof(int)))==NULL){
+   printf("erreur d'allocation memoire\n");
+   exit(-1);
+ }
 memoire[0]='\0';
 
 bbox0=raw_model2->BBOX[0];
@@ -333,6 +337,9 @@ cellule=m+n*10+o*100;
 	     }
 	   }
 	   if(state==0){
+             if (h>49){
+               memoire=(int *)realloc(memoire,(h+1)*sizeof(int));
+	     }
 	     memoire[h]=list[cellule][j];
 	     h++;
 	   }
@@ -374,6 +381,7 @@ sample1=echantillon(raw_model2->vertices[raw_model2->faces[facemin].f0],raw_mode
      dmin=d;
  }
 free(sample1->sample);
+free(memoire);
 
  /*printf("nb face test: %d;dmin: %lf\n",h,dmin);*/    
  /*printf("%lf ",dmin);*/
