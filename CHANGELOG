@@ -1,3 +1,7 @@
+* Changes from v1.10 to v1.11:
+	- Fixed a bug in the file format detection code (SMF files with no 
+	  leading comments were incorrectly read)
+
 * Changes from v1.9 to v1.10:
 	- Added support for panning the 3D views, activated with Ctrl key +
           left button mouse dragging.
