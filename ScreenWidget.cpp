@@ -1,8 +1,9 @@
-/* $Id: ScreenWidget.cpp,v 1.28 2002/02/20 23:35:59 dsanta Exp $ */
+/* $Id: ScreenWidget.cpp,v 1.29 2002/02/21 12:45:00 aspert Exp $ */
 #include <ScreenWidget.h>
 
 #include <qhbox.h>
 #include <qhbuttongroup.h>
+#include <qvbuttongroup.h>
 #include <qlabel.h>
 #include <RawWidget.h>
 #include <ColorMapWidget.h>
@@ -22,7 +23,8 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   ColorMapWidget *errorColorBar;
   QPushButton *quitBut;
   QRadioButton *verrBut, *fmerrBut, *serrBut;
-  QButtonGroup *radGrp=NULL;
+  QRadioButton *linBut, *logBut;
+  QButtonGroup *radGrp=NULL, *histoGrp=NULL;
 
 
   setCaption("Mesh: visualization");
@@ -118,9 +120,18 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   radGrp->insert(serrBut, RawWidget::SAMPLE_ERROR);
   connect(radGrp, SIGNAL(clicked(int)), glModel1, SLOT(setErrorMode(int)));
 
+  // Build scale selection buttons
+  histoGrp = new QVButtonGroup(this);
+  linBut = new QRadioButton("Linear scale", histoGrp);
+  linBut->setChecked(TRUE);
+  logBut = new QRadioButton("Log. scale", histoGrp);
+  histoGrp->insert(linBut, ColorMapWidget::LIN_SCALE);
+  histoGrp->insert(logBut, ColorMapWidget::LOG_SCALE);
+  connect(histoGrp, SIGNAL(clicked(int)), 
+          errorColorBar, SLOT(doHistogram(int)));
 
   // Build the topmost grid layout
-  bigGrid = new QGridLayout (this, 3, 7, 5);
+  bigGrid = new QGridLayout (this, 4, 7, 5);
   bigGrid->setMenuBar(mainBar);
   bigGrid->addWidget(errorColorBar, 0, 0);
   bigGrid->addMultiCellWidget(frameModel1, 0, 0, 1, 3);
@@ -129,7 +140,8 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   bigGrid->addWidget(lineSwitch2, 1, 5, Qt::AlignCenter);
   bigGrid->addMultiCellWidget(syncBut, 1, 1, 3, 4, Qt::AlignCenter);
   bigGrid->addMultiCellWidget(radGrp, 2, 2, 2, 5, Qt::AlignCenter);
-  bigGrid->addWidget(quitBut, 2, 0, Qt::AlignCenter);
+  bigGrid->addMultiCellWidget(histoGrp, 1, 2, 0, 0, Qt::AlignCenter);
+  bigGrid->addWidget(quitBut, 3, 0, Qt::AlignCenter);
 
   // Now set a sensible default widget size
   QSize prefSize = layout()->sizeHint();

@@ -1,4 +1,4 @@
-/* $Id: ColorMapWidget.cpp,v 1.16 2002/02/21 09:28:34 dsanta Exp $ */
+/* $Id: ColorMapWidget.cpp,v 1.17 2002/02/21 12:44:59 aspert Exp $ */
 #include <ColorMapWidget.h>
 #include <qapplication.h>
 #include <qpainter.h>
@@ -36,10 +36,11 @@ ColorMapWidget::~ColorMapWidget() {
   free_colormap(colormap);
 }
 
-void ColorMapWidget::doHistogram(int len) {
+void ColorMapWidget::doHistogram(int scaleType) {
   double drange,off;
   double *serror;
   int i,bin_idx,max_cnt,n;
+  int len = cmap_len/CBAR_STEP;
 
   // This is a potentially slow operation
   QApplication::setOverrideCursor(Qt::waitCursor);
@@ -56,13 +57,24 @@ void ColorMapWidget::doHistogram(int len) {
     bin_idx = (int) floor((serror[i]-off)/drange*(len-1)+0.5);
     histogram[bin_idx]++;
   }
+
   max_cnt = 0;
-  for (i=0; i<len; i++) {
+  for (i=0; i<len; i++) 
     if (max_cnt < histogram[i]) max_cnt = histogram[i];
-  }
-  for (i=0; i<len; i++) {
-    histogram[i] = (int)floor(histogram[i]/(double)max_cnt*CBAR_WIDTH+0.5);
-  }
+
+  if (scaleType == LIN_SCALE) {  
+    for (i=0; i<len; i++)
+      histogram[i] = (int)floor(histogram[i]/(double)max_cnt*CBAR_WIDTH+0.5);
+  } else if (scaleType == LOG_SCALE) {
+    for (i=0; i<len; i++) {
+      if (histogram[i] != 0)
+        histogram[i] = (int)floor(log((double)histogram[i])/
+                                  log((double)max_cnt)*CBAR_WIDTH + 0.5);
+    }
+  } else 
+    fprintf(stderr, "Invalid scale specified\n");
+  
+  update();
 
   QApplication::restoreOverrideCursor();
 }
@@ -82,7 +94,7 @@ void ColorMapWidget::paintEvent(QPaintEvent *) {
 
   lscale = (int) floor(log10(dmax));
   scale = pow(10,lscale);
-  f.setPixelSize(9);
+  f.setPixelSize(11);
   p.begin(this);
   p.setFont(f);
   QFontMetrics fm(p.fontMetrics());
@@ -97,7 +109,7 @@ void ColorMapWidget::paintEvent(QPaintEvent *) {
   if (cmap_len != h) {
     free_colormap(colormap);
     cmap_len = h;
-    doHistogram(h/CBAR_STEP);
+    doHistogram(LIN_SCALE);
     colormap = colormap_hsv(cmap_len);
   }
   tmpDisplayedText.sprintf( "%.3f",dmax/scale);
