@@ -1,7 +1,4 @@
-/* $Id: 3dmodel.h,v 1.10 2001/06/27 09:20:00 aspert Exp $ */
-#ifdef MPATROL_TEST
-#include <mpatrol.h>
-#endif
+/* $Id: 3dmodel.h,v 1.11 2001/08/17 08:54:19 dsanta Exp $ */
 #ifdef MEM_DEBUG
 #include <purify.h>
 #endif
