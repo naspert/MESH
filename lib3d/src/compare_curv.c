@@ -1,10 +1,11 @@
-/* $Id: compare_curv.c,v 1.3 2001/09/25 14:50:43 aspert Exp $ */
+/* $Id: compare_curv.c,v 1.4 2001/09/27 12:59:17 aspert Exp $ */
 #include <3dutils.h>
 
 
 /* Returns the angle lying at vertex v0 in the triangle v0v1v2 */
-double get_top_angle(const vertex *v0, const vertex *v1, const vertex *v2) {
-  vertex u0, u1;
+double get_top_angle(const vertex_t *v0, const vertex_t *v1, 
+		     const vertex_t *v2) {
+  vertex_t u0, u1;
   double tmp;
 
   substract_v(v1, v0, &u0);
@@ -16,8 +17,9 @@ double get_top_angle(const vertex *v0, const vertex *v1, const vertex *v2) {
 
 }
 
-double get_top_angle2(const vertex *v0, const vertex *v1, const vertex *v2) {
-  vertex u0, u1, v, h;
+double get_top_angle2(const vertex_t *v0, const vertex_t *v1, 
+		      const vertex_t *v2) {
+  vertex_t u0, u1, v, h;
   double tmp;
 
   substract_v(v1, v0, &u0);
@@ -37,7 +39,7 @@ double get_top_angle2(const vertex *v0, const vertex *v1, const vertex *v2) {
 }
 
 /* Test face f from raw_model to check if this is an obtuse triangle */
-int obtuse_triangle(const vertex *v0, const vertex *v1, const vertex *v2) {
+int obtuse_triangle(const vertex_t *v0, const vertex_t *v1, const vertex_t *v2) {
   double th, sum=0.0;
 
   th = get_top_angle(v0, v1, v2);
@@ -54,15 +56,16 @@ int obtuse_triangle(const vertex *v0, const vertex *v1, const vertex *v2) {
   return 0;
 }
 
-void compute_mean_curvature_normal(const model *raw_model, info_vertex *info, 
-				   int v0, const ring_info *rings, 
-				   vertex *sum_vert, double *mixed_area, 
+void compute_mean_curvature_normal(const struct model *raw_model, 
+				   struct info_vertex *info, 
+				   int v0, const struct ring_info *rings, 
+				   vertex_t *sum_vert, double *mixed_area, 
 				   double *gauss_curv) {
   int v1, v1_idx, v2f, v2b, v2b_idx, v2, i;
   int n=rings[v0].size;
-  vertex tmp;
+  vertex_t tmp;
   double alpha, beta, c, theta;
-  face cur_face;
+  face_t cur_face;
 
   *mixed_area = 0.0;
   sum_vert->x = 0.0;
@@ -151,8 +154,9 @@ void compute_mean_curvature_normal(const model *raw_model, info_vertex *info,
 }
 
 
-void compute_curvature(const model *raw_model, info_vertex *info, 
-		       const ring_info *rings) {
+void compute_curvature(const struct model *raw_model, 
+		       struct info_vertex *info, 
+		       const struct ring_info *rings) {
   int i;
   double k, k2, delta;
   
@@ -192,9 +196,9 @@ void compute_curvature(const model *raw_model, info_vertex *info,
 }
 
 int main(int argc, char **argv) {
-  model *raw_model1, *raw_model2;
-  info_vertex *info1, *info2;
-  ring_info *rings1, *rings2;
+  struct model *raw_model1, *raw_model2;
+  struct info_vertex *info1, *info2;
+  struct ring_info *rings1, *rings2;
   int i;
   char *filename1, *filename2;
   double *deltak1, *deltak2, *deltakg;
@@ -221,10 +225,12 @@ int main(int argc, char **argv) {
   }
 
   printf("Computing face normals...\n");
-  info1 = (info_vertex*)malloc(raw_model1->num_vert*sizeof(info_vertex));
+  info1 = (struct info_vertex*)
+    malloc(raw_model1->num_vert*sizeof(struct info_vertex));
   raw_model1->face_normals = compute_face_normals(raw_model1, info1);
 
-  info2 = (info_vertex*)malloc(raw_model2->num_vert*sizeof(info_vertex));
+  info2 = (struct info_vertex*)
+    malloc(raw_model2->num_vert*sizeof(struct info_vertex));
   raw_model2->face_normals = compute_face_normals(raw_model2, info2);
 
   printf("Computing vertex normals...\n");
@@ -234,8 +240,10 @@ int main(int argc, char **argv) {
   compute_vertex_normal(raw_model2, info2, raw_model2->face_normals); 
 
   printf("Generating 1-rings of all vertices...\n");
-  rings1 = (ring_info*)malloc(raw_model1->num_vert*sizeof(ring_info));
-  rings2 = (ring_info*)malloc(raw_model2->num_vert*sizeof(ring_info));
+  rings1 = (struct ring_info*)
+    malloc(raw_model1->num_vert*sizeof(struct ring_info));
+  rings2 = (struct ring_info*)
+    malloc(raw_model2->num_vert*sizeof(struct ring_info));
   for (i=0; i<raw_model1->num_vert; i++) {
     build_star(raw_model1, i, &(rings1[i]));
     build_star(raw_model2, i, &(rings2[i]));

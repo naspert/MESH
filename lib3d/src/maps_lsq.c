@@ -7,28 +7,29 @@
 
 /* Computes the principal curvatures for each vertex */
 /* using a least-squares fitting on the neighborhood */
-void lsq_fit(model *raw_model, ring_info *rings, info_vertex *curv) {
+void lsq_fit(struct model *raw_model, struct ring_info *rings, 
+	     struct info_vertex *curv) {
   int i, j;
-  vertex **t;
-  vertex vi_j; /* vi - vj */
-  vertex nvi;
-  vertex t1l, t2l;
-  vertex b0, b1; /* basis vectors of tangent plane*/ 
-  vertex **d;
+  vertex_t **t;
+  vertex_t vi_j; /* vi - vj */
+  vertex_t nvi;
+  vertex_t t1l, t2l;
+  vertex_t b0, b1; /* basis vectors of tangent plane*/ 
+  vertex_t **d;
   double  *u,  k1, k2, delta;
   gsl_matrix *X, *cov;
   gsl_vector *y,  *c;
   gsl_multifit_linear_workspace *wspace;
   double chisq;
 
-  t = (vertex**)malloc(raw_model->num_vert*sizeof(vertex*));
-  d = (vertex**)malloc(raw_model->num_vert*sizeof(vertex*));
+  t = (vertex_t**)malloc(raw_model->num_vert*sizeof(vertex_t*));
+  d = (vertex_t**)malloc(raw_model->num_vert*sizeof(vertex_t*));
 
   
 
   for (i=0; i<raw_model->num_vert; i++) {
-    t[i] = (vertex*)malloc(rings[i].size*sizeof(vertex));
-    d[i] = (vertex*)malloc(rings[i].size*sizeof(vertex));
+    t[i] = (vertex_t*)malloc(rings[i].size*sizeof(vertex_t));
+    d[i] = (vertex_t*)malloc(rings[i].size*sizeof(vertex_t));
 
 
     nvi = raw_model->normals[i];
@@ -180,16 +181,18 @@ void lsq_fit(model *raw_model, ring_info *rings, info_vertex *curv) {
 
 
 
-void compute_curvature(model *raw_model) {
+void compute_curvature(struct model *raw_model) {
   int i;
-  info_vertex *curv;
-  ring_info *rings;
+  struct info_vertex *curv;
+  struct ring_info *rings;
 
   
 
   raw_model->area = (double*)malloc(raw_model->num_faces*sizeof(double));
-  curv = (info_vertex*)malloc(raw_model->num_vert*sizeof(info_vertex));
-  rings= (ring_info*)malloc(raw_model->num_vert*sizeof(ring_info));
+  curv = (struct info_vertex*)
+    malloc(raw_model->num_vert*sizeof(struct info_vertex));
+  rings= (struct ring_info*)
+    malloc(raw_model->num_vert*sizeof(struct ring_info));
   /* Compute normals of each face of the model */
   raw_model->face_normals = compute_face_normals(raw_model, curv);
 
@@ -222,8 +225,7 @@ void compute_curvature(model *raw_model) {
 int main(int argc, char **argv) {
   
   char *basename;
-/*   int frame; */
-  model *raw_model;
+  struct model *raw_model;
   
 
   if (argc != 2) {
@@ -232,7 +234,6 @@ int main(int argc, char **argv) {
   }
   
   basename = argv[1];
-/*   frame = atoi(argv[2]); */
   raw_model = read_raw_model(basename);
   printf("Model read\n");
 
