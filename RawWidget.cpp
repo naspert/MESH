@@ -1,4 +1,4 @@
-/* $Id: RawWidget.cpp,v 1.40 2002/02/21 13:07:28 dsanta Exp $ */
+/* $Id: RawWidget.cpp,v 1.41 2002/02/21 13:12:25 dsanta Exp $ */
 
 #include <RawWidget.h>
 #include <qmessagebox.h>
@@ -194,8 +194,6 @@ int RawWidget::fillTexture(const struct face_error *fe,
           r = (GLubyte) (255*colormap[cidx][0]);
           g = (GLubyte) (255*colormap[cidx][1]);
           b = (GLubyte) (255*colormap[cidx][2]);
-          fprintf(stderr,"i = %i, j = %i, cidx = %i (in) RGB= %i %i %i\n",
-                  i2,j2,cidx,r,g,b);
         } else if (j == n-i) {
           /* diagonal border texel, can be used in GL_LINEAR texture mode */
           e1 = (i>0&&j>0) ? fe->serror[(j-1)+(i-1)*(2*n-(i-1)+1)/2] : 0;
@@ -210,12 +208,8 @@ int RawWidget::fillTexture(const struct face_error *fe,
           r = (GLubyte) (255*colormap[cidx][0]);
           g = (GLubyte) (255*colormap[cidx][1]);
           b = (GLubyte) (255*colormap[cidx][2]);
-          fprintf(stderr,"i = %i, j = %i, cidx = %i (diag) RGB= %i %i %i\n",
-                  i2,j2,cidx,r,g,b);
         } else { /* out of triangle point, this texel will never be used */
           r = g = b = 0; /* black */
-          fprintf(stderr,"i = %i, j = %i (out) RGB= %i %i %i\n",
-                  i2,j2,r,g,b);
         }
         texture[k++] = r;
         texture[k++] = g;
