@@ -1,4 +1,4 @@
-/* $Id: 3dmodel.h,v 1.9 2001/06/13 12:00:22 aspert Exp $ */
+/* $Id: 3dmodel.h,v 1.10 2001/06/27 09:20:00 aspert Exp $ */
 #ifdef MPATROL_TEST
 #include <mpatrol.h>
 #endif
@@ -81,6 +81,7 @@ typedef struct {
   int face;
 }edge_sort;
 
+
 typedef struct fnode *face_tree_ptr;
 
 typedef struct fnode {
@@ -117,6 +118,11 @@ typedef struct {
 }model;
 
 
+struct dual_graph_info {
+  int num_edges_dual;
+  edge_dual *edges;
+  int *done;
+};
 
 typedef struct dual_list *edge_list_ptr;
 

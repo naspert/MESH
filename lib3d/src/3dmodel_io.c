@@ -1,10 +1,10 @@
-/* $Id: 3dmodel_io.c,v 1.10 2001/06/15 12:39:50 aspert Exp $ */
+/* $Id: 3dmodel_io.c,v 1.11 2001/06/27 09:20:01 aspert Exp $ */
 #include <3dmodel.h>
 
 
-int read_header(FILE *pf, int *nvert, int *nfaces, int *nnorms) {
+int read_header(FILE *pf, int *nvert, int *nfaces, int *nnorms, int *nfnorms) {
   char buffer[300];
-  char *tok1, *tok2, *tok3, *delim;
+  char *tok1, *tok2, *tok3, *tok4, *delim;
 
     
   *nfaces = 0;
@@ -20,9 +20,23 @@ int read_header(FILE *pf, int *nvert, int *nfaces, int *nnorms) {
   tok1 = strtok(buffer, delim);
   tok2 = strtok(NULL, delim);
   tok3 = strtok(NULL, delim);
+  tok4 = strtok(NULL, delim);
   free(delim);
   /* Check validity */
-  if (tok3 != NULL) {
+  if (tok4 != NULL) {
+    *nfnorms = atoi(tok4);
+    *nnorms = atoi(tok3);
+    *nfaces = atoi(tok2);
+    *nvert = atoi(tok1);
+    if (*nfaces != *nfnorms) {
+      fprintf(stderr, "Incorrect number of face normals\n");
+      return 0;
+    }
+    if (*nvert != *nnorms) {
+      fprintf(stderr, "Incorrect number of vertex normals\n");
+      return 0;
+    }
+  } else if (tok3 != NULL) {
     *nnorms = atoi(tok3);
     *nfaces = atoi(tok2);
     *nvert = atoi(tok1);
@@ -40,7 +54,7 @@ int read_header(FILE *pf, int *nvert, int *nfaces, int *nnorms) {
   return 1;
 } 
 
-model* alloc_read_model(FILE *pf, int nvert, int nfaces, int nnorms) {
+model* alloc_read_model(FILE *pf, int nvert, int nfaces, int nnorms, int nfnorms) {
   model *raw_model;
   int i;
   double x,y,z;
@@ -62,7 +76,12 @@ model* alloc_read_model(FILE *pf, int nvert, int nfaces, int nnorms) {
   raw_model->bBox[1].y = -FLT_MAX;
   raw_model->bBox[1].z = -FLT_MAX;
 
-  if (nnorms > 0) {
+  if (nfnorms > 0) {
+    raw_model->face_normals = (vertex*)malloc(nfnorms*sizeof(vertex));
+    raw_model->normals = (vertex*)malloc(nnorms*sizeof(vertex));
+    raw_model->builtin_normals = 1;
+  }
+  else if (nnorms > 0) {
     raw_model->normals = (vertex*)malloc(nnorms*sizeof(vertex));
     raw_model->builtin_normals = 1;
   }
@@ -107,7 +126,15 @@ model* alloc_read_model(FILE *pf, int nvert, int nfaces, int nnorms) {
       raw_model->normals[i].z = z;
     }
   }
-  raw_model->face_normals = NULL;
+  if (nfnorms > 0) {
+    for (i=0; i<nfnorms; i++) {
+      fscanf(pf,"%lf %lf %lf",&x, &y, &z);
+      raw_model->face_normals[i].x = x;
+      raw_model->face_normals[i].y = y;
+      raw_model->face_normals[i].z = z;
+    }
+  }
+  
   raw_model->area = NULL;
   return raw_model;
 }
@@ -116,10 +143,10 @@ model* alloc_read_model(FILE *pf, int nvert, int nfaces, int nnorms) {
 model* read_raw_model(char *filename) {
   model* raw_model;
   FILE *pf;
-  int nfaces=0; 
-  int nvert=0;
-  int nnorms=0;
-
+  int nfaces = 0; 
+  int nvert = 0;
+  int nnorms = 0;
+  int nfnorms = 0;
 
   pf = fopen(filename, "r");
   if (pf==NULL) {
@@ -127,12 +154,13 @@ model* read_raw_model(char *filename) {
     exit(-1);
   }
     
-  if (read_header(pf, &nvert, &nfaces, &nnorms) == 0) {
+  if (!read_header(pf, &nvert, &nfaces, &nnorms, &nfnorms)) {
+    fprintf(stderr, "Exitting\n");
     fclose(pf);
     exit(-1);
   } 
 
-  raw_model = alloc_read_model(pf, nvert, nfaces, nnorms);
+  raw_model = alloc_read_model(pf, nvert, nfaces, nnorms, nfnorms);
 
   fclose(pf);
   return raw_model;
@@ -146,7 +174,7 @@ model* read_raw_model_frame(char *filename,int frame) {
   FILE *pf;
   char *fullname;
   char *tmp;
-  int nfaces, nvert, len, nnorms;
+  int nfaces=0, nvert=0, len, nnorms=0, nfnorms=0;
 
   if (frame == -1) {
     len = strlen(filename)+20;
@@ -175,12 +203,12 @@ model* read_raw_model_frame(char *filename,int frame) {
     exit(-1);
   }
   
-  if (read_header(pf, &nvert, &nfaces, &nnorms) == 0) {
+  if (!read_header(pf, &nvert, &nfaces, &nnorms, &nfnorms)) {
     fclose(pf);
     exit(-1);
   }
 
-  raw_model = alloc_read_model(pf, nvert, nfaces, nnorms);
+  raw_model = alloc_read_model(pf, nvert, nfaces, nnorms, nfnorms);
 
   fclose(pf);
   return raw_model;
@@ -232,8 +260,8 @@ void write_raw_model(model *raw_model, char *filename) {
     fprintf(pf, "%d %d %d\n",raw_model->faces[i].f0,
 	    raw_model->faces[i].f1,raw_model->faces[i].f2);
   } else {
-    fprintf(pf,"%d %d %d\n",raw_model->num_vert,raw_model->num_faces, 
-	    raw_model->num_vert);
+    fprintf(pf,"%d %d %d %d\n",raw_model->num_vert,raw_model->num_faces, 
+	    raw_model->num_vert, raw_model->num_faces);
     for (i=0; i<raw_model->num_vert; i++)
       fprintf(pf, "%f %f %f\n",raw_model->vertices[i].x,
 	      raw_model->vertices[i].y, raw_model->vertices[i].z);
@@ -245,6 +273,10 @@ void write_raw_model(model *raw_model, char *filename) {
     for (i=0; i<raw_model->num_vert; i++)
       fprintf(pf, "%f %f %f\n", raw_model->normals[i].x, 
 	      raw_model->normals[i].y, raw_model->normals[i].z);
+
+    for (i=0; i<raw_model->num_faces; i++)
+      fprintf(pf, "%f %f %f\n", raw_model->face_normals[i].x,
+	      raw_model->face_normals[i].y, raw_model->face_normals[i].z);
 	 
   }
   fclose(pf);
