@@ -1,4 +1,4 @@
-/* $Id: ScreenWidget.h,v 1.30 2003/01/13 12:46:06 aspert Exp $ */
+/* $Id: ScreenWidget.h,v 1.31 2003/01/13 13:01:14 aspert Exp $ */
 
 
 /*
@@ -86,7 +86,6 @@ protected slots:
 
 private:
   QHGroupBox *qgbSlider;
-  QVGroupBox *qgbTimer;
   QSlider *qslidDispSampDensity;
   QSpinBox *qspSampDensity, *qspTimerSpeed;
   QCheckBox *qcbInvNorm, *qcbTwoSide, *qcbTimer;
