@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.27 2001/08/10 09:59:42 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.28 2001/08/10 12:32:03 dsanta Exp $ */
 
 #include <compute_error.h>
 
@@ -147,10 +147,10 @@ static INLINE void neg_v(const vertex *v, vertex *vout)
 }
 
 /* Reallocates the buffers of tse to store the sample errors for a triangle
- * sampling with n samples in each direction. If n is zero, the buffer is
- * freed. If tse->err and tse->err_lin is NULL new buffers are allocated. If
- * tse->n_samples equals n nothing is done. The allocation never fails (if out
- * of memory the program is stopped, as with xrealloc()) */
+ * sampling with n samples in each direction. If tse->err and tse->err_lin is
+ * NULL new buffers are allocated. If tse->n_samples equals n nothing is
+ * done. The allocation never fails (if out of memory the program is stopped,
+ * as with xrealloc()) */
 static void realloc_triag_sample_error(struct triag_sample_error *tse, int n)
 {
   int i;
@@ -165,6 +165,16 @@ static void realloc_triag_sample_error(struct triag_sample_error *tse, int n)
       tse->err[i] = tse->err[i-1]+(n-(i-1));
     }
   }
+}
+
+/* Frees the buffers in tse (allocated with realloc_triag_sample_error()). */
+static void free_triag_sample_error(struct triag_sample_error *tse)
+{
+  if (tse == NULL) return;
+  free(tse->err);
+  free(tse->err_lin);
+  tse->err = NULL;
+  tse->err_lin = NULL;
 }
 
 /* Computes the vertex normals assuming an oriented model. The triangle
@@ -1062,6 +1072,6 @@ void dist_surf_surf(const model *m1, model *m2, int n_spt,
   free(fic->triag_idx);
   free(fic->empty_cell);
   free(fic);
-  realloc_triag_sample_error(&tse,0);
+  free_triag_sample_error(&tse);
   free(ts.sample);
 }
