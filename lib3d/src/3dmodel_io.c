@@ -1,4 +1,4 @@
-/* $Id: 3dmodel_io.c,v 1.20 2001/10/30 09:25:54 aspert Exp $ */
+/* $Id: 3dmodel_io.c,v 1.21 2001/12/07 17:15:29 aspert Exp $ */
 #include <3dmodel.h>
 #include <3dmodel_io.h>
 #include <normals.h>
@@ -49,7 +49,7 @@ struct model* alloc_read_model(FILE *pf, int* header_fields) {
 
   printf("num_faces = %d num_vert = %d\n", nfaces, nvert); 
   raw_model = (struct model*)malloc(sizeof(struct model));
-  raw_model = memset(raw_model, 0, sizeof(struct model));
+  memset(raw_model, 0, sizeof(struct model));
   raw_model->num_faces = nfaces;
   raw_model->num_vert = nvert;
   raw_model->faces = (face_t*)malloc(nfaces*sizeof(face_t));

@@ -1,4 +1,4 @@
-/* $Id: normals.c,v 1.16 2001/10/30 09:26:07 aspert Exp $ */
+/* $Id: normals.c,v 1.17 2001/12/07 17:15:30 aspert Exp $ */
 #include <3dmodel.h>
 #include <geomutils.h>
 #include <normals.h>
@@ -430,8 +430,8 @@ struct face_tree** bfs_build_spanning_tree(struct model *raw_model,
 
   dg_idx = (struct dual_graph_index*)malloc(raw_model->num_faces*
 					    sizeof(struct dual_graph_index));
-  dg_idx = memset(dg_idx, 0, 
-		  raw_model->num_faces*sizeof(struct dual_graph_index));
+  memset(dg_idx, 0, 
+	 raw_model->num_faces*sizeof(struct dual_graph_index));
 
 
   ne_dual = build_edge_list(raw_model, dual_graph, curv, &dg_idx);

@@ -1,4 +1,4 @@
-/* $Id: cone.c,v 1.3 2001/10/30 09:26:02 aspert Exp $ */
+/* $Id: cone.c,v 1.4 2001/12/07 17:15:30 aspert Exp $ */
 #include <3dutils.h>
 
 int main(int argc, char **argv) {
@@ -17,7 +17,7 @@ int main(int argc, char **argv) {
   out_fname = argv[3];
   
   cone = (struct model*)malloc(sizeof(struct model));
-  cone = memset(cone, 0, sizeof(struct model));
+  memset(cone, 0, sizeof(struct model));
   cone->num_vert = valence + 2;
   cone->vertices = (vertex_t*)malloc(cone->num_vert*sizeof(vertex_t));
   cone->num_faces = 2*valence;

@@ -1,4 +1,4 @@
-/* $Id: dirac.c,v 1.3 2001/10/30 09:26:03 aspert Exp $ */
+/* $Id: dirac.c,v 1.4 2001/12/07 17:15:30 aspert Exp $ */
 #include <3dutils.h>
 
 int main(int argc, char **argv) {
@@ -23,7 +23,7 @@ int main(int argc, char **argv) {
     valence =3;
 
   dirac = (struct model*)malloc(sizeof(struct model));
-  dirac = memset(dirac, 0, sizeof(struct model));
+  memset(dirac, 0, sizeof(struct model));
   dirac->num_vert = (nrings + 1)*valence + 1;
   dirac->num_faces = (nrings*2 +1)*valence;
   dirac->vertices = (vertex_t*)malloc(dirac->num_vert*sizeof(vertex_t));

@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.25 2001/11/30 15:08:10 aspert Exp $
+# $Id: Makefile,v 1.26 2001/12/07 17:15:30 aspert Exp $
 
 
 OS := $(shell uname -s)
@@ -14,7 +14,7 @@ ifeq ($(OS), Linux)
 CC = gcc
 XTRA_CFLAGS = -g  -pipe -ansi -pedantic -Wall -D__USE_DISPLAY_LISTS_
 
-GL_VENDOR = $(shell $(GLXINFO)|grep "OpenGL vendor"|cut -d\: -f2|cut -d\  -f2)
+GL_VENDOR := $(shell $(GLXINFO)|grep "OpenGL vendor"|cut -d\: -f2|cut -d\  -f2)
 ALL_TARGETS = $(TARGETS) rawview subdiv $(GSL_TARGETS)
 ifeq ($(GL_VENDOR), Hewlett-Packard) # The HP visualize have special dirs.
 GLDIR = $(HP_GLDIR)
