@@ -66,7 +66,7 @@ triangular meshes are accepted.
 * The Inventor parser only reads the Coordinate3-point and 
 IndexedFaceSet-coordIndex nodes. It will ignore all other fields, 
 icluding Normal vectors.
-* The SMF parser will *only* read vertices and faces. It will ignore 
+* The SMF parser will *only* read vertices and triangular faces. It will ignore 
 everything else in the SMF specification (bindings, colors, transforms, 
 begin/end ...).
 

@@ -1,4 +1,4 @@
-/* $Id: model_in.h,v 1.7 2002/04/11 15:33:52 aspert Exp $ */
+/* $Id: model_in.h,v 1.8 2002/04/12 13:47:15 aspert Exp $ */
 
 
 /*
@@ -67,7 +67,7 @@
  *     ignored. 
  *
  * - SMF : 
- *     Only the vertices and faces are read (which should be
+ *     Only the vertices and triangular faces are read (which should be
  *     sufficient to read the output of QSlim for instance). Every
  *     other field (normals, transforms, colors, begin/end, etc.) is
  *     ignored. 
