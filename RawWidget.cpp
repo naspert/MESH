@@ -1,4 +1,4 @@
-/* $Id: RawWidget.cpp,v 1.13 2001/08/10 10:10:42 dsanta Exp $ */
+/* $Id: RawWidget.cpp,v 1.14 2001/09/05 12:16:37 dsanta Exp $ */
 #include <RawWidget.h>
 
 // 
@@ -200,23 +200,17 @@ void RawWidget::rebuild_list() {
     glBegin(GL_TRIANGLES);  
     for (i=0; i<rawModelStruct->num_faces; i++) {
       cur_face = &(rawModelStruct->faces[i]);
-      glColor3f(colormap[rawModelStruct->error[cur_face->f0]][0],
-		colormap[rawModelStruct->error[cur_face->f0]][1],
-		colormap[rawModelStruct->error[cur_face->f0]][2]);  
+      glColor3dv(colormap[rawModelStruct->error[cur_face->f0]]);
       glVertex3d(rawModelStruct->vertices[cur_face->f0].x,
 		 rawModelStruct->vertices[cur_face->f0].y,
 		 rawModelStruct->vertices[cur_face->f0].z); 
       
-      glColor3f(colormap[rawModelStruct->error[cur_face->f1]][0],
-		colormap[rawModelStruct->error[cur_face->f1]][1],
-		colormap[rawModelStruct->error[cur_face->f1]][2]);
+      glColor3dv(colormap[rawModelStruct->error[cur_face->f1]]);
       glVertex3d(rawModelStruct->vertices[cur_face->f1].x,
 		 rawModelStruct->vertices[cur_face->f1].y,
 		 rawModelStruct->vertices[cur_face->f1].z); 
       
-      glColor3f(colormap[rawModelStruct->error[cur_face->f2]][0],
-		colormap[rawModelStruct->error[cur_face->f2]][1],
-		colormap[rawModelStruct->error[cur_face->f2]][2]);
+      glColor3dv(colormap[rawModelStruct->error[cur_face->f2]]);
       glVertex3d(rawModelStruct->vertices[cur_face->f2].x,
 		 rawModelStruct->vertices[cur_face->f2].y,
 		 rawModelStruct->vertices[cur_face->f2].z);       
