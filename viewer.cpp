@@ -1,4 +1,4 @@
-/* $Id: viewer.cpp,v 1.34 2001/08/10 13:06:24 dsanta Exp $ */
+/* $Id: viewer.cpp,v 1.35 2001/08/10 14:24:15 dsanta Exp $ */
 
 #include <time.h>
 #include <string.h>
@@ -136,11 +136,20 @@ int main( int argc, char **argv )
   double *tmp_error;
   struct args pargs;
   ScreenWidget *c;
-  QApplication a( argc, argv ); 
+  QApplication *a;
 
 
-
-
+  /* Initialize application */
+  i = 0;
+  while (i<argc) {
+    if (strcmp(argv[i],"-t") == 0) break; /* text version requested */
+    i++;
+  }
+  if (i == argc) { /* no text version requested, initialize QT */
+    a = new QApplication( argc, argv );
+  } else {
+    a = NULL; /* No QT app needed */
+  }
 
   /* Parse arguments */
   parse_args(argc,argv,&pargs);
@@ -153,9 +162,9 @@ int main( int argc, char **argv )
   } else {
     InitWidget *b;
     b = new InitWidget() ;
-    a.setMainWidget(b);
+    a->setMainWidget(b);
     b->show(); 
-    a.exec();
+    a->exec();
     
     pargs.m1_fname = b->mesh1;
     pargs.m2_fname = b->mesh2;
@@ -255,10 +264,10 @@ int main( int argc, char **argv )
    
    c = new ScreenWidget(raw_model1, raw_model2, dmoymin, dmoymax);
    QObject::connect(c->quitBut, SIGNAL(clicked()), 
-	    &a, SLOT(quit()));
-   a.setMainWidget( c );
+	    a, SLOT(quit()));
+   a->setMainWidget( c );
    c->show(); 
-   return a.exec();
+   return a->exec();
 
   }
  
