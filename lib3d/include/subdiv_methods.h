@@ -1,4 +1,4 @@
-/* $Id: subdiv_methods.h,v 1.9 2002/05/13 13:50:46 aspert Exp $ */
+/* $Id: subdiv_methods.h,v 1.10 2002/05/27 15:10:40 aspert Exp $ */
 #include <3dmodel.h>
 #include <ring.h>
 
@@ -33,8 +33,9 @@ struct midpoint_info {
 /* Precomputed regular stencil */
 const static float reg_sten[6] = {0.25 - __2W,  0.125 + __2W, -0.125 - __2W, 
                                   __2W, -0.125 - __2W, 0.125 + __2W};
-const static float sten_3[3] = {_5_12, _M1_12, _M1_12};
 const static float sten_4[4] = {0.375, 0.0, -0.125, 0.0};
+const static float sten_3[3] = {_5_12, _M1_12, _M1_12};
+
 
 # ifdef __cplusplus
 extern "C" {
