@@ -1,4 +1,4 @@
-/* $Id: geomutils.h,v 1.36 2002/09/26 12:39:39 dsanta Exp $ */
+/* $Id: geomutils.h,v 1.37 2002/10/31 10:19:27 aspert Exp $ */
 
 
 /*
@@ -200,9 +200,9 @@ extern "C" {
    * is OK for vout to alias v1 and/or v2. */
   INLINE void substract_v(const vertex_t *v1, const vertex_t *v2,
                           vertex_t *vout) {
-  vout->x = v1->x - v2->x;
-  vout->y = v1->y - v2->y;
-  vout->z = v1->z - v2->z;
+    vout->x = v1->x - v2->x;
+    vout->y = v1->y - v2->y;
+    vout->z = v1->z - v2->z;
   }
   
   /* Adds vectors v1 and v2 and puts the result in vout. It is OK for vout to
