@@ -1,4 +1,4 @@
-/* $Id: viewer.cpp,v 1.10 2001/06/13 14:13:38 jacquet Exp $ */
+/* $Id: viewer.cpp,v 1.11 2001/06/27 09:01:03 jacquet Exp $ */
 
 #include <qapplication.h>
 #include <ScreenWidget.h>
@@ -6,6 +6,7 @@
 #include <qkeycode.h>
 #include <compute_error.h>
 #include <init.h>
+#include <string.h>
 
 
 #define min3(x,y,z) (((x)<(y))?(((x)<(z))?(x):(z)):(((y)<(z))?(y):(z)))
@@ -44,12 +45,14 @@ int main( int argc, char **argv )
   int facteur;
   info_vertex *curv;
   QString m1,n1,o1;
+  int text;
 
  /* affichage de la fenetre graphique */
  QApplication::setColorSpec( QApplication::CustomColor );
  QApplication a( argc, argv ); 
 
- if(argc!=4){
+
+ if(argc<=4){
    InitWidget b;
    a.setMainWidget( &b );
    b.show(); 
@@ -63,9 +66,19 @@ int main( int argc, char **argv )
    samplethin=atof(thin);
  }
  else {
-  in_filename1 = argv[1];
-  in_filename2 = argv[2];
-  samplethin=atof(argv[3]);
+   if(strcmp("-t",argv[1]) == 0) {
+     text = 0;     
+     in_filename1 = argv[2];
+     in_filename2 = argv[3];
+     samplethin=atof(argv[4]);
+   }
+   else {
+     in_filename1 = argv[1];
+     in_filename2 = argv[2];
+     samplethin=atof(argv[3]);
+     text = 1;
+   }
+  
  } 
 
   k=(int)floor(1.0/samplethin);
@@ -245,10 +258,12 @@ int main( int argc, char **argv )
      raw_model1->error[i]=0;
  }
 
- ScreenWidget c(raw_model1,raw_model2,superdmin,superdmax);
- a.setMainWidget( &c );
- c.show(); 
- a.exec();
 
-
+ if(text == 1){
+   ScreenWidget c(raw_model1,raw_model2,superdmin,superdmax);
+   a.setMainWidget( &c );
+   c.show(); 
+   a.exec();
+ }
+ 
 }
