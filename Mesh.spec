@@ -1,12 +1,12 @@
 # Spec file for MESH
-# $Id: Mesh.spec,v 1.7 2003/01/14 13:05:08 aspert Exp $
+# $Id: Mesh.spec,v 1.8 2003/03/26 09:19:06 aspert Exp $
 Summary: Measuring Errors between Surfaces using the Hausdorff distance
 Name: Mesh
-Version: 1.8
+Version: 1.9
 Release: 1
 License: GPL
 Group: Applications/Scientific Visualization
-Source: http://mesh.epfl.ch/Mesh-1.8.tar.gz
+Source: http://mesh.epfl.ch/Mesh-1.9.tar.gz
 URL: http://mesh.epfl.ch
 Packager: Nicolas Aspert <Nicolas.Aspert@epfl.ch>
 Requires: qt >= 2.3, zlib >= 1.1, libpng >= 1, libjpeg >= 6, Mesa >= 3.4, libstdc++ >= 2.95
