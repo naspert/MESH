@@ -1,4 +1,13 @@
-# $Id: Makefile,v 1.10 2001/08/07 08:31:41 aspert Exp $
+# $Id: Makefile,v 1.11 2001/08/07 14:19:07 dsanta Exp $
+
+#
+# If the make variable PROFILE is defined, profiling flags are automatically
+# added. If the value of the variable is 'full' (without the quotes) the
+# executable is linked with the profiling versions of the standard C library.
+# Note that 'full' requires the creation of a fully static executable, and
+# thus the complete list of libraries might need to be adjusted depending on
+# your installation.
+#
 
 # Default compiler for C and C++ (CPP is normally the C preprocessor)
 CC = gcc
@@ -20,6 +29,16 @@ XTRA_CFLAGS = -g -O2 -ansi -march=i686
 XTRA_CXXFLAGS = -g -O2 -ansi
 XTRA_LDFLAGS = -g
 
+# Add profiling flags if requested
+ifdef PROFILE
+XTRA_CFLAGS += -pg
+XTRA_CXXFLAGS += -pg
+XTRA_LDFLAGS += -pg
+ifeq ($(PROFILE),full)
+XTRA_LDFLAGS += -static
+endif
+endif
+
 # Source files and executable name
 VIEWER_EXE := $(BINDIR)/viewer
 VIEWER_C_SRCS := $(wildcard *.c)
@@ -33,12 +52,18 @@ QTINCFLAGS = -I$(QTDIR)/include
 GLINCFLAGS = -I/usr/X11R6/include
 
 # Libraries and search path for final linking
+ifeq ($(PROFILE),full)
+LDLIBS = -lqt -lGL -lGLU -lXmu -lXext -lSM -lICE -lXft -lpng -ljpeg -lmng \
+	-lXi -ldl -lXt -lz -lfreetype -lXrender -lX11 -lm_p -lc_p
+else
 LDLIBS = -lqt -lGL -lGLU -lXmu -lXext -lX11 -lm
+endif
 LOADLIBES = -L$(QTDIR)/lib -L/usr/X11R6/lib
 LDFLAGS =
 
 # C and C++ warning flags
-WARN_CFLAGS = -pedantic -Wall -W -Winline -Wmissing-prototypes -Wstrict-prototypes -Wnested-externs -Wshadow -Waggregate-return
+WARN_CFLAGS = -pedantic -Wall -W -Winline -Wmissing-prototypes \
+	-Wstrict-prototypes -Wnested-externs -Wshadow -Waggregate-return
 WARN_CXXFLAGS = -pedantic -Wall -W -Wmissing-prototypes
 
 # Preprocessor flags
