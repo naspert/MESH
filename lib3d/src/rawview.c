@@ -1,4 +1,4 @@
-/* $Id: rawview.c,v 1.18 2002/06/11 16:02:39 aspert Exp $ */
+/* $Id: rawview.c,v 1.19 2002/08/15 13:34:37 aspert Exp $ */
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -459,14 +459,18 @@ int main(int argc, char **argv) {
 
   int i, rcode=0;
   char *title;
-  const char s_title[]="Raw Mesh Viewer v3.1b - ";
+  const char s_title[]="Raw Mesh Viewer v3.1 - ";
   vertex_t center;
   struct model* raw_model;
 
 
   assert(sizeof(vertex_t) == 3*sizeof(float));
   if (argc != 2) {
-    printf("Usage:%s file.[raw, wrl]\n", argv[0]);
+#ifdef DONT_USE_ZLIB
+    fprintf(stderr, "Usage:%s file.[raw, wrl, smf, ply, iv]\n", argv[0]);
+#else
+    fprintf(stderr, "Usage:%s file.[raw, wrl, smf, ply, iv][.gz]\n", argv[0]);
+#endif
     exit(-1);
   }
 
