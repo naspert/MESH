@@ -1,4 +1,4 @@
-/* $Id: image.h,v 1.3 2001/04/25 09:10:26 aspert Exp $ */
+/* $Id: image.h,v 1.4 2001/04/25 11:29:56 aspert Exp $ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -43,17 +43,24 @@ typedef struct
 
 #ifndef _IMAGE_PROTO
 #define _IMAGE_PROTO
-/*Destructors*/
-void free_image_uchar(image_uchar*);
-void free_image_int(image_int*);
 
-/*allocation+IO images*/
-image_uchar* image_uchar_read(FILE*);
-void image_uchar_write(image_uchar*,FILE*);
-image_uchar* image_uchar_alloc(int,int,int,int);
-image_int* image_int_alloc(int,int,int);
-image_int* image_int_extract(image_int*,int,int,int,int);
-image_int* image_int_extract_uchar(image_uchar*,int,int,int,int);
-void image_int_put(image_int*,image_int*,int,int,int,int);
+#ifdef _CPLUSPLUS
+extern "C" {
+#endif
+  /*Destructors*/
+  void free_image_uchar(image_uchar*);
+  void free_image_int(image_int*);
+
+  /*allocation+IO images*/
+  image_uchar* image_uchar_read(FILE*);
+  void image_uchar_write(image_uchar*,FILE*);
+  image_uchar* image_uchar_alloc(int,int,int,int);
+  image_int* image_int_alloc(int,int,int);
+  image_int* image_int_extract(image_int*,int,int,int,int);
+  image_int* image_int_extract_uchar(image_uchar*,int,int,int,int);
+  void image_int_put(image_int*,image_int*,int,int,int,int);
+#ifdef _CPLUSPLUS
+}
+#endif
 
 #endif
