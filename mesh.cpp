@@ -1,4 +1,4 @@
-/* $Id: mesh.cpp,v 1.25 2002/02/26 10:33:17 dsanta Exp $ */
+/* $Id: mesh.cpp,v 1.26 2002/02/26 12:09:53 aspert Exp $ */
 
 #include <time.h>
 #include <string.h>
@@ -226,7 +226,7 @@ int main( int argc, char **argv )
   ScreenWidget *c; 
   TextWidget *textOut;
   QProgressDialog *qProg;
-  QPixmap *qpxMeshIcon;
+  QPixmap *qpxMeshIcon=NULL;
   struct model_error model1,model2;
   int rcode;
   struct outbuf *log;
@@ -251,6 +251,8 @@ int main( int argc, char **argv )
   }
   if (i == argc) { /* no text version requested, initialize QT */
     a = new QApplication( argc, argv );
+    /* Load pixmap for icon */
+    qpxMeshIcon = new QPixmap((const char**)meshIcon);
     if (a != NULL) a->connect( a, SIGNAL(lastWindowClosed()), 
 			       a, SLOT(quit()) );
   } else {
@@ -260,8 +262,6 @@ int main( int argc, char **argv )
   /* Parse arguments */
   parse_args(argc,argv,&pargs);
 
-  /* Load pixmap for icon */
-  qpxMeshIcon = new QPixmap((const char**)meshIcon);
   /* Display starting dialog if insufficient arguments */
   if (pargs.m1_fname != NULL || pargs.m2_fname != NULL) {
     if (pargs.m1_fname == NULL || pargs.m2_fname == NULL) {
@@ -307,6 +307,7 @@ int main( int argc, char **argv )
   /* Free widgets */
   outbuf_delete(log);
   delete qProg;
+  delete qpxMeshIcon;
   delete b;
   delete c;
   delete a; // QApplication must be last QT thing to delete

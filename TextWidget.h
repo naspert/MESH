@@ -1,4 +1,4 @@
-/* $Id: TextWidget.h,v 1.4 2002/02/26 07:54:17 aspert Exp $ */
+/* $Id: TextWidget.h,v 1.5 2002/02/26 12:09:52 aspert Exp $ */
 #include <qpushbutton.h>
 #include <qtextview.h>
 #include <qlayout.h>
@@ -20,6 +20,7 @@ class TextWidget : public QWidget {
 
 public:
   TextWidget(QWidget *parent=0, const char *name=0);
+  ~TextWidget();
   void append(const QString &str);
   QSize sizeHint() const;
 

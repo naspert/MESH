@@ -19,6 +19,13 @@ TextWidget::TextWidget(QWidget *parent, const char *name)
   setCaption("Mesh execution log");
 }
 
+TextWidget::~TextWidget()
+{
+  delete view;
+  delete layout;
+  delete butClose;
+}
+
 QSize TextWidget::sizeHint() const {
   return QSize(550,500);
 }

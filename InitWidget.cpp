@@ -1,4 +1,4 @@
-/* $Id: InitWidget.cpp,v 1.19 2002/02/26 07:29:09 aspert Exp $ */
+/* $Id: InitWidget.cpp,v 1.20 2002/02/26 12:09:52 aspert Exp $ */
 
 #include <InitWidget.h>
 
@@ -31,6 +31,7 @@ InitWidget::InitWidget(struct args defArgs,
   model1 = m1;
   model2 = m2;
   c = NULL;
+  textOut = NULL;
   log = NULL;
 
   /* First mesh */
@@ -122,6 +123,7 @@ InitWidget::InitWidget(struct args defArgs,
 
 InitWidget::~InitWidget() {
   delete c;
+  delete qpxMeshIcon;
   delete textOut;
   outbuf_delete(log);
 }
@@ -133,6 +135,7 @@ void InitWidget::loadMesh1() {
   QFileDialog fd(QString::null,QString::null,this,"Model 1",TRUE);
   fd.setMode(QFileDialog::ExistingFile);
   fd.setFilters(mfilters);
+  fd.setIcon(*qpxMeshIcon);
   fd.show();
   QString fn = fd.selectedFile();
   if ( !fn.isEmpty() )
@@ -146,6 +149,7 @@ void InitWidget::loadMesh2() {
   QFileDialog fd(QString::null,QString::null,this,"Model 2",TRUE);
   fd.setMode(QFileDialog::ExistingFile);
   fd.setFilters(mfilters);
+  fd.setIcon(*qpxMeshIcon);
   fd.show();
   QString fn = fd.selectedFile();
   if ( !fn.isEmpty() )
