@@ -1,4 +1,4 @@
-/* $Id: model_in_ply.c,v 1.16 2002/08/30 09:18:46 aspert Exp $ */
+/* $Id: model_in_ply.c,v 1.17 2002/10/17 14:51:29 aspert Exp $ */
 
 
 /*
@@ -52,7 +52,7 @@
  * incorrectly specified (yes, it already happened). Before reporting
  * a bug, check if a 'corrupted' file can be 'recovered' by
  * hand-editing the file and by changing the 'binary_big_endian' into
- * a 'binary_little_endian' field (on the contrary) does not improve
+ * a 'binary_little_endian' field (or the contrary) does not improve
  * things, especially if you have used 'ply2binary' to create your
  * binary file (see the README for more details).
  *
