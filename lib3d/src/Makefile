@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.55 2003/01/09 11:59:58 aspert Exp $
+# $Id: Makefile,v 1.56 2003/03/04 16:41:25 aspert Exp $
 
 #Set PROFILE to something to enable profiling
 #PROFILE=1
@@ -17,10 +17,18 @@ TARGETS = torus cone dirac compare_curv lapl
 GSL_TARGETS = maps_lsq
 ifeq ($(OS), Linux)
 CC = gcc
+
+ifeq ($(CC), gcc)
 PROF_FLAGS = -pg
 XTRA_CFLAGS = -g -pipe -ansi -Wall -DREAD_TIME -DSUBDIV_TIME -W -Winline \
 	-Wmissing-prototypes -Wstrict-prototypes -Wnested-externs \
 	-Wshadow -Waggregate-return  #-Wno-unused 
+endif
+ifeq ($(CC),icc)
+PROF_FLAGS = -p
+XTRA_CFLAGS = -g -inline_debug_info -ansi -DREAD_TIME -DSUBDIV_TIME
+BASE_LIBFLAGS += -ipo 
+endif
 
 
 GL_VENDOR := $(shell $(GLXINFO)|grep "OpenGL vendor"|cut -d\: -f2|cut -d\  -f2)
@@ -68,9 +76,14 @@ endif
 ifdef DEBUG
 XTRA_CFLAGS += -DDEBUG #-DSUBDIV_DEBUG -DSUBDIV_SPH_DEBUG -DNORM_DEBUG -DNORM_DEBUG_BFS
 else
-XTRA_CFLAGS += -pedantic -O2
+XTRA_CFLAGS += -O2
 ifeq ($(ARCH), i686)
-XTRA_CFLAGS += -march=i686 -fstrict-aliasing -ffast-math #-fno-math-errno
+ifeq ($(CC),gcc)
+XTRA_CFLAGS += -pedantic -march=i686 -fstrict-aliasing -ffast-math #-fno-math-errno
+endif
+ifeq ($(CC),icc)
+XTRA_CFLAGS += -tpp6 -rcd -march=pentiumiii -ipo #-parallel
+endif
 endif
 endif
 
