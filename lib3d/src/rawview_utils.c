@@ -1,4 +1,4 @@
-/* $Id: rawview_utils.c,v 1.2 2002/06/05 09:30:56 aspert Exp $ */
+/* $Id: rawview_utils.c,v 1.3 2002/06/05 14:04:41 aspert Exp $ */
 #include <3dutils.h>
 #include <rawview.h>
 #include <rawview_misc.h>
@@ -117,7 +117,9 @@ int do_normals(struct model* raw_model) {
   int i;
 
   printf("Computing normals...\n");
-  raw_model->area = (float*)malloc(raw_model->num_faces*sizeof(float));
+  if (raw_model->area == NULL)
+    raw_model->area = (float*)malloc(raw_model->num_faces*sizeof(float));
+
   tmp = (struct info_vertex*)
     malloc(raw_model->num_vert*sizeof(struct info_vertex));
   
@@ -187,7 +189,18 @@ void destroy_tree(struct face_tree *tree) {
 
 int do_curvature(struct gl_render_context *gl_ctx) {
   int i;
+  struct model* raw_model = gl_ctx->raw_model;
+  face_t *cur_face;
 
+  if (raw_model->area == NULL)
+    raw_model->area = (float*)malloc(raw_model->num_faces*sizeof(float));
+
+  for (i=0; i< raw_model->num_faces; i++) {
+    cur_face = &(raw_model->faces[i]);
+    raw_model->area[i] = tri_area_v(&(raw_model->vertices[cur_face->f0]), 
+                                    &(raw_model->vertices[cur_face->f1]), 
+                                    &(raw_model->vertices[cur_face->f2]));
+  }
   gl_ctx->info = (struct info_vertex*)
     malloc(gl_ctx->raw_model->num_vert*sizeof(struct info_vertex));
   if (compute_curvature(gl_ctx->raw_model, gl_ctx->info)) {
@@ -197,9 +210,8 @@ int do_curvature(struct gl_render_context *gl_ctx) {
     return 1;
   }
   
-  /* if the computation was successful, find the maximum of the
-   * Gauss. curvature. TODO: Move this section outside
-   * (e.g. in rawview_utils.c) */
+  /* if the computation was successful, find the max/min of the
+   * Gauss. and mean curvatures.  */
   gl_ctx->max_kg = -FLT_MAX;
   gl_ctx->min_kg = FLT_MAX;
   
@@ -207,13 +219,17 @@ int do_curvature(struct gl_render_context *gl_ctx) {
   gl_ctx->min_km = FLT_MAX;
 
   for (i=0; i<gl_ctx->raw_model->num_vert; i++) {
+    /* Gauss curv. */
     if (gl_ctx->info[i].gauss_curv > gl_ctx->max_kg)
       gl_ctx->max_kg = gl_ctx->info[i].gauss_curv;
+
     if (gl_ctx->info[i].gauss_curv < gl_ctx->min_kg)
       gl_ctx->min_kg = gl_ctx->info[i].gauss_curv;
 
+    /* Mean curv. */
     if (gl_ctx->info[i].mean_curv > gl_ctx->max_km)
       gl_ctx->max_km = gl_ctx->info[i].mean_curv;
+
     if (gl_ctx->info[i].mean_curv < gl_ctx->min_km)
       gl_ctx->min_km = gl_ctx->info[i].mean_curv;
   }

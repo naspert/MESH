@@ -1,4 +1,4 @@
-/* $Id: curvature.c,v 1.3 2002/06/05 09:28:09 aspert Exp $ */
+/* $Id: curvature.c,v 1.4 2002/06/05 14:04:40 aspert Exp $ */
 #include <3dutils.h>
 #include <ring.h>
 
@@ -69,10 +69,10 @@ compute_mean_curvature_normal(const struct model *raw_model,
   int v1, v1_idx, v2f, v2b, v2b_idx, v2, i;
   int n=rings[v0].size;
   vertex_t tmp;
-  double alpha, beta, c, theta;
-  face_t cur_face;
+  double alpha, beta, c, theta, kg, ma;
+  face_t *cur_face;
 
-  *mixed_area = 0.0;
+  ma = 0.0;
   sum_vert->x = 0.0;
   sum_vert->y = 0.0;
   sum_vert->z = 0.0;
@@ -97,25 +97,25 @@ compute_mean_curvature_normal(const struct model *raw_model,
 
   }
   
-  *gauss_curv = 2.0*M_PI;
+  kg = 2.0*M_PI;
 
   for (i=0; i<rings[v0].n_faces; i++) {
-    cur_face = raw_model->faces[rings[v0].ord_face[i]];
-    if (cur_face.f0 == v0) {
-      v1 = cur_face.f1;
-      v2 = cur_face.f2;
-    } else if (cur_face.f1 == v0) {
-      v1 = cur_face.f0;
-      v2 = cur_face.f2;
-    } else {
-      v1 = cur_face.f0;
-      v2 = cur_face.f1;
+    cur_face = &(raw_model->faces[rings[v0].ord_face[i]]);
+    if (cur_face->f0 == v0) {
+      v1 = cur_face->f1;
+      v2 = cur_face->f2;
+    } else if (cur_face->f1 == v0) {
+      v1 = cur_face->f0;
+      v2 = cur_face->f2;
+    } else { /* cur_face.f2 == v0 */
+      v1 = cur_face->f0;
+      v2 = cur_face->f1;
     }
     
     theta = get_top_angle(&(raw_model->vertices[v0]), 
 			   &(raw_model->vertices[v1]),
 			   &(raw_model->vertices[v2]));
-    *gauss_curv -= theta; 
+    kg -= theta; 
 
     if (!obtuse_triangle(&(raw_model->vertices[v0]), 
 			 &(raw_model->vertices[v1]), 
@@ -128,32 +128,29 @@ compute_mean_curvature_normal(const struct model *raw_model,
 			     &(raw_model->vertices[v1]),
 			     &(raw_model->vertices[v0]));
       
-      *mixed_area += 0.125*(dist2_v(&(raw_model->vertices[v0]), 
-				    &(raw_model->vertices[v1]))*
-			    cos(beta)/sin(beta) +
-			    dist2_v(&(raw_model->vertices[v0]), 
-				    &(raw_model->vertices[v2]))*
-			    cos(alpha)/sin(alpha));
+      ma += 0.125*(dist2_v(&(raw_model->vertices[v0]), 
+                           &(raw_model->vertices[v1]))*
+                   cos(beta)/sin(beta) +
+                   dist2_v(&(raw_model->vertices[v0]), 
+                           &(raw_model->vertices[v2]))*
+                   cos(alpha)/sin(alpha));
 
       
     }
     else {
       if (theta > M_PI_2) {
-	*mixed_area += 0.5*tri_area_v(&(raw_model->vertices[cur_face.f0]), 
-				      &(raw_model->vertices[cur_face.f1]), 
-				      &(raw_model->vertices[cur_face.f2]));
+	ma += 0.5*raw_model->area[rings[v0].ord_face[i]];
       }
       else {
-	*mixed_area += 0.25*tri_area_v(&(raw_model->vertices[cur_face.f0]), 
-				       &(raw_model->vertices[cur_face.f1]), 
-				       &(raw_model->vertices[cur_face.f2]));
+	ma += 0.25*raw_model->area[rings[v0].ord_face[i]];
       }
-      
+     
     }
   }
   
-  prod_v(0.5/(*mixed_area), sum_vert, sum_vert);
-  *gauss_curv /= *mixed_area;
+  prod_v(0.5/ma, sum_vert, sum_vert);
+  *mixed_area = ma;
+  *gauss_curv = kg/ma;
   *mean_curv = 0.5*norm_v(sum_vert);
   
 }

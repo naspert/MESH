@@ -1,12 +1,12 @@
-/* $Id: rawview_disp.c,v 1.3 2002/06/05 09:30:56 aspert Exp $ */
+/* $Id: rawview_disp.c,v 1.4 2002/06/05 14:04:41 aspert Exp $ */
 
 #include <rawview_misc.h>
 
-#define CMAP_LENGTH 256 
+#define CMAP_LENGTH 256
 void setGlColor(int vidx, float **cmap, 
                 struct gl_render_context *gl_ctx) {
-  float range;
-  int cidx;
+  double range;
+  int cidx=-1;
   
   assert (cmap != NULL);
 
@@ -24,7 +24,9 @@ void setGlColor(int vidx, float **cmap,
     abort();
   }
 
-  assert(cidx >=0 && cidx < CMAP_LENGTH);
+  if (cidx >= CMAP_LENGTH)
+    cidx = CMAP_LENGTH - 1;
+  assert(cidx >=0 && cidx < CMAP_LENGTH); 
   glColor3fv(cmap[cidx]);
 
 }
@@ -82,9 +84,9 @@ void rebuild_list(struct gl_render_context *gl_ctx,
   }
 
   /* if we display curvature we need the colormap */
-  if (gl_ctx->disp_curv) {
+  if (gl_ctx->disp_curv == 1 || gl_ctx->disp_curv == 2) 
     cmap = colormap_hsv(CMAP_LENGTH);
-  }
+  
   /* Get the state of the lighting */
   light_mode = glIsEnabled(GL_LIGHTING);
   if (light_mode && !glIsEnabled(GL_NORMAL_ARRAY)) {

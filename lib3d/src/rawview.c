@@ -1,4 +1,4 @@
-/* $Id: rawview.c,v 1.15 2002/06/05 09:30:56 aspert Exp $ */
+/* $Id: rawview.c,v 1.16 2002/06/05 14:04:40 aspert Exp $ */
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -186,6 +186,8 @@ static void norm_key_pressed(unsigned char key, int x, int y) {
         }
         gl_ctx.curv_done = 1;
       }
+      printf("Displaying Gauss curvature\n");
+      printf("min_kg = %f max_kg = %f\n", gl_ctx.min_kg, gl_ctx.max_kg);
       gl_ctx.disp_curv = 1;
       set_light_off();
       glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -212,6 +214,8 @@ static void norm_key_pressed(unsigned char key, int x, int y) {
         }
         gl_ctx.curv_done = 1;
       }
+      printf("Displaying mean curvature\n");
+      printf("min_km = %f max_km = %f\n", gl_ctx.min_km, gl_ctx.max_km);
       gl_ctx.disp_curv = 2;
       set_light_off();
       glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
