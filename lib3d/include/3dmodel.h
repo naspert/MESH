@@ -1,4 +1,4 @@
-/* $Id: 3dmodel.h,v 1.19 2001/10/01 16:45:37 dsanta Exp $ */
+/* $Id: 3dmodel.h,v 1.20 2001/10/08 13:12:04 aspert Exp $ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -147,7 +147,7 @@ struct model {
 struct dual_graph_info {
   int num_edges_dual;
   struct edge_dual *edges;
-  int *done;
+  unsigned char *done;
 };
 
 struct dual_graph_index {

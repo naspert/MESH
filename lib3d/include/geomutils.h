@@ -1,4 +1,4 @@
-/* $Id: geomutils.h,v 1.14 2001/09/27 11:44:45 aspert Exp $ */
+/* $Id: geomutils.h,v 1.15 2001/10/08 13:12:05 aspert Exp $ */
 #include <3dmodel.h>
 
 #ifndef _GEOMUTILS_PROTO_
@@ -45,6 +45,8 @@ extern "C" {
   void normalize_v(vertex_t*);
   void substract_v(const vertex_t*, const vertex_t*, vertex_t*);
   void add_v(const vertex_t*, const vertex_t*, vertex_t*);
+  void add3_sc_v(double, const vertex_t*, const vertex_t*, const vertex_t*, 
+		 vertex_t*);
   void prod_v(double, const vertex_t*, vertex_t*);
   void add_prod_v(double, const vertex_t*, const vertex_t*, vertex_t*);
   void crossprod_v(const vertex_t*, const vertex_t*, vertex_t*);
@@ -157,6 +159,13 @@ extern "C" {
     vout->x = m*v1->x + v2->x;
     vout->y = m*v1->y + v2->y;
     vout->z = m*v1->z + v2->z;
+  }
+
+  INLINE void add3_sc_v(double m, const vertex_t* v0, const vertex_t* v1, 
+			const vertex_t* v2, vertex_t* vout) {
+    vout->x = m*(v0->x + v1->x + v2->x);
+    vout->y = m*(v0->y + v1->y + v2->y);
+    vout->z = m*(v0->z + v1->z + v2->z);
   }
 
   /* Calculates the cross product of vectors v1 and v2 and places the result in

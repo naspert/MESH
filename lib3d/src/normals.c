@@ -1,4 +1,4 @@
-/* $Id: normals.c,v 1.12 2001/10/02 08:47:48 aspert Exp $ */
+/* $Id: normals.c,v 1.13 2001/10/08 13:12:05 aspert Exp $ */
 #include <3dmodel.h>
 #include <geomutils.h>
 
@@ -10,7 +10,7 @@ void build_star(struct model *raw_model, int v, struct ring_info *ring) {
   int num_edges=0; /* number of edges in the 1-ring */
   struct edge_v *edge_list_primal=NULL;
   int *final_star;
-  int *done;
+  unsigned char *done;
   int star_size;
   int edge_added;
 /*   ring_info ring; */
@@ -65,7 +65,7 @@ void build_star(struct model *raw_model, int v, struct ring_info *ring) {
     return;
   }
 
-  done = (int*)calloc(num_edges, sizeof(int));
+  done = (unsigned char*)calloc(num_edges, sizeof(unsigned char));
   /* worst case allocation */
   final_star = (int*)malloc(2*num_edges*sizeof(int));
 
@@ -81,7 +81,7 @@ void build_star(struct model *raw_model, int v, struct ring_info *ring) {
   while (i < num_edges) {
     edge_added = 0;
     for(j=0; j<num_edges; j++) {
-      if (done[j] == 1)
+      if (done[j])
 	continue;
       if (edge_list_primal[j].v0 == final_star[0]) {
 	/* add v1 on top */
@@ -354,7 +354,7 @@ struct edge_list* find_dual_edges(int cur_face,  int *nfound,
 
   for (i=0; i<dg_index[cur_face].face_info; i++) {
     id = dg_index[cur_face].ring[i];
-    if (dual_graph->done[id] == 0) { /* if this edge has not been visited */
+    if (!dual_graph->done[id]) { /* if this edge has not been visited */
       /* add it to the list */
       if (dual_graph->edges[id].face0 == cur_face) 
 	bot->edge = dual_graph->edges[id];
@@ -390,16 +390,20 @@ struct face_tree** bfs_build_spanning_tree(struct model *raw_model,
 
 
   printf("Dual graph build.... ");fflush(stdout);
+
   dual_graph = (struct dual_graph_info*)malloc(sizeof(struct dual_graph_info));
   dual_graph->edges = NULL;
   dual_graph->num_edges_dual = 0;
+
   dg_idx = (struct dual_graph_index*)malloc(raw_model->num_faces*
 					    sizeof(struct dual_graph_index));
-  for (i=0; i<raw_model->num_faces; i++)
-    dg_idx[i].face_info = 0;
+  dg_idx = memset(dg_idx, 0, 
+		  raw_model->num_faces*sizeof(struct dual_graph_index));
+
 
   ne_dual = build_edge_list(raw_model, dual_graph, curv, &dg_idx);
-  dual_graph->done = (int*)calloc(dual_graph->num_edges_dual, sizeof(int));
+  dual_graph->done = (unsigned char*)calloc(dual_graph->num_edges_dual, 
+					    sizeof(unsigned char));
   printf("done\n");
   if (ne_dual == -1) {
     printf("No edges in dual graph ??\n");

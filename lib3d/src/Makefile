@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.17 2001/09/25 07:59:37 aspert Exp $
+# $Id: Makefile,v 1.18 2001/10/08 13:12:05 aspert Exp $
 
 #CC = /home/sun1/aspert/gcc/bin/gcc
 CC = gcc
@@ -13,7 +13,7 @@ HPGLDIR = /usr/GL/hp
 
 INCLFLAGS = -I../include
 GLINCLFLAGS = -I$(HPGLDIR)/include -I$(GLDIR)/include
-XTRA_CFLAGS = -g  -Wall -O2  -ansi
+XTRA_CFLAGS = -g  -Wall -O2  -ansi -pedantic
 
 BASE_CFLAGS = $(INCLFLAGS) $(XTRA_CFLAGS) 
 GL_CFLAGS = $(INCLFLAGS) $(GLINCLFLAGS) $(XTRA_CFLAGS) 
@@ -59,6 +59,9 @@ maps_lsq : $(OBJDIR)/maps_lsq.o lib3d
 	$(CC) -o $(BINDIR)/$@ $< $(BASE_LDFLAGS) -l3d -lgsl -lgslcblas
 
 loop : $(OBJDIR)/loop.o lib3d
+	$(CC) -o $(BINDIR)/$@ $< $(BASE_LDFLAGS) -l3d
+
+multires: $(OBJDIR)/multires.o lib3d
 	$(CC) -o $(BINDIR)/$@ $< $(BASE_LDFLAGS) -l3d
 
 compare_curv : $(OBJDIR)/compare_curv.o lib3d
