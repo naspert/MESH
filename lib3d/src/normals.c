@@ -1,4 +1,4 @@
-/* $Id: normals.c,v 1.20 2002/02/14 09:31:13 aspert Exp $ */
+/* $Id: normals.c,v 1.21 2002/02/14 09:33:31 aspert Exp $ */
 #include <3dmodel.h>
 #include <geomutils.h>
 #include <normals.h>
@@ -139,13 +139,16 @@ void build_star_global(struct model *raw_model, struct ring_info **ring) {
         free(final_star);
         free(face_star);
         (*ring)[i].type = 2;
-        /* What follows is implicitely done by memset-ing the
-         * structure to 0
+        /* 
+         *  What follows is implicitely done by memset-ing the
+         *  structure to 0 :
+         *
+         *  (*ring)[i].size = 0;
+         *  (*ring)[i].n_faces = 0;
+         *  (*ring)[i].ord_face = NULL;
+         *  (*ring)[i].ord_vert = NULL;
+         *
          */
-/*         (*ring)[i].size = 0; */
-/*         (*ring)[i].n_faces = 0; */
-/*         (*ring)[i].ord_face = NULL; */
-/*         (*ring)[i].ord_vert = NULL; */
         continue;
       }
     }
