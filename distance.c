@@ -1,4 +1,4 @@
-/* $Id: distance.c,v 1.2 2001/03/26 10:59:58 jacquet Exp $ */
+/* $Id: distance.c,v 1.3 2001/03/26 11:03:41 jacquet Exp $ */
 
 #include <stdio.h>
 #include <math.h>
@@ -142,25 +142,41 @@ double pcd(vertex point,model *raw_model2, double k)
 {
 double d,dmin;
 sample *sample1;
-int i,j;
+int i,j,numfacemin;
 
  for(j=0;j<raw_model2->nbfaces;j++){
    
-   sample1=echantillon(raw_model2->vertices[raw_model2->faces[j].f0],raw_model2->vertices[raw_model2->faces[j].f1],raw_model2->vertices[raw_model2->faces[j].f2],k);
+   sample1=echantillon(raw_model2->vertices[raw_model2->faces[j].f0],raw_model2->vertices[raw_model2->faces[j].f1],raw_model2->vertices[raw_model2->faces[j].f2],0.5);
 
    for(i=0;i<sample1->nbsamples;i++) {
 
 
      d=sqrt((point.x-sample1->sample[i].x)*(point.x-sample1->sample[i].x)+(point.y-sample1->sample[i].y)*(point.y-sample1->sample[i].y)+(point.z-sample1->sample[i].z)*(point.z-sample1->sample[i].z));
 
-
-     if(j==0)
+     if(j==0){
        dmin=d;
-     else if(d<dmin)
+       numfacemin=j;
+     }
+     else if(d<dmin){
        dmin=d;
+       numfacemin=j;
+     }
    }
    free(sample1->sample);
+   free(sample1);
  }
+
+sample1=echantillon(raw_model2->vertices[raw_model2->faces[numfacemin].f0],raw_model2->vertices[raw_model2->faces[numfacemin].f1],raw_model2->vertices[raw_model2->faces[numfacemin].f2],k);
+
+ for(i=0;i<sample1->nbsamples;i++){
+   d=sqrt((point.x-sample1->sample[i].x)*(point.x-sample1->sample[i].x)+(point.y-sample1->sample[i].y)*(point.y-sample1->sample[i].y)+(point.z-sample1->sample[i].z)*(point.z-sample1->sample[i].z));
+  
+     if(d<dmin){
+       dmin=d;
+     }
+ }
+free(sample1->sample);
+free(sample1);
 
 return(dmin);  
 }
