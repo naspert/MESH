@@ -1,4 +1,4 @@
-/* $Id: normals.c,v 1.8 2001/09/03 11:21:15 aspert Exp $ */
+/* $Id: normals.c,v 1.9 2001/09/14 15:16:22 aspert Exp $ */
 #include <3dmodel.h>
 #include <geomutils.h>
 
@@ -8,7 +8,7 @@ ring_info build_star2(model *raw_model, int v) {
 
   int i, j, k;
   int num_edges=0; /* number of edges in the 1-ring */
-  edge_v *edge_list=NULL;
+  edge_v *edge_list_primal=NULL;
   int *final_star;
   int *done;
   int star_size;
@@ -19,7 +19,8 @@ ring_info build_star2(model *raw_model, int v) {
   for (i=0; i<raw_model->num_faces; i++) {
     if (raw_model->faces[i].f0 == v) {
       num_edges ++;
-      edge_list = (edge_v*)realloc(edge_list, num_edges*sizeof(edge_v));
+      edge_list_primal = (edge_v*)realloc(edge_list_primal, 
+					  num_edges*sizeof(edge_v));
 
 #ifdef NORM_DEBUG
       if (edge_list == NULL) {
@@ -28,28 +29,30 @@ ring_info build_star2(model *raw_model, int v) {
       }
 #endif
 
-      edge_list[num_edges-1].v0 = raw_model->faces[i].f1;
-      edge_list[num_edges-1].v1 = raw_model->faces[i].f2;      
+      edge_list_primal[num_edges-1].v0 = raw_model->faces[i].f1;
+      edge_list_primal[num_edges-1].v1 = raw_model->faces[i].f2;      
     } else if (raw_model->faces[i].f1 == v) {
       num_edges ++;
-      edge_list = (edge_v*)realloc(edge_list, num_edges*sizeof(edge_v));
+      edge_list_primal = (edge_v*)realloc(edge_list_primal, 
+					  num_edges*sizeof(edge_v));
 
 #ifdef NORM_DEBUG
-      if (edge_list == NULL) {
+      if (edge_list_primal == NULL) {
 	printf("realloc failed %d\n", i);
 	exit(-1);
       }
 #endif
 
-      edge_list[num_edges-1].v0 = raw_model->faces[i].f0;
-      edge_list[num_edges-1].v1 = raw_model->faces[i].f2;      
+      edge_list_primal[num_edges-1].v0 = raw_model->faces[i].f0;
+      edge_list_primal[num_edges-1].v1 = raw_model->faces[i].f2;      
     }  else if (raw_model->faces[i].f2 == v) {
       num_edges ++;
-      edge_list = (edge_v*)realloc(edge_list, num_edges*sizeof(edge_v));
+      edge_list_primal = (edge_v*)realloc(edge_list_primal, 
+					  num_edges*sizeof(edge_v));
 
 
-      edge_list[num_edges-1].v0 = raw_model->faces[i].f0;
-      edge_list[num_edges-1].v1 = raw_model->faces[i].f1;      
+      edge_list_primal[num_edges-1].v0 = raw_model->faces[i].f0;
+      edge_list_primal[num_edges-1].v1 = raw_model->faces[i].f1;      
     }
 
   }
@@ -67,8 +70,8 @@ ring_info build_star2(model *raw_model, int v) {
   final_star = (int*)malloc(2*num_edges*sizeof(int));
 
   /* Put 1st two elts in the star */
-  final_star[0] = edge_list[0].v0;
-  final_star[1] = edge_list[0].v1;
+  final_star[0] = edge_list_primal[0].v0;
+  final_star[1] = edge_list_primal[0].v1;
   star_size = 2;
   done[0] = 1;
   i = 1;
@@ -80,42 +83,42 @@ ring_info build_star2(model *raw_model, int v) {
     for(j=0; j<num_edges; j++) {
       if (done[j] == 1)
 	continue;
-      if (edge_list[j].v0 == final_star[0]) {
+      if (edge_list_primal[j].v0 == final_star[0]) {
 	/* add v1 on top */
 	for (k=star_size-1; k>=0; k--) 
 	  final_star[k+1] = final_star[k];
 	
-	final_star[0] = edge_list[j].v1;
+	final_star[0] = edge_list_primal[j].v1;
 	done[j] = 1;
 	i++;
 	star_size++;
 	edge_added = 1;
 	break;
       }
-      else if (edge_list[j].v1 == final_star[0]) {
+      else if (edge_list_primal[j].v1 == final_star[0]) {
 	/* add v0 on top */
 	for (k=star_size-1; k>=0; k--) 
 	  final_star[k+1] = final_star[k];
 	
-	final_star[0] = edge_list[j].v0;
+	final_star[0] = edge_list_primal[j].v0;
 	done[j] = 1;
 	i++;
 	star_size++;
 	edge_added = 1;
 	break;
       }
-      else if (edge_list[j].v0 == final_star[star_size-1]) {
+      else if (edge_list_primal[j].v0 == final_star[star_size-1]) {
 	/* add v1 on bottom */
-	final_star[star_size] = edge_list[j].v1;
+	final_star[star_size] = edge_list_primal[j].v1;
 	done[j] = 1;
 	i++;
 	star_size++;
 	edge_added = 1;
 	break;
       }
-      else if (edge_list[j].v1 == final_star[star_size-1]) {
+      else if (edge_list_primal[j].v1 == final_star[star_size-1]) {
 	/* add v0 on bottom */
-	final_star[star_size] = edge_list[j].v0;
+	final_star[star_size] = edge_list_primal[j].v0;
 	done[j] = 1;
 	i++;
 	star_size++;
@@ -134,14 +137,12 @@ ring_info build_star2(model *raw_model, int v) {
     }
   }
 
-  if (final_star[0] == final_star[star_size-1]) {
-/*     printf("Regular vertex %d\n", v); */
+  if (final_star[0] == final_star[star_size-1]) {    /* Regular vertex */
     star_size--;
     ring.type = 0;
-  } else {
-/*     printf("Boundary vertex %d\n", v); */
+  } else     /* Boundary vertex */
     ring.type = 1;
-  }
+
 
   ring.size = star_size;
   ring.ord_vert = (int*)malloc(star_size*sizeof(int));
@@ -154,7 +155,7 @@ ring_info build_star2(model *raw_model, int v) {
     printf("vertex %d \n", final_star[i]);
 #endif
 
-  free(edge_list);
+  free(edge_list_primal);
   free(final_star);
   free(done);
   return ring;
@@ -191,22 +192,18 @@ void destroy_tree(face_tree_ptr tree) {
 /* Compares two edges (s.t. they are in lexico. order after qsort) */
 int compar(const void* ed0, const void* ed1) {
   edge_sort *e0, *e1;
-
+  int tmp;
+ 
   e0 = (edge_sort*)ed0;
   e1 = (edge_sort*)ed1;
+  
+  tmp = e0->prim.v0 - e1->prim.v0;
+  if (tmp)
+    return tmp;
+  else 
+    return  e0->prim.v1 - e1->prim.v1;
+  
 
-  if (e0->prim.v0 > e1->prim.v0)
-    return 1;
-  else if (e0->prim.v0 < e1->prim.v0)
-    return -1;
-  else {/* e1->v0 = e0->v0 */
-    if(e0->prim.v1 > e1->prim.v1)
-      return 1;
-    else if(e0->prim.v1 < e1->prim.v1)
-      return -1;
-    else 
-      return 0;
-  }
 }
 
 /* Adds an edge in the dual graph and returns the last elt. in the graph */
@@ -388,7 +385,7 @@ face_tree_ptr* bfs_build_spanning_tree(model *raw_model, info_vertex *curv) {
   int list_size = 0, i;
   int ne_dual = 0;
 
-  printf("Dual graph build ");
+  printf("Dual graph build.... ");fflush(stdout);
   dual_graph = (struct dual_graph_info*)malloc(sizeof(struct dual_graph_info));
   dual_graph->edges = NULL;
   dual_graph->num_edges_dual = 0;
@@ -415,7 +412,7 @@ face_tree_ptr* bfs_build_spanning_tree(model *raw_model, info_vertex *curv) {
 	   dual_graph->edges[i].common.v1);
   
 #endif
-
+  printf("Building spanning tree...");fflush(stdout);
   list = (edge_list_ptr*)malloc(sizeof(edge_list_ptr)); 
   *list = (edge_list_ptr)malloc(sizeof(edge_list));
   (*list)->next = NULL;
@@ -537,13 +534,14 @@ face_tree_ptr* bfs_build_spanning_tree(model *raw_model, info_vertex *curv) {
   printf("[bfs_build_spanning_tree]:faces_traversed = %d num_faces = %d\n", 
 	 faces_traversed, raw_model->num_faces); 
 #endif
-  free(bot->next); /* should be alloc'd but nothing inside */
+  free(bot->next);  /* should be alloc'd but nothing inside */
   free(bot);
   free(dual_graph->edges);
   free(dual_graph->done);
   free(dual_graph);
   free(list);
   free(dg_idx);
+  printf(" done\n");
   return tree;
 }
 
@@ -740,7 +738,7 @@ vertex* compute_face_normals(model* raw_model, info_vertex *curv) {
     curv[i].list_face = (int*)malloc(sizeof(int));
     curv[i].num_faces = 0;
   }
-  printf("Building spanning tree\n");
+
   /* Compute spanning tree of the dual graph */
 
 
@@ -750,13 +748,13 @@ vertex* compute_face_normals(model* raw_model, info_vertex *curv) {
   top = tree[0];
   while (top->parent != NULL)
     top = top->parent;
-  printf("Spanning tree done\n");
+ 
   /* Finally, compute the normals for each face */
   
-  printf("The model is manifold ...\n");
+  printf("The model is manifold.\n");
   normals = (vertex*)malloc(raw_model->num_faces*sizeof(vertex));
   build_normals(raw_model, top, normals);
-  printf("Face normals done %d\n", raw_model->num_faces);
+  printf("Face normals done !\n");
   
   for (i=0; i<raw_model->num_faces; i++) {
 #ifdef NORM_DEBUG

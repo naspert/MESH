@@ -1,4 +1,4 @@
-/* $Id: rawview3.c,v 1.18 2001/09/14 12:51:09 aspert Exp $ */
+/* $Id: rawview3.c,v 1.19 2001/09/14 15:16:22 aspert Exp $ */
 
 #include <GL/gl.h>
 #include <GL/glu.h>
@@ -43,6 +43,7 @@ int normals_done = 0;
 model *raw_model;
 char *in_filename;
 int grab_number = 0;
+int ps_number = 0;
 
 model *r_model;
 
@@ -57,7 +58,7 @@ void frame_grab() {
   int w,h,i;
   unsigned char *r_buffer, *g_buffer, *b_buffer;
   image_uchar *frame;
-  char filename[11];
+  char filename[12];
   int nbytes;
   FILE *pf;
 
@@ -80,8 +81,12 @@ void frame_grab() {
   sprintf(filename,"grab%03d.ppm",grab_number);
   grab_number++;
   pf = fopen(filename,"w");
-  image_uchar_write(frame, pf);
-  fclose(pf);
+  if (pf == NULL) 
+    fprintf(stderr,"Unable to open output file %s\n", filename);
+  else {
+    image_uchar_write(frame, pf);
+    fclose(pf);
+  }
   free(r_buffer);
   free(g_buffer);
   free(b_buffer);
@@ -478,7 +483,7 @@ void display() {
 	  glEnable(GL_POLYGON_OFFSET_FILL);
 	  glPolygonOffset(1.0, 1.0);
 	  glColor4f(0.0, 0.0, 0.0, 0.0);
-      }
+	}
 	else {
 	  gl2psEnable(GL2PS_POLYGON_OFFSET_FILL);
 	  glPolygonOffset(1.0, 1.0);
@@ -511,6 +516,38 @@ void display() {
   glutSwapBuffers();
 
 
+}
+
+/* ***************************** */
+/* Writes the frame to a PS file */
+/* ***************************** */
+void ps_grab() {
+  int bufsize = 0, state = GL2PS_OVERFLOW;
+  char filename[13];
+  FILE *ps_file;
+
+  sprintf(filename, "psgrab%03d.ps", ps_number);
+  ps_file = fopen(filename, "w");
+  if (ps_file == NULL)
+    fprintf(stderr, "Unable to open PS outfile %s\n", filename);
+  else {
+    ps_rend = 1;
+    glClearColor(1.0, 1.0, 1.0, 0.0);
+    while (state == GL2PS_OVERFLOW) {
+      bufsize += 1024*1024;
+      gl2psBeginPage("PS Grab", "LaTeX", GL2PS_SIMPLE_SORT, 
+		     GL2PS_SIMPLE_LINE_OFFSET, 
+		     GL_RGBA, 0, NULL, bufsize, ps_file);
+    
+      display();
+      state = gl2psEndPage();
+    }
+    ps_number++;
+    printf("Buffer for PS grab was %d bytes\n", bufsize);
+    ps_rend = 0;
+    glClearColor(0.0, 0.0, 0.0, 0.0);
+    fclose(ps_file);
+  }
 }
 
 /* **************************** */
@@ -546,9 +583,7 @@ void sp_key_pressed(int key, int x, int y) {
   info_vertex *curv;
   face_tree_ptr top;
   int i;
-  /* GL2PS stuff */
-  int bufsize = 0, state = GL2PS_OVERFLOW;
-  FILE *ps_file;
+
 
 
   
@@ -565,8 +600,7 @@ void sp_key_pressed(int key, int x, int y) {
     if (light_mode == GL_FALSE) {
       printf("Lighted mode\n");
       if (normals_done != 1) {/* We have to build the normals */
-	printf("Computing normals...");
-	fflush(stdout);
+	printf("Computing normals...\n");
 	raw_model->area = (double*)malloc(raw_model->num_faces*sizeof(double));
 	curv = (info_vertex*)malloc(raw_model->num_vert*sizeof(info_vertex));
 
@@ -578,7 +612,7 @@ void sp_key_pressed(int key, int x, int y) {
 	    free(curv[i].list_face);
 	  free(curv);
 	  normals_done = 1;
-	  printf("done\n");
+	  printf("Normals done !\n");
 	
 	  glEnable(GL_LIGHTING);
  	  glLightfv(GL_LIGHT0, GL_AMBIENT, amb); 
@@ -742,22 +776,7 @@ void sp_key_pressed(int key, int x, int y) {
     /* This NEEDS cleanup ! */
   case GLUT_KEY_F10: 
     printf("Rendering to a PostScript file...\n");
-    ps_file = fopen("test_gl2ps.ps", "w");
-    ps_rend = 1;
-    glClearColor(1.0, 1.0, 1.0, 0.0);
-    while (state == GL2PS_OVERFLOW) {
-      bufsize += 1024*1024;
-      gl2psBeginPage("Test", "LaTeX", GL2PS_SIMPLE_SORT, 
-		     GL2PS_SIMPLE_LINE_OFFSET, 
-		     GL_RGBA, 0, NULL, bufsize, ps_file);
-
-      display();
-      state = gl2psEndPage();
-    }
-    printf("Buffer was %d bytes\n", bufsize);
-    ps_rend = 0;
-    glClearColor(0.0, 0.0, 0.0, 0.0);
-    fclose(ps_file);
+    ps_grab();
     printf("done\n");
     glutPostRedisplay();
     break;
