@@ -1,4 +1,4 @@
-/* $Id: image.h,v 1.4 2001/04/25 11:29:56 aspert Exp $ */
+/* $Id: image.h,v 1.5 2001/04/26 11:40:21 aspert Exp $ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -44,7 +44,7 @@ typedef struct
 #ifndef _IMAGE_PROTO
 #define _IMAGE_PROTO
 
-#ifdef _CPLUSPLUS
+#ifdef __cplusplus
 extern "C" {
 #endif
   /*Destructors*/
@@ -59,7 +59,7 @@ extern "C" {
   image_int* image_int_extract(image_int*,int,int,int,int);
   image_int* image_int_extract_uchar(image_uchar*,int,int,int,int);
   void image_int_put(image_int*,image_int*,int,int,int,int);
-#ifdef _CPLUSPLUS
+#ifdef __cplusplus
 }
 #endif
 

@@ -1,10 +1,10 @@
-/* $Id: normals.h,v 1.3 2001/04/25 11:29:56 aspert Exp $ */
+/* $Id: normals.h,v 1.4 2001/04/26 11:40:21 aspert Exp $ */
 #include <3dmodel.h>
 
 #ifndef _NORMALS_PROTO
 #define _NORMALS_PROTO
 
-#ifdef _CPLUSPLUS
+#ifdef __cplusplus
 extern "C" {
 #endif
   int list_face_excl(model*, int, int, int);
@@ -22,7 +22,7 @@ extern "C" {
   void build_normals(model*, face_tree_ptr, vertex*);
   vertex* compute_face_normals(model*);
   void compute_vertex_normal(model*, info_vertex*, vertex*);
-#ifdef _CPLUSPLUS
+#ifdef __cplusplus
 }
 #endif
 
