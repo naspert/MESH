@@ -1,4 +1,4 @@
-# $Id: Makefile.sgi,v 1.7 2001/04/30 08:06:53 aspert Exp $
+# $Id: Makefile.sgi,v 1.8 2001/05/01 07:58:28 aspert Exp $
 
 CC = cc
 #CC = /usr/freeware/bin/gcc
@@ -24,9 +24,9 @@ GL_LDFLAGS = -g -O2 $(GL_LIBFLAGS)
 
 
 
-default : viewer
+default : rawview3
 
-all: dirs viewer rawview3
+all: dirs rawview3
 
 clean : 
 	rm $(OBJDIR)/*.o $(BINDIR)/* $(LIBDIR)/*
@@ -46,7 +46,7 @@ subdiv_sph : $(OBJDIR)/subdiv_sph.o lib3d
 libimage : $(OBJDIR)/image.o
 	$(CC) -g -shared  -o $(LIBDIR)/libimage.so $<
 
-lib3d : $(OBJDIR)/geomutils.o $(OBJDIR)/3dmodel_io.o $(OBJDIR)/normals.o $(OBJDIR)/compute_error.o
+lib3d : $(OBJDIR)/geomutils.o $(OBJDIR)/3dmodel_io.o $(OBJDIR)/normals.o 
 	$(CC) -g -shared -o $(LIBDIR)/lib3d.so $^
 
 $(OBJDIR)/viewer.o : viewer.cpp
