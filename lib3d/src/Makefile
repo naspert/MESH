@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.54 2002/11/14 12:51:42 aspert Exp $
+# $Id: Makefile,v 1.55 2003/01/09 11:59:58 aspert Exp $
 
 #Set PROFILE to something to enable profiling
 #PROFILE=1
@@ -13,14 +13,14 @@ GLXINFO = $(shell which glxinfo)
 STD_GLDIR = /usr/X11R6
 HP_GLDIR = /usr/GL/hp
 BASE_LIBFLAGS = -lm -lz
-TARGETS = torus cone dirac compare_curv
+TARGETS = torus cone dirac compare_curv lapl
 GSL_TARGETS = maps_lsq
 ifeq ($(OS), Linux)
 CC = gcc
 PROF_FLAGS = -pg
-XTRA_CFLAGS = -g -pipe -ansi -Wall -DREAD_TIME  -W -Winline \
+XTRA_CFLAGS = -g -pipe -ansi -Wall -DREAD_TIME -DSUBDIV_TIME -W -Winline \
 	-Wmissing-prototypes -Wstrict-prototypes -Wnested-externs \
-	-Wshadow -Waggregate-return  -Wno-unused 
+	-Wshadow -Waggregate-return  #-Wno-unused 
 
 
 GL_VENDOR := $(shell $(GLXINFO)|grep "OpenGL vendor"|cut -d\: -f2|cut -d\  -f2)
