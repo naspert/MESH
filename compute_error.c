@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.32 2001/08/16 13:04:05 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.33 2001/08/16 15:03:27 dsanta Exp $ */
 
 #include <compute_error.h>
 
@@ -171,8 +171,8 @@ static void realloc_triag_sample_error(struct triag_sample_error *tse, int n)
 static void free_triag_sample_error(struct triag_sample_error *tse)
 {
   if (tse == NULL) return;
-  free(tse->err);
-  free(tse->err_lin);
+  xfree(tse->err);
+  xfree(tse->err_lin);
   tse->err = NULL;
   tse->err_lin = NULL;
 }
@@ -698,9 +698,9 @@ static struct t_in_cell_list *triangles_in_cells(const struct triangle_list *tl,
     }
   }
 
-  free(nt);
-  free(sl.sample);
-  free(c_buf);
+  xfree(nt);
+  xfree(sl.sample);
+  xfree(c_buf);
   return lst;
 }
 
@@ -1049,14 +1049,20 @@ void dist_surf_surf(const model *m1, model *m2, int n_spt,
   }
 
   /* free temporary storage */
-  free(tl2->triangles);
-  free(tl2);
+  xfree(tl2->triangles);
+  xfree(tl2);
   for (k=0, kmax=fic->n_cells; k<kmax; k++) {
-    free(fic->triag_idx[k]);
+    xfree(fic->triag_idx[k]);
   }
-  free(fic->triag_idx);
-  free(fic->empty_cell);
-  free(fic);
+  xfree(fic->triag_idx);
+  xfree(fic->empty_cell);
+  xfree(fic);
   free_triag_sample_error(&tse);
-  free(ts.sample);
+  xfree(ts.sample);
+}
+
+/* See compute_error.h */
+void free_face_error(struct face_error *fe)
+{
+  xfree(fe);
 }
