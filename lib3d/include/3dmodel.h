@@ -1,4 +1,4 @@
-/* $Id: 3dmodel.h,v 1.14 2001/09/19 14:31:44 aspert Exp $ */
+/* $Id: 3dmodel.h,v 1.15 2001/09/24 15:04:18 aspert Exp $ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -7,7 +7,7 @@
 /* with '-ansi' flag and still use the */
 /* useful constants from 'math.h' */
 #ifndef __USE_BSD
-#define __USE_BSD
+# define __USE_BSD
 #endif
 #include <math.h>
 #include <limits.h>
@@ -56,9 +56,11 @@ typedef struct {
 typedef struct {
   int num_faces;
   int *list_face; /* Index of faces containing the vertex */
-  double *weight; /* weight of neighbouring vertices */
   int outdegree;
   int *list_vertex; /* Index of vertices neighbouring the current vertex */
+  double mixed_area;
+  double gauss_curv;
+  vertex mean_curv_normal;
   double c[3];
   double k1, k2; /* principal curvature */
   vertex t1,t2; /* principal directions (if any) */
