@@ -1,4 +1,4 @@
-/* $Id: mesh.cpp,v 1.6 2001/09/27 08:56:58 aspert Exp $ */
+/* $Id: mesh.cpp,v 1.7 2001/10/01 16:51:16 dsanta Exp $ */
 
 #include <time.h>
 #include <string.h>
@@ -8,6 +8,7 @@
 #include <InitWidget.h>
 
 #include <mesh_run.h>
+#include <3dmodel_io.h>
 
 /* Prints usage information to the out stream */
 static void print_usage(FILE *out)
@@ -122,8 +123,14 @@ int main( int argc, char **argv )
   InitWidget *b;
   ScreenWidget *c;
   struct model_error model1,model2;
+  int rcode;
 
   /* Initialize application */
+  a = NULL;
+  b = NULL;
+  c = NULL;
+  memset(&model1,0,sizeof(model1));
+  memset(&model2,0,sizeof(model2));
   i = 0;
   while (i<argc) {
     if (strcmp(argv[i],"-t") == 0) break; /* text version requested */
@@ -147,7 +154,7 @@ int main( int argc, char **argv )
     }
     mesh_run(&pargs,&model1,&model2);
   } else {
-    b = new InitWidget(pargs);
+    b = new InitWidget(pargs,&model1,&model2);
     b->show(); 
   }
   if (a != NULL) {
@@ -155,8 +162,27 @@ int main( int argc, char **argv )
       c = new ScreenWidget(&model1, &model2);
       c->show(); 
     }
-    return a->exec();
+    rcode = a->exec();
   } else {
-    return 0;
+    rcode = 0;
   }
+  /* Free model data */
+  if (model1.mesh != NULL) free_raw_model(model1.mesh);
+  free(model1.verror);
+  free(model1.k1_error);
+  free(model1.k2_error);
+  free(model1.kg_error);
+  free(model1.info);
+  if (model2.mesh != NULL) free_raw_model(model2.mesh);
+  free(model2.verror);
+  free(model2.k1_error);
+  free(model2.k2_error);
+  free(model2.kg_error);
+  free(model2.info);
+  /* Free widgets */
+  delete b;
+  delete c;
+  delete a; // QApplication must be last QT thing to delete
+  /* Return exit code */
+  return rcode;
 }
