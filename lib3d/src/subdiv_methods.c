@@ -1,4 +1,4 @@
-/* $Id: subdiv_methods.c,v 1.2 2001/10/16 15:31:06 aspert Exp $ */
+/* $Id: subdiv_methods.c,v 1.3 2001/10/16 15:35:05 aspert Exp $ */
 #include <3dmodel.h>
 #include <geomutils.h>
 #include <subdiv_methods.h>
@@ -417,37 +417,31 @@ void compute_midpoint_loop(struct ring_info *rings, int center, int v1,
 
 }
 
-void update_vertices_loop(struct model *or_model, struct model *subdiv_model, 
+void update_vertices_loop(struct model *or_model, 
+			  struct model *subdiv_model, 
 			  struct ring_info *rings) {
   int i, j, v, n;
   double beta;
   vertex_t tmp;
   for (i=0; i<or_model->num_vert; i++) {
     n = rings[i].size;
-    if (rings[i].type == 0) {
-      if (n == 3)
-	beta = 3.0/16.0;
-      else
-	beta = 3.0/(8.0*n);
-      
-      prod_v(1.0-n*beta, &(or_model->vertices[i]), &tmp);
-      
-      for (j=0; j<n; j++) {
-	v = rings[i].ord_vert[j];
-	add_prod_v(beta, &(or_model->vertices[v]), &tmp, &tmp);
-      }
+    
+    if (n == 3)
+      beta = 3.0/16.0;
+    else
+      beta = 3.0/(8.0*n);
 
-    } else {
-      add_v(&(or_model->vertices[rings[i].ord_vert[0]]), 
-	    &(or_model->vertices[rings[i].ord_vert[n-1]]), &tmp);
-      prod_v(0.125, &tmp, &tmp);
-      add_prod_v(0.75, &(or_model->vertices[i]), &tmp, &tmp);
-      
+    prod_v(1.0-n*beta, &(or_model->vertices[i]), &tmp);
+
+    for (j=0; j<n; j++) {
+      v = rings[i].ord_vert[j];
+      add_prod_v(beta, &(or_model->vertices[v]), &tmp, &tmp);
     }
     subdiv_model->vertices[i] = tmp;
   }
 
 }
+
 
 void compute_midpoint_loop_crease(struct ring_info *rings, int center,  
 				  int v1, struct model *raw_model, 
@@ -505,19 +499,28 @@ void update_vertices_loop_crease(struct model *or_model,
   vertex_t tmp;
   for (i=0; i<or_model->num_vert; i++) {
     n = rings[i].size;
-    
-    if (n == 3)
-      beta = 3.0/16.0;
-    else
-      beta = 3.0/(8.0*n);
+    if (rings[i].type == 0) {
+      if (n == 3)
+	beta = 3.0/16.0;
+      else
+	beta = 3.0/(8.0*n);
+      
+      prod_v(1.0-n*beta, &(or_model->vertices[i]), &tmp);
+      
+      for (j=0; j<n; j++) {
+	v = rings[i].ord_vert[j];
+	add_prod_v(beta, &(or_model->vertices[v]), &tmp, &tmp);
+      }
 
-    prod_v(1.0-n*beta, &(or_model->vertices[i]), &tmp);
-
-    for (j=0; j<n; j++) {
-      v = rings[i].ord_vert[j];
-      add_prod_v(beta, &(or_model->vertices[v]), &tmp, &tmp);
+    } else {
+      add_v(&(or_model->vertices[rings[i].ord_vert[0]]), 
+	    &(or_model->vertices[rings[i].ord_vert[n-1]]), &tmp);
+      prod_v(0.125, &tmp, &tmp);
+      add_prod_v(0.75, &(or_model->vertices[i]), &tmp, &tmp);
+      
     }
     subdiv_model->vertices[i] = tmp;
   }
 
 }
+
