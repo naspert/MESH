@@ -1,4 +1,4 @@
-/* $Id: model_in.c,v 1.1 2002/02/04 15:56:21 dsanta Exp $ */
+/* $Id: model_in.c,v 1.2 2002/02/04 16:40:03 dsanta Exp $ */
 
 /*
  * Functions to read 3D model data from files
@@ -875,7 +875,6 @@ static int read_vrml_ifs(struct model *tmesh, FILE *data)
     if (c == '}') { /* end of node */
       fgetc(data); /* skip } */
     } else if (c != EOF && fscanf(data,sfmt,stmp) == 1) { /* field */
-      fprintf(stderr,"stmp %s (rcode = %i)\n",stmp,rcode);
       if (strcmp(stmp,"coord") == 0) { /* Coordinates */
         if (n_vtcs != -1 || skip_ws_comm(data) == EOF ||
             fscanf(data,sfmt,stmp) != 1 || strcmp(stmp,"Coordinate") != 0) {
@@ -925,9 +924,6 @@ static int read_vrml_ifs(struct model *tmesh, FILE *data)
     }
     if (rcode == 0 && n_nrmls > 0) {
       if (n_nrml_idcs > 0) { /* convert indexed to direct */
-        fprintf(stderr,"n_nrmls = %i, n_nrml_idcs = %i, max_vidx = %i, "
-                "n_faces = %i, p/v = %i\n",
-                n_nrmls,n_nrml_idcs,max_vidx,n_faces,nrml_per_vertex);
         if (nrml_per_vertex) { /* vertex normals */
           n_nrmls = tidxnormals_to_vnormals(&vnormals,normals,n_nrmls,
                                             nrml_idcs,n_nrml_idcs,max_nidx,
@@ -944,8 +940,6 @@ static int read_vrml_ifs(struct model *tmesh, FILE *data)
           }
         }
       } else { /* already direct normals */
-        fprintf(stderr,"n_nrmls = %i, max_vidx = %i, n_faces = %i, p/v = %i\n",
-                n_nrmls,max_vidx,n_faces,nrml_per_vertex);
         if (nrml_per_vertex) { /* vertex normals */
           if (n_nrmls <= max_vidx) {
             rcode = MESH_MODEL_ERR;
