@@ -1,4 +1,4 @@
-/* $Id: model_in.h,v 1.20 2002/10/16 13:02:46 aspert Exp $ */
+/* $Id: model_in.h,v 1.21 2002/11/04 15:54:03 aspert Exp $ */
 
 
 /*
@@ -80,7 +80,7 @@
  *     other field (normals, transforms, colors, begin/end, etc.) is
  *     ignored. 
  *
- * - Ply ascii:
+ * - Ply :
  *     Only the vertices and triangular faces are read. The 'property'
  *     fields are *not* read (only those describing vertex coordinates
  *     and face indices are considered, others are skipped). Binary
