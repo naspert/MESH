@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.5 2001/06/11 08:01:24 jacquet Exp $
+# $Id: Makefile,v 1.6 2001/06/13 09:53:11 jacquet Exp $
 
 CC = gcc
 CPP = g++
@@ -41,8 +41,8 @@ all: dirs viewer
 clean : 
 	rm $(OBJDIR)/*.o $(BINDIR)/* $(LIBDIR)/* $(LIB3DDIR)/obj/* $(LIB3DDIR)/lib/*
 
-viewer : $(OBJDIR)/viewer.o $(OBJDIR)/ScreenWidget.o $(OBJDIR)/compute_error.o $(OBJDIR)/RawWidget.o $(OBJDIR)/moc_RawWidget.o $(OBJDIR)/ColorMapWidget.o $(OBJDIR)/ColorMap.o lib3d
-	$(CPP) -O2 $(OBJDIR)/viewer.o $(OBJDIR)/ScreenWidget.o $(OBJDIR)/compute_error.o $(OBJDIR)/RawWidget.o $(OBJDIR)/moc_RawWidget.o $(OBJDIR)/ColorMapWidget.o $(OBJDIR)/ColorMap.o -o ../viewer $(QTGL_LIBFLAGS)
+viewer : $(OBJDIR)/viewer.o $(OBJDIR)/ScreenWidget.o $(OBJDIR)/compute_error.o $(OBJDIR)/RawWidget.o $(OBJDIR)/moc_RawWidget.o $(OBJDIR)/moc_ScreenWidget.o $(OBJDIR)/ColorMapWidget.o $(OBJDIR)/ColorMap.o $(OBJDIR)/init.o $(OBJDIR)/moc_init.o lib3d
+	$(CPP) -O2 $(OBJDIR)/viewer.o $(OBJDIR)/ScreenWidget.o $(OBJDIR)/compute_error.o $(OBJDIR)/RawWidget.o $(OBJDIR)/moc_RawWidget.o $(OBJDIR)/moc_ScreenWidget.o $(OBJDIR)/ColorMapWidget.o $(OBJDIR)/ColorMap.o $(OBJDIR)/init.o $(OBJDIR)/moc_init.o -o ../viewer $(QTGL_LIBFLAGS)
 
 lib3d :  $(LIB3DDIR)/obj/3dmodel_io.o $(LIB3DDIR)/obj/normals.o  $(LIB3DDIR)/obj/geomutils.o
 	$(CC) -g -shared -o $(LIB3DDIR)/lib/lib3d.so $^
@@ -53,7 +53,19 @@ $(OBJDIR)/viewer.o : viewer.cpp
 $(OBJDIR)/moc_RawWidget.o : moc_RawWidget.cpp
 	$(CPP) -D_METRO -O2 -ansi -lm $(QTINCFLAGS) $(GL_CFLAGS) -c $< -o $@
 
+$(OBJDIR)/moc_ScreenWidget.o : moc_ScreenWidget.cpp
+	$(CPP) -D_METRO -O2 -ansi -lm $(QTINCFLAGS) $(GL_CFLAGS) -c $< -o $@
+
+$(OBJDIR)/moc_init.o : moc_init.cpp
+	$(CPP) -D_METRO -O2 -ansi -lm $(QTINCFLAGS) $(GL_CFLAGS) -c $< -o $@
+
+moc_ScreenWidget.cpp : ScreenWidget.h
+	$(MOC) $< -o $@
+
 moc_RawWidget.cpp : RawWidget.h
+	$(MOC) $< -o $@
+
+moc_init.cpp : init.h
 	$(MOC) $< -o $@
 
 $(LIB3DDIR)/obj/%.o : $(LIB3DDIR)/src/%.c
