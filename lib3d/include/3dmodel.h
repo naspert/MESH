@@ -1,4 +1,4 @@
-/* $Id: 3dmodel.h,v 1.25 2001/10/30 09:25:51 aspert Exp $ */
+/* $Id: 3dmodel.h,v 1.26 2001/11/12 13:40:17 dsanta Exp $ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -62,6 +62,12 @@ typedef struct {
   float y;
   float z;
 }vertex_t;
+
+typedef struct {
+  double x;
+  double y;
+  double z;
+}dvertex_t;
 
 typedef struct {
   int f0;
