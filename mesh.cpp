@@ -1,4 +1,4 @@
-/* $Id: mesh.cpp,v 1.32 2002/03/15 16:32:12 aspert Exp $ */
+/* $Id: mesh.cpp,v 1.33 2002/03/15 16:46:32 aspert Exp $ */
 
 
 /*
@@ -57,7 +57,7 @@
 #endif
 
 /* The version string, also parsed by Makefile */
-const char *version = "1.0-rc2";
+const char *version = "1.0-rc3";
 
 /* The Copyright */
 const char *copyright = "2001-2002 EPFL";
@@ -65,14 +65,20 @@ const char *copyright = "2001-2002 EPFL";
 /* Prints usage information to the out stream */
 static void print_usage(FILE *out)
 {
-  fprintf(out,"MESH: Measuring Distance between Surfaces with the "
+  fprintf(out,"MESH: Measuring Distance between Surfaces using the "
           "Hausdorff distance\n");
-  fprintf(out,"\n");
-  fprintf(out,"usage: mesh [[options] file1 file2]\n");
-  fprintf(out,"\n");
-  fprintf(out,"version: %s\n",version);
+  fprintf(out,"MESH version %s\n",version);
   fprintf(out,"\n");
   fprintf(out,"Copyright (C) %s\n",copyright);
+  fprintf(out,
+          "This is free software; see the source for copying conditions.\n");
+  fprintf(out,
+          "There is NO warranty; not even for MERCHANTABILITY or FITNESS "); 
+  fprintf(out,"FOR A\nPARTICULAR PURPOSE.\n\n");
+  fprintf(out,"Report bugs to <Nicolas.Aspert@epfl.ch> and ");
+  fprintf(out,"<Diego.SantaCruz@epfl.ch>\n");
+  fprintf(out,"\n");
+  fprintf(out,"Usage: mesh [[options] file1 file2]\n");
   fprintf(out,"\n");
   fprintf(out,"The program measures the distance from the 3D model in\n");
   fprintf(out,"file1 to the one in file2. The models must be given as\n");

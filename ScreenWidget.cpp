@@ -1,4 +1,4 @@
-/* $Id: ScreenWidget.cpp,v 1.42 2002/03/15 16:32:07 aspert Exp $ */
+/* $Id: ScreenWidget.cpp,v 1.43 2002/03/15 16:46:31 aspert Exp $ */
 
 
 /*
@@ -422,11 +422,14 @@ void ScreenWidget::aboutMesh()
 {
   QString msg;
 
-  msg.sprintf("Mesh v %s\n"
+  msg.sprintf("MESH version %s\n"
               "Copyright (C) %s\n"
-              "Authors: Nicolas Aspert, Diego Santa Cruz, Davy Jacquet\n",
+              "Authors: Nicolas Aspert, Diego Santa Cruz, Davy Jacquet\n\n"
+              "This is free software; see the source for copying conditions.\n"
+              "There is NO warranty; not even for MERCHANTABILITY or\n"
+              "FITNESS FOR A PARTICULAR PURPOSE.",
               version, copyright);
-  QMessageBox::about(this, "Mesh", msg);
+  QMessageBox::about(this, "MESH", msg);
 }
 
 void ScreenWidget::aboutKeys()
