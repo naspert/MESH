@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.44 2002/08/15 15:39:02 aspert Exp $
+# $Id: Makefile,v 1.45 2002/08/26 12:22:16 aspert Exp $
 
 
 OS := $(shell uname -s)
@@ -12,7 +12,7 @@ TARGETS = torus cone dirac compare_curv
 GSL_TARGETS = maps_lsq
 ifeq ($(OS), Linux)
 CC = gcc
-XTRA_CFLAGS = -g  -pipe -ansi -pedantic -Wall -DREAD_TIME  # \
+XTRA_CFLAGS = -g  -pipe -ansi -pedantic -Wall -DREAD_TIME  # -DDEBUG \
 	-D__BUTTERFLY_CREASE_DEBUG -DDONT_USE_ZLIB
 
 
@@ -32,8 +32,9 @@ endif #Linux
 
 ifeq ($(OS), IRIX64)
 CC = cc
-XTRA_CFLAGS = -g 
-STATIC_GLFLAGS =  -lglut -lGLU -lGL -lX11 -lXmu $(BASE_LIBFLAGS)
+XTRA_CFLAGS = -g3 -o32 
+STATIC_GLFLAGS =  -o32 -lglut -lGLU -lGL -lX11 -lXmu \
+	-L/usr/freeware/bin $(BASE_LIBFLAGS)
 ALL_TARGETS = $(TARGETS) rawview subdiv
 endif
 
