@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.46 2001/08/22 13:43:27 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.47 2001/08/22 14:51:07 dsanta Exp $ */
 
 #include <compute_error.h>
 
@@ -315,6 +315,7 @@ static void get_cells_at_distance(struct dist_cell_lists *dlists,
   int cell_stride_z;
   ec_bitmap_t *fic_empty_cell;
   int *cell_list;
+  int *cur_cell;
   int cll;
   int m,n,o;
   int min_m,max_m,min_n,max_n,min_o,max_o;
@@ -335,12 +336,12 @@ static void get_cells_at_distance(struct dist_cell_lists *dlists,
   max_n_cells = 6*(2*k+1)*(2*k+1)+12*(2*k+1)+8;
   if (k == 0) max_n_cells += 1; /* add center cell */
   cell_list = xa_malloc(max_n_cells*sizeof(*cell_list));
-  cll = 0;
+  cur_cell = cell_list;
   if (k == 0) { /* add center cell */
     cell_idx = cell_gr_coord.x+cell_gr_coord.y*grid_sz.x+
       cell_gr_coord.z*cell_stride_z;
     if (!EC_BITMAP_TEST_BIT(fic_empty_cell,cell_idx)) {
-      cell_list[cll++] = cell_idx;
+      *(cur_cell++) = cell_idx;
     }
   }
   d = k+1; /* max displacement */
@@ -353,7 +354,7 @@ static void get_cells_at_distance(struct dist_cell_lists *dlists,
       for (m = min_m; m <= max_m; m++) {
         cell_idx = m+n*grid_sz.x+o*cell_stride_z;
         if (!EC_BITMAP_TEST_BIT(fic_empty_cell,cell_idx)) {
-          cell_list[cll++] = cell_idx;
+          *(cur_cell++) = cell_idx;
         }
       }
     }
@@ -363,7 +364,7 @@ static void get_cells_at_distance(struct dist_cell_lists *dlists,
       for (m = min_m; m <= max_m; m++) {
         cell_idx = m+n*grid_sz.x+o*cell_stride_z;
         if (!EC_BITMAP_TEST_BIT(fic_empty_cell,cell_idx)) {
-          cell_list[cll++] = cell_idx;
+          *(cur_cell++) = cell_idx;
         }
       }
     }
@@ -375,7 +376,7 @@ static void get_cells_at_distance(struct dist_cell_lists *dlists,
       for (m = min_m; m <= max_m; m++) {
         cell_idx = m+n*grid_sz.x+o*cell_stride_z;
         if (!EC_BITMAP_TEST_BIT(fic_empty_cell,cell_idx)) {
-          cell_list[cll++] = cell_idx;
+          *(cur_cell++) = cell_idx;
         }
       }
     }
@@ -385,7 +386,7 @@ static void get_cells_at_distance(struct dist_cell_lists *dlists,
       for (m = min_m; m <= max_m; m++) {
         cell_idx = m+n*grid_sz.x+o*cell_stride_z;
         if (!EC_BITMAP_TEST_BIT(fic_empty_cell,cell_idx)) {
-          cell_list[cll++] = cell_idx;
+          *(cur_cell++) = cell_idx;
         }
       }
     }
@@ -397,7 +398,7 @@ static void get_cells_at_distance(struct dist_cell_lists *dlists,
       for (n = min_n; n <= max_n; n++) {
         cell_idx = m+n*grid_sz.x+o*cell_stride_z;
         if (!EC_BITMAP_TEST_BIT(fic_empty_cell,cell_idx)) {
-          cell_list[cll++] = cell_idx;
+          *(cur_cell++) = cell_idx;
         }
       }
     }
@@ -407,12 +408,13 @@ static void get_cells_at_distance(struct dist_cell_lists *dlists,
       for (n = min_n; n <= max_n; n++) {
         cell_idx = m+n*grid_sz.x+o*cell_stride_z;
         if (!EC_BITMAP_TEST_BIT(fic_empty_cell,cell_idx)) {
-          cell_list[cll++] = cell_idx;
+          *(cur_cell++) = cell_idx;
         }
       }
     }
   }
   /* Store resulting cell list */
+  cll = cur_cell-cell_list;
   if (cll != 0) {
     dlists->list[k].cell = xa_realloc(cell_list,cll*sizeof(*cell_list));
     dlists->list[k].n_cells = cll;
@@ -1034,15 +1036,14 @@ static double dist_pt_surf(vertex p, const struct triangle_list *tl,
   double dmin_sqr;      /* minimum distance squared */
   double dist_sqr;      /* current distance squared */
   double cell_sz_sqr;   /* cubic cell side length squared */
-  int tfcl_idx;         /* triangle index in faces in cell list */
   int t_idx;            /* triangle index in triangle list */
   int cell_stride_z;    /* spacement for Z index in 3D addressing of cell
                          * list */
-  int *cell_tl;         /* list of triangles intersecting the current cell */
+  int *cur_cell_tl;     /* list of triangles intersecting the current cell */
   struct triangle_info *triags; /* local pointer to triangle array */
-  int *cell_list;       /* list of cells to scan for the current k */
-  int cll;              /* length of cell list */
-  int j;                /* counter */
+  int *cur_cell;        /* current cell in the list of cells to scan for the
+                         * current k */
+  int *end_cell;        /* one past the last cell in the current cell list */
   ec_bitmap_t *fic_empty_cell; /* stack copy of fic->empty_cell (faster) */
   int **fic_triag_idx;  /* stack copy of fic->triag_idx (faster) */
 
@@ -1093,13 +1094,12 @@ static double dist_pt_surf(vertex p, const struct triangle_list *tl,
     if (dcl[cell_idx].n_dists <= k) {
       get_cells_at_distance(&(dcl[cell_idx]),grid_coord,grid_sz,k,fic);
     }
-    cell_list = dcl[cell_idx].list[k].cell;
-    cll = dcl[cell_idx].list[k].n_cells;
 
     /* Scan each (non-empty) cell in the compiled list */
-    for (j=0; j<cll; j++) {
-      cell_idx = cell_list[j];
-      cell_tl = fic_triag_idx[cell_idx];
+    for (cur_cell = dcl[cell_idx].list[k].cell,
+           end_cell = cur_cell+dcl[cell_idx].list[k].n_cells;
+         cur_cell<end_cell; cur_cell++) {
+      cell_idx = *cur_cell;
       /* If minimum distance from point to cell is larger than already
        * found minimum distance we can skip all triangles in the cell */
 #ifdef DO_DIST_PT_SURF_STATS
@@ -1114,8 +1114,8 @@ static double dist_pt_surf(vertex p, const struct triangle_list *tl,
 #ifdef DO_DIST_PT_SURF_STATS
       stats->n_cell_t_scans++;
 #endif
-      tfcl_idx = 0;
-      t_idx = cell_tl[0];
+      cur_cell_tl = fic_triag_idx[cell_idx];
+      t_idx = *(cur_cell_tl++);
       do { /* cell has always one triangle at least, so do loop is OK */
 #ifdef DO_DIST_PT_SURF_STATS
         stats->n_triag_scans++;
@@ -1124,7 +1124,7 @@ static double dist_pt_surf(vertex p, const struct triangle_list *tl,
         if (dist_sqr < dmin_sqr) {
           dmin_sqr = dist_sqr;
         }
-      } while ((t_idx = cell_tl[++tfcl_idx]) != -1);
+      } while ((t_idx = *(cur_cell_tl++)) >= 0);
     }
     /* We loop until the minimum distance to any of the cells to come is
      * larger than the minimum distance to a face found so far; or until all
