@@ -14,7 +14,9 @@ The Qt library source code can be downloaded for free at Trolltech's website
 (http://www.trolltech.com/developer/download ) for all the Unix-like systems. 
 For Windows users, a precompiled Qt v2.3.0 is also available for free 
 (provided it is used for non-commercial purposes). 
-The MESH tool works identically with both *nix/Windows versions of Qt.
+The MESH tool works identically with both *nix/Windows versions of Qt. We 
+have been able to compile and run it successfully under Linux, Solaris 5.8, 
+IRIX 6.5, Windows 98/Me/2000.
 
 * Installation - Unix
 The QTDIR environment variable should point to the QT installation directory.
