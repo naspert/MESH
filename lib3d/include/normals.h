@@ -1,4 +1,4 @@
-/* $Id: normals.h,v 1.9 2001/10/23 09:29:36 aspert Exp $ */
+/* $Id: normals.h,v 1.10 2002/01/24 17:11:20 aspert Exp $ */
 #include <3dmodel.h>
 
 #ifndef _NORMALS_PROTO
@@ -8,6 +8,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+  void build_star_global(struct model*, struct ring_info**);
   void build_star(struct model*, int, struct ring_info*);
   void destroy_tree(struct face_tree*);
   int compar(const void*, const void*);
