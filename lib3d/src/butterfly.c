@@ -1,4 +1,4 @@
-/* $Id: butterfly.c,v 1.2 2001/09/03 15:38:31 aspert Exp $ */
+/* $Id: butterfly.c,v 1.3 2001/09/24 11:59:28 aspert Exp $ */
 #include <3dutils.h>
 
 /* v0 & v1 are the indices in rings[center].ord_vert */
@@ -716,7 +716,7 @@ model* subdiv(model *raw_model) {
   rings = (ring_info*)malloc(raw_model->num_vert*sizeof(ring_info));
   
   for (i=0; i<raw_model->num_vert; i++) {
-    rings[i] = build_star2(raw_model, i);
+    build_star(raw_model, i, &(rings[i]));
 #ifdef SUBDIV_DEBUG
     printf("Vertex %d : star_size = %d\n", i, rings[i].size);
     for (j=0; j<rings[i].size; j++)

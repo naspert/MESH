@@ -1,4 +1,4 @@
-/* $Id: loop.c,v 1.1 2001/09/03 15:36:47 aspert Exp $ */
+/* $Id: loop.c,v 1.2 2001/09/24 11:59:27 aspert Exp $ */
 #include <3dutils.h>
 
 
@@ -23,8 +23,9 @@ vertex compute_midpoint(ring_info *rings, int center, int v1,
  
   add_v(&(raw_model->vertices[p0]), &(raw_model->vertices[p1]), 
 	&tmp);
-  prod_v(0.125, &tmp, &tmp);
-  add_v(&np, &tmp, &np);
+
+  add_prod_v(0.125, &tmp, &np, &np);
+
 
   return np;
 }
@@ -36,8 +37,7 @@ void update_old_vertices(model *or_model, model *subdiv_model,
   vertex tmp;
   for (i=0; i<or_model->num_vert; i++) {
     n = rings[i].size;
- /*    beta = (0.625 - (0.375 + 0.25*cos(2*M_PI/(double)n)* */
-/* 		     cos(2*M_PI/(double)n)))/(double)n; */
+ 
     if (n == 3)
       beta = 3.0/16.0;
     else
@@ -73,7 +73,7 @@ model* subdiv(model *raw_model, edge_sub **edge_list_ptr,
   rings = (ring_info*)malloc(raw_model->num_vert*sizeof(ring_info));
   
   for (i=0; i<raw_model->num_vert; i++) {
-    rings[i] = build_star2(raw_model, i);
+    build_star(raw_model, i, &(rings[i]));
 
 #ifdef _DEBUG
     printf("Vertex %d : star_size = %d\n", i, rings[i].size);

@@ -1,10 +1,10 @@
-/* $Id: normals.c,v 1.9 2001/09/14 15:16:22 aspert Exp $ */
+/* $Id: normals.c,v 1.10 2001/09/24 11:59:27 aspert Exp $ */
 #include <3dmodel.h>
 #include <geomutils.h>
 
 
 /* find the 1-ring of vertex v */
-ring_info build_star2(model *raw_model, int v) {
+void build_star(model *raw_model, int v, ring_info *ring) {
 
   int i, j, k;
   int num_edges=0; /* number of edges in the 1-ring */
@@ -13,7 +13,7 @@ ring_info build_star2(model *raw_model, int v) {
   int *done;
   int star_size;
   int edge_added;
-  ring_info ring;
+/*   ring_info ring; */
 
   /* list all edges in the 1-ring */
   for (i=0; i<raw_model->num_faces; i++) {
@@ -59,10 +59,10 @@ ring_info build_star2(model *raw_model, int v) {
 
   if (num_edges == 0) {
     printf("Vertex %d has no face...\n", v);
-    ring.type = 0;
-    ring.size = 0;
-    ring.ord_vert = NULL;
-    return ring;
+    ring->type = 0;
+    ring->size = 0;
+    ring->ord_vert = NULL;
+    return;
   }
 
   done = (int*)calloc(num_edges, sizeof(int));
@@ -130,23 +130,23 @@ ring_info build_star2(model *raw_model, int v) {
       printf("Vertex %d is non-manifold\n", v);
       free(done);
       free(final_star);
-      ring.type = 2;
-      ring.size = 0;
-      ring.ord_vert = NULL;
-      return ring;
+      ring->type = 2;
+      ring->size = 0;
+      ring->ord_vert = NULL;
+      return;
     }
   }
 
   if (final_star[0] == final_star[star_size-1]) {    /* Regular vertex */
     star_size--;
-    ring.type = 0;
+    ring->type = 0;
   } else     /* Boundary vertex */
-    ring.type = 1;
+    ring->type = 1;
 
 
-  ring.size = star_size;
-  ring.ord_vert = (int*)malloc(star_size*sizeof(int));
-  memcpy(ring.ord_vert, final_star, star_size*sizeof(int));
+  ring->size = star_size;
+  ring->ord_vert = (int*)malloc(star_size*sizeof(int));
+  memcpy(ring->ord_vert, final_star, star_size*sizeof(int));
 
 #ifdef NORM_DEBUG
   printf("Vertex %d : star_size = %d num_edges = %d\n", v, star_size, 
@@ -158,7 +158,7 @@ ring_info build_star2(model *raw_model, int v) {
   free(edge_list_primal);
   free(final_star);
   free(done);
-  return ring;
+
 }
 
 
@@ -765,6 +765,9 @@ vertex* compute_face_normals(model* raw_model, info_vertex *curv) {
   }
 
   free(tree);
+
+/*   for (i=0; i<raw_model->num_vert; i++) */
+/*     printf("curv[%d].num_faces=%d\n", i, curv[i].num_faces); */
 
   return normals;
 }

@@ -1,4 +1,4 @@
-/* $Id: subdiv_sph.c,v 1.3 2001/08/15 15:00:07 aspert Exp $ */
+/* $Id: subdiv_sph.c,v 1.4 2001/09/24 11:59:28 aspert Exp $ */
 #include <3dutils.h>
 
 #undef EST_NORMALS
@@ -83,7 +83,8 @@ vertex compute_midpoint(ring_info *rings, int center, int v1,
   normalize_v(&v);
   
   prod_v(rp, &v, &np1);
-
+  
+ 
   np1.x += dz*n.x + p.x;
   np1.y += dz*n.y + p.y;
   np1.z += dz*n.z + p.z;
@@ -143,7 +144,7 @@ vertex compute_midpoint(ring_info *rings, int center, int v1,
     nph = g*ph;
   } else {
     nph = 0.5*ph; 
-  }
+  } 
 
 
 
@@ -157,12 +158,10 @@ vertex compute_midpoint(ring_info *rings, int center, int v1,
   np2.y += dz*n.y + p.y;
   np2.z += dz*n.z + p.z;
 
-/*   printf("np2 = %f %f %f\n", np2.x, np2.y, np2.z); */
+
   add_v(&np1, &np2, &np);
   prod_v(0.5, &np, &np);
-/*   np.x = 0.5*(np1.x + np2.x); */
-/*   np.y = 0.5*(np1.y + np2.y); */
-/*   np.z = 0.5*(np1.z + np2.z); */
+
 
 #ifdef EST_NORMALS
   p0p1.x = p1.x - p0.x;
@@ -254,7 +253,7 @@ model* subdiv(model *raw_model, edge_sub **edge_list_ptr,
   rings = (ring_info*)malloc(raw_model->num_vert*sizeof(ring_info));
   
   for (i=0; i<raw_model->num_vert; i++) {
-    rings[i] = build_star2(raw_model, i);
+    build_star(raw_model, i, &(rings[i]));
 #ifdef _DEBUG
     printf("Vertex %d : star_size = %d\n", i, rings[i].size);
     for (j=0; j<rings[i].size; j++)
