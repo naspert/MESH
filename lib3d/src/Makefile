@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.46 2002/09/09 08:36:15 aspert Exp $
+# $Id: Makefile,v 1.47 2002/09/18 11:36:43 aspert Exp $
 
 
 OS := $(shell uname -s)
@@ -14,7 +14,7 @@ ifeq ($(OS), Linux)
 CC = gcc
 XTRA_CFLAGS = -g  -pipe -ansi -pedantic -Wall -DREAD_TIME  -W -Winline \
 	-Wmissing-prototypes -Wstrict-prototypes -Wnested-externs \
-	-Wshadow -Waggregate-return # -DDEBUG \
+	-Wshadow -Waggregate-return -Wno-unused # -DDEBUG \
 	-D__BUTTERFLY_CREASE_DEBUG -DDONT_USE_ZLIB
 
 
