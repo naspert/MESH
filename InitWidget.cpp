@@ -1,4 +1,4 @@
-/* $Id: InitWidget.cpp,v 1.18 2002/02/25 20:49:51 aspert Exp $ */
+/* $Id: InitWidget.cpp,v 1.19 2002/02/26 07:29:09 aspert Exp $ */
 
 #include <InitWidget.h>
 
@@ -192,6 +192,7 @@ void InitWidget::meshSetUp() {
     log = outbuf_new(stdio_puts,stdout);
   } else {
     textOut = new TextWidget();
+    textOut->setIcon(*qpxMeshIcon);
     log = outbuf_new(TextWidget_puts,textOut);
     textOut->show();
   }

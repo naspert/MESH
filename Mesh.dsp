@@ -276,6 +276,10 @@ SOURCE=.\mesh_run.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\meshIcon.xpm
+# End Source File
+# Begin Source File
+
 SOURCE=.\model_analysis.h
 # End Source File
 # Begin Source File

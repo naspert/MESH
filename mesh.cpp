@@ -1,4 +1,4 @@
-/* $Id: mesh.cpp,v 1.23 2002/02/25 20:49:52 aspert Exp $ */
+/* $Id: mesh.cpp,v 1.24 2002/02/26 07:29:09 aspert Exp $ */
 
 #include <time.h>
 #include <string.h>
@@ -248,6 +248,9 @@ int main( int argc, char **argv )
 
   /* Parse arguments */
   parse_args(argc,argv,&pargs);
+
+  /* Load pixmap for icon */
+  qpxMeshIcon = new QPixmap((const char**)meshIcon);
   /* Display starting dialog if insufficient arguments */
   if (pargs.m1_fname != NULL || pargs.m2_fname != NULL) {
     if (pargs.m1_fname == NULL || pargs.m2_fname == NULL) {
@@ -259,6 +262,7 @@ int main( int argc, char **argv )
     }
     else {
       textOut = new TextWidget();
+      textOut->setIcon(*qpxMeshIcon);
       log = outbuf_new(TextWidget_puts,textOut);
       textOut->show();
     }
@@ -267,6 +271,7 @@ int main( int argc, char **argv )
       pr.cb_out = stdout;
     } else {
       qProg = new QProgressDialog("Calculating distance",0,100);
+      qProg->setIcon(*qpxMeshIcon);
       qProg->setMinimumDuration(1500);
       pr.prog = QT_prog;
       pr.cb_out = qProg;
@@ -274,14 +279,12 @@ int main( int argc, char **argv )
     mesh_run(&pargs, &model1, &model2, log, &pr);
   } else {
     b = new InitWidget(pargs, &model1, &model2);
-    qpxMeshIcon = new QPixmap((const char**)meshIcon);
     b->setIcon(*qpxMeshIcon);
     b->show(); 
   }
   if (a != NULL) {
     if (pargs.m1_fname != NULL || pargs.m2_fname != NULL) {
       c = new ScreenWidget(&model1, &model2, pargs.do_texture);
-      qpxMeshIcon = new QPixmap((const char**)meshIcon);
       c->setIcon(*qpxMeshIcon);
       a->setMainWidget(c);
       c->show(); 
