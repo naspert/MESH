@@ -1,4 +1,4 @@
-/* $Id: InitWidget.h,v 1.15 2002/02/25 16:09:44 aspert Exp $ */
+/* $Id: InitWidget.h,v 1.16 2002/02/25 20:49:52 aspert Exp $ */
 
 #ifndef INITW_H
 #define INITW_H
@@ -6,6 +6,8 @@
 #include <qwidget.h>
 #include <qlineedit.h>
 #include <qcheckbox.h>
+#include <qpixmap.h>
+#include <meshIcon.xpm>
 #include <mesh_run.h>
 #include <ScreenWidget.h>
 #include <TextWidget.h>
@@ -38,6 +40,7 @@ private:
   ScreenWidget *c;
   TextWidget *textOut;
   struct outbuf *log;
+  QPixmap *qpxMeshIcon;
 };
 
 extern "C" {

@@ -1,12 +1,13 @@
-/* $Id: mesh.cpp,v 1.22 2002/02/25 16:09:44 aspert Exp $ */
+/* $Id: mesh.cpp,v 1.23 2002/02/25 20:49:52 aspert Exp $ */
 
 #include <time.h>
 #include <string.h>
 #include <qapplication.h>
 #include <qprogressdialog.h>
+#include <qpixmap.h>
+#include <meshIcon.xpm>
 #include <ScreenWidget.h>
 #include <InitWidget.h>
-
 #include <mesh_run.h>
 #include <3dmodel_io.h>
 
@@ -214,6 +215,7 @@ int main( int argc, char **argv )
   ScreenWidget *c; 
   TextWidget *textOut;
   QProgressDialog *qProg;
+  QPixmap *qpxMeshIcon;
   struct model_error model1,model2;
   int rcode;
   struct outbuf *log;
@@ -272,11 +274,15 @@ int main( int argc, char **argv )
     mesh_run(&pargs, &model1, &model2, log, &pr);
   } else {
     b = new InitWidget(pargs, &model1, &model2);
+    qpxMeshIcon = new QPixmap((const char**)meshIcon);
+    b->setIcon(*qpxMeshIcon);
     b->show(); 
   }
   if (a != NULL) {
     if (pargs.m1_fname != NULL || pargs.m2_fname != NULL) {
       c = new ScreenWidget(&model1, &model2, pargs.do_texture);
+      qpxMeshIcon = new QPixmap((const char**)meshIcon);
+      c->setIcon(*qpxMeshIcon);
       a->setMainWidget(c);
       c->show(); 
     }

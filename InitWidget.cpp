@@ -1,4 +1,4 @@
-/* $Id: InitWidget.cpp,v 1.17 2002/02/25 16:09:44 aspert Exp $ */
+/* $Id: InitWidget.cpp,v 1.18 2002/02/25 20:49:51 aspert Exp $ */
 
 #include <InitWidget.h>
 
@@ -17,12 +17,13 @@
 InitWidget::InitWidget(struct args defArgs,
                        struct model_error *m1, struct model_error *m2,
 		       QWidget *parent, const char *name):
-  QWidget( parent, name) {
+  QWidget(parent, name) {
 
   QLabel *qlabMesh1, *qlabMesh2, *qlabSplStep, *qlabMinSplFreq;
   QPushButton *B1, *B2, *OK;
   QListBox *qlboxSplStep;
   QGridLayout *bigGrid;
+
 
 
   /* Initialize */
@@ -114,6 +115,9 @@ InitWidget::InitWidget(struct args defArgs,
 
   /* Build grid layout for OK button */
   bigGrid->addMultiCellWidget(OK, 9, 9, 0, 2, Qt::AlignCenter);
+  
+  qpxMeshIcon = new QPixmap((const char**)meshIcon);
+  setIcon(*qpxMeshIcon);
 }
 
 InitWidget::~InitWidget() {
@@ -197,13 +201,14 @@ void InitWidget::meshSetUp() {
 void InitWidget::meshRun() {
   QProgressDialog qProg("Calculating distance",0,100);
   struct prog_reporter pr;
-
+  
   qProg.setMinimumDuration(1500);
   pr.prog = QT_prog;
   pr.cb_out = &qProg;
   mesh_run(&pargs,model1,model2, log, &pr);
   outbuf_flush(log);
   c = new ScreenWidget(model1, model2, pargs.do_texture);
+  c->setIcon(*qpxMeshIcon);
   if (qApp != NULL) {
     qApp->setMainWidget(c);
   }
