@@ -1,4 +1,4 @@
-/* $Id: model_in.c,v 1.38 2003/01/13 12:46:09 aspert Exp $ */
+/* $Id: model_in.c,v 1.39 2003/03/25 11:02:58 dsanta Exp $ */
 
 
 /*
@@ -133,39 +133,42 @@ int buf_getc_func(struct file_data* data)
 static int refill_buffer(struct file_data* data) 
 {
   int rbytes, tmp;
+  int rsz;
 
   if (data->eof_reached) /* we cannot read anything from the buffer */
     return 0;
 
   /* backup last byte for silly ungetc's */
-  data->block[0] = data->block[data->pos-1];
-  data->pos = 1;
+  if (data->pos > 1) {
+    data->block[0] = data->block[data->pos-1];
+    data->pos = 1;
+  }
 
   /* now fill da buffer w. at most GZ_RBYTES of data */
-  rbytes = loc_fread(&(data->block[1]), sizeof(unsigned char), GZ_RBYTES, 
-		     data->f);
+  rsz = (GZ_RBYTES < data->size-1) ? GZ_RBYTES : data->size-1;
+  assert(rsz > 255);
+  rbytes = loc_fread(&(data->block[1]), sizeof(unsigned char), rsz, data->f);
   data->nbytes = rbytes+1;
 
 
-  if (rbytes < ((int)(GZ_RBYTES*sizeof(unsigned char)))) { 
+  if (rbytes < ((int)(rsz*sizeof(unsigned char)))) { 
     /* if we read less, this means that an EOF has been encoutered */
     data->eof_reached = 1;
     memset(&(data->block[data->nbytes]), 0, 
-           (GZ_BUF_SZ-data->nbytes)*sizeof(unsigned char));
+           (data->size-data->nbytes)*sizeof(unsigned char));
 #ifdef DEBUG
     DEBUG_PRINT("refill_buffer %d bytes\n", data->nbytes);
 #endif
     return 1;
   }
 
-  
   /* now let's fill the buffer s.t. a valid separator ends it */
   while (strchr(VRML_WS_CHARS, data->block[data->nbytes-1]) == NULL) {
     tmp = loc_getc(data->f);
     if (tmp == EOF) {
       data->eof_reached = 1;
       memset(&(data->block[data->nbytes]), 0, 
-             (GZ_BUF_SZ-data->nbytes)*sizeof(unsigned char));
+             (data->size-data->nbytes)*sizeof(unsigned char));
 
 #ifdef DEBUG
       DEBUG_PRINT("refill_buffer %d bytes\n", data->nbytes);
@@ -183,8 +186,9 @@ static int refill_buffer(struct file_data* data)
         return MESH_NO_MEM;
     }
   }
+  assert(data->size >= data->nbytes);
   memset(&(data->block[data->nbytes]), 0, 
-         (GZ_BUF_SZ-data->nbytes)*sizeof(unsigned char));
+         (data->size-data->nbytes)*sizeof(unsigned char));
 
 #ifdef DEBUG
   DEBUG_PRINT("refill_buffer %d bytes\n", data->nbytes);
