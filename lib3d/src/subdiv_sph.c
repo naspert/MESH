@@ -1,4 +1,4 @@
-/* $Id: subdiv_sph.c,v 1.7 2002/05/27 15:17:18 aspert Exp $ */
+/* $Id: subdiv_sph.c,v 1.8 2002/09/17 08:36:54 aspert Exp $ */
 #include <3dmodel.h>
 #include <normals.h>
 #include <geomutils.h>
@@ -6,7 +6,7 @@
 #include <assert.h>
 
 /* ph -> h(ph) */
-float h(float x) {
+static float h(float x) {
   float tmp, res;
   if (x <= -M_PI_2 || x >= M_PI_2)
     res = x;
