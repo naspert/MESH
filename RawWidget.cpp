@@ -6,7 +6,7 @@
 /*        definition de la classe RawWidget                                */
 /***************************************************************************/
 
-RawWidget::RawWidget( model *raw_model, QWidget *parent, const char *name) 
+RawWidget::RawWidget(model *raw_model, QWidget *parent, const char *name) 
   : QGLWidget( parent, name)
 { 
   
@@ -16,6 +16,7 @@ RawWidget::RawWidget( model *raw_model, QWidget *parent, const char *name)
   
   FOV = 40;
   model_list=0;
+  colormap=HSVtoRGB();
   raw_model2=raw_model;
   line_fill_state=0;
   move_state=0;
@@ -75,12 +76,6 @@ void RawWidget::setLine()
   updateGL();
 }
 
-// void RawWidget::setFill()
-// {
-//   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-//   rebuild_list(raw_model); 
-//   updateGL();
-// }
 
 void RawWidget::paintGL()
 {
@@ -112,7 +107,7 @@ void RawWidget::initializeGL()
 
   model_list=glGenLists(1);
   glNewList(model_list, GL_COMPILE);
-  rebuild_list(raw_model2);
+  rebuild_list(colormap,raw_model2);
   glEndList();
   
   glMatrixMode(GL_PROJECTION);
@@ -140,7 +135,7 @@ void RawWidget::display(double distance) {
 /* This functions rebuilds the display list of the current model */
 /* It is called when the viewing setting (light...) are changed  */
 /* ************************************************************* */
-void RawWidget::rebuild_list(model *raw_model) {
+void RawWidget::rebuild_list(double **colormap,model *raw_model) {
   int i;
   face *cur_face;
 

@@ -1,4 +1,4 @@
-# $Id: Makefile.sgi,v 1.2 2001/05/01 08:28:43 jacquet Exp $
+# $Id: Makefile.sgi,v 1.3 2001/05/03 10:57:31 jacquet Exp $
 
 CC = cc
 CPP = CC
@@ -37,8 +37,8 @@ all: dirs viewer
 clean : 
 	rm $(OBJDIR)/*.o $(BINDIR)/* $(LIBDIR)/*
 
-viewer : $(MAKEDIR)/viewer.o $(MAKEDIR)/moc_RawWidget.o  $(MAKEDIR)/RawWidget.o $(MAKEDIR)/compute_error.o lib3d
-	$(CPP) $(MAKEDIR)/viewer.o $(MAKEDIR)/moc_RawWidget.o  $(MAKEDIR)/RawWidget.o $(MAKEDIR)/compute_error.o -o ../viewer $(QTGL_LIBFLAGS) $(QT_LIBFLAGS)
+viewer : $(MAKEDIR)/viewer.o $(MAKEDIR)/ScreenWidget.o $(MAKEDIR)/compute_error.o $(MAKEDIR)/RawWidget.o $(MAKEDIR)/moc_RawWidget.o $(MAKEDIR)/ColorMapWidget.o $(MAKEDIR)/ColorMap.o lib3d
+	$(CPP) $(MAKEDIR)/viewer.o $(MAKEDIR)/ScreenWidget.o $(MAKEDIR)/compute_error.o $(MAKEDIR)/RawWidget.o $(MAKEDIR)/moc_RawWidget.o $(MAKEDIR)/ColorMapWidget.o $(MAKEDIR)/ColorMap.o -o ../viewer $(QTGL_LIBFLAGS) $(QT_LIBFLAGS)
 
 lib3d :  $(OBJDIR)/3dmodel_io.o $(OBJDIR)/normals.o  $(OBJDIR)/geomutils.o
 	$(CC) -g -shared -o $(LIBDIR)/lib3d.so $^
@@ -52,15 +52,14 @@ $(MAKEDIR)/moc_RawWidget.o : $(MAKEDIR)/moc_RawWidget.cpp
 $(MAKEDIR)/moc_RawWidget.cpp : $(MAKEDIR)/RawWidget.h
 	$(MOC) $< -o $@
 
-$(MAKEDIR)/RawWidget.o : RawWidget.cpp
-	$(CPP) -I$(MAKEDIR) $(QTINCFLAGS) $(GL_CFLAGS) -c $< -o $@
-
 $(OBJDIR)/%.o : /home/sun1/jacquet/lib3d/src/%.c
 	$(CC) $(BASE_CFLAGS)-D_METRO -c $< -o $@
 
-$(MAKEDIR)/compute_error.o : compute_error.c
+$(MAKEDIR)/%.o : $(MAKEDIR)/%.c
 	$(CC) -I$(MAKEDIR) $(GL_CFLAGS) -c $< -o $@	
 
+$(MAKEDIR)/%.o : $(MAKEDIR)/%.cpp
+	$(CPP) -I$(MAKEDIR) $(QTINCFLAGS) $(GL_CFLAGS) -c $< -o $@
 
 
 libdir : 
