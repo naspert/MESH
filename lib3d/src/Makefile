@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.22 2001/11/23 13:49:03 aspert Exp $
+# $Id: Makefile,v 1.23 2001/11/30 10:57:52 aspert Exp $
 
 #CC = /home/sun1/aspert/gcc/bin/gcc
 
@@ -7,7 +7,7 @@ ARCH := $(shell uname -m)
 
 ifeq ($(OS),Linux)
 CC = gcc
-XTRA_CFLAGS = -g  -pipe -ansi -pedantic -Wall -D__LINUX #-D__USE_DISPLAY_LISTS_
+XTRA_CFLAGS = -g  -pipe -ansi -pedantic -Wall -D__LINUX -D__USE_DISPLAY_LISTS_
 endif
 ifeq ($(OS),IRIX64)
 CC = cc
@@ -32,7 +32,7 @@ XTRA_CFLAGS +=  -O2  #-D__RING_DEBUG
 BASE_CFLAGS = $(INCLFLAGS) $(XTRA_CFLAGS) 
 GL_CFLAGS = $(INCLFLAGS) $(GLINCLFLAGS) $(XTRA_CFLAGS) 
 
-BASE_LIBFLAGS = -L$(LIBDIR) -l3d -lm 
+BASE_LIBFLAGS = -lm -lgsl -lgslcblas
 GL_LIBFLAGS = -L$(LIBDIR) -L$(HPGLDIR)/lib -L$(GLDIR)/lib -lglut -lGLU -lGL \
 	-lXmu -lXext -lX11 -lXi -l3d -limage -lm 
 
@@ -42,41 +42,27 @@ STATIC_GLFLAGS =   -L$(LIBDIR) -L$(GLDIR)/lib -lglut -lGLU -lGL -lXmu -lXext \
 BASE_LDFLAGS += -g $(BASE_LIBFLAGS) #-pg
 GL_LDFLAGS += -g $(GL_LIBFLAGS) 
 
+TARGETS = torus cone isoca dirac maps_lsq compare_curv
+BASE_OBJECTS = $(OBJDIR)/geomutils.o $(OBJDIR)/normals.o $(OBJDIR)/3dmodel_io.o
 
 default : rawview3
 
-all: dirs rawview3 torus cone isoca  subdiv dirac compare_curv
+all: dirs rawview3 subdiv $(TARGETS)
 
 clean : 
 	rm -f $(OBJDIR)/*.o $(BINDIR)/* $(LIBDIR)/*
 
-rawview : $(OBJDIR)/rawview3.o $(OBJDIR)/geomutils.o $(OBJDIR)/normals.o $(OBJDIR)/3dmodel_io.o $(OBJDIR)/image.o $(OBJDIR)/gl2ps.o
+rawview3 : $(OBJDIR)/rawview3.o $(BASE_OBJECTS) $(OBJDIR)/image.o $(OBJDIR)/gl2ps.o
 	$(CC) $^ -o $(BINDIR)/$@ $(STATIC_GLFLAGS)
 
-rawview3 : $(OBJDIR)/rawview3.o $(OBJDIR)/gl2ps.o lib3d libimage
+$(TARGETS): % : $(OBJDIR)/%.o $(BASE_OBJECTS)
+	$(CC) -o $(BINDIR)/$@ $^ $(BASE_LDFLAGS)
+
+subdiv : $(OBJDIR)/subdiv.o $(OBJDIR)/subdiv_methods.o $(BASE_OBJECTS)
+	$(CC) -o $(BINDIR)/$@ $^ $(BASE_LDFLAGS) 
+
+rawview : $(OBJDIR)/rawview3.o $(OBJDIR)/gl2ps.o lib3d libimage
 	$(CC) $(OBJDIR)/rawview3.o $(OBJDIR)/gl2ps.o -o $(BINDIR)/$@ $(GL_LDFLAGS)
-
-torus : $(OBJDIR)/torus.o lib3d 
-	$(CC) -o $(BINDIR)/$@ $< $(BASE_LDFLAGS) 
-
-isoca : $(OBJDIR)/isoca.o lib3d
-	$(CC) -o $(BINDIR)/$@ $< $(BASE_LDFLAGS) 
-
-cone: $(OBJDIR)/cone.o lib3d
-	$(CC) -g -o $(BINDIR)/$@ $< $(BASE_LDFLAGS) 
-
-dirac: $(OBJDIR)/dirac.o lib3d
-	$(CC) -g -o $(BINDIR)/$@ $< $(BASE_LDFLAGS) 
-
-maps_lsq : $(OBJDIR)/maps_lsq.o lib3d
-	$(CC) -o $(BINDIR)/$@ $< $(BASE_LDFLAGS)  -lgsl -lgslcblas
-
-compare_curv : $(OBJDIR)/compare_curv.o lib3d
-	$(CC) -o $(BINDIR)/$@ $< $(BASE_LDFLAGS) 
-
-subdiv : $(OBJDIR)/subdiv.o $(OBJDIR)/subdiv_methods.o lib3d
-	$(CC) -o $(BINDIR)/$@ $(OBJDIR)/subdiv.o $(OBJDIR)/subdiv_methods.o \
-	 $(BASE_LDFLAGS) 
 
 libimage : $(OBJDIR)/image.o
 	$(CC) -g -shared  -o $(LIBDIR)/$@.so $<
@@ -89,9 +75,6 @@ $(OBJDIR)/rawview3.o : rawview3.c
 
 $(OBJDIR)/gl2ps.o : gl2ps.c
 	$(CC) $(GL_CFLAGS) -c $< -o $@
-
-$(OBJDIR)/purify.o : purify.c
-	$(CC) $(BASE_P_CFLAGS) -c $< -o $@
 
 $(OBJDIR)/%.o : %.c
 	$(CC) $(BASE_CFLAGS) -c $< -o $@	

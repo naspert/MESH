@@ -13,7 +13,7 @@ void lsq_fit(struct model *raw_model, struct ring_info *rings,
   vertex_t **t;
   vertex_t vi_j; /* vi - vj */
   vertex_t nvi;
-  vertex_t t1l, t2l;
+  vertex_t t1l, t2l, tmp;
   vertex_t b0, b1; /* basis vectors of tangent plane*/ 
   vertex_t **d;
   double  *u,  k1, k2, delta;
@@ -164,7 +164,8 @@ void lsq_fit(struct model *raw_model, struct ring_info *rings,
     normalize_v(&(curv[i].t2));
     printf("T1 = (%f, %f, 0.0)\t T2 = (%f, %f, 0.0)\n", curv[i].t1.x, 
 	   curv[i].t1.y, curv[i].t2.x, curv[i].t2.y);
-    printf("discr = %f\n",norm(crossprod(curv[i].t1, curv[i].t2)));
+    crossprod_v(&(curv[i].t1), &(curv[i].t2), &tmp);
+    printf("discr = %f\n",norm_v(&tmp));
     free(u);
   }/* End for i */
 
@@ -188,7 +189,7 @@ void compute_curvature(struct model *raw_model) {
 
   
 
-  raw_model->area = (double*)malloc(raw_model->num_faces*sizeof(double));
+  raw_model->area = (float*)malloc(raw_model->num_faces*sizeof(float));
   curv = (struct info_vertex*)
     malloc(raw_model->num_vert*sizeof(struct info_vertex));
   rings= (struct ring_info*)
