@@ -1,4 +1,4 @@
-/* $Id: 3dmodel.h,v 1.12 2001/09/03 11:14:45 aspert Exp $ */
+/* $Id: 3dmodel.h,v 1.13 2001/09/12 08:11:02 dsanta Exp $ */
 #ifdef MPATROL_TEST
 #include <mpatrol.h>
 #endif
@@ -110,10 +110,6 @@ typedef struct {
   face_tree_ptr *tree; /* spanning tree of the dual graph */
 #ifdef EST_NORMALS
   vertex *est_normals;
-#endif
-
-#ifdef _METRO
-  int *error; 
 #endif
 }model;
 

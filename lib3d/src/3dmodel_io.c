@@ -1,4 +1,4 @@
-/* $Id: 3dmodel_io.c,v 1.14 2001/09/03 11:40:11 aspert Exp $ */
+/* $Id: 3dmodel_io.c,v 1.15 2001/09/12 08:11:03 dsanta Exp $ */
 #include <3dmodel.h>
 #include <normals.h>
 
@@ -72,9 +72,6 @@ model* alloc_read_model(FILE *pf, int nvert, int nfaces, int nnorms, int nfnorms
   raw_model->face_normals = NULL;
   raw_model->area = NULL;
   raw_model->tree = NULL;
-#ifdef _METRO
-  raw_model->error = NULL;
-#endif
 
   raw_model->bBox[0].x = FLT_MAX;
   raw_model->bBox[0].y = FLT_MAX;
@@ -301,12 +298,6 @@ void free_raw_model(model *raw_model) {
     free(raw_model->area);
   if (raw_model->tree != NULL)
     destroy_tree(*(raw_model->tree));
-
-#ifdef _METRO
-  if (raw_model->error != NULL)
-    free(raw_model->error);
-#endif
-
   free(raw_model);
 }
 
