@@ -1,4 +1,4 @@
-/* $Id: mesh.cpp,v 1.16 2002/02/13 10:38:40 dsanta Exp $ */
+/* $Id: mesh.cpp,v 1.17 2002/02/20 18:30:47 dsanta Exp $ */
 
 #include <time.h>
 #include <string.h>
@@ -29,6 +29,31 @@ static void print_usage(FILE *out)
   fprintf(out,"map in graphical form.\n");
   fprintf(out,"If no options nor filenames are given a dialog is shown\n");
   fprintf(out,"to select the input file names as well as the parameters.\n");
+  fprintf(out,"\n");
+  fprintf(out,"Display:\n");
+  fprintf(out,"After calculating the distance, the error distribution on\n");
+  fprintf(out,"model 1 is be displayed in graphical form. There are three\n");
+  fprintf(out,"modes to display the error distribution: vertex error, face\n");
+  fprintf(out,"mean error and sample error. In vertex error, each vertex is\n");
+  fprintf(out,"assigned a color based on the calculated error at that\n");
+  fprintf(out,"vertex (if not calculated at that vertex, dark gray is used)\n");
+  fprintf(out,"and the color is interpolated between vertices. While fast,\n");
+  fprintf(out,"this method ignores any errors not located at the vertices\n");
+  fprintf(out,"and thus can provide misleading results. In mean face error,\n");
+  fprintf(out,"each triangle is assigned a color based on the mean error\n");
+  fprintf(out,"for that face (if that face has no samples a dark gray is\n");
+  fprintf(out,"used). In sample error mode a color is assigned to each\n");
+  fprintf(out,"sample point based on the error at that point, and applied\n");
+  fprintf(out,"to the model using texture mapping (if a face has no sample\n");
+  fprintf(out,"points a dark gray is assigned to it). This mode is the\n");
+  fprintf(out,"slowest but it accurately represents the error distribution.\n");
+  fprintf(out,"A colorbar showing the correspondance between error values\n");
+  fprintf(out,"and color is displayed. The colorbar also shows the\n");
+  fprintf(out,"approximate distribution, on the surface of model 1, of the\n");
+  fprintf(out,"error values using a histogram (approximate because the\n");
+  fprintf(out,"distribution of the sample points on the surface is not\n");
+  fprintf(out,"truly uniform).\n");
+  fprintf(out,"Note that the -f flag forces at least one sample per face.\n");
   fprintf(out,"\n");
   fprintf(out,"options:");
   fprintf(out,"\n");
@@ -209,6 +234,12 @@ int main( int argc, char **argv )
   } else {
     rcode = 0;
   }
+  /* Free widgets */
+  outbuf_delete(log);
+  delete qProg;
+  delete b;
+  delete c;
+  delete a; // QApplication must be last QT thing to delete
   /* Free model data */
   if (model1.mesh != NULL) free_raw_model(model1.mesh);
   free(model1.verror);
@@ -216,12 +247,6 @@ int main( int argc, char **argv )
   if (model2.mesh != NULL) free_raw_model(model2.mesh);
   free(model2.verror);
   free(model2.info);
-  /* Free widgets */
-  outbuf_delete(log);
-  delete qProg;
-  delete b;
-  delete c;
-  delete a; // QApplication must be last QT thing to delete
   /* Return exit code */
   return rcode;
 }
