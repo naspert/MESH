@@ -1,4 +1,4 @@
-/* $Id: compute_error.h,v 1.23 2002/02/13 10:38:39 dsanta Exp $ */
+/* $Id: compute_error.h,v 1.24 2002/02/20 18:19:31 dsanta Exp $ */
 #ifndef _COMPUTE_ERROR_PROTO
 #define _COMPUTE_ERROR_PROTO
 
@@ -38,18 +38,36 @@ struct face_error {
   double max_error;      /* The maximum error for the face */
   double mean_error;     /* The mean error for the face */
   double mean_sqr_error; /* The mean squared error for the face */
-  int n_samples;         /* Number of samples used to calculate error. If
-                          * zero, no error was calculated */
+  double *serror;        /* The error at each sample of the face. For a
+                          * triangle with vertices v0 v1 and v2 (in that
+                          * order) the samples (i,j) appear in the following
+                          * order. First the errors at samples with i equal 0
+                          * and j from 0 to sample_freq-1, followed by errors
+                          * at samples i equal 1 and j from 0 to
+                          * sample_freq-2, and so on. The index i corresponds
+                          * to the v0-v1 direction and j to the v0-v2
+                          * direction. If sample_freq is larger than 1, the
+                          * error at v0 is serror[0], at v1 is
+                          * serror[sample_freq*(sample_freq+1)/2-1] and at v2
+                          * is serror[sample_freq-1]. */
+  int sample_freq;       /* The sampling frequency for this triangle. If zero,
+                          * no error was calculated. The number of samples is
+                          * sample_freq*(sample_freq+1)/2. */
 };
 
 /* Model and error, plus miscellaneous model properties */
 struct model_error {
   struct model *mesh;     /* The 3D model mesh */
+  int n_samples;          /* Number of samples used to calculate the error */
+  struct face_error *fe;  /* The per-face error metrics. NULL if not
+                           * present. The fe[i].serror arrays are all parts of
+                           * one array, starting at fe[0].serror and can thus
+                           * be accessed linearly. */
+  double min_error;       /* The minimum error value (at sample) */
+  double max_error;       /* The maximum error value (at sample) */
+  double mean_error;      /* The mean error value */
   float *verror;          /* The per vertex error array. NULL if not
                            * present. */
-  float min_verror;       /* The minimum vertex error for the model */
-  float max_verror;       /* The maximum vertex error for the model */
-
   struct model_info *info;/* The model information. NULL if not present. */
 };
 
@@ -74,24 +92,23 @@ struct dist_surf_surf_stats {
  *                       Exported functions                                  *
  * --------------------------------------------------------------------------*/
 
-/* Calculates the distance from model m1 to model m2. The triangles of m1 are
- * sampled so that the sampling density (number of samples per unit surface)
- * is sampling_density. If force_sample_all is non-zero, all triangles of m1
- * have at least one sample, even if the specified sampling density is too
- * low for that. The per face (of m1) error metrics are returned in a new
- * array (of length m1->num_faces) allocated at *fe_ptr. The overall distance
- * metrics and other statistics are returned in stats. Optionally, if
- * calc_normals is non-zero and m2 has no normals or face normals, the normals
- * will be calculated and added to m2 (only normals, not face normals). The
- * normals are calculated assuming that the model m2 is oriented, if it is not
- * the case the resulting normals can be incorrect. Information already used
- * to calculate the distance is reused to compute the normals, so it is very
- * fast. If prog in not NULL it is used for reporting progress. The memory
- * allocated at *fe_ptr should be freed by calling
- * free_face_error(*fe_ptr). */
-void dist_surf_surf(const struct model *m1, struct model *m2, 
-		    double sampling_step, int force_sample_all,
-                    struct face_error *fe_ptr[],
+/* Calculates the distance from model me1->mesh (m1) to model m2. The
+ * triangles of m1 are sampled so that the sampling density (number of samples
+ * per unit surface) is sampling_density. If force_sample_all is non-zero, all
+ * triangles of m1 have at least one sample, even if the specified sampling
+ * density is too low for that. The per face (of m1) error metrics are
+ * returned in a new array (of length m1->num_faces) allocated at me1->fe. The
+ * overall distance metrics and other statistics are returned in
+ * stats. Optionally, if calc_normals is non-zero and m2 has no normals or
+ * face normals, the normals will be calculated and added to m2 (only normals,
+ * not face normals). The normals are calculated assuming that the model m2 is
+ * oriented, if it is not the case the resulting normals can be
+ * incorrect. Information already used to calculate the distance is reused to
+ * compute the normals, so it is very fast. If prog in not NULL it is used for
+ * reporting progress. The memory allocated at me1->fe should be freed by
+ * calling free_face_error(me1->fe). */
+void dist_surf_surf(struct model_error *me1, struct model *m2, 
+		    double sampling_density, int force_sample_all,
                     struct dist_surf_surf_stats *stats, int calc_normals,
                     struct prog_reporter *prog);
 
@@ -100,11 +117,12 @@ void dist_surf_surf(const struct model *m1, struct model *m2,
  * metrics. */
 void free_face_error(struct face_error *fe);
 
-/* Calculates the per vertex error and stores it in me, given the per face
- * error metrics in fe. The list of faces incident on each vertex should be
- * given in vfl. If NULL a temporary list is generated. */
-void calc_vertex_error(struct model_error *me, const struct face_error *fe,
-                       const struct face_list *vfl);
+/* Stores the error values at each vertex in the me->verror array (realloc'ed
+ * to the correct size), given the per face error metrics in me->fe. A
+ * negative error (special flag) is assigned to vertices for which there are
+ * no sample points. The number of vertices and faces without error samples is
+ * returned in *nv_empty and *nf_empty, respectively. */
+void calc_vertex_error(struct model_error *me, int *nv_empty, int *nf_empty);
 
 END_DECL
 #undef END_DECL

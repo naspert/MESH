@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.78 2002/02/19 15:15:49 aspert Exp $ */
+/* $Id: compute_error.c,v 1.79 2002/02/20 18:19:30 dsanta Exp $ */
 
 #include <compute_error.h>
 
@@ -80,6 +80,12 @@
 # define EC_BITMAP_SET_BIT(bm,i) (bm[i] = 1)
 #endif
 
+/* Temporary struct to hold extra statistics */
+struct misc_stats {
+  double *dist_smpl;/* The distance at each sample of model 1 */
+  int dist_smpl_sz; /* Size (in elements) of the buffer for dist_smpl */
+};
+
 /* List of triangles intersecting each cell */
 struct t_in_cell_list {
   int ** triag_idx;         /* The list of the indices of the triangles
@@ -129,7 +135,7 @@ struct triag_sample_error {
                       * in err_lin and vice-versa. The order in the 1D array
                       * is all errors for i equal 0 and j from 0 to
                       * n_samples-1, followed by errors for i equal 1 and j
-                      * from 1 to n_samples-2, and so on. */
+                      * from 0 to n_samples-2, and so on. */
   int n_samples_tot; /* The total number of samples in the triangle */
   int buf_sz;        /* The allocated err_lin buffer size (number of elements)*/
 };
@@ -189,6 +195,22 @@ struct dist_pt_surf_stats {
  *                    Local utility functions                                *
  * --------------------------------------------------------------------------*/
 
+/* Finalizes the members of the me->fe array. The m_stats->dist_smpl array
+ * will now be referenced by me->fe->serror. */
+static void finalize_face_error(struct model_error *me,
+                                struct misc_stats *m_stats)
+{
+  struct face_error *fe;
+  int n_faces,i,n;
+
+  n_faces = me->mesh->num_faces;
+  fe = me->fe;
+  fe[0].serror = m_stats->dist_smpl;
+  for (i=1; i<n_faces; i++) {
+    n = fe[i-1].sample_freq;
+    fe[i].serror = fe[i-1].serror+n*(n+1)/2;
+  }
+}
 
 /* Reallocates the buffers of tse to store the sample errors for a triangle
  * sampling with n samples in each direction. If tse->err and tse->err_lin is
@@ -539,7 +561,7 @@ static void get_cells_at_distance(struct dist_cell_lists *dlists,
 /* Initializes the triangle '*t' using the '*a' '*b' and '*c' vertices and
  * calculates all the relative fields of the struct. */
 static void init_triangle(const vertex_t *a, const vertex_t *b, 
-			  const vertex_t *c, struct triangle_info *t)
+                          const vertex_t *c, struct triangle_info *t)
 {
   dvertex_t dv_a,dv_b,dv_c;
   dvertex_t ab,ac,bc;
@@ -826,25 +848,41 @@ static struct triangle_list* model_to_triangle_list(const struct model *m)
  * obtained by calculating the mean of the errors of the sample triangles. The
  * other statistics are obtained analogously. Note that all sample triangles
  * have exactly the same area, and thus the calculation is independent of the
- * triangle shape. */
+ * triangle shape. The overall statistics in dss_stats and m_stats are updated
+ * (dss_stats->mean_dist is cumulated with the total error and
+ * dss_stats->rms_dist is cumulated with the total squared error, instead of
+ * being really updated).  */
 static void error_stat_triag(const struct triag_sample_error *tse,
-                             struct face_error *fe)
+                             struct face_error *fe,
+                             struct dist_surf_surf_stats *dss_stats,
+                             struct misc_stats *m_stats)
 {
-  int n,i,j,imax,jmax;
+  int n,n_tot,i,j,imax,jmax;
   double err_local;
   double err_a,err_b,err_c;
   double err_min, err_max, err_tot, err_sqr_tot;
   double **s_err;
 
   n = tse->n_samples;
-  fe->n_samples = tse->n_samples_tot;
+  fe->sample_freq = n;
+  dss_stats->m1_area += fe->face_area;
   if (n == 0) { /* no samples in this triangle */
-    fe->min_error = 0;
-    fe->max_error = 0;
-    fe->mean_error = 0;
-    fe->mean_sqr_error = 0;
     return;
   }
+  n_tot = tse->n_samples_tot;
+  dss_stats->st_m1_area += fe->face_area;
+  if (m_stats->dist_smpl_sz < n_tot+dss_stats->m1_samples) {
+    m_stats->dist_smpl_sz += (m_stats->dist_smpl_sz+3)/4; /* 25% increase */
+    if (m_stats->dist_smpl_sz < n_tot+dss_stats->m1_samples) {
+      m_stats->dist_smpl_sz = n_tot+dss_stats->m1_samples;
+    }
+    m_stats->dist_smpl = xa_realloc(m_stats->dist_smpl,
+                                    sizeof(*(m_stats->dist_smpl))*
+                                    m_stats->dist_smpl_sz);
+  }
+  memcpy(m_stats->dist_smpl+dss_stats->m1_samples,
+         tse->err_lin,sizeof(*(m_stats->dist_smpl))*n_tot);
+  dss_stats->m1_samples += n_tot;
   /* NOTE: In a triangle with values at the vertex e1, e2 and e3 and using
    * linear interpolation to obtain the values within the triangle, the mean
    * value (i.e. integral of the value divided by the surface) is
@@ -886,13 +924,18 @@ static void error_stat_triag(const struct triag_sample_error *tse,
   /* Finalize error measures */
   fe->min_error = err_min;
   fe->max_error = err_max;
-  if (n != 1) { /* normal case */
-    fe->mean_error = err_tot/(((n-1)*n/2+(n-2)*(n-1)/2)*3);
-    fe->mean_sqr_error = err_sqr_tot/(((n-1)*n/2+(n-2)*(n-1)/2)*6);
+  if (n != 1) { /* normal case, (n-1)*n/2+(n-2)*(n-1)/2 = (n-1)*(n-1) */
+    fe->mean_error = err_tot/((n-1)*(n-1)*3);
+    fe->mean_sqr_error = err_sqr_tot/((n-1)*(n-1)*6);
   } else { /* special case */
     fe->mean_error = tse->err_lin[0];
     fe->mean_sqr_error = tse->err_lin[0]*tse->err_lin[0];
   }
+  /* Update overall statistics */
+  if (err_min < dss_stats->min_dist) dss_stats->min_dist = err_min;
+  if (err_max > dss_stats->max_dist) dss_stats->max_dist = err_max;
+  dss_stats->mean_dist += fe->mean_error*fe->face_area;
+  dss_stats->rms_dist += fe->mean_sqr_error*fe->face_area;
 }
 
 /* Samples a triangle (a,b,c) using n samples in each direction. The sample
@@ -1254,12 +1297,12 @@ static double dist_pt_surf(dvertex_t p, const struct triangle_list *tl,
  * --------------------------------------------------------------------------*/
 
 /* See compute_error.h */
-void dist_surf_surf(const struct model *m1, struct model *m2, 
+void dist_surf_surf(struct model_error *me1, struct model *m2, 
 		    double sampling_density, int force_sample_all,
-                    struct face_error *fe_ptr[],
                     struct dist_surf_surf_stats *stats, int calc_normals,
                     struct prog_reporter *prog)
 {
+  struct model *m1;           /* The m1 model mesh */
   dvertex_t bbox_min,bbox_max;/* min and max of bounding box of m1 and m2 */
   struct triangle_list *tl2;  /* triangle list for m2 */
   struct t_in_cell_list *fic; /* list of faces intersecting each cell */
@@ -1269,7 +1312,6 @@ void dist_surf_surf(const struct model *m1, struct model *m2,
   int i,k,kmax;               /* counters and loop limits */
   double cell_sz;             /* side length of the cubic cells */
   struct size3d grid_sz;      /* number of cells in the X, Y and Z directions */
-  struct face_error *fe;      /* The error metrics for each face of m1 */
   int report_step;            /* The step to update the progress report */
   struct dist_cell_lists *dcl;/* Cache for the list of non-empty cells at each
                                * distance, for each cell. */
@@ -1278,11 +1320,13 @@ void dist_surf_surf(const struct model *m1, struct model *m2,
   dvertex_t prev_p;           /* previous point */
   double prev_d;              /* distance for previous point */
   dvertex_t v1,v2,v3;         /* double version of triangle vertices */
+  struct misc_stats m_stats;  /* temporary structure for temp stats */
 #ifdef DO_DIST_PT_SURF_STATS
   struct dist_pt_surf_stats dps_stats; /* Statistics */
 #endif
 
   /* Initialize */
+  m1 = me1->mesh;
   memset(&ts,0,sizeof(ts));
   memset(&tse,0,sizeof(tse));
   report_step = (int) (m1->num_faces/(100.0/2)); /* report every 2 % */
@@ -1307,24 +1351,23 @@ void dist_surf_surf(const struct model *m1, struct model *m2,
 
   /* Get the list of triangles in each cell */
   fic = triangles_in_cells(tl2,grid_sz,cell_sz,bbox_min);
-  stats->n_ne_cells = fic->n_ne_cells;
-  stats->n_t_p_nec = fic->n_t_per_ne_cell;
 
   /* Allocate storage for errors */
-  *fe_ptr = xa_realloc(*fe_ptr,m1->num_faces*sizeof(**fe_ptr));
-  fe = *fe_ptr;
+  me1->fe = xa_realloc(me1->fe,m1->num_faces*sizeof(*(me1->fe)));
 
   /* Initialize overall statistics */
-  stats->m1_samples = 0;
-  stats->st_m1_area = 0;
-  stats->m1_area = 0;
+  memset(stats,0,sizeof(*stats));
   stats->m2_area = tl2->area;
   stats->min_dist = DBL_MAX;
-  stats->max_dist = 0;
-  stats->mean_dist = 0;
-  stats->rms_dist = 0;
   stats->cell_sz = cell_sz;
   stats->grid_sz = grid_sz;
+  stats->n_ne_cells = fic->n_ne_cells;
+  stats->n_t_p_nec = fic->n_t_per_ne_cell;
+  memset(&m_stats,0,sizeof(m_stats));
+  m_stats.dist_smpl_sz = (int)(1.1*tl2->area*sampling_density);
+  if (m_stats.dist_smpl_sz < 200) m_stats.dist_smpl_sz = 200;
+  m_stats.dist_smpl =
+    xa_malloc(sizeof(*(m_stats.dist_smpl))*m_stats.dist_smpl_sz);
 #ifdef DO_DIST_PT_SURF_STATS
   memset(&dps_stats,0,sizeof(dps_stats));
 #endif
@@ -1338,10 +1381,9 @@ void dist_surf_surf(const struct model *m1, struct model *m2,
     vertex_f2d_dv(&(m1->vertices[m1->faces[k].f0]),&v1);
     vertex_f2d_dv(&(m1->vertices[m1->faces[k].f1]),&v2);
     vertex_f2d_dv(&(m1->vertices[m1->faces[k].f2]),&v3);
-    fe[k].face_area = tri_area_dv(&v1,&v2,&v3);
-    n = get_sampling_freq(fe[k].face_area,sampling_density);
+    me1->fe[k].face_area = tri_area_dv(&v1,&v2,&v3);
+    n = get_sampling_freq(me1->fe[k].face_area,sampling_density);
     if (force_sample_all && n == 0) n = 1;
-    stats->m1_samples += (n*(n+1))/2;
     realloc_triag_sample_error(&tse,n);
     sample_triangle(&v1,&v2,&v3,n,&ts);
     for (i=0; i<tse.n_samples_tot; i++) {
@@ -1354,16 +1396,7 @@ void dist_surf_surf(const struct model *m1, struct model *m2,
       prev_p = ts.sample[i];
       prev_d = tse.err_lin[i];
     }
-    error_stat_triag(&tse,&fe[k]);
-    /* Update overall statistics */
-    stats->m1_area += fe[k].face_area;
-    if (fe[k].n_samples > 0) {
-      stats->st_m1_area += fe[k].face_area;
-      if (fe[k].min_error < stats->min_dist) stats->min_dist = fe[k].min_error;
-      if (fe[k].max_error > stats->max_dist) stats->max_dist = fe[k].max_error;
-      stats->mean_dist += fe[k].mean_error*fe[k].face_area;
-      stats->rms_dist += fe[k].mean_sqr_error*fe[k].face_area;
-    }
+    error_stat_triag(&tse,&(me1->fe[k]),stats,&m_stats);
   }
   if (prog != NULL) prog_report(prog,-1);
 #ifdef DO_DIST_PT_SURF_STATS
@@ -1380,6 +1413,11 @@ void dist_surf_surf(const struct model *m1, struct model *m2,
   /* Finalize overall statistics */
   stats->mean_dist /= stats->st_m1_area;
   stats->rms_dist = sqrt(stats->rms_dist/stats->st_m1_area);
+  finalize_face_error(me1,&m_stats);
+  me1->min_error = stats->min_dist;
+  me1->max_error = stats->max_dist;
+  me1->mean_error = stats->mean_dist;
+  me1->n_samples = stats->m1_samples;
 
   /* Do normals for model 2 if requested and not yet present */
   if (calc_normals && m2->normals == NULL && m2->face_normals == NULL) {
@@ -1412,69 +1450,50 @@ void dist_surf_surf(const struct model *m1, struct model *m2,
 /* See compute_error.h */
 void free_face_error(struct face_error *fe)
 {
-  free(fe);
+  if (fe != NULL) {
+    free(fe->serror);
+    free(fe);
+  }
 }
 
 /* See compute_error.h */
-void calc_vertex_error(struct model_error *me, const struct face_error *fe,
-                       const struct face_list *vfl)
+void calc_vertex_error(struct model_error *me, int *nv_empty, int *nf_empty)
 {
-  struct face_list *vfl_local;
-  int i,j;
-  double mean_error;
-  double tot_area;
+  int i,n;
 
   /* Initialize */
-  if (vfl == NULL) {
-    vfl_local = faces_of_vertex(me->mesh);
-    vfl = vfl_local;
-  } else {
-    vfl_local = NULL;
-  }
   me->verror = xa_realloc(me->verror,me->mesh->num_vert*sizeof(*(me->verror)));
-  me->min_verror = FLT_MAX;
-  me->max_verror = 0;
-
-  /* Calculate vertex error and look for minimum and maximum */
   for (i=0; i<me->mesh->num_vert; i++) {
-    if (vfl[i].n_faces > 0) { /* skip degenerate cases */
-      mean_error = 0;
-      tot_area = 0;
-      for (j=0; j<vfl[i].n_faces; j++) {
-        if (fe[vfl[i].face[j]].n_samples > 0) {
-          mean_error += fe[vfl[i].face[j]].mean_error*
-            fe[vfl[i].face[j]].face_area;
-          tot_area += fe[vfl[i].face[j]].face_area;
-        }
+    me->verror[i] = -1; /* special flag value */
+  }
+
+  /* Get the error values at the vertices of each face */
+  *nf_empty = 0;
+  for (i=0; i<me->mesh->num_faces; i++) {
+    n = me->fe[i].sample_freq;
+    if (n <= 1) { /* no samples at face vertices */
+      if (n == 0) (*nf_empty)++; /* no samples for this face */
+      if (me->verror[me->mesh->faces[i].f0] == -1) {
+        me->verror[me->mesh->faces[i].f0] = -2; /* special flag value */
       }
-      if (tot_area > 0) {
-        mean_error /= tot_area;
-        me->verror[i] = (float) mean_error;
-        if (mean_error < me->min_verror) me->min_verror = (float) mean_error;
-        if (mean_error > me->max_verror) me->max_verror = (float) mean_error;
-      } else { /* no triangles incident on vertex i had error calculated */
-        me->verror[i] = -2; /* special flag value */
+      if (me->verror[me->mesh->faces[i].f1] == -1) {
+        me->verror[me->mesh->faces[i].f1] = -2; /* special flag value */
       }
-    } else { /* vertex error should never be consulted */
-      me->verror[i] = -1; /* invalid value */
+      if (me->verror[me->mesh->faces[i].f2] == -1) {
+        me->verror[me->mesh->faces[i].f2] = -2; /* special flag value */
+      }
+    } else {
+      me->verror[me->mesh->faces[i].f0] = me->fe[i].serror[0];
+      me->verror[me->mesh->faces[i].f1] = me->fe[i].serror[n*(n+1)/2-1];
+      me->verror[me->mesh->faces[i].f2] = me->fe[i].serror[n-1];
     }
   }
-  /* For vertices that had no indicent triangles with error stats use mean */
-  /* NOTE: This is a kludge, but don't really know what to do. Should probably
-   * propagate from neighbor's neighbor's or something like that. */
-  for (i=0, j=0; i<me->mesh->num_vert; i++) {
-    if (me->verror[i] == -2) {
-      j++;
-      me->verror[i] = (me->max_verror+me->min_verror)/2;
+
+  *nv_empty = 0;
+  for (i=0; i<me->mesh->num_vert; i++) {
+    if (me->verror[i] == -2) { /* no samples at this vertex */
+      (*nv_empty)++;
     }
   }
-  if (j>0) {
-    fprintf(stderr,
-            "WARNING: %.2f%% of vertices (%i out of %i) had no error samples,\n"
-            "         using medium value (%g).\n",
-            100.0*j/me->mesh->num_vert,j,me->mesh->num_vert,
-            (me->max_verror+me->min_verror)/2);
-  }
-  /* Free temporary storage */
-  if (vfl_local != NULL) free_face_lists(vfl_local,me->mesh->num_vert);
+
 }
