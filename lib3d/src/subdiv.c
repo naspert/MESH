@@ -1,4 +1,4 @@
-/* $Id: subdiv.c,v 1.16 2002/01/24 17:12:19 aspert Exp $ */
+/* $Id: subdiv.c,v 1.17 2002/01/25 09:57:13 aspert Exp $ */
 #include <3dutils.h>
 #include <subdiv_methods.h>
 #include <assert.h>
@@ -33,7 +33,7 @@ struct model* subdiv(struct model *raw_model,
 
 
   rings = (struct ring_info*)
-    calloc(raw_model->num_vert, sizeof(struct ring_info));
+    malloc(raw_model->num_vert*sizeof(struct ring_info));
   
   mp_info = (struct midpoint_info*)
     malloc(raw_model->num_vert*sizeof(struct midpoint_info));

@@ -1,4 +1,4 @@
-/* $Id: normals.c,v 1.18 2002/01/24 17:11:20 aspert Exp $ */
+/* $Id: normals.c,v 1.19 2002/01/25 09:57:12 aspert Exp $ */
 #include <3dmodel.h>
 #include <geomutils.h>
 #include <normals.h>
@@ -17,6 +17,8 @@ void build_star_global(struct model *raw_model, struct ring_info **ring) {
   edge_list_primal = (struct edge_v**)
     calloc(raw_model->num_vert, sizeof(struct edge_v*));
   
+  memset(*ring, 0, raw_model->num_vert*sizeof(struct ring_info));
+
   num_edges = (int*)calloc(raw_model->num_vert, sizeof(int));
   
   /* List all the edges in the 1-rings */
@@ -137,7 +139,9 @@ void build_star_global(struct model *raw_model, struct ring_info **ring) {
         free(final_star);
         free(face_star);
         (*ring)[i].type = 2;
-        /* What follows is implicitely done by calloc-ing the structure */
+        /* What follows is implicitely done by memset-ing the
+         * structure to 0
+         */
 /*         (*ring)[i].size = 0; */
 /*         (*ring)[i].n_faces = 0; */
 /*         (*ring)[i].ord_face = NULL; */
