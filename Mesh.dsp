@@ -98,7 +98,7 @@ SOURCE=.\lib3d\src\3dmodel_io.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\ColorMap.c
+SOURCE=.\colormap.c
 # End Source File
 # Begin Source File
 
@@ -190,7 +190,7 @@ SOURCE=.\lib3d\include\3dutils.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\ColorMap.h
+SOURCE=.\colormap.h
 # End Source File
 # Begin Source File
 
