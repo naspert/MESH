@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.3 2001/03/13 07:57:01 aspert Exp $
+# $Id: Makefile,v 1.4 2001/03/13 12:43:32 aspert Exp $
 
 CC = gcc
 
@@ -24,6 +24,8 @@ BASE_LDFLAGS = -g -O3 $(BASE_LIBFLAGS)
 GL_LDFLAGS = -g -O3 $(GL_LIBFLAGS)
 
 default : rawview3
+
+all: rawview3 torus
 
 rawview3 : $(OBJDIR)/rawview3.o lib3d libimage
 	$(CC) $(OBJDIR)/rawview3.o -o $(BINDIR)/rawview3 $(GL_LDFLAGS)
