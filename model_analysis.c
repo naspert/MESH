@@ -1,4 +1,4 @@
-/* $Id: model_analysis.c,v 1.6 2002/02/04 15:51:56 dsanta Exp $ */
+/* $Id: model_analysis.c,v 1.7 2002/02/22 23:32:21 dsanta Exp $ */
 
 #include <model_analysis.h>
 
@@ -188,7 +188,7 @@ static void analyze_faces_rec(const face_t *mfaces, int vidx, int pfidx,
         st->minfo.manifold = 0;
         st->minfo.closed = 0;
         /* Restart with first not yet counted triangle (always one) */
-        for (j=1; j<nf; j++) {
+        for (j=0; j<nf; j++) {
           fidx = vfaces[j];
           if (fidx != -1) break;
         }
