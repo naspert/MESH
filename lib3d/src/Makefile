@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.26 2001/12/07 17:15:30 aspert Exp $
+# $Id: Makefile,v 1.27 2001/12/18 14:45:00 aspert Exp $
 
 
 OS := $(shell uname -s)
@@ -11,7 +11,7 @@ BASE_LIBFLAGS = -lm
 TARGETS = torus cone isoca dirac compare_curv
 GSL_TARGETS = maps_lsq
 ifeq ($(OS), Linux)
-CC = gcc
+CC = gcc3
 XTRA_CFLAGS = -g  -pipe -ansi -pedantic -Wall -D__USE_DISPLAY_LISTS_
 
 GL_VENDOR := $(shell $(GLXINFO)|grep "OpenGL vendor"|cut -d\: -f2|cut -d\  -f2)
