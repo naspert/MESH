@@ -1,4 +1,4 @@
-/* $Id: rawview.c,v 1.34 2003/03/04 16:08:24 aspert Exp $ */
+/* $Id: rawview.c,v 1.35 2003/03/13 12:10:05 aspert Exp $ */
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -238,6 +238,27 @@ static void norm_key_pressed(unsigned char key, int x, int y) {
   case 'I':
     fprintf(stderr, "\nModel Info :\n %d vertices and %d triangles\n\n", 
             gl_ctx.raw_model->num_vert, gl_ctx.raw_model->num_faces);
+    break;
+  case 'k':
+  case 'K':
+    verbose_printf(gl_ctx.verbose, "Kobbelt-sqrt3 subdivision...\n");
+    sub_model = subdiv_sqrt3(gl_ctx.raw_model, SUBDIV_KOB_SQRT3, 
+                             compute_face_midpoint_kobsqrt3, NULL, 
+                             update_vertices_kobsqrt3);
+    if (sub_model != NULL) {
+      sub_model->bBox[0] = gl_ctx.raw_model->bBox[0];
+      sub_model->bBox[1] = gl_ctx.raw_model->bBox[1];
+      __free_raw_model(gl_ctx.raw_model);
+      gl_ctx.normals_done = 0;
+      gl_ctx.curv_done = 0;
+      gl_ctx.disp_curv = 0;
+      gl_ctx.draw_normals = 0;
+      set_light_off();
+      gl_ctx.raw_model = sub_model;
+      rebuild_list(&gl_ctx, &dl_idx);
+      glutPostRedisplay();
+    } else 
+      fprintf(stderr, "Kobbelt-sqrt3 subdivision failed\n");
     break;
   case 'l':
   case 'L':
@@ -551,7 +572,7 @@ int main(int argc, char **argv) {
 
   int i, rcode=0;
   char *title=NULL;
-  const char s_title[]="Raw Mesh Viewer $Revision: 1.34 $ - ";
+  const char s_title[]="Raw Mesh Viewer $Revision: 1.35 $ - ";
   vertex_t center;
   struct model* raw_model;
 

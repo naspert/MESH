@@ -1,4 +1,4 @@
-/* $Id: subdiv_sqrt3.c,v 1.1 2003/03/12 17:55:00 aspert Exp $ */
+/* $Id: subdiv_sqrt3.c,v 1.2 2003/03/13 12:10:05 aspert Exp $ */
 #include <3dutils.h>
 #include <subdiv_methods.h>
 #include <subdiv.h>
@@ -37,7 +37,7 @@ struct model* subdiv_sqrt3(struct model *raw_model, const int sub_method,
   int face_idx = 0;
   int i,j;
   bitmap_t *face_mp_done;
-  face_t *temp_face;
+  struct block_list *temp_face=NULL, *cur;
   vertex_t *tmp_v=NULL;
 #ifdef SUBDIV_DEBUG
   int vert_idx = raw_model->num_vert;
@@ -54,11 +54,17 @@ struct model* subdiv_sqrt3(struct model *raw_model, const int sub_method,
  
   /* FIXME : This may be too small a storage in case of a mesh
      w. boundaries. Replace this w. a block_list maybe... */
-  temp_face = (face_t*)malloc(3*raw_model->num_faces*sizeof(face_t));
+  temp_face = (struct block_list*)malloc(sizeof(struct block_list));
+  if (init_block_list(temp_face, sizeof(face_t)) != 0)
+    abort();
+  cur = temp_face;
 
   tmp_v = (vertex_t*)malloc(raw_model->num_faces*sizeof(vertex_t));
   face_mp_done = BITMAP_ALLOC(raw_model->num_faces);
 
+#ifdef SUBDIV_TIME
+  start = clock();
+#endif
   for (i=0; i< raw_model->num_vert; i++) {
     nedges = rings[i].size;
     if (rings[i].type == 0) {
@@ -69,10 +75,17 @@ struct model* subdiv_sqrt3(struct model *raw_model, const int sub_method,
                         &(tmp_v[rings[i].ord_face[j]]));
           BITMAP_SET_BIT(face_mp_done, rings[i].ord_face[j]);
         }
-        temp_face[face_idx].f0 = i;
-        temp_face[face_idx].f1 = rings[i].ord_face[j] + raw_model->num_vert;
-        temp_face[face_idx++].f2 = rings[i].ord_face[j+1] + 
+        if (cur->elem_filled == cur->nelem)
+          cur = get_next_block(cur);
+        assert(cur != NULL);
+
+        ((face_t*)cur->data)[cur->elem_filled].f0 = i;
+        ((face_t*)cur->data)[cur->elem_filled].f1 = rings[i].ord_face[j] + 
           raw_model->num_vert;
+        ((face_t*)cur->data)[cur->elem_filled++].f2 = rings[i].ord_face[j+1] + 
+          raw_model->num_vert;
+
+        face_idx++;
         
       }
       
@@ -82,10 +95,17 @@ struct model* subdiv_sqrt3(struct model *raw_model, const int sub_method,
                       &(tmp_v[rings[i].ord_face[nedges-1]]));
         BITMAP_SET_BIT(face_mp_done, rings[i].ord_face[nedges-1]);
       }
-      temp_face[face_idx].f0 = i;
-      temp_face[face_idx].f1 = rings[i].ord_face[rings[i].size-1] + 
-        raw_model->num_vert;
-      temp_face[face_idx++].f2 = rings[i].ord_face[0] + raw_model->num_vert;
+        if (cur->elem_filled == cur->nelem)
+          cur = get_next_block(cur);
+        assert(cur != NULL);
+
+        ((face_t*)cur->data)[cur->elem_filled].f0 = i;
+        ((face_t*)cur->data)[cur->elem_filled].f1 = 
+          rings[i].ord_face[nedges-1] + raw_model->num_vert;
+        ((face_t*)cur->data)[cur->elem_filled++].f2 = rings[i].ord_face[0] + 
+          raw_model->num_vert;
+
+        face_idx++;
 
     } else if (rings[i].type == 1) {
       for (j=0; j<nedges-2; j++) {
@@ -95,10 +115,17 @@ struct model* subdiv_sqrt3(struct model *raw_model, const int sub_method,
                              &(tmp_v[rings[i].ord_face[j]]));
           BITMAP_SET_BIT(face_mp_done, rings[i].ord_face[j]);
         }
-        temp_face[face_idx].f0 = i;
-        temp_face[face_idx].f1 = rings[i].ord_face[j] + raw_model->num_vert;
-        temp_face[face_idx++].f2 = rings[i].ord_face[j+1] + 
+        if (cur->elem_filled == cur->nelem)
+          cur = get_next_block(cur);
+        assert(cur != NULL);
+
+        ((face_t*)cur->data)[cur->elem_filled].f0 = i;
+        ((face_t*)cur->data)[cur->elem_filled].f1 = rings[i].ord_face[j] + 
           raw_model->num_vert;
+        ((face_t*)cur->data)[cur->elem_filled++].f2 = rings[i].ord_face[j+1] + 
+          raw_model->num_vert;
+
+        face_idx++;
         
       }
       
@@ -108,19 +135,38 @@ struct model* subdiv_sqrt3(struct model *raw_model, const int sub_method,
                            &(tmp_v[rings[i].ord_face[nedges-2]]));
         BITMAP_SET_BIT(face_mp_done, rings[i].ord_face[nedges-2]);
       }
-      temp_face[face_idx].f0 = i;
-      temp_face[face_idx].f1 = rings[i].ord_face[nedges-2] + 
-        raw_model->num_vert;
-      /* FIXME: replace this by the MP of the edge */
-      temp_face[face_idx++].f2 = rings[i].ord_vert[nedges-1];
+      if (cur->elem_filled == cur->nelem)
+        cur = get_next_block(cur);
+      assert(cur != NULL);
+      
+      /* FIXME: replace this by the MP of the edge every even
+       * subdivision level */
+      ((face_t*)cur->data)[cur->elem_filled].f0 = i;
+      ((face_t*)cur->data)[cur->elem_filled].f1 = 
+        rings[i].ord_face[nedges-2] + raw_model->num_vert;
+      ((face_t*)cur->data)[cur->elem_filled++].f2 = 
+        rings[i].ord_vert[nedges-1];
 
-      temp_face[face_idx].f0 = i;
-      temp_face[face_idx].f1 = rings[i].ord_face[0] + 
-        raw_model->num_vert;
-      temp_face[face_idx++].f2 = rings[i].ord_vert[0];
-    } else /* vertices w. weird type. Let's hit the roof for now */
+      face_idx++;
+
+      if (cur->elem_filled == cur->nelem)
+        cur = get_next_block(cur);
+      assert(cur != NULL);
+      ((face_t*)cur->data)[cur->elem_filled].f0 = i;
+      ((face_t*)cur->data)[cur->elem_filled].f1 = 
+        rings[i].ord_face[0] + raw_model->num_vert;
+      ((face_t*)cur->data)[cur->elem_filled++].f2 = 
+        rings[i].ord_vert[0];
+
+      face_idx++;
+
+    } else /* vertices w. weird type. Let's hit the roof for
+            * now. Maybe just continue instead...  */
       abort();
   }
+#ifdef SUBDIV_TIME
+  printf("subdiv time = %f sec.\n", (clock()-start)/(float)CLOCKS_PER_SEC);
+#endif
 
 #ifdef SUBDIV_DEBUG
   DEBUG_PRINT("%d new vertices computed \n", raw_model->num_faces);
@@ -131,7 +177,8 @@ struct model* subdiv_sqrt3(struct model *raw_model, const int sub_method,
   memset(subdiv_model, 0, sizeof(struct model));
   subdiv_model->num_vert = raw_model->num_vert + raw_model->num_faces;
   subdiv_model->num_faces = face_idx;
-  subdiv_model->faces = temp_face;
+  subdiv_model->faces = 
+    (face_t*)malloc(subdiv_model->num_faces*sizeof(face_t));
   subdiv_model->vertices = 
     (vertex_t*)malloc(subdiv_model->num_vert*sizeof(vertex_t));
 
@@ -144,6 +191,11 @@ struct model* subdiv_sqrt3(struct model *raw_model, const int sub_method,
   /* copy faces midpoints */
   memcpy(&(subdiv_model->vertices[raw_model->num_vert]), tmp_v, 
          raw_model->num_faces*sizeof(vertex_t));
+
+  if (gather_block_list(temp_face, subdiv_model->faces, 
+                        subdiv_model->num_faces*sizeof(face_t)) != 0)
+    abort();
+  free_block_list(&temp_face);
   
 #ifdef SUBDIV_TIME
 /*   printf("subdiv time = %f sec.\n", (clock()-start)/(float)CLOCKS_PER_SEC); */

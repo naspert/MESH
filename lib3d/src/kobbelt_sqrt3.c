@@ -1,3 +1,4 @@
+/* $Id: kobbelt_sqrt3.c,v 1.2 2003/03/13 12:10:05 aspert Exp $ */
 #include <3dmodel.h>
 #include <geomutils.h>
 #include <subdiv_methods.h>
@@ -29,8 +30,8 @@ void update_vertices_kobsqrt3(const struct model *or_model,
   vertex_t tmp;
 
   for (i=0; i<or_model->num_vert; i++) {
-    if (rings[i].type != 0)
-      abort();
+    if (rings[i].type != 0 && rings[i].type != 1)
+      continue;
     n = rings[i].size;
     alpha = (4. - 2.*cos(2*M_PI/n))/(9.*n);
     __prod_v(1.-n*alpha, or_model->vertices[i], tmp);
