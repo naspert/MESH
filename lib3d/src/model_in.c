@@ -1,4 +1,4 @@
-/* $Id: model_in.c,v 1.4 2002/02/06 15:31:24 dsanta Exp $ */
+/* $Id: model_in.c,v 1.5 2002/02/07 14:00:17 dsanta Exp $ */
 
 /*
  * Functions to read 3D model data from files
@@ -26,17 +26,25 @@
  * accesses the input file. FLOCKFILE_LOCK will, if available, put a lock on
  * the given stream and disable I/O streams auto-locking
  * (slow). FLOCKFILE_AUTO will release the lock for the given stream and
- * re-enable auto-locking (default behaviour). */
+ * re-enable auto-locking (default behaviour).
+ *
+ * NOTE: the "do { ... } while(0)" trick is so that macros behave as single
+ * statements, even with tricky "if else" sequences. Taken from linux kernel.
+ */
 #if defined(__GLIBC__) && (__GLIBC__ >= 2)
 /* Auto-locking and stream locking available */
 # include <stdio_ext.h>
-# define FLOCKFILE_LOCK(stream) \
-    { __fsetlocking((stream),FSETLOCKING_BYCALLER); flockfile(stream); }
-# define FLOCKFILE_AUTO(stream) \
-    { funlockfile(stream); __fsetlocking((stream),FSETLOCKING_INTERNAL); }
+# define FLOCKFILE_LOCK(stream)                                         \
+    do {                                                                \
+      __fsetlocking((stream),FSETLOCKING_BYCALLER); flockfile(stream);  \
+    } while(0)
+# define FLOCKFILE_AUTO(stream)                                           \
+    do {                                                                  \
+      funlockfile(stream); __fsetlocking((stream),FSETLOCKING_INTERNAL);  \
+    } while (0)
 #else /* no support for disabling autolocking, no use in global lock */
-# define FLOCKFILE_LOCK(stream)
-# define FLOCKFILE_AUTO(stream)
+# define FLOCKFILE_LOCK(stream) do { } while(0)
+# define FLOCKFILE_AUTO(stream) do { } while(0)
 #endif
 
 /* --------------------------------------------------------------------------
