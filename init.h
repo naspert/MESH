@@ -11,6 +11,7 @@
 #include <qfiledialog.h>
 #include <qhbox.h>
 #include <qmessagebox.h>
+#include <qcheckbox.h>
 
 class InitWidget : public QWidget
 {
@@ -19,6 +20,7 @@ public:
   InitWidget(QWidget *parent=0, const char *name=0 );
   char *mesh1,*mesh2,*thin;
   QString m,n,o;
+  QCheckBox *check1;
 
 public slots:
     void load1();

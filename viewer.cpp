@@ -1,4 +1,4 @@
-/* $Id: viewer.cpp,v 1.15 2001/07/02 09:14:41 jacquet Exp $ */
+/* $Id: viewer.cpp,v 1.16 2001/07/02 10:47:41 jacquet Exp $ */
 
 #include <qapplication.h>
 #include <ScreenWidget.h>
@@ -64,6 +64,10 @@ int main( int argc, char **argv )
    in_filename2=(char *)n1.latin1();
    thin=(char *)o1.latin1();
    samplethin=atof(thin);
+   if(b.check1->isChecked())
+     text=1;
+   else
+     text=0;
  }
  else {
    if(strcmp("-t",argv[1]) == 0) {

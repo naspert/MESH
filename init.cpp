@@ -1,5 +1,4 @@
 /* $Id */
-/* $Id */
 
 #include <init.h>
 
@@ -16,6 +15,8 @@ InitWidget::InitWidget(QWidget *parent, const char *name)
   QPushButton *B2 = new QPushButton("parcourir",this);
   connect(B2, SIGNAL(clicked()), this, SLOT(load2()));
   textEd3 = new QLineEdit("samplethin",this);
+  QLabel *checklabel1 = new QLabel(textEd2,"&avec ou sans Interface Graphique",this);
+  check1 = new QCheckBox(this);
   QListBox *samplethin = new QListBox(this);
   QLabel *textLabel3 = new QLabel(samplethin,"&samplethin",this);
   samplethin->insertItem("0.5");
@@ -30,7 +31,7 @@ InitWidget::InitWidget(QWidget *parent, const char *name)
   connect(this, SIGNAL(exit()), qApp, SLOT(closeAllWindows()));
 
 
-  QGridLayout *bigGrid = new QGridLayout( this, 4, 1, 20 );
+  QGridLayout *bigGrid = new QGridLayout( this, 5, 1, 20 );
 
   QHBoxLayout *smallGrid1 = new QHBoxLayout();
   smallGrid1->addWidget(textLabel1,0,0);
@@ -48,13 +49,18 @@ InitWidget::InitWidget(QWidget *parent, const char *name)
   smallGrid3->addWidget(samplethin,0,2);
 
   QHBoxLayout *smallGrid4 = new QHBoxLayout();
-  smallGrid4->addSpacing(100);
-  smallGrid4->addWidget(OK,0,1);
+  smallGrid4->addWidget(checklabel1,0,0);
+  smallGrid4->addWidget(check1,0,1);
+
+  QHBoxLayout *smallGrid5 = new QHBoxLayout();
+  smallGrid5->addSpacing(100);
+  smallGrid5->addWidget(OK,0,1);
 
   bigGrid->addLayout(smallGrid1,0,0);
   bigGrid->addLayout(smallGrid2,1,0);
   bigGrid->addLayout(smallGrid3,2,0);
   bigGrid->addLayout(smallGrid4,3,0);
+  bigGrid->addLayout(smallGrid5,4,0);
  
 
 }
