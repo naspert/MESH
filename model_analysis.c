@@ -1,4 +1,4 @@
-/* $Id: model_analysis.c,v 1.8 2002/02/22 23:35:03 dsanta Exp $ */
+/* $Id: model_analysis.c,v 1.9 2002/02/22 23:44:48 dsanta Exp $ */
 
 #include <model_analysis.h>
 
@@ -83,17 +83,17 @@ static void analyze_faces_rec(const face_t *mfaces, int vidx, int pfidx,
   int fidx;        /* current face index */
   int v2;          /* vertex on which next face should be incident */
   int vstart;      /* starting vertex, to check for closed surface */
-  int rev_orient;  /* reversed processing orientation flag */
+  char rev_orient; /* reversed processing orientation flag */
   int tmpi;        /* temporary integer */
-  int fface_orient;/* orientation of first face */
-  int cface_orient;/* orientation of current face */
+  char fface_orient;/* orientation of first face */
+  char cface_orient;/* orientation of current face */
   int *vfaces;     /* list of faces incident on current vertex */
   int ffidx;       /* first face index */
   struct vtx_list vlist; /* list of found vertices  */
-  int cur_degen;   /* flag for degenerate current triangle */
-  int new_degen;   /* flag for degenerate new triangle */
-  int v2_was_in_list; /* flag: v2 already visited when last encountered */
-  int vstart_was_in_list; /* same as above but for vstart */
+  char cur_degen;  /* flag for degenerate current triangle */
+  char new_degen;  /* flag for degenerate new triangle */
+  char v2_was_in_list; /* flag: v2 already visited when last encountered */
+  char vstart_was_in_list; /* same as above but for vstart */
 
   /* Initialize */
   nf = st->flist[vidx].n_faces;
