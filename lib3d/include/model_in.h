@@ -1,4 +1,4 @@
-/* $Id: model_in.h,v 1.22 2003/01/13 12:46:08 aspert Exp $ */
+/* $Id: model_in.h,v 1.23 2003/03/25 12:16:40 dsanta Exp $ */
 
 
 /*
@@ -137,6 +137,7 @@ struct file_data {
   int size; /* size of the block */
   int nbytes; /* actual number of valid bytes in block */
   int pos; /* current position in block */
+  int is_binary; /* flag for binary data */
   int eof_reached;
 };
 
@@ -146,10 +147,11 @@ struct file_data {
 
 #define MESH_FF_AUTO      0 /* Autodetect file format */
 #define MESH_FF_RAW       1 /* Raw ascii */
-#define MESH_FF_VRML      2 /* VRML 2 utf8 (a.k.a. VRML97) */
-#define MESH_FF_IV        3 /* Inventor 2 ascii */
-#define MESH_FF_PLY       4 /* Ply ascii */
-#define MESH_FF_SMF       5 /* SMF format (from QSlim) */
+#define MESH_FF_RAWBIN    2 /* Raw binary */
+#define MESH_FF_VRML      3 /* VRML 2 utf8 (a.k.a. VRML97) */
+#define MESH_FF_IV        4 /* Inventor 2 ascii */
+#define MESH_FF_PLY       5 /* Ply ascii */
+#define MESH_FF_SMF       6 /* SMF format (from QSlim) */
 
 /* --------------------------------------------------------------------------
    ERROR CODES (always negative)
@@ -258,6 +260,7 @@ int skip_ws_comm(struct file_data*);
 int skip_ws_comm_str(struct file_data*);
 int find_chars(struct file_data*, const char*);
 int find_string(struct file_data*, const char*);
+size_t bin_read(void *, size_t, size_t, struct file_data*);
 
 /* File format reader functions - should be accessed only through
  * read_[f]model. See the model_in*.c files for more details about

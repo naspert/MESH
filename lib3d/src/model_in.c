@@ -1,4 +1,4 @@
-/* $Id: model_in.c,v 1.39 2003/03/25 11:02:58 dsanta Exp $ */
+/* $Id: model_in.c,v 1.40 2003/03/25 12:16:41 dsanta Exp $ */
 
 
 /*
@@ -58,6 +58,7 @@
 
 #include <assert.h>
 #include <stdlib.h>
+#include <stddef.h>
 #ifdef READ_TIME
 # include <time.h>
 #endif
@@ -162,6 +163,9 @@ static int refill_buffer(struct file_data* data)
     return 1;
   }
 
+  /* if data is binary we're done */
+  if (data->is_binary) return 1;
+  
   /* now let's fill the buffer s.t. a valid separator ends it */
   while (strchr(VRML_WS_CHARS, data->block[data->nbytes-1]) == NULL) {
     tmp = loc_getc(data->f);
@@ -194,6 +198,23 @@ static int refill_buffer(struct file_data* data)
   DEBUG_PRINT("refill_buffer %d bytes\n", data->nbytes);
 #endif
   return 1;
+}
+
+/* equivalent of fread() */
+size_t bin_read(void *ptr, size_t size, size_t nmemb, struct file_data *data) 
+{
+  size_t len,i;
+  char *cptr;
+  int c;
+
+  len = size*nmemb;
+  i = 0;
+  cptr = (char*)ptr;
+  do {
+    c = getc(data);
+    if (c != EOF) *(cptr++) = c;
+  } while (c != EOF && (++i) < len);
+  return i/size;
 }
 
 /* This function is an equivalent for 'sscanf(data->block, "%d", out)'
@@ -644,6 +665,7 @@ int read_model(struct model **models_ref, struct file_data *data,
 
   switch (fformat) {
   case MESH_FF_RAW:
+  case MESH_FF_RAWBIN:
     rcode = read_raw_tmesh(&models, data);
     break;
   case MESH_FF_VRML:
@@ -690,6 +712,7 @@ int read_fmodel(struct model **models_ref, const char *fname,
   data->eof_reached = 0;
   data->nbytes = 0;
   data->pos = 1;
+  data->is_binary = 0;
 
 #ifdef READ_TIME
   stime = clock();

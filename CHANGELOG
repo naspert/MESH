@@ -1,3 +1,9 @@
+* Changes from v1.8 to v1.9:
+	- Added support for reading raw format with binary data: it provides
+          much faster I/O, at the expense of portability.
+	- Help message fixes.
+	- fixed (rare) buffer overflows in model input routines
+
 * Changes from v1.7 to v1.8 :
 	- Added prettier debug prints when DEBUG is defined at compile time
 	- Fixed the return code of 'read_smf_tmesh' (should be 1 if success)

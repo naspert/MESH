@@ -1,4 +1,4 @@
-/* $Id: mesh.cpp,v 1.58 2003/01/15 09:26:51 aspert Exp $ */
+/* $Id: mesh.cpp,v 1.59 2003/03/25 12:16:40 dsanta Exp $ */
 
 
 /*
@@ -64,7 +64,7 @@
 #endif
 
 /* The version string, also parsed by Makefile */
-const char *version = "1.8";
+const char *version = "1.9";
 
 /* The Copyright */
 const char *copyright = "2001-2003 EPFL";
@@ -93,11 +93,13 @@ static void print_usage(FILE *out)
   fprintf(out,"\n");
   fprintf(out,"The program measures the distance from the 3D model in\n");
   fprintf(out,"file1 to the one in file2. The models must be given as\n");
-  fprintf(out,"triangular meshes in RAW or VRML2 formats,\n");
-  fprintf(out,"optionally with normals. It also reads gzipped files directly.\n");
+  fprintf(out,"triangular meshes in RAW, VRML2, Inventor 2.x, PLY ASCII,\n");
+  fprintf(out,"PLY binary, and SMF formats. Normals are supported in RAW\n");
+  fprintf(out,"and VRML2 formats. It also reads gzipped files directly.\n");
   fprintf(out,"The VRML parser reads IndexedFaceSets nodes only,\n");
   fprintf(out,"ignoring all transformations, and does not support USE tags\n");
-  fprintf(out,"(DEF tags are ignored). The file type is autodetected.\n");
+  fprintf(out,"(DEF tags are ignored). Likewise the Inventor 2.x reader is\n");
+  fprintf(out,"somewhat limited. The file type is autodetected.\n");
   fprintf(out,"After the distance is calculated the result is displayed\n");
   fprintf(out,"as overall measures in text form and as a detailed distance\n");
   fprintf(out,"map in graphical form.\n");
@@ -141,7 +143,8 @@ static void print_usage(FILE *out)
   fprintf(out,"error values using a histogram (approximate because the\n");
   fprintf(out,"distribution of the sample points on the surface is not\n");
   fprintf(out,"truly uniform).\n");
-  fprintf(out,"Note that the -f flag forces at least one sample per face.\n");
+  fprintf(out,"Note that the -mf flag can force a minimum number of samples\n");
+  fprintf(out,"per face.\n");
   fprintf(out,"\n");
   fprintf(out,"options:");
   fprintf(out,"\n");

@@ -1,4 +1,4 @@
-/* $Id: model_in_raw.c,v 1.5 2003/01/13 12:46:10 aspert Exp $ */
+/* $Id: model_in_raw.c,v 1.6 2003/03/25 12:16:41 dsanta Exp $ */
 
 
 /*
@@ -51,20 +51,29 @@
 
 /* Reads 'n_faces' triangular faces from the '*data' stream in raw ascii
  * format and stores them in the 'faces' array. The face's vertex indices are
- * checked for consistency with the number of vertices 'n_vtcs'. Zero is
- * returned on success, or the negative error code otherwise. */
-static int read_raw_faces(face_t *faces, struct file_data *data, 
+ * checked for consistency with the number of vertices 'n_vtcs'. If 'use_bin'
+ * is non-zero uses binary instead of ascii format. Zero is returned on
+ * success, or the negative error code otherwise. */
+static int read_raw_faces(face_t *faces, struct file_data *data, int use_bin,
                           int n_faces, int n_vtcs)
 {
   int i;
+  int vidx[3];
   
   for (i=0; i<n_faces; i++) {
-    if (int_scanf(data, &(faces[i].f0)) != 1)
-      return MESH_CORRUPTED;
-    if (int_scanf(data, &(faces[i].f1)) != 1)
-      return MESH_CORRUPTED;
-    if (int_scanf(data, &(faces[i].f2)) != 1)
-      return MESH_CORRUPTED;
+    if (use_bin) {
+      if (bin_read(vidx,sizeof(*vidx),3,data) != 3) return MESH_CORRUPTED;
+      faces[i].f0 = vidx[0];
+      faces[i].f1 = vidx[1];
+      faces[i].f2 = vidx[2];
+    } else {
+      if (int_scanf(data, &(faces[i].f0)) != 1)
+        return MESH_CORRUPTED;
+      if (int_scanf(data, &(faces[i].f1)) != 1)
+        return MESH_CORRUPTED;
+      if (int_scanf(data, &(faces[i].f2)) != 1)
+        return MESH_CORRUPTED;
+    }
 
 #ifdef DEBUG
     DEBUG_PRINT("i=%d f0=%d f1=%d f2=%d\n", i, faces[i].f0, 
@@ -80,26 +89,34 @@ static int read_raw_faces(face_t *faces, struct file_data *data,
 }
 
 /* Reads 'n_vtcs' vertex points from the '*data' stream in raw ascii format
- * and stores them in the 'vtcs' array. Zero is returned on success, or the
- * negative error code otherwise. If no error occurs the bounding box minium
- * and maximum are returned in 'bbox_min' and 'bbox_max'. */
+ * and stores them in the 'vtcs' array. If 'use_bin' is non-zero uses binary
+ * instead of ascii format. Zero is returned on success, or the negative error
+ * code otherwise. If no error occurs the bounding box minium and maximum are
+ * returned in 'bbox_min' and 'bbox_max'. */
 static int read_raw_vertices(vertex_t *vtcs, struct file_data *data, 
-                             int n_vtcs,
+                             int use_bin, int n_vtcs,
                              vertex_t *bbox_min, vertex_t *bbox_max)
 {
   int i;
   vertex_t bbmin,bbmax;
+  float v[3];
 
   bbmin.x = bbmin.y = bbmin.z = FLT_MAX;
   bbmax.x = bbmax.y = bbmax.z = -FLT_MAX;
   for (i=0; i<n_vtcs; i++) {
-
-    if (float_scanf(data, &(vtcs[i].x)) != 1)
-      return MESH_CORRUPTED;
-    if (float_scanf(data, &(vtcs[i].y)) != 1)
-      return MESH_CORRUPTED;
-    if (float_scanf(data, &(vtcs[i].z)) != 1)
-      return MESH_CORRUPTED;
+    if (use_bin) {
+      if (bin_read(v,sizeof(*v),3,data) != 3) return MESH_CORRUPTED;
+      vtcs[i].x = v[0];
+      vtcs[i].y = v[1];
+      vtcs[i].z = v[2];
+    } else {
+      if (float_scanf(data, &(vtcs[i].x)) != 1)
+        return MESH_CORRUPTED;
+      if (float_scanf(data, &(vtcs[i].y)) != 1)
+        return MESH_CORRUPTED;
+      if (float_scanf(data, &(vtcs[i].z)) != 1)
+        return MESH_CORRUPTED;
+    }
 
 #ifdef DEBUG    
     DEBUG_PRINT("i=%d x=%f y=%f z=%f\n", i, vtcs[i].x, vtcs[i].y, vtcs[i].z);
@@ -121,20 +138,29 @@ static int read_raw_vertices(vertex_t *vtcs, struct file_data *data,
 }
 
 /* Reads 'n' normal vectors from the '*data' stream in raw ascii format and
- * stores them in the 'nrmls' array. Zero is returned on success, or the
- * negative error code otherwise. */
-static int read_raw_normals(vertex_t *nrmls, struct file_data *data, int n)
+ * stores them in the 'nrmls' array. If 'use_bin' is non-zero uses binary
+ * instead of ascii format. Zero is returned on success, or the negative error
+ * code otherwise. */
+static int read_raw_normals(vertex_t *nrmls, struct file_data *data,
+                            int use_bin, int n)
 {
   int i;
-  for (i=0; i<n; i++) {
-    if (float_scanf(data,  &(nrmls[i].x)) != 1)
-      return MESH_CORRUPTED;
-    if (float_scanf(data,  &(nrmls[i].y)) != 1)
-      return MESH_CORRUPTED;
-    if (float_scanf(data,  &(nrmls[i].z)) != 1)
-      return MESH_CORRUPTED;
+  float nv[3];
 
-  
+  for (i=0; i<n; i++) {
+    if (use_bin) {
+      if (bin_read(nv,sizeof(*nv),3,data) != 3) return MESH_CORRUPTED;
+      nrmls[i].x = nv[0];
+      nrmls[i].y = nv[1];
+      nrmls[i].z = nv[2];
+    } else {
+      if (float_scanf(data,  &(nrmls[i].x)) != 1)
+        return MESH_CORRUPTED;
+      if (float_scanf(data,  &(nrmls[i].y)) != 1)
+        return MESH_CORRUPTED;
+      if (float_scanf(data,  &(nrmls[i].z)) != 1)
+        return MESH_CORRUPTED;
+    }
   }
   return 0;
 }
@@ -149,9 +175,12 @@ int read_raw_tmesh(struct model **tmesh_ref, struct file_data *data)
   int n_vtcs,n_faces,n_vnorms,n_fnorms;
   int n, i;
   char line_buf[256];
+  char str_buf[16];
   int tmp;
   struct model *tmesh;
   int rcode;
+  int use_bin;
+  float f;
 
   rcode = 0;
   /* Read 1st line */
@@ -166,22 +195,28 @@ int read_raw_tmesh(struct model **tmesh_ref, struct file_data *data)
   if (tmp == EOF || i == sizeof(line_buf))
     return MESH_CORRUPTED;
 
-  if (tmp != EOF)
-    ungetc(tmp, data);
-
   line_buf[--i]='\0';
 
-  n = sscanf(line_buf,"%i %i %i %i",&n_vtcs,&n_faces,&n_vnorms,&n_fnorms);
+  n = sscanf(line_buf,"%i %i %i %i %15s",
+             &n_vtcs,&n_faces,&n_vnorms,&n_fnorms,str_buf);
 
-  if (n < 2 || n > 4) {
+  if (n < 2 || n > 5) {
     return MESH_CORRUPTED;
   }
 
   if (n_vtcs < 3 || n_faces <= 0) return MESH_CORRUPTED;
-  if (n > 2 && n_vnorms != n_vtcs) return MESH_CORRUPTED;
-  if (n > 3 && n_fnorms != n_faces) return MESH_CORRUPTED;
+  if (n > 2 && n_vnorms != 0 && n_vnorms != n_vtcs) return MESH_CORRUPTED;
+  if (n > 3 && n_fnorms != 0 && n_fnorms != n_faces) return MESH_CORRUPTED;
   if (n <= 3) n_fnorms = 0;
   if (n <= 2) n_vnorms = 0;
+  use_bin = (n >= 5 && strcmp(str_buf,"bin") == 0);
+  if (use_bin) { /* check endianness and float format detector */
+    data->is_binary = 1;
+    if (bin_read(&i,sizeof(i),1,data) != 1) return MESH_CORRUPTED;
+    if (i != (('\n'<<24)|('\r'<<16)|('\n'<<8)|0x87)) return MESH_CORRUPTED;
+    if (bin_read(&f,sizeof(f),1,data) != 1) return MESH_CORRUPTED;
+    if (f != FLT_MIN) return MESH_CORRUPTED;
+  }
   /* Allocate space and initialize mesh */
   tmesh = calloc(1,sizeof(*tmesh));
   if (tmesh == NULL) return MESH_NO_MEM;
@@ -201,17 +236,17 @@ int read_raw_tmesh(struct model **tmesh_ref, struct file_data *data)
     rcode = MESH_NO_MEM;
   }
   if (rcode == 0) {
-    rcode = read_raw_vertices(tmesh->vertices,data,n_vtcs,
+    rcode = read_raw_vertices(tmesh->vertices,data,use_bin,n_vtcs,
                               &(tmesh->bBox[0]),&(tmesh->bBox[1]));
   }
   if (rcode == 0) {
-    rcode = read_raw_faces(tmesh->faces,data,n_faces,n_vtcs);
+    rcode = read_raw_faces(tmesh->faces,data,use_bin,n_faces,n_vtcs);
   }
   if (rcode == 0 && n_vnorms > 0) {
-    rcode = read_raw_normals(tmesh->normals,data,n_vnorms);
+    rcode = read_raw_normals(tmesh->normals,data,use_bin,n_vnorms);
   }
   if (rcode == 0 && n_fnorms > 0) {
-    rcode = read_raw_normals(tmesh->face_normals,data,n_fnorms);
+    rcode = read_raw_normals(tmesh->face_normals,data,use_bin,n_fnorms);
   }
   if (rcode < 0) {
     free(tmesh->vertices);

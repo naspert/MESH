@@ -52,8 +52,8 @@ in 'C:\Program Files\Qt', but for instance in 'C:\Qt'). We provide the
 Micro$oft Visual C++ 6 dsp and dsw files needed to build the program.
 
 * Input data format 
-The input file format for the triangular meshes is a raw ASCII format,
-VRML2, Inventor 2.x, PLY ASCII format, and SMF format (used by
+The input file format for the triangular meshes is a raw ASCII or binary
+format, VRML2, Inventor 2.x, PLY ASCII format, and SMF format (used by
 M. Garland's 'QSlim'). On systems having zlib (>= 1.1) installed, MESH
 offers the possiblity of directly reading gzipped files (gzipped VRML
 is in the standard). Please note that most of Win32 systems do not
@@ -69,15 +69,28 @@ author list ;-).
 
 
 * The raw ASCII format describes the vertices, the vertex connectivity
-and optionally the vertex normals. The first line should contain two or three
-decimal numbers with the number of vertices, the number of triangles and the
-number of vertex normals (if they are present). If the vertex normals are
-present, their number must equal the number of vertices. Follow the X, Y, Z
-affine coordinates for each vertex and then the indices of the three vertices
-of each triangular face. The vertex indices are zero based. If the vertex
-normals are given follows the X, Y, Z affine coordinates of the vertex normal
-vectors, in the same order as the vertices. The normal vectors should all be
-normalized. 
+and optionally the vertex normals. The first line should contain two to four
+decimal numbers with the number of vertices, the number of triangles, the
+number of vertex normals and face normals (if they are present). If the vertex
+(face) normals are present, their number must equal the number of vertices
+(faces). Follow the X, Y, Z affine coordinates for each vertex and then the
+indices of the three vertices of each triangular face. The vertex indices are
+zero based. If the vertex normals are given follows the X, Y, Z affine
+coordinates of the vertex normal vectors, in the same order as the vertices.
+If the face normals are given, they follow in the same format. The normal
+vectors should all be normalized. 
+* The raw binary format follows the same structure as its ASCII counterpart
+above but provides for much faster I/O. However, these files are not portable
+between machines. The first line must contain four decimal numbers and be
+followed by the string 'bin'. If the vertex or face normals are not given
+their number should be zero. Then follows a fixed 32 bit word to detect
+endianness (i.e. byte order) changes and another 32 bit word to detect changes
+in floating-point format (although the detection is not fool-proof, see the
+source of model_in_raw.c for the exact values). Then follow all the vertex
+coordinates, as 32 bit floats, the vertex indices of each face as 32 bit ints.
+If the vertex normals are given they follow in the same format as the vertex
+coordinates, and likewise for the face normals. The normal vectors should all
+be normalized.
 * The VRML2 parser reads IndexedFaceSet nodes, ignoring all
 transformations, and does not support USE tags (DEF tags are ignored). Only
 triangular meshes are accepted.
