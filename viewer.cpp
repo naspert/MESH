@@ -1,4 +1,4 @@
-/* $Id: viewer.cpp,v 1.37 2001/08/16 15:04:06 dsanta Exp $ */
+/* $Id: viewer.cpp,v 1.38 2001/08/18 15:48:22 dsanta Exp $ */
 
 #include <time.h>
 #include <string.h>
@@ -11,8 +11,6 @@
 #include <model_analysis.h>
 #include <ScreenWidget.h>
 #include <InitWidget.h>
-
-#include <mutils.h>
 
 /* To store the parsed arguments */
 struct args {
