@@ -1,4 +1,4 @@
-/* $Id: rawview3.c,v 1.6 2001/03/27 08:14:18 aspert Exp $ */
+/* $Id: rawview3.c,v 1.7 2001/04/03 11:46:20 aspert Exp $ */
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <GL/glut.h>
@@ -331,6 +331,10 @@ void norm_key_pressed(unsigned char key, int x, int y) {
     free(raw_model->faces);
     if (raw_model->normals != NULL)
       free(raw_model->normals);
+    if (raw_model->face_normals != NULL)
+      free(raw_model->face_normals);
+    if (raw_model->area != NULL)
+      free(raw_model->area);
     free(raw_model);
     exit(0);
     break;
@@ -610,7 +614,7 @@ int main(int argc, char **argv) {
 
   in_filename = argv[1]; 
   raw_model = read_raw_model(in_filename);
-  raw_model->face_normals = NULL;
+ 
 
   
   if (raw_model->builtin_normals == 1) {

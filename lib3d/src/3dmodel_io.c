@@ -1,4 +1,4 @@
-/* $Id: 3dmodel_io.c,v 1.7 2001/03/20 11:38:15 aspert Exp $ */
+/* $Id: 3dmodel_io.c,v 1.8 2001/04/03 11:46:20 aspert Exp $ */
 #include <3dmodel.h>
 
 
@@ -107,6 +107,8 @@ model* alloc_read_model(FILE *pf, int nvert, int nfaces, int nnorms) {
       raw_model->normals[i].z = z;
     }
   }
+  raw_model->face_normals = NULL;
+  raw_model->area = NULL;
   return raw_model;
 }
 
