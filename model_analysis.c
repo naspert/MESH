@@ -1,4 +1,4 @@
-/* $Id: model_analysis.c,v 1.16 2002/03/27 08:23:15 dsanta Exp $ */
+/* $Id: model_analysis.c,v 1.17 2002/03/27 08:52:43 dsanta Exp $ */
 
 
 /*
@@ -45,21 +45,27 @@
 #include <assert.h>
 #include <xalloc.h>
 
-/* The state for recursively walking the vertex tree */
-struct vtx_walk_state {
-  char *visited_vertex;          /* array to mark the already visited
-                                  * vertices (visited_vertex[i] == 1 if vertex
-                                  * i has been visited). */
-  int n_visited_vertices;        /* the number of alredy visited vertices */
-  struct face_list *flist;       /* the list of faces incident on each vertex */
-  struct model_info minfo;       /* the model information */
-  signed char *face_orientation; /* the orientation for each face. If
-                                  * face_orientation[i] is 0 it has not yet
-                                  * been oriented, if positive its orientation
-                                  * is correct (for an orientable model), if
-                                  * negative its orientation should be
-                                  * inversed to obtain an oriented model (if
-                                  * the model is orientable). */
+#ifdef INLINE
+# error Name clash with INLINE macro
+#endif
+
+#if defined (_MSC_VER)
+# define INLINE __inline
+#elif defined (__INTEL_COMPILER) && (__INTEL_COMPILER >= 500)
+# define INLINE __inline
+#elif defined (__GNUC__)
+# define INLINE __inline__
+#elif defined (__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)
+# define INLINE inline
+#endif
+
+
+/* A stack for arbitrary objects */
+struct stack {
+  char *data;       /* the buffer to store the data */
+  char *end;        /* the position just past the end of the data buffer */
+  char *next;       /* the position where to store the next element */
+  size_t elem_sz;   /* the element size, in bytes */
 };
 
 /* A list of vertices */
@@ -68,8 +74,101 @@ struct vtx_list {
   int n_elems;  /* The number of elements in the list */
 };
 
+/* Structure to hold topology info */
+struct topology {
+  int manifold; /* is manifold */
+  int closed;   /* is closed */
+};
+
+/* Structure to hold the list of extra faces adjacent to a face */
+struct adj_faces_x {
+  int *faces_on_edge[3];  /* list of adjacent faces for each edge */
+  int n_faces_on_edge[3]; /* number of elements in above lists. */
+};
+
+/* Structure to hold the list of faces adjacent to a face */
+struct adj_faces {
+  int face_on_edge[3];       /* index of the face adjacent on the f0-f1, f1-f2
+                              * and f2-f0 edges. -1 if none. */
+  struct adj_faces_x *extra; /* The additional adjacent faces for each of the
+                              * above edges, if any. NULL if none. Only
+                              * non-manifold models have more than one
+                              * adjacent face at any edge. */
+};
+
 /* --------------------------------------------------------------------------*
- *                            Local functions                                *
+ *                            Utility functions                              *
+ * --------------------------------------------------------------------------*/
+
+/* Initializes the stack s for storing elements of elem_sz bytes. */
+static void stack_init(struct stack *s, size_t elem_sz)
+{
+  size_t buf_sz;
+  assert(elem_sz > 0);
+  s->elem_sz = elem_sz;
+  buf_sz = 16350*elem_sz;
+  s->data = xa_malloc(buf_sz);
+  s->end = s->data+buf_sz;
+  s->next = s->data;
+}
+
+/* Frees allocated storage for stack s */
+static void stack_fini(struct stack *s)
+{
+  free(s->data);
+  s->data = NULL;
+  s->end = NULL;
+  s->next = NULL;
+}
+
+/* Grows the stack buffer. Currently grows by 16384 elements. */
+static void stack_grow_buf(struct stack *s)
+{
+  size_t buf_sz;
+  ptrdiff_t next_off;
+
+  buf_sz = (s->end-s->data)+16384*s->elem_sz;
+  next_off = s->next-s->data;
+  s->data = xa_realloc(s->data,buf_sz);
+  s->end = s->data+buf_sz;
+  s->next = s->data+next_off;
+}
+
+/* Pushes the element pointed by *e and of the size specifed at stack
+ * initialization into the stack s. */
+static INLINE void stack_push(struct stack *s, void *e)
+{
+  assert(s->next <= s->end);
+  if (s->next == s->end) stack_grow_buf(s);
+  memcpy(s->next,e,s->elem_sz);
+  s->next += s->elem_sz;
+  assert(s->next <= s->end);
+}
+
+/* If the stack is not empty, it pops the last element of the stack and stores
+ * it the location pointed by e and of the size specified at stack
+ * initialization, and returns one. If the stack is empty it returns zero. */
+static INLINE int stack_pop(struct stack *s, void *e)
+{
+  assert(s->next <= s->end);
+  if (s->next == s->data) {
+    return 0; /* stack empty */
+  } else {
+    s->next -= s->elem_sz;
+    assert(s->next <= s->end);
+    memcpy(e,s->next,s->elem_sz);
+    return 1;
+  }
+}
+
+/* Returns one if face is degenerate and zero if not.*/
+static INLINE int is_degenerate(face_t face)
+{
+  return (face.f0 == face.f1 || face.f1 == face.f2 || face.f2 == face.f0);
+}
+
+/* --------------------------------------------------------------------------*
+ *                         Model analysis functions                          *
  * --------------------------------------------------------------------------*/
 
 /* Given the face orientation map face_orientation, orients the model m. */
@@ -89,8 +188,9 @@ static void orient_model(struct model *m, signed char *face_orientation)
 
 /* Searches for vertex index v in list. If not found v is added to
  * list. Returns zero if not-found and non-zero otherwise. list->vtcs storage
- * must be large enough for v to be added.  */
-static int vtx_in_list_or_add(struct vtx_list *list, int v)
+ * must be large enough for v to be added. The current size of the list buffer
+ * is given in *sz and adjusted if necessary. */
+static int vtx_in_list_or_add(struct vtx_list *list, int v, int *sz)
 {
   int i;
   i = 0;
@@ -98,17 +198,15 @@ static int vtx_in_list_or_add(struct vtx_list *list, int v)
     i++;
   }
   if (i == list->n_elems) {
+    if (*sz == list->n_elems) { /* need more storage */
+      *sz += 2;
+      list->vtcs = xa_realloc(list->vtcs,*sz*sizeof(*(list->vtcs)));
+    }
     list->vtcs[list->n_elems++] = v;
     return 0;
   } else {
     return 1;
   }
-}
-
-/* Returns one if face is degenerate and zero if not.*/
-static int is_degenerate(const face_t *face)
-{
-  return (face->f0 == face->f1 || face->f1 == face->f2 || face->f2 == face->f0);
 }
 
 /* Returns the indices of the vertices if face, that are not center_vidx, in
@@ -133,64 +231,58 @@ static void get_ordered_vtcs(const face_t *face, int center_vidx,
   }
 }
 
-/* Tests if *new_face is adjacent to the previous face at the edge defined by
- * the vertices with index center_vidx and edge_vidx. Returns zero if
- * non-adjacent and one if adjacent. The current correct face orientation (1
- * or -1) is given by face_orientation. The flag rev_orient indicates if the
- * orientation order has been reversed. If *new_face is non-adjacent no
- * argument are modified. Otherwise, the non-adjacent vertex index of
- * *new_face is returned in *edge_vidx. The orientation of the new face is
- * returned in *newf_orientation. */
-static int is_adjacent_and_update(const face_t *new_face, int center_vidx,
-                                  int *edge_vidx, signed char face_orientation,
-                                  int rev_orient,
-                                  signed char *newf_orientation)
+/* Given the list, vfaces, of faces incident on the vertex center_vidx and not
+ * yet visited, it finds the first face that has the edge from center_vidx to
+ * *outer_vidx. The length of the vfaces list is vfaces_len. The return value
+ * is the index of the face found, or -1 if there is none. Any negative entry
+ * in vfaces is skipped. The entry in vfaces corresponding to the face found
+ * is set to -1 before returning (i.e. it is marked as visited). The vertex of
+ * the found face that is not on the specifed edge is returned in
+ * *outer_vidx. The faces of the model are given in the mfaces array. */
+static int find_face_with_edge(const face_t *mfaces, int *vfaces,
+                               int vfaces_len, int center_vidx,
+                               int *outer_vidx)
 {
-  int e_vidx;
-
-  /* Try to find adjacent edge and check orientation */
-  e_vidx = *edge_vidx;
-  if (e_vidx == new_face->f0) {
-    if (center_vidx == new_face->f2) { /* same orientation as first face */
-      *edge_vidx = new_face->f1;
-      *newf_orientation = (!rev_orient) ? face_orientation : -face_orientation;
-    } else { /* opposite orientation */
-      *edge_vidx = new_face->f2; /* do as if face orient was opposite */
-      *newf_orientation = (rev_orient) ? face_orientation : -face_orientation;
+  int i,fidx;
+  int out_vidx;
+  const face_t *face;
+  
+  fidx = 0; /* keep compiler happy */
+  out_vidx = *outer_vidx;
+  for (i=0; i<vfaces_len; i++) {
+    fidx = vfaces[i];
+    if (fidx < 0) continue; /* already visited face */
+    face = &mfaces[fidx];
+    if (out_vidx == face->f0) {
+      *outer_vidx = (center_vidx == face->f2) ? face->f1 : face->f2;
+      break; /* done searching */
+    } else if (out_vidx == face->f1) {
+      *outer_vidx = (center_vidx == face->f0) ? face->f2 : face->f0;
+      break; /* done searching */
+    } else if (out_vidx == face->f2) {
+      *outer_vidx = (center_vidx == face->f1) ? face->f0 : face->f1;
+      break; /* done searching */
     }
-  } else if (e_vidx == new_face->f1) {
-    if (center_vidx == new_face->f0) { /* same orientation as first face */
-      *edge_vidx = new_face->f2; /* do as if face orient was opposite */
-      *newf_orientation = (!rev_orient) ? face_orientation : -face_orientation;
-    } else { /* opposite orientation */
-      *edge_vidx = new_face->f0; /* do as if face orient was opposite */
-      *newf_orientation = (rev_orient) ? face_orientation : -face_orientation;
-    }
-  } else if (e_vidx == new_face->f2) {
-    if (center_vidx == new_face->f1) { /* same orientation as first face */
-      *edge_vidx = new_face->f0;
-      *newf_orientation = (!rev_orient) ? face_orientation : -face_orientation;
-    } else { /* opposite orientation */
-      *edge_vidx = new_face->f1; /* do as if face orient was opposite */
-      *newf_orientation = (rev_orient) ? face_orientation : -face_orientation;
-    }
-  } else {
-    return 0; /* not an adjacent face */
+    /* not an adjacent face => continue searching */
   }
-  return 1; /* we did find the adjacent face */
+  if (i >= vfaces_len) {
+    fidx = -1; /* no adjacent face found */
+  } else {
+    vfaces[i] = -1; /* mark face as visited */
+  }
+  return fidx;
 }
 
-/* Recursively analyze the faces incident on the on any of the vertices
- * connected to vertex vidx, and updates the information in st
- * accordingly. The face analysis starts at face pfidx, which should be
- * incident on vidx and already oriented (st->face_orientation[ofidx] !=
- * 0). The vertex of each face is given by mfaces. The analysis updates the
- * oriented, orientable, manifold and closed properties of the model. The
- * orientation of each face to obtain an oriented model is recorded in
- * st->face_orientation. The vertex vidx should already be marked as visited
- * (st->visited_vertex[vidx] != 0). */
-static void analyze_faces_rec(const face_t *mfaces, int vidx, int pfidx,
-                              struct vtx_walk_state *st)
+/* Performs local analysis of the faces incident on vertex vidx. The faces of
+ * the model are given in the mfaces array. The list of faces incident on each
+ * verftex of the model is given by flist. The local topology information is
+ * returned in *ltop. In addition it constructs the list of vertices,
+ * different from vidx and without repetition, that belong to the faces
+ * incident on vidx in vlist[vidx]. */
+static void get_vertex_topology(const face_t *mfaces, int vidx,
+                                const struct face_list *flist,
+                                struct topology *ltop,
+                                struct vtx_list *vlist)
 {
   int j;           /* loop counter */
   int nf;          /* number of faces incident on current vertex */
@@ -198,110 +290,59 @@ static void analyze_faces_rec(const face_t *mfaces, int vidx, int pfidx,
   int fidx;        /* current face index */
   int v2;          /* vertex on which next face should be incident */
   int vstart;      /* starting vertex, to check for closed surface */
-  char rev_orient; /* reversed processing orientation flag */
-  int tmpi;        /* temporary integer */
-  signed char fface_orient;/* orientation of first face */
-  signed char cface_orient;/* orientation of current face */
+  int rev_orient;  /* reversed processing orientation flag */
   int *vfaces;     /* list of faces incident on current vertex */
-  int ffidx;       /* first face index */
-  struct vtx_list vlist; /* list of found vertices  */
-  char cur_degen;  /* flag for degenerate current triangle */
-  char new_degen;  /* flag for degenerate new triangle */
-  char v2_was_in_list; /* flag: v2 already visited when last encountered */
-  char vstart_was_in_list; /* same as above but for vstart */
+  int v2_was_in_list; /* flag: v2 already visited when last encountered */
+  int vstart_was_in_list; /* same as above but for vstart */
+  int vtx_buf_sz;  /* size of the vertex list buffer */
 
   /* Initialize */
-  nf = st->flist[vidx].n_faces;
-  vlist.vtcs = xa_malloc(sizeof(*(vlist.vtcs))*nf*2); /* worst case size */
-  vlist.n_elems = 0;
-  assert(st->visited_vertex[vidx] != 0);
-  assert(nf != 0); /* An isolated vertex should never get here  */
-  vfaces = st->flist[vidx].face;
-  /* Locate the face from which we are coming, so that it is the first face */
-  for (j=0; j<nf; j++) {
-    if (vfaces[j] == pfidx) break;
-  }
-  assert(j<nf);
+  ltop->manifold = 1;
+  ltop->closed = 1;
+  vlist[vidx].n_elems = 0;
+  nf = flist[vidx].n_faces;
+  if (nf == 0) return; /* isolated vertex => nothing to be done */
+  vfaces = xa_malloc(sizeof(*vfaces)*nf);
+  memcpy(vfaces,flist[vidx].face,sizeof(*vfaces)*nf);
+  /* do typical size allocation */
+  vtx_buf_sz = nf+1;
+  vlist[vidx].vtcs = xa_realloc(vlist[vidx].vtcs,
+                                sizeof(*(vlist->vtcs))*vtx_buf_sz);
   /* Get first face vertices */
-  fidx = pfidx;
-  get_ordered_vtcs(&mfaces[fidx],vidx,&vstart,&v2);
-  /* Get orientation of first face (which is already oriented) */
-  fface_orient = st->face_orientation[fidx];
-  assert(fface_orient != 0);
-  /* Recursively analyze from the non-center vertices of first face */
-  if (!st->visited_vertex[vstart]) {
-    st->visited_vertex[vstart] = 1;
-    (st->n_visited_vertices)++;
-    analyze_faces_rec(mfaces,vstart,fidx,st);
-  }
-  if (!st->visited_vertex[v2]) {
-    st->visited_vertex[v2] = 1;
-    (st->n_visited_vertices)++;
-    analyze_faces_rec(mfaces,v2,fidx,st);
-  }
-  /* Check the other faces in an oriented order */
+  fidx = vfaces[0];
+  assert(fidx>=0);
   nf_left = nf-1;
-  vfaces[j] = -1;
+  vfaces[0] = -1;
+  get_ordered_vtcs(&mfaces[fidx],vidx,&vstart,&v2);
+  /* Check the other faces in order */
   rev_orient = 0;
-  ffidx = fidx;
-  cur_degen = is_degenerate(&mfaces[fidx]);
   vstart_was_in_list = 0;
-  vtx_in_list_or_add(&vlist,vstart); /* list empty, so always added */
-  v2_was_in_list = vtx_in_list_or_add(&vlist,v2);
+  /* list empty, so vstart always added */
+  vtx_in_list_or_add(&vlist[vidx],vstart,&vtx_buf_sz);
+  v2_was_in_list = vtx_in_list_or_add(&vlist[vidx],v2,&vtx_buf_sz);
   while (nf_left > 0) { /* process the remaining faces */
-    for (j=0; j<nf; j++) { /* search for face that shares v2 */
-      fidx = vfaces[j];
-      if (fidx == -1) continue; /* face already counted */
-      if (!is_adjacent_and_update(&mfaces[fidx],vidx,&v2,fface_orient,
-                                  rev_orient,&cface_orient)) {
-        continue; /* non-adjacent face => test next */
-      }
-      /* Update oriented state */
-      new_degen = is_degenerate(&mfaces[fidx]);
-      if (cface_orient != fface_orient &&
-          !(new_degen || cur_degen)) st->minfo.oriented = 0;
-      /* Check that we can orient face in a consistent manner */
-      if (st->face_orientation[fidx] == 0) { /* not yet oriented */
-        st->face_orientation[fidx] = cface_orient;
-      } else if (st->face_orientation[fidx] != cface_orient) {
-        /* can not get consistent orientation */
-        if (!(new_degen || cur_degen)) st->minfo.orientable = 0;
-        fface_orient = cface_orient; /* take new orientation */
-      }
-      /* Recursively analyze from new vertex */
-      if (!st->visited_vertex[v2]) {
-        st->visited_vertex[v2] = 1;
-        (st->n_visited_vertices)++;
-        analyze_faces_rec(mfaces,v2,fidx,st);
-      }
-      vfaces[j] = -1; /* mark face as counted */
-      nf_left--;  /* goto search for face that shares new v2 */
-      v2_was_in_list = vtx_in_list_or_add(&vlist,v2);
+    fidx = find_face_with_edge(mfaces,vfaces,nf,vidx,&v2);
+    if (fidx >= 0) { /* found an adjacent face */
+      nf_left--;
+      v2_was_in_list = vtx_in_list_or_add(&vlist[vidx],v2,&vtx_buf_sz);
       if (v2_was_in_list) {
         if (v2 == vstart) vstart_was_in_list = 1;
         /* v2 appearing more than once is only admissible in a manifold if the
          * triangle is degenerate or if it is the last triangle and it closes
          * a cycle */
-        if (!new_degen && !(nf_left == 0 && v2 == vstart)) {
-          st->minfo.manifold = 0;
-          /* The vidx-v2 edge is shared by more than two non-degenerate
-           * triangles => cannot be orientable nor oriented */
-          st->minfo.oriented = 0;
-          st->minfo.orientable = 0;
+        if (!(nf_left == 0 && v2 == vstart) && !is_degenerate(mfaces[fidx])) {
+          ltop->manifold = 0;
         }
       }
-      cur_degen = new_degen;
-      break;
-    }
-    if (j == nf) { /* none of unvisited triangles share's v2! */
+    } else { /* no of the not yet visited faces share's v2! */
       /* vertex vidx can be at a border or there is really a non-manifold */
       if (rev_orient || v2 == vstart) {
         /* already reversed orientation or completed a disk => non-manifold */
-        st->minfo.manifold = 0;
+        ltop->manifold = 0;
         /* closedness is not affected if we just closed a cycle or if vstart
          * and v2 were already visited the last time they were tested. */
         if (!(v2 == vstart || (vstart_was_in_list && v2_was_in_list))) {
-          st->minfo.closed = 0;
+          ltop->closed = 0;
         }
         /* Restart with first not yet counted triangle (always one) */
         for (j=0; j<nf; j++) {
@@ -312,37 +353,14 @@ static void analyze_faces_rec(const face_t *mfaces, int vidx, int pfidx,
         rev_orient = 0; /* restore original orientation */
         /* Get new first face vertices */
         get_ordered_vtcs(&mfaces[fidx],vidx,&vstart,&v2);
-        /* Get and mark orientation of new first face */
-        fface_orient = st->face_orientation[fidx];
-        if (fface_orient == 0) {
-          st->face_orientation[fidx] = 1;
-          fface_orient = 1;
-        }
-        /* Recursively analyze from the non-center vertices of new first face */
-        if (!st->visited_vertex[vstart]) {
-          st->visited_vertex[vstart] = 1;
-          (st->n_visited_vertices)++;
-          analyze_faces_rec(mfaces,vstart,fidx,st);
-        }
-        if (!st->visited_vertex[v2]) {
-          st->visited_vertex[v2] = 1;
-          (st->n_visited_vertices)++;
-          analyze_faces_rec(mfaces,v2,fidx,st);
-        }
-        ffidx = fidx;
         vfaces[j] = -1;
         nf_left--;
-        cur_degen = (vidx == vstart || vidx == v2 || vstart == v2);
-        vstart_was_in_list = vtx_in_list_or_add(&vlist,vstart);
-        v2_was_in_list = vtx_in_list_or_add(&vlist,v2);
-        if (!cur_degen && (vstart_was_in_list || v2_was_in_list)) {
-          /* The vidx-vstart or vidx-v2 edge is shared by more than two
-           * non-degenerate triangles => can not be orientable nor oriented */
-          st->minfo.oriented = 0;
-          st->minfo.orientable = 0;
-        }
+        vstart_was_in_list = vtx_in_list_or_add(&vlist[vidx],
+                                                vstart,&vtx_buf_sz);
+        v2_was_in_list = vtx_in_list_or_add(&vlist[vidx],v2,&vtx_buf_sz);
       } else {
         /* we reverse scanning orientation and continue from the other side */
+        int tmpi;
         rev_orient = 1;
         tmpi = v2;
         v2 = vstart;
@@ -350,39 +368,339 @@ static void analyze_faces_rec(const face_t *mfaces, int vidx, int pfidx,
         tmpi = v2_was_in_list;
         v2_was_in_list = vstart_was_in_list;
         vstart_was_in_list = tmpi;
-        /* re-take original orientation */
-        fface_orient = st->face_orientation[ffidx];
       }
     }
   }
+  /* closedness is not affected if we just closed a cycle or if vstart and v2
+   * were already visited the last time they were tested. */
   if (!(v2 == vstart || (vstart_was_in_list && v2_was_in_list))) {
-    st->minfo.closed = 0;
+    ltop->closed = 0;
   }
-  free(vlist.vtcs);
+  free(vfaces);
 }
 
-/* Walks the vertex tree rooted at the vertex with index vidx. The vertex tree
- * is made of all vertices that are connected (directly or indirectly) to vidx
- * trough some face. The vertex on each face are given by the mface array. For
- * each face incident on a visited vertex, the model properties (orientable,
- * oriented, manifold, etc.), and other state information, are updated in
- * st. If vidx is an isolated vertex, it is marked and counted and visited but
- * nothing else is done. The counter for the number of disjoint parts is
- * incremented by one (if the vertex is not isolated). */
-static void walk_vertex_tree(const face_t *mfaces, int vidx,
-                             struct vtx_walk_state *st) {
-  /* Mark vidx vertex as visited */
-  st->visited_vertex[vidx] = 1;
-  (st->n_visited_vertices)++;
-  /* Ignore isolated vertices */
-  if (st->flist[vidx].n_faces == 0) return;
-  /* Orient the first face at the root of the tree (orientation is
-   * arbitrary) */
-  assert(st->face_orientation[st->flist[vidx].face[0]] == 0);
-  st->face_orientation[st->flist[vidx].face[0]] = 1;
-  /* Analyze the tree rooted at vidx */
-  analyze_faces_rec(mfaces,vidx,st->flist[vidx].face[0],st);
-  st->minfo.n_disjoint_parts++;
+/* Adds the face_idx to the list of adjacent faces *af, as adjacent on the
+ * edge edge_idx. */
+static void add_adj_face(struct adj_faces *af, int edge_idx, int face_idx)
+{
+  int j;
+
+  if (af->face_on_edge[edge_idx] < 0) {
+    af->face_on_edge[edge_idx] = face_idx;
+  } else { /* already one face adjacent on the edge_idx edge => add as extra */
+    if (af->extra == NULL) { /* no extra lists for no edge yet */
+      af->extra = xa_calloc(1,sizeof(*(af->extra)));
+    }
+    j = (af->extra->n_faces_on_edge[edge_idx])++;
+    af->extra->faces_on_edge[edge_idx] =
+      xa_realloc(af->extra->faces_on_edge[edge_idx],j+1);
+    af->extra->faces_on_edge[edge_idx][j] = face_idx;
+  }
+}
+
+/* Frees all the storage array of lists of adjacent faces, of length n_faces. */
+static void free_adj_face_list(struct adj_faces *aflist, int n_faces)
+{
+  int i;
+
+  for (i=0; i<n_faces; i++) {
+    if (aflist[i].extra != NULL) {
+      free(aflist[i].extra->faces_on_edge[0]);
+      free(aflist[i].extra->faces_on_edge[1]);
+      free(aflist[i].extra->faces_on_edge[2]);
+      free(aflist[i].extra);
+    }
+  }
+  free(aflist);
+}
+
+/* Builds and returns the list of adjacent faces for each face in the
+ * model. n_faces is the number of faces, mfaces the array of faces of the
+ * model, and flist the list of faces incident on each vertex. Degenerate
+ * faces are skipped. The returned array is of length n_faces. */
+static struct adj_faces * find_adjacent_faces(const face_t *mfaces, int n_faces,
+                                              const struct face_list *flist)
+{
+  struct adj_faces *aflist;
+  int k,i;
+  int f0,f1,f2;
+  int adj_fidx;
+  const struct face_list *faces_at_vtx;
+
+  aflist = xa_malloc(n_faces*sizeof(*aflist));
+  for (k=0; k<n_faces; k++) {
+    aflist[k].face_on_edge[0] = -1;
+    aflist[k].face_on_edge[1] = -1;
+    aflist[k].face_on_edge[2] = -1;
+    aflist[k].extra = NULL;
+    if (is_degenerate(mfaces[k])) continue; /* degenerates are irrelevant */
+    f0 = mfaces[k].f0;
+    f1 = mfaces[k].f1;
+    f2 = mfaces[k].f2;
+    /* Find faces adjacent on the f0-f1 edge */
+    faces_at_vtx = &flist[f0];
+    for (i=0; i<faces_at_vtx->n_faces; i++) {
+      adj_fidx = faces_at_vtx->face[i];
+      if (adj_fidx == k) continue; /* don't include ourselves */
+      if (mfaces[adj_fidx].f0 == f1 || mfaces[adj_fidx].f1 == f1 ||
+          mfaces[adj_fidx].f2 == f1) { /* adjacent on f0-f1 */
+        add_adj_face(&aflist[k],0,adj_fidx);
+      }
+    }
+    /* Find faces adjacent on the f1-f2 edge */
+    faces_at_vtx = &flist[f1];
+    for (i=0; i<faces_at_vtx->n_faces; i++) {
+      adj_fidx = faces_at_vtx->face[i];
+      if (adj_fidx == k) continue; /* don't include ourselves */
+      if (mfaces[adj_fidx].f0 == f2 || mfaces[adj_fidx].f1 == f2 ||
+          mfaces[adj_fidx].f2 == f2) { /* adjacent on f1-f2 */
+        add_adj_face(&aflist[k],1,adj_fidx);
+      }
+    }
+    /* Find faces adjacent on the f2-f0 edge */
+    faces_at_vtx = &flist[f2];
+    for (i=0; i<faces_at_vtx->n_faces; i++) {
+      adj_fidx = faces_at_vtx->face[i];
+      if (adj_fidx == k) continue; /* don't include ourselves */
+      if (mfaces[adj_fidx].f0 == f0 || mfaces[adj_fidx].f1 == f0 ||
+          mfaces[adj_fidx].f2 == f0) { /* adjacent on f2-f0 */
+        add_adj_face(&aflist[k],2,adj_fidx);
+      }
+    }
+  }
+  return aflist;
+}
+
+/* Returns the next face in the list of adjacent faces *af. The search starts
+ * at edge edge_idx and at position edge_pos within that edge. The values edge
+ * and position for the next search are returned in *edge_idx and
+ * *edge_pos. The index of the edge on which the adjacent face is found is
+ * returned in *join_eidx. If there are no more adjacent faces -1 is
+ * returned. */
+static int get_next_adj_face(struct adj_faces *af, int *edge_idx,
+                             int *edge_pos, int *join_eidx)
+{
+  int next_fidx;
+  int eidx,epos;
+
+  eidx = *edge_idx;
+  epos = *edge_pos;
+
+  assert(eidx >= 0);
+  if (eidx >= 3) return -1; /* already at end */
+  do {
+    if (epos == 0) { /* take from main adjacent faces */
+      next_fidx = af->face_on_edge[eidx];
+    } else { /* take from extra adjacent faces */
+      next_fidx = af->extra->faces_on_edge[eidx][epos-1];
+    }
+    /* get indices of next adjacent face */
+    *join_eidx = eidx;
+    if (af->extra != NULL && epos < af->extra->n_faces_on_edge[eidx]) {
+      epos++;
+    } else {
+      eidx++;
+      epos = 0;
+    }
+  } while (next_fidx < 0 && eidx < 3);
+  *edge_idx = eidx;
+  *edge_pos = epos;
+  return next_fidx;
+}
+
+/* Returns the orientation (1 or -1) of *new_face that is compatible with that
+ * of the already oriented face and adjacent face *oriented_face. The
+ * orientation of the oriented face is orientation. The index of the edge of
+ * *oriented_face where *new_face is adjacent is of join_eidx. */
+static signed char get_orientation(const face_t *new_face,
+                                   const face_t *oriented_face,
+                                   signed char orientation, int of_join_eidx)
+{
+  int v0,v1; /* ordered vertices of the joining edge */
+
+  switch (of_join_eidx) {
+  case 0:
+    v0 = oriented_face->f0;
+    v1 = oriented_face->f1;
+    break;
+  case 1:
+    v0 = oriented_face->f1;
+    v1 = oriented_face->f2;
+    break;
+  default: /* must always be 2 */
+    assert(of_join_eidx == 2);
+    v0 = oriented_face->f2;
+    v1 = oriented_face->f0;
+  }
+
+  if (new_face->f0 == v0) {
+    return (new_face->f2 == v1) ? orientation : -orientation;
+  } else if (new_face->f1 == v0) {
+    return (new_face->f0 == v1) ? orientation : -orientation;
+  } else { /* new_face->f2 == v0 */
+    assert(new_face->f2 == v0);
+    return (new_face->f1 == v1) ? orientation : -orientation;
+  }
+}
+
+/* Evaluates the orientation of the model given by the faces in mfaces, the
+ * number of faces n_faces and the list of incident faces for each vertext
+ * flist. The results is returned in the following fields of minfo: oriented
+ * and orientable. The orientation of each face is returned as a malloc'ed
+ * array of length n_faces. A negative entry means that the orientation of the
+ * corresponding face needs to be reversed. */
+static signed char * model_orientation(const face_t *mfaces, int n_faces,
+                                       const struct face_list *flist,
+                                       struct model_info *minfo)
+{
+  struct adj_faces *aflist;
+  signed char *face_orientation;
+  int n_oriented_faces;
+  int next_fidx;
+  signed char next_orientation;
+  int join_eidx;
+  struct stack stack;
+  struct {
+    int fidx;
+    int eidx;
+    int epos;
+  } cur;
+
+  /* Initialize */
+  aflist = find_adjacent_faces(mfaces,n_faces,flist);
+  face_orientation = xa_calloc(n_faces,sizeof(*face_orientation));
+  stack_init(&stack,sizeof(cur));
+  minfo->orientable = 1;
+  minfo->oriented = 1;
+  n_oriented_faces = 0;
+  cur.fidx = 0;
+  while (n_oriented_faces < n_faces) {
+    /* find next not yet oriented face */
+    for (; cur.fidx<n_faces; cur.fidx++) {
+      if (face_orientation[cur.fidx] == 0) break;
+    }
+    assert(cur.fidx < n_faces);
+    face_orientation[cur.fidx] = 1;
+    n_oriented_faces++;
+    if (is_degenerate(mfaces[cur.fidx])) continue;
+    cur.eidx = 0;
+    cur.epos = 0;
+    /* do a walk on all connected faces, checking orientation */
+    do {
+      /* get next face that is adjacent to current one */
+      next_fidx = get_next_adj_face(&aflist[cur.fidx],&cur.eidx,&cur.epos,
+                                    &join_eidx);
+      if (next_fidx >= 0) { /* still an adjacent face */
+        assert(face_orientation[cur.fidx] != 0);
+        next_orientation =
+          get_orientation(&mfaces[next_fidx],&mfaces[cur.fidx],
+                          face_orientation[cur.fidx],join_eidx);
+        if (next_orientation != face_orientation[cur.fidx]) {
+          minfo->oriented = 0;
+        }
+        if (face_orientation[next_fidx] == 0) {
+          /* not yet oriented face => orient and continue from new */
+          face_orientation[next_fidx] = next_orientation;
+          n_oriented_faces++;
+          stack_push(&stack,&cur);
+          cur.fidx = next_fidx;
+          cur.eidx = 0;
+          cur.epos = 0;
+        } else { /* face already oriented, check consistency */
+          if (face_orientation[next_fidx] != next_orientation) {
+            minfo->orientable = 0;
+          }
+        }
+      } else { /* no more adjacent faces for cur.fidx => walk back */
+        if (!stack_pop(&stack,&cur)) {
+          break; /* stack is empty => we are done */
+        }
+      }
+    } while (1);
+    cur.fidx = 0; /* restart rescanning from beggining */
+  }
+  free_adj_face_list(aflist,n_faces);
+  stack_fini(&stack);
+  return face_orientation;
+}
+
+/* Evaluates the topology of the model given by the faces in mfaces, the list
+ * of incident faces for each vertex flist and the number of vertices
+ * n_vtcs. The result is returned in the following fields of minfo: manifold,
+ * closed and n_disjoint_parts. */
+static void model_topology(int n_vtcs, const face_t *mfaces,
+                           const struct face_list *flist,
+                           struct model_info *minfo)
+{
+  struct vtx_list *vlist; /* for each vertex, the list of vertices sharing an
+                           * edge with them. */
+  struct stack stack;     /* stack to walk vertex tree */
+  char *visited_vtcs;     /* array to mark visited vertices */
+  int n_visited_vertices; /* number of already visited vertices */
+  int next_vidx;          /* the index of the next vertex to visit */
+  struct topology vtx_top;/* local vertex toppology */
+  struct {
+    int vidx; /* index of entry in vlist */
+    int lpos; /* current position in the list at entry vidx in vlist */
+  } cur;                  /* the indices to the current vertex entry in vlist */
+
+  /* Initialize */
+  minfo->manifold = 1;
+  minfo->closed = 1;
+  minfo->n_disjoint_parts = 0;
+  stack_init(&stack,sizeof(cur));
+  vlist = xa_calloc(n_vtcs,sizeof(*vlist));
+  visited_vtcs = xa_calloc(n_vtcs,sizeof(*visited_vtcs));
+  next_vidx = 0; /* keep compiler happy */
+
+  n_visited_vertices = 0;
+  while (n_visited_vertices < n_vtcs) {
+    /* Find next unvisited vertex (always one) */
+    for (cur.vidx=0; cur.vidx<n_vtcs; cur.vidx++) {
+      if (!visited_vtcs[cur.vidx]) break;
+    }
+    assert(cur.vidx<n_vtcs);
+    /* mark all the connected vertices as visited and count one part */
+    assert(visited_vtcs[cur.vidx] == 0);
+    visited_vtcs[cur.vidx] = 1;
+    n_visited_vertices++;
+    get_vertex_topology(mfaces,cur.vidx,flist,&vtx_top,vlist);
+    minfo->manifold = minfo->manifold && vtx_top.manifold;
+    minfo->closed = minfo->closed && vtx_top.closed;
+    if (vlist[cur.vidx].n_elems != 0) { /* vertex is not alone */
+      minfo->n_disjoint_parts++;
+      cur.lpos = 0;
+      do {
+        for (; cur.lpos < vlist[cur.vidx].n_elems; cur.lpos++) {
+          next_vidx = vlist[cur.vidx].vtcs[cur.lpos];
+          if (!visited_vtcs[next_vidx]) break;
+        }
+        if (cur.lpos < vlist[cur.vidx].n_elems) {
+          /* found connected and not yet visited vertex => continue from new */
+          visited_vtcs[next_vidx] = 1;
+          n_visited_vertices++;
+          get_vertex_topology(mfaces,next_vidx,flist,&vtx_top,vlist);
+          minfo->manifold = minfo->manifold && vtx_top.manifold;
+          minfo->closed = minfo->closed && vtx_top.closed;
+          cur.lpos++;
+          stack_push(&stack,&cur);
+          cur.vidx = next_vidx;
+          cur.lpos = 0;
+        } else {
+          /* no connected and not yet visited vertices => walk back */
+          free(vlist[cur.vidx].vtcs);
+          vlist[cur.vidx].vtcs = NULL;
+          if (!stack_pop(&stack,&cur)) {
+            break; /* stack is empty => we are done */
+          }
+        }
+      } while (1);
+    }
+  }
+
+  stack_fini(&stack);
+  free(visited_vtcs);
+  free(vlist);
 }
 
 /* --------------------------------------------------------------------------*
@@ -393,58 +711,33 @@ static void walk_vertex_tree(const face_t *mfaces, int vidx,
 void analyze_model(struct model *m, const struct face_list *flist,
                    struct model_info *info, int do_orient)
 {
-  struct vtx_walk_state st; /* walk state storage */
-  int start_idx;            /* index where to start next vertex walk */
-  int i,imax;
+  signed char *face_orientation; /* the face orientation map */
+  struct face_list *flist_local; /* the locally generated flist, if any */
 
   /* Initialize */
-  memset(&st,0,sizeof(st));
-  if (flist != NULL) { /* make local copy of flist */
-    st.flist = xa_malloc(m->num_vert*sizeof(*flist));
-    for (i=0, imax=m->num_vert; i<imax; i++) {
-      st.flist[i].n_faces = flist[i].n_faces;
-      st.flist[i].face = xa_malloc(sizeof(*(flist[i].face))*flist[i].n_faces);
-      memcpy(st.flist[i].face,flist[i].face,
-             sizeof(*(flist[i].face))*flist[i].n_faces);
-    }
-  } else { /* locally get flist */
-    st.flist = faces_of_vertex(m);
+  memset(info,0,sizeof(*info));
+  if (flist == NULL) {
+    flist_local = faces_of_vertex(m);
+    flist = flist_local;
+  } else {
+    flist_local = NULL;
   }
 
-  /* Start assuming the model is manifold, oriented, etc. */
-  st.minfo.orientable = 1;
-  st.minfo.oriented = 1;
-  st.minfo.manifold = 1;
-  st.minfo.closed = 1;
-  
-  /* Analyze model for each disjoint element */
-  start_idx = 0;
-  st.visited_vertex = xa_calloc(m->num_vert,sizeof(*(st.visited_vertex)));
-  st.face_orientation = xa_calloc(m->num_faces,sizeof(*(st.face_orientation)));
-  st.n_visited_vertices = 0;
-  while (st.n_visited_vertices != m->num_vert) {
-    while (st.visited_vertex[start_idx]) { /* Search for root of next element */
-      start_idx++;
-    }
-    /* Walk all the vertices connected to root */
-    walk_vertex_tree(m->faces,start_idx,&st);
-  }
+  /* Make topology and orientation analysis */
+  model_topology(m->num_vert,m->faces,flist,info);
+  face_orientation = model_orientation(m->faces,m->num_faces,flist,info);
 
   /* Save original oriented state */
-  st.minfo.orig_oriented = st.minfo.oriented;
+  info->orig_oriented = info->oriented;
 
   /* Orient model if requested and  possible */
-  if (do_orient && st.minfo.orientable && !st.minfo.oriented) {
-    orient_model(m,st.face_orientation);
+  if (do_orient && info->orientable && !info->oriented) {
+    orient_model(m,face_orientation);
   }
 
   /* Free memory */
-  free(st.visited_vertex);
-  free(st.face_orientation);
-  free_face_lists(st.flist,m->num_vert);
-
-  /* Return model analysis info */
-  *info = st.minfo;
+  free(face_orientation);
+  free_face_lists(flist_local,m->num_vert);
 }
 
 /* See model_analysis.h */
