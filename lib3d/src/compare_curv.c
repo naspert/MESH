@@ -1,4 +1,4 @@
-/* $Id: compare_curv.c,v 1.6 2001/10/30 09:25:58 aspert Exp $ */
+/* $Id: compare_curv.c,v 1.7 2002/01/25 08:50:24 aspert Exp $ */
 #include <3dutils.h>
 
 
@@ -247,10 +247,10 @@ int main(int argc, char **argv) {
     malloc(raw_model1->num_vert*sizeof(struct ring_info));
   rings2 = (struct ring_info*)
     malloc(raw_model2->num_vert*sizeof(struct ring_info));
-  for (i=0; i<raw_model1->num_vert; i++) {
-    build_star(raw_model1, i, &(rings1[i]));
-    build_star(raw_model2, i, &(rings2[i]));
-  }
+
+  build_star_global(raw_model1, &rings1);
+  build_star_global(raw_model2, &rings2);
+
   
   printf("Computing curvature of model 1.... ");fflush(stdout);
   compute_curvature(raw_model1, info1, rings1);
