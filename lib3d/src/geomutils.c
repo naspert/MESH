@@ -1,11 +1,11 @@
-/* $Id: geomutils.c,v 1.8 2001/10/23 09:29:35 aspert Exp $ */
+/* $Id: geomutils.c,v 1.9 2001/11/12 15:26:39 dsanta Exp $ */
 #include <3dmodel.h>
 #define _GEOMUTILS_C_
 #include <geomutils.h> /* catch the inlined functions */
 
 
 /*Used for 2D triangulation */
-double cross_product2d(vertex_t p1, vertex_t p2, vertex_t p3) {
+float cross_product2d(vertex_t p1, vertex_t p2, vertex_t p3) {
     vertex_t v1, v2;
 
     v1.x = p2.x - p1.x;
@@ -18,17 +18,21 @@ double cross_product2d(vertex_t p1, vertex_t p2, vertex_t p3) {
 }
 
 /* Computes the scalar product between 2 vectors */
-double scalprod(vertex_t v1, vertex_t v2) {
+float scalprod(vertex_t v1, vertex_t v2) {
   return (v1.x*v2.x + v1.y*v2.y + v1.z*v2.z);
 }
 
 /* Computes the norm of vector v */
-double norm(vertex_t v) {
-  return (sqrt(v.x*v.x + v.y*v.y + v.z*v.z));
+float norm(vertex_t v) {
+#if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)  /* C99 */
+  return sqrtf(v.x*v.x + v.y*v.y + v.z*v.z);
+#else /* pre-C99 */
+  return (float)sqrt(v.x*v.x + v.y*v.y + v.z*v.z);
+#endif
 }
 
 /* Computes the distance between v1 and v2 */
-double dist(vertex_t v1, vertex_t v2) {
+float dist(vertex_t v1, vertex_t v2) {
   vertex_t tmp;
   
   tmp.x = v1.x - v2.x;
@@ -42,12 +46,15 @@ double dist(vertex_t v1, vertex_t v2) {
 
 /* Normalizes vertex_t v */
 void normalize(vertex_t *v) {
-  double n;
+  float n;
 
   n = norm(*v);
   
-  if (fabs(n) < 1e-10) /* Do nothing if vector is too small */
-    return;
+#if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)  /* C99 */
+  if (fabsf(n) < 1e-10f) return; /* Do nothing if vector is too small */
+#else /* pre-C99 */
+  if (fabs(n) < 1e-10) return; /* Do nothing if vector is too small */
+#endif
   
   v->x /= n;
   v->y /= n;
@@ -59,28 +66,30 @@ void rotate_3d(vertex_t p, vertex_t u, double theta, vertex_t *vout) {
   double cth=cos(theta);
   double sth=sin(theta);
   double a=1.0-cth;
-
+  double tmp;
 
   
   normalize_v(&u); /* useful ? */
 
-  vout->x = (cth + a*u.x*u.x)*p.x;
-  vout->x += (a*u.x*u.y - sth*u.z)*p.y;
-  vout->x += (a*u.x*u.z +u.y*sth)*p.z;
+  tmp = (cth + a*u.x*u.x)*p.x;
+  tmp += (a*u.x*u.y - sth*u.z)*p.y;
+  tmp += (a*u.x*u.z +u.y*sth)*p.z;
+  vout->x = (float) tmp;
 
-  vout->y = (a*u.x*u.y + u.z*sth)*p.x;
-  vout->y += (cth +a*u.y*u.y)*p.y;
-  vout->y += (a*u.y*u.z -u.x*sth)*p.z;
-  
-  vout->z = (a*u.x*u.z -u.y*sth)*p.x;
-  vout->z += (u.y*u.z*a + u.x*sth)*p.y;
-  vout->z += (u.z*u.z*a + cth)*p.z;
+  tmp = (a*u.x*u.y + u.z*sth)*p.x;
+  tmp += (cth +a*u.y*u.y)*p.y;
+  tmp += (a*u.y*u.z -u.x*sth)*p.z;
+  vout->y = (float) tmp;
 
+  tmp = (a*u.x*u.z -u.y*sth)*p.x;
+  tmp += (u.y*u.z*a + u.x*sth)*p.y;
+  tmp += (u.z*u.z*a + cth)*p.z;
+  vout->z = (float) tmp;
   
 }
 
 /* Returns 1 if p is inside the circle defined by center & r */
-int inside(vertex_t p, vertex_t center, double r) {
+int inside(vertex_t p, vertex_t center, float r) {
  
     if (dist(center, p) < r)
 	return 1;
@@ -90,10 +99,10 @@ int inside(vertex_t p, vertex_t center, double r) {
 
 /* Computes the radius and center of the 2D circle passing by p1 p2 and p3 */
 void compute_circle2d(vertex_t p1, vertex_t p2, vertex_t p3, 
-		      double *r, vertex_t *center) {
+		      float *r, vertex_t *center) {
     vertex_t v1, v2;
-    double cp; 
-    double num, np1, np2, np3;
+    float cp; 
+    float num, np1, np2, np3;
 
 
     v1.x = p2.x - p1.x;
@@ -110,10 +119,10 @@ void compute_circle2d(vertex_t p1, vertex_t p2, vertex_t p3,
 	np3 = norm(p3);
 	num = np1*(p2.y - p3.y) + np2*(p3.y - p1.y) +
 	    np3*(p1.y - p2.y);
-	center->x = num/(2.0*cp);
+	center->x = num/(2.0f*cp);
 	num = np1*(p3.x - p2.x) + np2*(p1.x - p3.x) +
 	    np3*(p2.x - p1.x);
-	center->y = num/(2.0*cp);
+	center->y = num/(2.0f*cp);
     }
 
     v1.x = center->x - p1.x;
@@ -127,12 +136,12 @@ void compute_circle2d(vertex_t p1, vertex_t p2, vertex_t p3,
 /* Compute the center and radius of the circle passing
    by the points p1,p2 and p3 */
 void compute_circle3d(vertex_t p1, vertex_t p2, vertex_t p3, 
-		    double *r, vertex_t *center) {
+                      float *r, vertex_t *center) {
     vertex_t u,v,w;
     vertex_t m1, m2, tmp;
     int i;
-    double det;
-    double a[9], b[3];
+    float det;
+    float a[9], b[3];
 
     substract_v(&p2, &p1, &u);
     substract_v(&p3, &p1, &v);
@@ -145,10 +154,10 @@ void compute_circle3d(vertex_t p1, vertex_t p2, vertex_t p3,
        intersection of 3 planes */
 
     add_v(&p1, &p2, &m1);
-    prod_v(0.5, &m1, &m1);
+    prod_v(0.5f, &m1, &m1);
 
     add_v(&p1, &p3, &m2);
-    prod_v(0.5, &m2, &m2);
+    prod_v(0.5f, &m2, &m2);
 
 
     /* Is the equation system OK ? */
@@ -199,10 +208,10 @@ void compute_circle3d(vertex_t p1, vertex_t p2, vertex_t p3,
 
 
 /* Computes the area of the triangle p1,p2, p3 */
-double tri_area(vertex_t p1, vertex_t p2, vertex_t p3) {
+float tri_area(vertex_t p1, vertex_t p2, vertex_t p3) {
     vertex_t u,v,h;
-    double nu2,uv;
-    double tmp;
+    float nu2,uv;
+    float tmp;
 
     u.x = p1.x - p3.x;
     u.y = p1.y - p3.y;
@@ -225,6 +234,10 @@ double tri_area(vertex_t p1, vertex_t p2, vertex_t p3) {
 
 
 
-    return (norm(h)*sqrt(nu2)*0.5);
+#if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)  /* C99 */
+    return (norm(h)*sqrtf(nu2)*0.5f);
+#else /* pre-C99 */
+    return (norm(h)*(float)sqrt(nu2)*0.5f);
+#endif
 
 }

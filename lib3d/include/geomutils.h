@@ -1,4 +1,4 @@
-/* $Id: geomutils.h,v 1.17 2001/11/12 13:40:17 dsanta Exp $ */
+/* $Id: geomutils.h,v 1.18 2001/11/12 15:26:39 dsanta Exp $ */
 #include <3dmodel.h>
 
 #ifndef _GEOMUTILS_PROTO_
@@ -23,33 +23,33 @@ extern "C" {
 #endif
 
   /* exported functions */
-  double dist(vertex_t, vertex_t);
-  double cross_product2d(vertex_t, vertex_t, vertex_t);
-  double scalprod(vertex_t, vertex_t);
-  double norm(vertex_t);
+  float dist(vertex_t, vertex_t);
+  float cross_product2d(vertex_t, vertex_t, vertex_t);
+  float scalprod(vertex_t, vertex_t);
+  float norm(vertex_t);
   void normalize(vertex_t*);
   void rotate_3d(vertex_t, vertex_t, double, vertex_t*);
-  int inside(vertex_t, vertex_t, double);
-  void compute_circle2d(vertex_t, vertex_t, vertex_t, double*, vertex_t*);
-  void compute_circle3d(vertex_t, vertex_t, vertex_t, double*, vertex_t*);
-  double tri_area(vertex_t, vertex_t, vertex_t);
+  int inside(vertex_t, vertex_t, float);
+  void compute_circle2d(vertex_t, vertex_t, vertex_t, float*, vertex_t*);
+  void compute_circle3d(vertex_t, vertex_t, vertex_t, float*, vertex_t*);
+  float tri_area(vertex_t, vertex_t, vertex_t);
 
   /* Inlined faster functions */
-  double scalprod_v(const vertex_t*, const vertex_t*);
-  double norm2_v(const vertex_t*);
-  double norm_v(const vertex_t*);
-  double dist_v(const vertex_t*, const vertex_t*);
-  double dist2_v(const vertex_t *, const vertex_t *);
+  float scalprod_v(const vertex_t*, const vertex_t*);
+  float norm2_v(const vertex_t*);
+  float norm_v(const vertex_t*);
+  float dist_v(const vertex_t*, const vertex_t*);
+  float dist2_v(const vertex_t *, const vertex_t *);
   void normalize_v(vertex_t*);
   void substract_v(const vertex_t*, const vertex_t*, vertex_t*);
   void add_v(const vertex_t*, const vertex_t*, vertex_t*);
-  void add3_sc_v(double, const vertex_t*, const vertex_t*, const vertex_t*, 
+  void add3_sc_v(float, const vertex_t*, const vertex_t*, const vertex_t*, 
 		 vertex_t*);
-  void prod_v(double, const vertex_t*, vertex_t*);
-  void add_prod_v(double, const vertex_t*, const vertex_t*, vertex_t*);
+  void prod_v(float, const vertex_t*, vertex_t*);
+  void add_prod_v(float, const vertex_t*, const vertex_t*, vertex_t*);
   void crossprod_v(const vertex_t*, const vertex_t*, vertex_t*);
   void ncrossp_v(const vertex_t*, const vertex_t*, const vertex_t*, vertex_t*);
-  double tri_area_v(const vertex_t*, const vertex_t*, const vertex_t*);
+  float tri_area_v(const vertex_t*, const vertex_t*, const vertex_t*);
   void neg_v(const vertex_t*, vertex_t*);
 
   /* Version using the dvertex_t (double) type */
@@ -85,7 +85,7 @@ extern "C" {
 #  define INLINE __inline
 # elif defined(__GNUC__)
 #  define INLINE __inline__
-# elif defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 19901L)
+# elif defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)
 #  define INLINE extern inline
 # else
 #  define INLINE
@@ -95,7 +95,7 @@ extern "C" {
 #  define INLINE __inline
 # elif defined(__GNUC__)
 #  define INLINE extern __inline__
-# elif defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 19901L)
+# elif defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)
 #  define INLINE inline
 # endif
 #endif
@@ -103,33 +103,36 @@ extern "C" {
 #ifdef INLINE /* give definition of functions */
 
   /* returns the scalar product of 2 vectors */
-  INLINE double scalprod_v(const vertex_t *v1, const vertex_t *v2) {
+  INLINE float scalprod_v(const vertex_t *v1, const vertex_t *v2) {
     return (v1->x*v2->x + v1->y*v2->y + v1->z*v2->z);
   }
   
   /* returns the squared norm of a vector */
-  INLINE double norm2_v(const vertex_t *v) {
+  INLINE float norm2_v(const vertex_t *v) {
     return (v->x*v->x + v->y*v->y + v->z*v->z);
   }
   
   /* Returns the norm (i.e. length) of vector v */
-  INLINE double norm_v(const vertex_t *v) {
-    return (sqrt(v->x*v->x + v->y*v->y + v->z*v->z));
+  INLINE float norm_v(const vertex_t *v) {
+    return (float) sqrt(v->x*v->x + v->y*v->y + v->z*v->z);
   }
 
   /* Returns the distance between vertices v1 and v2 */
-  INLINE double dist_v(const vertex_t *v1, const vertex_t *v2) {
+  INLINE float dist_v(const vertex_t *v1, const vertex_t *v2) {
     vertex_t tmp;
   
     tmp.x = v1->x - v2->x;
     tmp.y = v1->y - v2->y;
     tmp.z = v1->z - v2->z;
-    
-    return sqrt(tmp.x*tmp.x+tmp.y*tmp.y+tmp.z*tmp.z);
+#if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)  /* C99 */
+    return sqrtf(tmp.x*tmp.x+tmp.y*tmp.y+tmp.z*tmp.z);
+#else /* pre-C99 */
+    return (float) sqrt(tmp.x*tmp.x+tmp.y*tmp.y+tmp.z*tmp.z);
+#endif
   }
 
   /* Returns the squared distance between vertices v1 and v2 */
-  INLINE double dist2_v(const vertex_t *v1, const vertex_t *v2) {
+  INLINE float dist2_v(const vertex_t *v1, const vertex_t *v2) {
     vertex_t tmp;
   
     tmp.x = v1->x - v2->x;
@@ -141,7 +144,7 @@ extern "C" {
   
   /* Normalizes the vector v to be of unit length */
   INLINE void normalize_v(vertex_t *v) {
-    double inv_l;
+    float inv_l;
     inv_l = 1/norm_v(v); /* multiplication is faster than division */
     v->x *= inv_l;
     v->y *= inv_l;
@@ -168,7 +171,7 @@ extern "C" {
 
   /* Multiplies vector v by scalar m and puts the result in vout. It is OK for
    * vout to alias v. */
-  INLINE void prod_v(double m, const vertex_t *v, vertex_t *vout) {
+  INLINE void prod_v(float m, const vertex_t *v, vertex_t *vout) {
     vout->x = m*v->x;
     vout->y = m*v->y;
     vout->z = m*v->z;
@@ -176,14 +179,14 @@ extern "C" {
   
 
   /* Multiplies v1 by scalar m, adds v2 to it and puts the result in vout */
-  INLINE void add_prod_v(double m, const vertex_t *v1, const vertex_t *v2, 
+  INLINE void add_prod_v(float m, const vertex_t *v1, const vertex_t *v2, 
 			 vertex_t *vout) {
     vout->x = m*v1->x + v2->x;
     vout->y = m*v1->y + v2->y;
     vout->z = m*v1->z + v2->z;
   }
 
-  INLINE void add3_sc_v(double m, const vertex_t* v0, const vertex_t* v1, 
+  INLINE void add3_sc_v(float m, const vertex_t* v0, const vertex_t* v1, 
 			const vertex_t* v2, vertex_t* vout) {
     vout->x = m*(v0->x + v1->x + v2->x);
     vout->y = m*(v0->y + v1->y + v2->y);
@@ -206,7 +209,7 @@ extern "C" {
                         const vertex_t *v3, vertex_t *vout) {
     vertex_t res; /* Use temporary to be safe if vout alias v1 and/or v2 */
     vertex_t u,v;
-    double n;
+    float n;
     
     u.x = v2->x - v1->x;
     u.y = v2->y - v1->y;
@@ -230,11 +233,11 @@ extern "C" {
   }
 
 
-  INLINE double tri_area_v(const vertex_t *v1, const vertex_t *v2, 
-			   const vertex_t*v3) {
+  INLINE float tri_area_v(const vertex_t *v1, const vertex_t *v2, 
+                          const vertex_t*v3) {
     vertex_t u,v,h;
-    double nu2,uv;
-    double tmp;
+    float nu2,uv;
+    float tmp;
     
     u.x = v1->x - v3->x;
     u.y = v1->y - v3->y;
@@ -255,9 +258,11 @@ extern "C" {
     h.y = v.y - u.y*tmp;
     h.z = v.z - u.z*tmp;
 
-
-
-    return (norm_v(&h)*sqrt(nu2)*0.5);
+#if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)  /* C99 */
+    return (norm_v(&h)*sqrtf(nu2)*0.5f);
+#else /* pre-C99 */
+    return (norm_v(&h)*(float)sqrt(nu2)*0.5f);
+#endif
   }
 
   INLINE void neg_v(const vertex_t *v, vertex_t *vout) {
