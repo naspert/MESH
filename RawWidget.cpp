@@ -1,4 +1,4 @@
-/* $Id: RawWidget.cpp,v 1.44 2002/02/24 20:18:34 dsanta Exp $ */
+/* $Id: RawWidget.cpp,v 1.45 2002/02/27 12:09:30 aspert Exp $ */
 
 #include <RawWidget.h>
 #include <qmessagebox.h>
@@ -520,7 +520,10 @@ void RawWidget::setVEDownSampling(int n) {
     downsampling = n;
     if (error_mode == VERTEX_ERROR) {
       makeCurrent();
+      // display wait cursor while rebuilding list (useful for n=1 only)
+      QApplication::setOverrideCursor(Qt::waitCursor);
       rebuildList();
+      QApplication::restoreOverrideCursor();
       updateGL();
     }
   }

@@ -1,4 +1,4 @@
-/* $Id: ScreenWidget.cpp,v 1.37 2002/02/26 10:27:48 dsanta Exp $ */
+/* $Id: ScreenWidget.cpp,v 1.38 2002/02/27 12:09:30 aspert Exp $ */
 #include <ScreenWidget.h>
 
 #include <qhbox.h>
@@ -11,8 +11,6 @@
 #include <qradiobutton.h>
 #include <qhbuttongroup.h>
 #include <qvbuttongroup.h>
-#include <qgroupbox.h>
-#include <qslider.h>
 #include <qstring.h>
 #include <RawWidget.h>
 #include <ColorMapWidget.h>
@@ -35,7 +33,6 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   QRadioButton *verrBut, *fmerrBut, *serrBut;
   QRadioButton *linBut, *logBut;
   QButtonGroup *dispInfoGrp=NULL, *histoGrp=NULL;
-  QSlider *qslidDispSampDensity;
   QString tmp;
   const float p = 0.95f; // max proportion of screen to use
   int max_ds; // maximum downsampling value
@@ -154,9 +151,8 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   }
   // This is needed s.t. we can add children widget to the GroupBox
   qgbSlider = new 
-    QGroupBox(1, Qt::Horizontal, 
-              tmp.sprintf("Subsampling factor of the error = %d", max_ds), 
-              this);
+    QHGroupBox(tmp.sprintf("Subsampling factor of the error = %d", max_ds), 
+               this);
 
   qslidDispSampDensity = new QSlider(1, max_ds, 1, max_ds, 
                                      QSlider::Horizontal, qgbSlider);
@@ -164,12 +160,21 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   qslidDispSampDensity->setTickmarks(QSlider::Both);
   qslidDispSampDensity->setTracking(FALSE);
   glModel1->setVEDownSampling(max_ds); // Initialization
-  
 
-  connect(qslidDispSampDensity, SIGNAL(valueChanged(int)),
+  qspSampDensity = new QSpinBox(1, max_ds, 1, qgbSlider);
+  qspSampDensity->setValue(max_ds);
+
+
+  // Connect the slider and spinbox to a 'phony' slot s.t. we avoid
+  // loops between valueChanged signals and setValue slots
+  connect(qspSampDensity, SIGNAL(valueChanged(int)), this, 
+          SLOT(trapChanges(int)));
+  connect(qslidDispSampDensity, SIGNAL(valueChanged(int)), this, 
+          SLOT(trapChanges(int)));
+  // The dsValChange signal is emitted once when there has been a real
+  // change 
+  connect(this, SIGNAL(dsValChange(int)), 
           glModel1, SLOT(setVEDownSampling(int)));
-  connect(qslidDispSampDensity, SIGNAL(valueChanged(int)), 
-          this, SLOT(changeGroupBoxTitle(int)));
 
   // Build scale selection buttons
   histoGrp = new QVButtonGroup("X scale",this);
@@ -283,6 +288,31 @@ void ScreenWidget::disableSlider(int errMode)
     break;
   default: /* should never get here */
     return;
+  }
+}
+
+void ScreenWidget::trapChanges(int n) 
+{
+  int slv = qslidDispSampDensity->value(); // value of the slider
+  int spv = qspSampDensity->value(); // value of the spinbox
+  bool hasChanged = FALSE;
+
+  if (slv == n && spv == n)
+    return;
+
+  if (slv != n) {
+    qslidDispSampDensity->setValue(n);
+    hasChanged = TRUE;
+  }
+
+  if (spv != n) {
+    qspSampDensity->setValue(n);
+    hasChanged = TRUE;
+  }
+  
+  if (hasChanged) {
+    changeGroupBoxTitle(n);
+    emit dsValChange(n);  
   }
 }
 
