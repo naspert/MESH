@@ -1,4 +1,4 @@
-/* $Id: ScreenWidget.cpp,v 1.30 2002/02/22 09:37:24 aspert Exp $ */
+/* $Id: ScreenWidget.cpp,v 1.31 2002/02/22 12:54:29 aspert Exp $ */
 #include <ScreenWidget.h>
 
 #include <qhbox.h>
@@ -16,7 +16,7 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   QAction *fileQuitAction;
   QPushButton *syncBut, *lineSwitch1, *lineSwitch2;
   QMenuBar *mainBar;
-  QPopupMenu *fileMenu, *helpMenu;
+  QPopupMenu *fileMenu, *infoMenu, *helpMenu;
   QHBox *frameModel1, *frameModel2;
   QGridLayout *bigGrid;
   RawWidget *glModel1, *glModel2;
@@ -25,7 +25,7 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   QRadioButton *verrBut, *fmerrBut, *serrBut;
   QRadioButton *linBut, *logBut;
   QButtonGroup *radGrp=NULL, *histoGrp=NULL;
-
+  const float p = 0.95; // max proportion of screen to use
 
   setCaption("Mesh: visualization");
 
@@ -38,13 +38,22 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   mainBar = new QMenuBar(this);
   fileMenu = new QPopupMenu(this);
   mainBar->insertItem("&File",fileMenu);
-  fileMenu->insertSeparator();
   fileQuitAction->addTo(fileMenu);
+
+  // Create the 'Info' menu
+  infoMenu = new QPopupMenu(this);
+  // save the adresses of these structures for later
+  locMod1 = model1;
+  locMod2 = model2;
+  mainBar->insertItem("&Info", infoMenu);
+  infoMenu->insertItem("Left model information", this, 
+                       SLOT(infoLeftModel()));
+  infoMenu->insertItem("Right model information", this, 
+                       SLOT(infoRightModel()));
 
   //Create the 'Help' menu
   helpMenu = new QPopupMenu(this);
   mainBar->insertItem("&Help", helpMenu);
-  helpMenu->insertSeparator();
   helpMenu->insertItem("&Key utilities", this, SLOT(aboutKeys()),CTRL+Key_H);
   helpMenu->insertItem("&Bug", this, SLOT(aboutBugs()));
 
@@ -109,7 +118,7 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   connect(glModel2, SIGNAL(toggleLine()),lineSwitch2, SLOT(toggle()));
 
   // Build error mode selection buttons
-  radGrp = new QHButtonGroup("Displayed information",this);
+  radGrp = new QHButtonGroup("Displayed information (left model)",this);
   radGrp->layout()->setMargin(3);
   verrBut = new QRadioButton("Vertex error", radGrp);
   verrBut->setChecked(TRUE);
@@ -131,7 +140,7 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
           errorColorBar, SLOT(doHistogram(int)));
 
   // Build the topmost grid layout
-  bigGrid = new QGridLayout (this, 4, 7, 5);
+  bigGrid = new QGridLayout (this, 3, 7, 5);
   bigGrid->setMenuBar(mainBar);
   bigGrid->addWidget(errorColorBar, 0, 0);
   bigGrid->addMultiCellWidget(frameModel1, 0, 0, 1, 3);
@@ -139,14 +148,14 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   bigGrid->addWidget(lineSwitch1, 1, 2, Qt::AlignCenter);
   bigGrid->addWidget(lineSwitch2, 1, 5, Qt::AlignCenter);
   bigGrid->addMultiCellWidget(syncBut, 1, 1, 3, 4, Qt::AlignCenter);
-  bigGrid->addMultiCellWidget(radGrp, 2, 2, 2, 5, Qt::AlignCenter);
+  bigGrid->addMultiCellWidget(radGrp, 2, 2, 1, 4, Qt::AlignLeft);
   bigGrid->addMultiCellWidget(histoGrp, 1, 2, 0, 0, Qt::AlignCenter);
-  bigGrid->addMultiCellWidget(quitBut, 3, 3, 3, 4, Qt::AlignCenter);
+  bigGrid->addWidget(quitBut, 2, 5, Qt::AlignCenter);
 
   // Now set a sensible default widget size
   QSize prefSize = layout()->sizeHint();
   QSize screenSize = QApplication::desktop()->size();
-  double p = 0.95; // max proportion of screen to use
+
 
   if (prefSize.width() > p*screenSize.width()) {
     prefSize.setWidth((int)(p*screenSize.width()));
@@ -155,6 +164,57 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
     prefSize.setHeight((int)(p*screenSize.height()));
   }
   resize(prefSize.width(),prefSize.height());
+}
+
+void ScreenWidget::infoLeftModel()
+{
+  infoModel(locMod1, LEFT_MODEL);
+}
+
+void ScreenWidget::infoRightModel()
+{
+  infoModel(locMod2, RIGHT_MODEL);
+}
+
+void ScreenWidget::infoModel(struct model_error *model, int id) 
+{
+  QString tmp, fullText;
+  fullText.sprintf("%d vertices\n%d triangles\n", model->mesh->num_vert, 
+                   model->mesh->num_faces);
+
+  // Orientable model ?
+  if (model->info->orientable)
+    fullText += "Orientable model\n";
+  else 
+    fullText += "Non-orientable model\n";
+
+  // Manifold model ?
+  if (model->info->manifold)
+    fullText += "Manifold model\n";
+  else
+    fullText += "Non-manifold model\n"; 
+
+  // Closed model ?
+  if (model->info->closed)
+    fullText += "Closed model\n";
+  else
+    fullText += "Non-closed model\n"; 
+
+  fullText += tmp.sprintf("%d connected component(s)\n", 
+                          model->info->n_disjoint_parts);
+
+  switch(id) {
+  case LEFT_MODEL:
+    QMessageBox::information(this, "Left Model Information", fullText);
+    break;
+  case RIGHT_MODEL:
+    QMessageBox::information(this, "Right Model Information", fullText);
+    break;
+  default:
+    QMessageBox::warning(this, "Error", "Invalid paremeter !!\n");
+    break;
+  }
+  
 }
 
 void ScreenWidget::aboutKeys()

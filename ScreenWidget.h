@@ -1,4 +1,4 @@
-/* $Id: ScreenWidget.h,v 1.16 2002/02/20 18:28:37 dsanta Exp $ */
+/* $Id: ScreenWidget.h,v 1.17 2002/02/22 12:54:29 aspert Exp $ */
 #ifndef SCREENWIDGET_H
 #define SCREENWIDGET_H
 
@@ -25,11 +25,19 @@ public:
   ScreenWidget(struct model_error *model1, struct model_error *model2,
                QWidget *parent=0, const char *name=0 );
 
-public slots:
+
+protected slots:
+  void quit();
+  void infoLeftModel();
+  void infoRightModel(); 
   void aboutKeys();
   void aboutBugs();
-  void quit();
 
+private:
+// local copies of the parameters passed to the constructor
+  struct model_error *locMod1, *locMod2; 
+  enum whichModel {LEFT_MODEL=0, RIGHT_MODEL=1};
+  void infoModel(struct model_error *model, int id);
 };
 
 

@@ -1,4 +1,4 @@
-/* $Id: RawWidget.cpp,v 1.41 2002/02/21 13:12:25 dsanta Exp $ */
+/* $Id: RawWidget.cpp,v 1.42 2002/02/22 12:54:29 aspert Exp $ */
 
 #include <RawWidget.h>
 #include <qmessagebox.h>
@@ -270,6 +270,7 @@ void RawWidget::genErrorTextures() {
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP);
     // Default GL_TEXTURE_MIN_FILTER requires mipmaps!
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
   }
   check_gl_errors("error texture generation");
   free(texture);
@@ -311,8 +312,8 @@ void RawWidget::resizeGL(int width ,int height) {
 // Initializations for the renderer
 void RawWidget::initializeGL() { 
   static const GLfloat amb[] = {0.1f, 0.1f, 0.1f, 1.0f};
-  static const GLfloat dif[] = {0.3f, 0.3f, 0.3f, 1.0f};
-  static const GLfloat spec[] = {0.3f, 0.3f, 0.3f, 0.3f};
+  static const GLfloat dif[] = {1.0f, 1.0f, 1.0f, 1.0f};
+  static const GLfloat spec[] = {1.0f, 1.0f, 1.0f, 1.0f};
   static const GLfloat amb_light[] = {0.8f, 0.8f, 0.8f, 1.0f};
 
   glDepthFunc(GL_LESS);
@@ -375,13 +376,13 @@ void RawWidget::display(double distance) {
 // viewing parameters (light...)
 void RawWidget::rebuild_list() {
   // Surface material characteristics for lighted mode
-  static const float front_amb_mat[4] = {0.5f, 0.5f, 0.5f, 1.0f};
-  static const float front_diff_mat[4] = {0.7f, 0.7f, 0.7f, 1.0f};
-  static const float front_spec_mat[4] = {0.3f, 0.3f, 0.3f, 1.0f};
-  static const float front_mat_shin = 30.0f;
+  static const float front_amb_mat[4] = {0.11f, 0.06f, 0.11f, 1.0f};
+  static const float front_diff_mat[4] = {0.43f, 0.47f, 0.54f, 1.0f};
+  static const float front_spec_mat[4] = {0.33f, 0.33f, 0.52f, 1.0f};
+  static const float front_mat_shin = 10.0f;
   static const float back_amb_mat[4] = {0.3f, 0.3f, 0.3f, 1.0f};
   static const float back_diff_mat[4] = {0.5f, 0.5f, 0.5f, 1.0f};
-  static const float back_spec_mat[4] = {0.2f, 0.2f, 0.2f, 1.0f};
+  static const float back_spec_mat[4] = {0.33f, 0.33f, 0.52f, 1.0f};
   static const float back_mat_shin = 10.0f;
   // Color for non-lighted mode
   static const float lighted_color[3] = {1.0f, 1.0f, 1.0f};
@@ -406,7 +407,6 @@ void RawWidget::rebuild_list() {
   
   switch(renderFlag & RW_CAPA_MASK) {
   case RW_LIGHT_TOGGLE:
-    glNewList(model_list, GL_COMPILE);
     glColor3fv(lighted_color);
     if (two_sided_material) {
       glMaterialfv(GL_FRONT,GL_AMBIENT,front_amb_mat);
@@ -423,7 +423,9 @@ void RawWidget::rebuild_list() {
       glMaterialfv(GL_FRONT_AND_BACK,GL_SPECULAR,front_spec_mat);
       glMaterialf(GL_FRONT_AND_BACK,GL_SHININESS,front_mat_shin);
     }
+
     if (model->mesh->normals != NULL) {
+      glNewList(model_list, GL_COMPILE);
       glBegin(GL_TRIANGLES);  
       for (i=0; i<model->mesh->num_faces; i++) {
 	cur_face = &(model->mesh->faces[i]);
@@ -451,7 +453,9 @@ void RawWidget::rebuild_list() {
 		   model->mesh->vertices[cur_face->f2].z);       
       }
       glEnd();
+      glEndList();
     } else {
+      glNewList(model_list, GL_COMPILE);
       glBegin(GL_TRIANGLES);  
       for (i=0; i<model->mesh->num_faces; i++) {
 	cur_face = &(model->mesh->faces[i]);
@@ -469,8 +473,8 @@ void RawWidget::rebuild_list() {
 		   model->mesh->vertices[cur_face->f2].z);       
       }
       glEnd();
+      glEndList();
     }
-    glEndList();
     break;
   case RW_ERROR_ONLY:
     drange = model->max_error-model->min_error;
@@ -478,10 +482,11 @@ void RawWidget::rebuild_list() {
     if (error_mode == SAMPLE_ERROR && etex_id == NULL) {
       genErrorTextures();
     }
-    glNewList(model_list, GL_COMPILE);
+
     glShadeModel((error_mode == MEAN_FACE_ERROR) ? GL_FLAT : GL_SMOOTH);
     if (error_mode != SAMPLE_ERROR) {
       glDisable(GL_TEXTURE_2D);
+      glNewList(model_list, GL_COMPILE);
       glBegin(GL_TRIANGLES);
       for (i=0; i<model->mesh->num_faces; i++) {
         cur_face = &(model->mesh->faces[i]);
@@ -531,10 +536,13 @@ void RawWidget::rebuild_list() {
                    model->mesh->vertices[cur_face->f2].z);
       }
       glEnd();
+      glEndList();
     } else {
+
       glColor3f(1,1,1); /* white base */
       glEnable(GL_TEXTURE_2D);
       glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
+      glNewList(model_list, GL_COMPILE);
       for (i=0; i<model->mesh->num_faces; i++) {
         glBindTexture(GL_TEXTURE_2D,etex_id[i]);
         cur_face = &(model->mesh->faces[i]);
@@ -555,8 +563,9 @@ void RawWidget::rebuild_list() {
                    model->mesh->vertices[cur_face->f2].z);
         glEnd();
       }      
+
+      glEndList();
     }
-    glEndList();
     break;
   default:
       fprintf(stderr, "Invalid render flag found !!\n");
@@ -703,5 +712,5 @@ void RawWidget::check_gl_errors(const char* where) {
   while ((glerr = glGetError()) != GL_NO_ERROR) {
     fprintf(stderr,"ERROR: at %s start: OpenGL: %s\n",where,
             gluErrorString(glerr));
-  };
+  }
 }

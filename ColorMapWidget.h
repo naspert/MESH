@@ -1,4 +1,4 @@
-/* $Id: ColorMapWidget.h,v 1.12 2002/02/21 14:47:59 aspert Exp $ */
+/* $Id: ColorMapWidget.h,v 1.13 2002/02/22 12:54:28 aspert Exp $ */
 #ifndef COLORMAPWIDGET_H
 #define COLORMAPWIDGET_H
 
@@ -41,6 +41,7 @@ protected:
   int cmap_len;
   int len;
   double dmax, dmin;
+  int scaleState; // stores the state of the scale (LIN or LOG)
 };
 
 #endif

@@ -1,4 +1,4 @@
-/* $Id: ColorMapWidget.cpp,v 1.18 2002/02/21 13:07:28 dsanta Exp $ */
+/* $Id: ColorMapWidget.cpp,v 1.19 2002/02/22 12:54:28 aspert Exp $ */
 #include <ColorMapWidget.h>
 #include <qapplication.h>
 #include <qpainter.h>
@@ -18,6 +18,7 @@ ColorMapWidget::ColorMapWidget(const struct model_error *model1_error,
   me = model1_error;
   colormap = NULL;
   histogram = NULL;
+  scaleState = LIN_SCALE;
   dmax = me->max_error;
   dmin = me->min_error;
   cmap_len = -1;
@@ -63,7 +64,8 @@ void ColorMapWidget::doHistogram(int scaleType) {
   for (i=0; i<len; i++) 
     if (max_cnt < histogram[i]) max_cnt = histogram[i];
 
-  if (scaleType == LIN_SCALE) {  
+  scaleState = scaleType;
+  if (scaleType == LIN_SCALE) {
     for (i=0; i<len; i++)
       histogram[i] = (int)floor(histogram[i]/(double)max_cnt*CBAR_WIDTH+0.5);
   } else if (scaleType == LOG_SCALE) {
@@ -110,7 +112,7 @@ void ColorMapWidget::paintEvent(QPaintEvent *) {
   if (cmap_len != h) {
     free_colormap(colormap);
     cmap_len = h;
-    doHistogram(LIN_SCALE);
+    doHistogram(scaleState);
     colormap = colormap_hsv(cmap_len);
   }
   tmpDisplayedText.sprintf( "%.3f",dmax/scale);
