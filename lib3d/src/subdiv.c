@@ -1,4 +1,4 @@
-/* $Id: subdiv.c,v 1.12 2001/10/22 08:58:34 aspert Exp $ */
+/* $Id: subdiv.c,v 1.13 2001/10/22 11:24:47 aspert Exp $ */
 #include <3dutils.h>
 #include <subdiv_methods.h>
 #include <assert.h>
@@ -27,7 +27,7 @@ struct model* subdiv(struct model *raw_model,
   int nedges = 0;
   int vert_idx = raw_model->num_vert;
   int face_idx = 0;
-
+  struct midpoint_info *mp_info;
   int v_idx=raw_model->num_vert;
   face_t *temp_face;
 
@@ -35,14 +35,18 @@ struct model* subdiv(struct model *raw_model,
   rings = (struct ring_info*)
     malloc(raw_model->num_vert*sizeof(struct ring_info));
   
+  mp_info = (struct midpoint_info*)
+    malloc(raw_model->num_vert*sizeof(struct midpoint_info));
 
   for (i=0; i<raw_model->num_vert; i++) {
     build_star(raw_model, i, &(rings[i]));
-    rings[i].midpoint_idx = (int*)malloc(rings[i].size*sizeof(int));
+
+    mp_info[i].size = rings[i].size;
+    mp_info[i].midpoint_idx = (int*)malloc(mp_info[i].size*sizeof(int));
     /* Initialize the values of this array to -1 */
-    rings[i].midpoint_idx = memset(rings[i].midpoint_idx, 0xff, 
-				   rings[i].size*sizeof(int));
-    rings[i].midpoint = (vertex_t*)malloc(rings[i].size*sizeof(vertex_t));
+    mp_info[i].midpoint_idx = memset(mp_info[i].midpoint_idx, 0xff, 
+				     mp_info[i].size*sizeof(int));
+    mp_info[i].midpoint = (vertex_t*)malloc(mp_info[i].size*sizeof(vertex_t));
       
 #ifdef __SUBDIV_DEBUG
     printf("Vertex %d : star_size = %d\n", i, rings[i].size);
@@ -68,14 +72,14 @@ struct model* subdiv(struct model *raw_model,
 	else {
 	  midpoint_func_bound(rings, i, j, raw_model, &p);
 	  nedges ++;
-	  rings[i].midpoint_idx[j] = v_idx;
-	  rings[i].midpoint[j] = p;
+	  mp_info[i].midpoint_idx[j] = v_idx;
+	  mp_info[i].midpoint[j] = p;
 	  v2 = rings[i].ord_vert[j];
 	  v0 = 0;
 	  while (rings[v2].ord_vert[v0] != i)
 	    v0++;
-	  rings[v2].midpoint_idx[v0] = v_idx++;
-	  rings[v2].midpoint[v0] = p;
+	  mp_info[v2].midpoint_idx[v0] = v_idx++;
+	  mp_info[v2].midpoint[v0] = p;
 	  continue;
 	}
       }
@@ -92,14 +96,14 @@ struct model* subdiv(struct model *raw_model,
 #endif
 
 
-      rings[i].midpoint_idx[j] = v_idx;
-      rings[i].midpoint[j] = p;
+      mp_info[i].midpoint_idx[j] = v_idx;
+      mp_info[i].midpoint[j] = p;
       v2 = rings[i].ord_vert[j];
       v0 = 0;
       while (rings[v2].ord_vert[v0] != i)
 	v0++;
-      rings[v2].midpoint_idx[v0] = v_idx++;
-      rings[v2].midpoint[v0] = p;
+      mp_info[v2].midpoint_idx[v0] = v_idx++;
+      mp_info[v2].midpoint[v0] = p;
     }
 
   }
@@ -136,30 +140,30 @@ struct model* subdiv(struct model *raw_model,
     i = 0;
     while (rings[v0].ord_vert[i] != v1)
       i++;
-    if (rings[v0].midpoint_idx[i] != -1) {
-      u0 = rings[v0].midpoint_idx[i];
+    if (mp_info[v0].midpoint_idx[i] != -1) {
+      u0 = mp_info[v0].midpoint_idx[i];
       subdiv_model->vertices[u0] = 
-	rings[v0].midpoint[i];
+	mp_info[v0].midpoint[i];
       ufound_bm |= U0_FOUND;
     } 
      
     i = 0;
     while (rings[v1].ord_vert[i] != v2)
       i++;
-    if (rings[v1].midpoint_idx[i] != -1) {
-      u1 = rings[v1].midpoint_idx[i];
+    if (mp_info[v1].midpoint_idx[i] != -1) {
+      u1 = mp_info[v1].midpoint_idx[i];
       subdiv_model->vertices[u1] = 
-	rings[v1].midpoint[i];
+	mp_info[v1].midpoint[i];
       ufound_bm |= U1_FOUND;
     } 
 
     i = 0;
     while (rings[v2].ord_vert[i] != v0)
       i++;
-    if (rings[v2].midpoint_idx[i] != -1) {
-      u2 = rings[v2].midpoint_idx[i];
+    if (mp_info[v2].midpoint_idx[i] != -1) {
+      u2 = mp_info[v2].midpoint_idx[i];
       subdiv_model->vertices[u2] = 
-	rings[v2].midpoint[i];
+	mp_info[v2].midpoint[i];
       ufound_bm |= U2_FOUND;
     } 
 
@@ -293,10 +297,11 @@ struct model* subdiv(struct model *raw_model,
   for (i=0; i<raw_model->num_vert; i++) {
     free(rings[i].ord_vert);
     free(rings[i].ord_face);
-    free(rings[i].midpoint_idx);
-    free(rings[i].midpoint);
+    free(mp_info[i].midpoint_idx);
+    free(mp_info[i].midpoint);
   }
   free(rings);
+  free(mp_info);
   return subdiv_model;
 }
 

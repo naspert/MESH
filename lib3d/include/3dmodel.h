@@ -1,4 +1,4 @@
-/* $Id: 3dmodel.h,v 1.21 2001/10/22 08:58:34 aspert Exp $ */
+/* $Id: 3dmodel.h,v 1.22 2001/10/22 11:24:48 aspert Exp $ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -165,6 +165,10 @@ struct ring_info {
   int size;
   int n_faces;
   int *ord_face;
+};
+
+struct midpoint_info {
+  int size;
   int *midpoint_idx; /* stores the midpoint idx for each edge of the 1-ring */
   vertex_t *midpoint;
 };
