@@ -1,6 +1,6 @@
-/* $Id: torus.c,v 1.1 2001/03/12 14:50:32 aspert Exp $ */
+/* $Id: torus.c,v 1.2 2001/03/12 15:57:55 aspert Exp $ */
 #include <3dmodel.h>
-#include <geomutils.c>
+#include <geomutils.h>
 
 void write_raw_model(model *raw_model, char *filename) {
   FILE *pf;
