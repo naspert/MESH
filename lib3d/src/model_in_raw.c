@@ -1,4 +1,4 @@
-/* $Id: model_in_raw.c,v 1.6 2003/03/25 12:16:41 dsanta Exp $ */
+/* $Id: model_in_raw.c,v 1.7 2003/07/02 08:37:08 aspert Exp $ */
 
 
 /*
@@ -244,6 +244,7 @@ int read_raw_tmesh(struct model **tmesh_ref, struct file_data *data)
   }
   if (rcode == 0 && n_vnorms > 0) {
     rcode = read_raw_normals(tmesh->normals,data,use_bin,n_vnorms);
+    tmesh->builtin_normals = 1;
   }
   if (rcode == 0 && n_fnorms > 0) {
     rcode = read_raw_normals(tmesh->face_normals,data,use_bin,n_fnorms);
