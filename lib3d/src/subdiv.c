@@ -1,4 +1,4 @@
-/* $Id: subdiv.c,v 1.36 2003/03/24 12:16:38 aspert Exp $ */
+/* $Id: subdiv.c,v 1.37 2003/03/28 12:30:08 aspert Exp $ */
 #include <3dutils.h>
 #include <subdiv_methods.h>
 #include <subdiv.h>
@@ -65,10 +65,10 @@ struct model* subdiv(struct model *raw_model,
 
   for (i=0; i< raw_model->num_vert; i++) {
 
-    if (rings[i].type != 0 && rings[i].type != 1) {
-      fprintf(stderr, "Vertex %d non-manifold -> bail out\n", i);
-      return NULL;
-    }
+    /* This _should_ be kinda OK to ignore this vertex */
+    if (rings[i].type != 0 && rings[i].type != 1) 
+      continue;
+    
     mp_info[i].edge_subdiv_done = BITMAP_ALLOC(rings[i].size);
     mp_info[i].size = rings[i].size;
     mp_info[i].midpoint_idx = (int*)malloc(mp_info[i].size*sizeof(int));
