@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.95 2003/01/13 12:46:07 aspert Exp $ */
+/* $Id: compute_error.c,v 1.96 2003/04/08 09:09:15 dsanta Exp $ */
 
 
 /*
@@ -1080,6 +1080,7 @@ triangles_in_cells(const struct triangle_list *tl,
         o_a == o_b && o_a == o_c) {
       /* The ABC triangle fits entirely into one cell => fast case */
       cell_idx = m_a+n_a*grid_sz.x+o_a*cell_stride_z;
+      assert(cell_idx >= 0 && cell_idx < grid_sz.x*grid_sz.y*grid_sz.z);
       tab[cell_idx] = xa_realloc(tab[cell_idx],(nt[cell_idx]+2)*sizeof(**tab));
       tab[cell_idx][nt[cell_idx]++] = i;
       continue;
@@ -1130,6 +1131,7 @@ triangles_in_cells(const struct triangle_list *tl,
       /* Include cell index in list only if not the same as previous one
        * (avoid too many duplicates). */
       cell_idx = m + n*grid_sz.x + o*cell_stride_z;
+      assert(cell_idx >= 0 && cell_idx < grid_sz.x*grid_sz.y*grid_sz.z);
       if (cell_idx != cell_idx_prev) {
         if (c_buf_sz <= h) {
           c_buf = xa_realloc(c_buf, (h+1)*sizeof(*c_buf));
@@ -1143,6 +1145,7 @@ triangles_in_cells(const struct triangle_list *tl,
     /* Include triangle in intersecting cell lists, without duplicate. */
     for (j=0; j<h; j++) {
       cell_idx = c_buf[j];
+      assert(cell_idx >= 0 && cell_idx < grid_sz.x*grid_sz.y*grid_sz.z);
       if (nt[cell_idx] == 0 || tab[cell_idx][nt[cell_idx]-1] != i) {
         tab[cell_idx] = xa_realloc(tab[cell_idx],
                                    (nt[cell_idx]+2)*sizeof(**tab));
