@@ -1,4 +1,4 @@
-/* $Id: compare_curv.c,v 1.4 2001/09/27 12:59:17 aspert Exp $ */
+/* $Id: compare_curv.c,v 1.5 2001/10/25 12:03:31 aspert Exp $ */
 #include <3dutils.h>
 
 
@@ -39,7 +39,8 @@ double get_top_angle2(const vertex_t *v0, const vertex_t *v1,
 }
 
 /* Test face f from raw_model to check if this is an obtuse triangle */
-int obtuse_triangle(const vertex_t *v0, const vertex_t *v1, const vertex_t *v2) {
+int obtuse_triangle(const vertex_t *v0, const vertex_t *v1, 
+		    const vertex_t *v2) {
   double th, sum=0.0;
 
   th = get_top_angle(v0, v1, v2);
@@ -60,7 +61,7 @@ void compute_mean_curvature_normal(const struct model *raw_model,
 				   struct info_vertex *info, 
 				   int v0, const struct ring_info *rings, 
 				   vertex_t *sum_vert, double *mixed_area, 
-				   double *gauss_curv) {
+				   double *gauss_curv, double *mean_curv) {
   int v1, v1_idx, v2f, v2b, v2b_idx, v2, i;
   int n=rings[v0].size;
   vertex_t tmp;
@@ -149,7 +150,7 @@ void compute_mean_curvature_normal(const struct model *raw_model,
   
   prod_v(0.5/(*mixed_area), sum_vert, sum_vert);
   *gauss_curv /= *mixed_area;
-  
+  *mean_curv = 0.5*norm_v(sum_vert);
   
 }
 
@@ -169,9 +170,11 @@ void compute_curvature(const struct model *raw_model,
     compute_mean_curvature_normal(raw_model, info, i, rings, 
 				  &(info[i].mean_curv_normal), 
 				  &(info[i].mixed_area), 
-				  &(info[i].gauss_curv));
-    k2 = 0.25*norm2_v(&(info[i].mean_curv_normal));
-    k = 0.5*norm_v(&(info[i].mean_curv_normal));
+				  &(info[i].gauss_curv), 
+				  &(info[i].mean_curv));
+
+    k = info[i].mean_curv;
+    k2 = k*k;
     delta = k2 - info[i].gauss_curv;
     if (delta <= 0.0) {
 #ifdef __CURV_DEBUG
