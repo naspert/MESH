@@ -1,4 +1,4 @@
-/* $Id: rawview3.c,v 1.3 2001/03/13 09:40:18 aspert Exp $ */
+/* $Id: rawview3.c,v 1.4 2001/03/15 09:25:04 aspert Exp $ */
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <GL/glut.h>
@@ -11,13 +11,14 @@
 GLfloat FOV = 40.0; /* vertical field of view */
 GLdouble distance, dstep; /* distance and incremental distance step */
 GLdouble mvmatrix[16]; /* Buffer for GL_MODELVIEW_MATRIX */
-GLuint model_list = 0;
+GLuint model_list = 0; /* display lists idx storage */
 GLuint normal_list = 0;
 
 int oldx, oldy;
 int left_button_state;
 int middle_button_state;
 int right_button_state;
+int tr_mode = 1; /* Default = draw triangles */
 int light_mode = 0;
 int draw_normals = 0;
 vertex center;
@@ -187,7 +188,10 @@ void rebuild_list(model *raw_model) {
 
   if (light_mode == 0) { /* Store a wireframe model */
     glNewList(model_list, GL_COMPILE);
-    glBegin(GL_TRIANGLES);
+    if (tr_mode == 1)
+      glBegin(GL_TRIANGLES);
+    else 
+      glBegin(GL_POINTS);
     for (i=0; i<raw_model->num_faces; i++) {
       cur_face = &(raw_model->faces[i]);
       glVertex3d(raw_model->vertices[cur_face->f0].x,
@@ -246,7 +250,10 @@ void rebuild_list(model *raw_model) {
     }
   } else {
     glNewList(model_list, GL_COMPILE);
-    glBegin(GL_TRIANGLES);
+    if (tr_mode == 1)
+      glBegin(GL_TRIANGLES);
+    else
+      glBegin(GL_POINTS);
     for (i=0; i<raw_model->num_faces; i++) {
       cur_face = &(raw_model->faces[i]);
       glNormal3d(raw_model->normals[cur_face->f0].x,
@@ -501,6 +508,18 @@ void sp_key_pressed(int key, int x, int y) {
     break;
   case GLUT_KEY_F6: /* Frame grab */
     frame_grab();
+    break;
+  case GLUT_KEY_F7: /* switch from triangle mode to point mode */
+    if(tr_mode == 1) {/*go to point mode*/
+      tr_mode = 0;
+      printf("Going to point mode\n");
+
+    } else if(tr_mode == 0) {
+      tr_mode = 1;
+      printf("Going to triangle mode\n");
+    }
+    rebuild_list(raw_model);
+    glutPostRedisplay();
     break;
   case GLUT_KEY_UP:
     glPushMatrix(); /* Save transform context */
