@@ -1,9 +1,34 @@
-/* $Id: rawview.h,v 1.1 2002/06/04 11:54:57 aspert Exp $ */
+/* $Id: rawview.h,v 1.2 2002/06/04 13:06:38 aspert Exp $ */
 
 #include <GL/gl.h>
 
 #ifndef _RAWVIEW_PROTO_
 #define _RAWVIEW_PROTO_
+
+/* Global parameters */
+
+/* display normals with length=5% of the bounding box */
+#define NORMALS_DISPLAY_FACTOR 5.0e-2 
+/* step for rotation motion */
+#define ANGLE_STEP 0.5
+/* step for forward/backward motion */
+#define TRANSL_STEP 1.0e-2
+/* Field of view (in degrees) */
+#define FOV 40.0
+
+
+/* Light specification */
+static const GLfloat amb[] = {0.1, 0.1, 0.1, 1.0};
+static const GLfloat dif[] = {1.0, 1.0, 1.0, 1.0};
+static const GLfloat spec[] = {1.0, 1.0, 1.0, 1.0};
+/* Global ambient light */
+static const GLfloat amb_light[] = {0.9, 0.9, 0.9, 1.0};
+/* Material specifications */
+static const GLfloat mat_spec[] = {0.33, 0.33, 0.52, 1.0};
+static const GLfloat mat_diff[] = {0.43, 0.47, 0.54, 1.0};
+static const GLfloat mat_amb[] = {0.11, 0.06, 0.11, 1.0};  
+static const GLfloat shine[] = {10.0};
+
 
 struct mouse_state {
   int oldx, oldy;

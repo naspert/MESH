@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.39 2002/06/04 09:27:10 aspert Exp $
+# $Id: Makefile,v 1.40 2002/06/04 13:06:39 aspert Exp $
 
 
 OS := $(shell uname -s)
@@ -63,7 +63,8 @@ GL_CFLAGS = $(INCLFLAGS) $(GLINCLFLAGS) $(XTRA_CFLAGS)
 BASE_OBJECTS = $(OBJDIR)/geomutils.o $(OBJDIR)/normals.o \
 	$(OBJDIR)/3dmodel_io.o $(OBJDIR)/model_in.o $(OBJDIR)/ring.o \
 	$(OBJDIR)/curvature.o
-GL_OBJECTS = $(OBJDIR)/rawview.o $(OBJDIR)/gl2ps.o
+GL_OBJECTS = $(OBJDIR)/rawview.o $(OBJDIR)/gl2ps.o $(OBJDIR)/rawview_disp.o \
+	$(OBJDIR)/rawview_utils.o $(OBJDIR)/rawview_grab.o
 GSL_OBJECTS = $(OBJDIR)/maps_lsq.o
 
 
