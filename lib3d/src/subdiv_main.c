@@ -1,4 +1,4 @@
-/* $Id: subdiv_main.c,v 1.5 2003/03/04 16:08:25 aspert Exp $ */
+/* $Id: subdiv_main.c,v 1.6 2003/03/04 16:09:57 aspert Exp $ */
 #include <3dutils.h>
 #include <subdiv.h>
 #include <subdiv_methods.h>
@@ -7,7 +7,7 @@
 int main(int argc, char **argv) {
   char *infile, *outfile;
   struct model *or_model, *sub_model=NULL;
-  int i, lev, nlev=1, rcode;
+  int lev, nlev=1, rcode;
   int sub_method=-1;
 
 
@@ -72,11 +72,7 @@ int main(int argc, char **argv) {
       break;
     }
 
-    for (i=0; i<or_model->num_vert; i++) {
-      free(rings[i].ord_face);
-      free(rings[i].ord_vert);
-    }
-    free(rings);
+    
     __free_raw_model(or_model);
     
     or_model = sub_model;
