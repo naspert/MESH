@@ -1,4 +1,4 @@
-/* $Id: rawview.c,v 1.39 2003/03/27 09:42:28 aspert Exp $ */
+/* $Id: rawview.c,v 1.40 2003/04/08 13:52:39 aspert Exp $ */
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -45,14 +45,19 @@ static void display(void);
 /* Here is the callback function when mouse buttons are pressed */
 /* or released. It does nothing else than store their state     */
 /* ************************************************************ */
-static void mouse_button(int button, int state, int x, int y) {
+static void mouse_button(int button, int state, int x, int y) 
+{
   switch(button) {
   case GLUT_LEFT_BUTTON:
     if (state==GLUT_DOWN) {
       mouse.oldx = x;
       mouse.oldy = y;
-      mouse.left_button_state = 1;
-    } else if (state == GLUT_UP)
+      if (glutGetModifiers() & GLUT_ACTIVE_CTRL)
+        mouse.left_button_state = 2;
+      else
+        mouse.left_button_state = 1;
+    } 
+    else if (state == GLUT_UP)
       mouse.left_button_state = 0;
     break;
   case GLUT_MIDDLE_BUTTON:
@@ -60,7 +65,8 @@ static void mouse_button(int button, int state, int x, int y) {
       mouse.oldx = x;
       mouse.oldy = y;
       mouse.middle_button_state = 1;
-    } else if (state == GLUT_UP)
+    } 
+    else if (state == GLUT_UP)
       mouse.middle_button_state = 0;
     break;
   case GLUT_RIGHT_BUTTON:
@@ -68,7 +74,8 @@ static void mouse_button(int button, int state, int x, int y) {
       mouse.oldx = x;
       mouse.oldy = y;
       mouse.right_button_state = 1;
-    } else if (state == GLUT_UP)
+    } 
+    else if (state == GLUT_UP)
       mouse.right_button_state = 0;
     break;
   default:
@@ -81,14 +88,22 @@ static void mouse_button(int button, int state, int x, int y) {
 /* Callback function when the mouse is dragged in the window */
 /* Only does sthg when a button is pressed                   */
 /* ********************************************************* */
-static void motion_mouse(int x, int y) {
+static void motion_mouse(int x, int y) 
+{
   int dx, dy;
   GLfloat dth, dph, dpsi;
 
   dx = x - mouse.oldx;
   dy = y - mouse.oldy;
-
-  if (mouse.left_button_state == 1) {
+  
+  if (mouse.left_button_state == 2) {
+    gl_ctx.tx -= 
+      ((float)dx/gl_ctx.window_width)*2*gl_ctx.distance*tan(FOV*M_PI/180.0);
+    gl_ctx.ty -= 
+      ((float)dy/gl_ctx.window_width)*2*gl_ctx.distance*tan(FOV*M_PI/180.0);
+    glutPostRedisplay();
+  }
+  else if (mouse.left_button_state == 1) {
     dth = dx*ANGLE_STEP; 
     dph = dy*ANGLE_STEP;
     glPushMatrix(); /* Save transform context */
@@ -124,8 +139,10 @@ static void motion_mouse(int x, int y) {
 /* Reshape callbak function. Only sets correct values for the */
 /* viewport and projection matrices.                          */
 /* ********************************************************** */
-static void reshape(int width, int height) {
+static void reshape(int width, int height) 
+{
   glViewport(0, 0, width, height);
+  gl_ctx.window_width = width;
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
   gluPerspective(FOV, (GLdouble)width/(GLdouble)height, gl_ctx.distance/10.0, 
@@ -139,7 +156,8 @@ static void reshape(int width, int height) {
 /* ******************************************** */
 /* Initial settings of the rendering parameters */
 /* ******************************************** */
-static void gfx_init() {
+static void gfx_init() 
+{
   const char *glverstr;
 
   glverstr = (const char*)glGetString(GL_VERSION);
@@ -176,7 +194,8 @@ static void gfx_init() {
  * Display callback - This just calls the *true* function which lies
  * inside rawview_misc.c 
  * ***************************************************************** */
-static void display() {
+static void display() 
+{
   display_wrapper(&gl_ctx, &dl_idx);
 }
 
@@ -185,7 +204,8 @@ static void display() {
 /* **************************** */
 /* Callback for the normal keys */
 /* **************************** */
-static void norm_key_pressed(unsigned char key, int x, int y) {
+static void norm_key_pressed(unsigned char key, int x, int y) 
+{
   struct model *sub_model;
 
 
@@ -354,7 +374,8 @@ static void norm_key_pressed(unsigned char key, int x, int y) {
 /* ********************************************************* */
 /* Callback function for the special keys (arrows, function) */
 /* ********************************************************* */
-static void sp_key_pressed(int key, int x, int y) {
+static void sp_key_pressed(int key, int x, int y) 
+{
 
 
   GLboolean light_mode;
@@ -569,11 +590,12 @@ static void sp_key_pressed(int key, int x, int y) {
 /* Main function : read model, compute initial bounding box/vp, */
 /* perform callback registration and go into the glutMainLoop   */
 /* ************************************************************ */
-int main(int argc, char **argv) {
+int main(int argc, char **argv) 
+{
 
   int i, rcode=0;
   char *title=NULL;
-  const char s_title[]="Raw Mesh Viewer $Revision: 1.39 $ - ";
+  const char s_title[]="Raw Mesh Viewer $Revision: 1.40 $ - ";
   vertex_t center;
   struct model* raw_model;
 
@@ -664,6 +686,7 @@ int main(int argc, char **argv) {
   glutInit(&argc, argv);
   glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
   glutInitWindowSize(500, 500);
+  gl_ctx.window_width = 500;
   glutCreateWindow(title);
   free(title);
 

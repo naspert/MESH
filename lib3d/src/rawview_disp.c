@@ -1,4 +1,4 @@
-/* $Id: rawview_disp.c,v 1.9 2002/11/14 16:45:02 aspert Exp $ */
+/* $Id: rawview_disp.c,v 1.10 2003/04/08 13:52:39 aspert Exp $ */
 
 #include <rawview_misc.h>
 #ifdef DEBUG
@@ -7,7 +7,8 @@
 
 #define CMAP_LENGTH 256
 void setGlColor(int vidx, float **cmap, 
-                struct gl_render_context *gl_ctx) {
+                struct gl_render_context *gl_ctx) 
+{
   double range;
   int cidx=-1;
   
@@ -39,7 +40,8 @@ void setGlColor(int vidx, float **cmap,
 /* It is called when the viewing setting (light...) are changed  */
 /* ************************************************************* */
 void rebuild_list(struct gl_render_context *gl_ctx,
-                  struct display_lists_indices *dl_idx) {
+                  struct display_lists_indices *dl_idx) 
+{
   int i;
   GLboolean light_mode;
   float scale_fact;
@@ -225,7 +227,8 @@ void rebuild_list(struct gl_render_context *gl_ctx,
 }
 
 static void display_vtx_labels(struct gl_render_context *gl_ctx, 
-                               struct display_lists_indices *dl_idx) {
+                               struct display_lists_indices *dl_idx) 
+{
   int i, len;
   char str[42],fmt[24];
 
@@ -253,7 +256,8 @@ static void display_vtx_labels(struct gl_render_context *gl_ctx,
 /* call display list and swap the buffers                            */
 /* ***************************************************************** */
 void display_wrapper(struct gl_render_context *gl_ctx, 
-                     struct display_lists_indices *dl_idx) {
+                     struct display_lists_indices *dl_idx) 
+{
   GLenum errorCode;
   GLboolean light_mode;
   GLfloat lpos[] = {-1.0, 1.0, 1.0, 0.0};
@@ -263,7 +267,8 @@ void display_wrapper(struct gl_render_context *gl_ctx,
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glLoadIdentity();
   glLightfv(GL_LIGHT0, GL_POSITION, lpos);
-  glTranslated(0.0, 0.0, -gl_ctx->distance); /* Translate the object along z */
+  glTranslated(-gl_ctx->tx, gl_ctx->ty, /* Panning */
+               -gl_ctx->distance); /* Translate the object along z */
   glMultMatrixd(gl_ctx->mvmatrix); /* Perform rotation */
   if (!light_mode) {
     for (i=0; i<=gl_ctx->wf_bc; i++) {
@@ -274,8 +279,7 @@ void display_wrapper(struct gl_render_context *gl_ctx,
         else if (gl_ctx->wf_bc)
           glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         
-/*         else  */
-/*           glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); */
+
 
 	if (gl_ctx->ps_rend%2 == 0) /* rendering to buffer or to a PS
                                        file in negative */
