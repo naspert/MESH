@@ -1,4 +1,4 @@
-/* $Id: model_in_vrml_iv.c,v 1.4 2002/11/04 15:27:47 aspert Exp $ */
+/* $Id: model_in_vrml_iv.c,v 1.5 2002/11/05 07:39:12 aspert Exp $ */
 
 
 /*
@@ -1031,7 +1031,7 @@ int read_vrml_tmesh(struct model **tmeshes_ref, struct file_data *data,
       n_tmeshes = 0; /* avoid freeing tmeshes */
     }
   }
-/*   abort(); */
+  
   for (i=0; i<n_tmeshes; i++) {
     free_model_pfields(tmeshes+i);
   }
