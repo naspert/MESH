@@ -1,4 +1,4 @@
-/* $Id: viewer.cpp,v 1.17 2001/07/03 07:58:07 aspert Exp $ */
+/* $Id: viewer.cpp,v 1.18 2001/07/06 12:57:14 jacquet Exp $ */
 
 #include <qapplication.h>
 #include <ScreenWidget.h>
@@ -57,10 +57,6 @@ int main( int argc, char **argv )
    in_filename2=(char *)n1.latin1();
    thin=(char *)o1.latin1();
    samplethin=atof(thin);
-   if(b.check1->isChecked())
-     text=1;
-   else
-     text=0;
  }
  else {
    if(strcmp("-t",argv[1]) == 0) {
@@ -108,9 +104,9 @@ int main( int argc, char **argv )
   raw_model2->area = (double*)malloc(raw_model2->num_faces*sizeof(double));
   curv = (info_vertex*)malloc(raw_model2->num_vert*sizeof(info_vertex));
   
-  if (raw_model2->normals==NULL && raw_model2->face_normals==NULL) {
+  if (raw_model2->face_normals==NULL) {
     raw_model2->face_normals = compute_face_normals(raw_model2,curv);
-    
+        
     if (raw_model2->face_normals != NULL){
       compute_vertex_normal(raw_model2, curv, raw_model2->face_normals);
       for (i=0; i<raw_model2->num_vert; i++) 
@@ -265,6 +261,7 @@ int main( int argc, char **argv )
 
 
  if(text == 1){
+   printf("coucou");
    ScreenWidget c(raw_model1,raw_model2,superdmin,superdmax);
    a.setMainWidget( &c );
    c.show(); 
