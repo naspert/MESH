@@ -1,4 +1,4 @@
-/* $Id: model_analysis.c,v 1.28 2002/03/29 19:01:00 dsanta Exp $ */
+/* $Id: model_analysis.c,v 1.29 2002/03/29 22:01:46 dsanta Exp $ */
 
 
 /*
@@ -846,7 +846,7 @@ static bmap_t * model_topology(int n_vtcs, const face_t *mfaces,
                         &vtx_top,&vlist[cur.vidx]);
     minfo->manifold = minfo->manifold && vtx_top.manifold;
     minfo->closed = minfo->closed && vtx_top.closed;
-    if (minfo->manifold) BMAP_SET(manifold_vtcs,cur.vidx);
+    if (vtx_top.manifold) BMAP_SET(manifold_vtcs,cur.vidx);
     if (vlist[cur.vidx].n_elems != 0) { /* vertex is not alone */
       minfo->n_disjoint_parts++;
       cur.lpos = 0;
@@ -857,13 +857,14 @@ static bmap_t * model_topology(int n_vtcs, const face_t *mfaces,
         }
         if (cur.lpos < vlist[cur.vidx].n_elems) {
           /* found connected and not yet visited vertex => continue from new */
+          assert(!BMAP_ISSET(visited_vtcs,next_vidx));
           BMAP_SET(visited_vtcs,next_vidx);
           n_visited_vertices++;
           get_vertex_topology(mfaces,next_vidx,&flist[next_vidx],
                               &vtx_top,&vlist[next_vidx]);
           minfo->manifold = minfo->manifold && vtx_top.manifold;
           minfo->closed = minfo->closed && vtx_top.closed;
-          if (minfo->manifold) BMAP_SET(manifold_vtcs,cur.vidx);
+          if (vtx_top.manifold) BMAP_SET(manifold_vtcs,next_vidx);
           cur.lpos++;
           stack_push(&stack,&cur);
           cur.vidx = next_vidx;
@@ -886,12 +887,52 @@ static bmap_t * model_topology(int n_vtcs, const face_t *mfaces,
   return manifold_vtcs;
 }
 
+/* Prints a list of non-manifold vertices to out. manifold_vtcs flags, for
+ * each vertex, if it is manifold or not. n_vtcs is the number of vertices of
+ * the model. First a title is printed with name and the number of
+ * non-manifold vertices. Then the list of non-manifold vertices is
+ * printed. */
+static void print_manifold_vertices(struct outbuf *out, const char *name,
+                                    const bmap_t *manifold_vtcs, int n_vtcs)
+{
+  int i,j,jmax,k;
+  int n_non_man;
+
+  for (n_non_man=0, i=0; i<n_vtcs; i+=BMAP_T_BITS) {
+    if (manifold_vtcs[i/BMAP_T_BITS] != ~0U) {
+      jmax = (i+(int)BMAP_T_BITS <= n_vtcs) ? (i+(int)BMAP_T_BITS) : n_vtcs;
+      for (j=i; j<jmax; j++) {
+        if (!BMAP_ISSET(manifold_vtcs,j)) n_non_man++;
+      }
+    }
+  }
+  outbuf_printf(out,"%s has %i non-manfifold vertices (of %i):\n",
+                name,n_non_man,n_vtcs);
+  for (i=0,k=0; i<n_vtcs; i+=BMAP_T_BITS) {
+    if (manifold_vtcs[i/BMAP_T_BITS] != ~0U) {
+      jmax = (i+(int)BMAP_T_BITS <= n_vtcs) ? (i+(int)BMAP_T_BITS) : n_vtcs;
+      for (j=i; j<jmax; j++) {
+        if (!BMAP_ISSET(manifold_vtcs,j)) {
+          if (++k%10 == 0) {
+            outbuf_printf(out," %i\n",j);
+          } else {
+            outbuf_printf(out," %i",j);
+          }
+        }
+      }
+    }
+  }
+  if (k%10 != 0) outbuf_printf(out,"\n");
+  outbuf_flush(out);
+}
+
 /* --------------------------------------------------------------------------*
  *                          External functions                               *
  * --------------------------------------------------------------------------*/
 
 /* See model_analysis.h */
-void analyze_model(struct model *m, struct model_info *info, int do_orient)
+void analyze_model(struct model *m, struct model_info *info, int do_orient,
+                   int verbose, struct outbuf *out, const char *name)
 {
   struct face_list *flist;       /* list of faces incident on each vertex */
   bmap_t *face_revo;             /* flag for each face: if its orientation
@@ -912,6 +953,10 @@ void analyze_model(struct model *m, struct model_info *info, int do_orient)
   /* Orient model if requested and  possible */
   if (do_orient && info->orientable && !info->oriented) {
     orient_model(m,face_revo);
+  }
+
+  if (verbose && !info->manifold) {
+    print_manifold_vertices(out,name,manifold_vtcs,m->num_vert);
   }
 
   /* Free memory */
