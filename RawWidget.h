@@ -1,4 +1,4 @@
-/* $Id: RawWidget.h,v 1.24 2002/01/30 15:41:15 aspert Exp $ */
+/* $Id: RawWidget.h,v 1.25 2002/02/20 18:27:38 dsanta Exp $ */
 #ifndef RAWWIDGET_H
 #define RAWWIDGET_H
 
@@ -29,12 +29,16 @@ public:
   QSize sizeHint() const;
   QSize minimumSizeHint() const;
   
+  static const int VERTEX_ERROR = 0;
+  static const int MEAN_FACE_ERROR = 1;
+  static const int SAMPLE_ERROR = 2;
+
 public slots: 
   void setLine(bool state);
   void setLight();
   void switchSync(bool state);
   void transfer(double dist,double *mvmat);
-
+  void setErrorMode(int emode);
   
 signals:
   void transfervalue(double,double*);
@@ -53,18 +57,24 @@ private:
 // functions 
   void display(double distance);
   void rebuild_list();
-  void check_gl_errors(const char* where);
+  static void check_gl_errors(const char* where);
+  void genErrorTextures();
+  int fillTexture(const struct face_error *fe, GLubyte *texture) const;
+  static int ceil_log2(int v);
 
 // vars
   int renderFlag; // flag to indicate whether the widget can be set in
   // the lighted mode or not
   GLdouble dth, dph, dpsi;
-  double **colormap;
+  float **colormap;
   struct model_error *model;
   GLdouble distance, dstep;
   int oldx,oldy;
   GLdouble mvmatrix[16]; // Buffer for GL_MODELVIEW_MATRIX 
   GLuint model_list; // display list index for the model 
+  GLuint *etex_id; // texture IDs for per triangle sample error
+  int *etex_sz;    // texture size for each of etex_id textures
+  const GLfloat no_err_value; // gray value for when there is no error for primitive
 // state vars
   int left_button_state;
   int middle_button_state;
@@ -73,6 +83,9 @@ private:
   int computed_normals; // flag if normals have been computed or loaded
   int not_orientable_warned;
   int two_sided_material;
+  int error_mode;
+// constants
+  static const int CMAP_LENGTH = 256;
 };
 
 #endif

@@ -1,9 +1,11 @@
-/* $Id: RawWidget.cpp,v 1.36 2002/02/20 17:33:44 dsanta Exp $ */
+/* $Id: RawWidget.cpp,v 1.37 2002/02/20 18:27:38 dsanta Exp $ */
 
 #include <RawWidget.h>
 #include <qmessagebox.h>
-#include <ColorMap.h>
+#include <qapplication.h>
+#include <colormap.h>
 #include <geomutils.h>
+#include <xalloc.h>
 
 // 
 // This is a derived class from QGLWidget used to render models
@@ -11,7 +13,7 @@
 
 RawWidget::RawWidget(struct model_error *model, int renderType, 
 		     QWidget *parent, const char *name)
-  :QGLWidget(parent, name) { 
+  :QGLWidget(parent, name), no_err_value(0.25) { 
   
   int i;
   vertex_t center;
@@ -21,21 +23,24 @@ RawWidget::RawWidget(struct model_error *model, int renderType,
 
   // 0 is not a valid display list index
   model_list = 0;
-  
+
   // Build the colormap used to display the mean error onto the surface of
   // the model
-  colormap = HSVtoRGB();
+  colormap = colormap_hsv(CMAP_LENGTH);
 
   // Get the structure containing the model
   this->model = model;
 
   // Get the flags
   renderFlag = renderType;
+  error_mode = VERTEX_ERROR;
 
   // Initialize the state
   move_state=0;
   not_orientable_warned = 0;
   two_sided_material = 1;
+  etex_id = NULL;
+  etex_sz = NULL;
 
   // Compute the center of the bounding box of the model
   add_v(&(model->mesh->bBox[0]), &(model->mesh->bBox[1]), &center);
@@ -75,6 +80,8 @@ RawWidget::~RawWidget() {
   // display lists and/or texture bindings. In any case those resources will
   // be freed when the GL context if finally destroyed.
   free_colormap(colormap);
+  free(etex_id);
+  free(etex_sz);
 }
 
 void RawWidget::transfer(double dist,double *mvmat) {
@@ -139,6 +146,143 @@ void RawWidget::setLight() {
     }
     check_gl_errors("setLight()");
     updateGL();
+  }
+}
+
+// Returns the ceil(log(v)/log(2)), if v is zero or less it returns zero
+int RawWidget::ceil_log2(int v) {
+  int i;
+  i = 0;
+  v -= 1;
+  while ((v >> i) > 0) {
+    i++;
+  }
+  return i;
+}
+
+// creates the error texture for fe and stores it in texture
+int RawWidget::fillTexture(const struct face_error *fe,
+                           GLubyte *texture) const {
+  int i,j,k,n,sz,cidx;
+  GLubyte r,g,b;
+  float drange;
+  float e1,e2,e3;
+
+  n = fe->sample_freq;
+  if (n == 0) { /* no samples, using no error value gray */
+    for (k=0,i=0; i<9; i++) {
+      texture[k++] = (GLubyte) (255*no_err_value);
+      texture[k++] = (GLubyte) (255*no_err_value);
+      texture[k++] = (GLubyte) (255*no_err_value);
+    }
+    return 1;
+  } else {
+    sz = 1<<ceil_log2(n);
+    drange = model->max_error-model->min_error;
+    if (drange < FLT_MIN*100) drange = 1;
+    r = g = b = 0; // to keep compiler happy
+    for (i=0, k=0; i<sz; i++) {
+      for (j=0; j<sz; j++) {
+        if (i<n && j<(n-i)) { /* sample point */
+          cidx = (int) floor((CMAP_LENGTH-1)*(fe->serror[j+i*(2*n-i+1)/2]-
+                                              model->min_error)/drange+0.5);
+          r = (GLubyte) (255*colormap[cidx][0]);
+          g = (GLubyte) (255*colormap[cidx][1]);
+          b = (GLubyte) (255*colormap[cidx][2]);
+        } else if (j == n-i) {
+          /* diagonal border texel, can be used in GL_LINEAR texture mode */
+          e1 = (i>0&&j>0) ? fe->serror[(j-1)+(i-1)*(2*n-(i-1)+1)/2] : 0;
+          e2 = (j>0) ? fe->serror[(j-1)+i*(2*n-i+1)/2] : 0;
+          e3 = (i>0) ? fe->serror[j+(i-1)*(2*n-(i-1)+1)/2] : 0;
+          cidx = (int) floor((CMAP_LENGTH-1)*(e2+e3-e1-
+                                              model->min_error)/drange+0.5);\
+          if (cidx < 0) {
+            cidx = 0;
+          } else if (cidx > CMAP_LENGTH-1) {
+            cidx = CMAP_LENGTH-1;
+          }
+          r = (GLubyte) (255*colormap[cidx][0]);
+          g = (GLubyte) (255*colormap[cidx][1]);
+          b = (GLubyte) (255*colormap[cidx][2]);
+        } else { /* out of triangle point, this texel will never be used */
+          r = g = b = 0; /* black */
+        }
+        texture[k++] = r;
+        texture[k++] = g;
+        texture[k++] = b;
+      }
+    }
+    return sz;
+  }
+}
+
+void RawWidget::genErrorTextures() {
+  static const GLint internalformat = GL_R3_G3_B2;
+  GLubyte *texture;
+  GLint tw,max_n;
+  int i;
+
+  // Only in error mapping mode and if not disabled
+  if ((renderFlag & RW_CAPA_MASK) != RW_ERROR_ONLY) return;
+  // Allocate texture names (IDs) if not present
+  if (etex_id == NULL) {
+    etex_id = (GLuint*) xa_malloc(sizeof(*etex_id)*model->mesh->num_faces);
+    etex_sz = (int*) xa_malloc(sizeof(*etex_sz)*model->mesh->num_faces);
+    glGenTextures(model->mesh->num_faces,etex_id);
+  }
+  // Get maximum texture size
+  max_n = 0;
+  for (i=0; i<model->mesh->num_faces; i++) {
+    if (max_n < model->fe[i].sample_freq) max_n = model->fe[i].sample_freq;
+  }
+  max_n = 1<<ceil_log2(max_n); // round (towards infinity) to power of two
+  // Test if OpenGL implementation can deal with maximum texture size
+  glTexImage2D(GL_PROXY_TEXTURE_2D,0,internalformat,max_n,max_n,0,GL_RGB,
+               GL_UNSIGNED_BYTE,NULL);
+  glGetTexLevelParameteriv(GL_PROXY_TEXTURE_2D, 0,GL_TEXTURE_WIDTH, &tw);
+  check_gl_errors("error texture size check");
+  if (tw == 0) {
+    QString tmps;
+    tmps.sprintf("The OpenGL implementation does not support\n"
+                 "the required texture size (%ix%i).\n"
+                 "Using plain white color",max_n,max_n);
+    QMessageBox::warning(this,"OpenGL texture size exceeded",tmps);
+    for (i=0; i<model->mesh->num_faces; i++) {
+      etex_sz[i] = 1; // avoid having divide by zero texture coords
+    }
+    return;
+  }
+  // What follows is a potentially slow operation
+  QApplication::setOverrideCursor(Qt::waitCursor);
+  // Allocate temporary texture storage
+  texture = (GLubyte*) xa_malloc(sizeof(*texture)*3*max_n*max_n);
+  glPixelStorei(GL_UNPACK_ALIGNMENT,1); /* pixel rows aligned on bytes only */
+  for (i=0; i<model->mesh->num_faces; i++) {
+    glBindTexture(GL_TEXTURE_2D,etex_id[i]);
+    etex_sz[i] = fillTexture(&(model->fe[i]),texture);
+    glTexImage2D(GL_TEXTURE_2D,0,internalformat,etex_sz[i],etex_sz[i],0,
+                 GL_RGB,GL_UNSIGNED_BYTE,texture);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
+    // Default GL_TEXTURE_MIN_FILTER requires mipmaps!
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+  }
+  check_gl_errors("error texture generation");
+  free(texture);
+  QApplication::restoreOverrideCursor();
+}
+
+void RawWidget::setErrorMode(int emode) {
+  if ((renderFlag & RW_CAPA_MASK) == RW_ERROR_ONLY) {
+    if (emode == VERTEX_ERROR || emode == MEAN_FACE_ERROR ||
+        emode == SAMPLE_ERROR) {
+      error_mode = emode;
+      makeCurrent();
+      rebuild_list();
+      updateGL();
+    } else {
+      fprintf(stderr,"invalid mode in setErrorMode()\n");
+    }
   }
 }
 
@@ -325,40 +469,91 @@ void RawWidget::rebuild_list() {
     glEndList();
     break;
   case RW_ERROR_ONLY:
-    drange = model->max_verror-model->min_verror;
+    drange = model->max_error-model->min_error;
     if (drange < FLT_MIN*100) drange = 1;
-    glNewList(model_list, GL_COMPILE);
-    glBegin(GL_TRIANGLES);  
-    for (i=0; i<model->mesh->num_faces; i++) {
-      cur_face = &(model->mesh->faces[i]);
-      cidx = (int) floor(7*(model->verror[cur_face->f0]-
-                            model->min_verror)/drange);
-      glColor3dv(colormap[cidx]);
-      glVertex3f(model->mesh->vertices[cur_face->f0].x,
-		 model->mesh->vertices[cur_face->f0].y,
-		 model->mesh->vertices[cur_face->f0].z); 
-      
-      cidx = (int) floor(7*(model->verror[cur_face->f1]-
-                            model->min_verror)/drange);
-      glColor3dv(colormap[cidx]);
-      glVertex3f(model->mesh->vertices[cur_face->f1].x,
-		 model->mesh->vertices[cur_face->f1].y,
-		 model->mesh->vertices[cur_face->f1].z); 
-      
-      cidx = (int) floor(7*(model->verror[cur_face->f2]-
-                            model->min_verror)/drange);
-      glColor3dv(colormap[cidx]);
-      glVertex3f(model->mesh->vertices[cur_face->f2].x,
-		 model->mesh->vertices[cur_face->f2].y,
-		 model->mesh->vertices[cur_face->f2].z);       
+    if (error_mode == SAMPLE_ERROR && etex_id == NULL) {
+      genErrorTextures();
     }
-    glEnd();
+    glNewList(model_list, GL_COMPILE);
+    glShadeModel((error_mode == MEAN_FACE_ERROR) ? GL_FLAT : GL_SMOOTH);
+    if (error_mode != SAMPLE_ERROR) {
+      glDisable(GL_TEXTURE_2D);
+      glBegin(GL_TRIANGLES);
+      for (i=0; i<model->mesh->num_faces; i++) {
+        cur_face = &(model->mesh->faces[i]);
+        if (model->verror[cur_face->f0] >= model->min_error) {
+          cidx = (int) floor((CMAP_LENGTH-1)*(model->verror[cur_face->f0]-
+                                              model->min_error)/drange+0.5);
+          glColor3fv(colormap[cidx]);
+        } else {
+          glColor3f(no_err_value,no_err_value,no_err_value); /* gray */
+        }
+        glVertex3f(model->mesh->vertices[cur_face->f0].x,
+                   model->mesh->vertices[cur_face->f0].y,
+                   model->mesh->vertices[cur_face->f0].z);
+        if (model->verror[cur_face->f1] >= model->min_error) {
+          cidx = (int) floor((CMAP_LENGTH-1)*(model->verror[cur_face->f1]-
+                                              model->min_error)/drange+0.5);
+          glColor3fv(colormap[cidx]);
+        } else {
+          glColor3f(no_err_value,no_err_value,no_err_value); /* gray */
+        }
+        glVertex3f(model->mesh->vertices[cur_face->f1].x,
+                   model->mesh->vertices[cur_face->f1].y,
+                   model->mesh->vertices[cur_face->f1].z); 
+        if (error_mode == VERTEX_ERROR) {
+          if (model->verror[cur_face->f2] >= model->min_error) {
+            cidx = (int) floor((CMAP_LENGTH-1)*(model->verror[cur_face->f2]-
+                                                model->min_error)/drange+0.5);
+            glColor3fv(colormap[cidx]);
+          } else {
+            glColor3f(no_err_value,no_err_value,no_err_value); /* gray */
+          }
+        } else {
+          if (model->fe[i].sample_freq > 0) {
+            cidx = (int) floor((CMAP_LENGTH-1)*(model->fe[i].mean_error-
+                                                model->min_error)/drange+0.5);
+            glColor3fv(colormap[cidx]);
+          } else { /* no samples in this triangle => mean error meaningless */
+            glColor3f(no_err_value,no_err_value,no_err_value); /* gray */
+          }
+        }
+        glVertex3f(model->mesh->vertices[cur_face->f2].x,
+                   model->mesh->vertices[cur_face->f2].y,
+                   model->mesh->vertices[cur_face->f2].z);
+      }
+      glEnd();
+    } else {
+      glColor3f(1,1,1); /* white base */
+      glEnable(GL_TEXTURE_2D);
+      glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
+      for (i=0; i<model->mesh->num_faces; i++) {
+        glBindTexture(GL_TEXTURE_2D,etex_id[i]);
+        cur_face = &(model->mesh->faces[i]);
+        glBegin(GL_TRIANGLES);
+        glTexCoord2f(0.5f/etex_sz[i],0.5f/etex_sz[i]);
+        glVertex3f(model->mesh->vertices[cur_face->f0].x,
+                   model->mesh->vertices[cur_face->f0].y,
+                   model->mesh->vertices[cur_face->f0].z);
+        glTexCoord2f(0.5f/etex_sz[i],
+                     (model->fe[i].sample_freq-0.5f)/etex_sz[i]);
+        glVertex3f(model->mesh->vertices[cur_face->f1].x,
+                   model->mesh->vertices[cur_face->f1].y,
+                   model->mesh->vertices[cur_face->f1].z); 
+        glTexCoord2f((model->fe[i].sample_freq-0.5f)/etex_sz[i],
+                     0.5f/etex_sz[i]);
+        glVertex3f(model->mesh->vertices[cur_face->f2].x,
+                   model->mesh->vertices[cur_face->f2].y,
+                   model->mesh->vertices[cur_face->f2].z);
+        glEnd();
+      }      
+    }
     glEndList();
     break;
-    default:
+  default:
       fprintf(stderr, "Invalid render flag found !!\n");
       return;
-    }
+  }
 
   // Check for errors in display list generation
   while ((glerr = glGetError()) != GL_NO_ERROR) {
