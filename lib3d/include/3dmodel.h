@@ -1,4 +1,4 @@
-/* $Id: 3dmodel.h,v 1.26 2001/11/12 13:40:17 dsanta Exp $ */
+/* $Id: 3dmodel.h,v 1.27 2002/02/21 13:35:23 aspert Exp $ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -98,28 +98,6 @@ struct edge_v {
 };
 
 
-
-struct edge_dual {
-  int face0;
-  int face1;
-  struct edge_v common;
-};
-
-
-struct edge_tr {
-  int s,t; /* An edge contains 2 vertices */
-  int l,r;/*left & right faces index*/
-  /* l,r = -1 -> undefined face...*/
-};
-
-struct edge_sort {
-  struct edge_v prim;
-  int face;
-};
-
-
-
-
 struct face_tree {
   int face_idx;
   int visited;
@@ -146,45 +124,5 @@ struct model {
   vertex_t bBox[2]; /* bBox[0] is the min  bBox[1] is the max */
   struct face_tree **tree; /* spanning tree of the dual graph */
 };
-
-
-struct dual_graph_info {
-  int num_edges_dual;
-  struct edge_dual *edges;
-  unsigned char *done;
-};
-
-struct dual_graph_index {
-  int ring[3]; 
-  int face_info; /* number of neighb. faces */
-};
-
-
-struct edge_list {
-  struct edge_dual edge;
-  struct edge_list *next;
-  struct edge_list *prev;
-};
-
-struct ring_info {
-  int *ord_vert; /* ordered list of vertex */
-  int type; /* 0=regular 1=boundary 2=non-manifold */
-  int size;
-  int n_faces;
-  int *ord_face;
-};
-
-struct midpoint_info {
-  int size;
-  int *midpoint_idx; /* stores the midpoint idx for each edge of the 1-ring */
-  vertex_t *midpoint;
-};
-
-
-struct edge_sub {
-  struct edge_v edge;
-  vertex_t p;
-};
-
 
 #endif

@@ -1,4 +1,4 @@
-/* $Id: geomutils.h,v 1.27 2002/02/21 09:15:19 dsanta Exp $ */
+/* $Id: geomutils.h,v 1.28 2002/02/21 13:35:23 aspert Exp $ */
 #include <3dmodel.h>
 
 #ifndef _GEOMUTILS_PROTO_
@@ -611,7 +611,7 @@ extern "C" {
              (v).x /= __n__;                    \
              (v).y /= __n__;                    \
              (v).z /= __n__;                    \
-        } while (0)
+           } while (0)
 #endif 
 
 #endif

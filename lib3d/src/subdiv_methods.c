@@ -1,5 +1,6 @@
-/* $Id: subdiv_methods.c,v 1.13 2002/02/19 12:58:55 aspert Exp $ */
+/* $Id: subdiv_methods.c,v 1.14 2002/02/21 13:35:24 aspert Exp $ */
 #include <3dmodel.h>
+#include <normals.h>
 #include <geomutils.h>
 #include <subdiv_methods.h>
 

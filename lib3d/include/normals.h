@@ -1,9 +1,45 @@
-/* $Id: normals.h,v 1.10 2002/01/24 17:11:20 aspert Exp $ */
+/* $Id: normals.h,v 1.11 2002/02/21 13:35:24 aspert Exp $ */
 #include <3dmodel.h>
 
 #ifndef _NORMALS_PROTO
 #define _NORMALS_PROTO
 
+struct ring_info {
+  int *ord_vert; /* ordered list of vertex */
+  int type; /* 0=regular 1=boundary 2=non-manifold */
+  int size;
+  int n_faces;
+  int *ord_face;
+};
+
+struct edge_sort {
+  struct edge_v prim;
+  int face;
+};
+
+struct edge_dual {
+  int face0;
+  int face1;
+  struct edge_v common;
+};
+
+struct dual_graph_info {
+  int num_edges_dual;
+  struct edge_dual *edges;
+  unsigned char *done;
+};
+
+struct dual_graph_index {
+  int ring[3]; 
+  int face_info; /* number of neighb. faces */
+};
+
+
+struct edge_list {
+  struct edge_dual edge;
+  struct edge_list *next;
+  struct edge_list *prev;
+};
 
 #ifdef __cplusplus
 extern "C" {

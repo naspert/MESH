@@ -1,5 +1,4 @@
-/* $Id: subdiv_methods.h,v 1.7 2002/02/15 09:42:26 aspert Exp $ */
-
+/* $Id: subdiv_methods.h,v 1.8 2002/02/21 13:35:24 aspert Exp $ */
 
 #ifndef __SUBDIV_METHODS_PROTO
 # define __SUBDIV_METHODS_PROTO
@@ -22,6 +21,12 @@
 # define __2W   -0.125           /* w = -1.0/16.0 */
 # define _M1_12 -0.0833333333333 /* -1.0/12.0 */
 # define _5_12   0.4166666666666 /* 5.0/12.0 */
+
+struct midpoint_info {
+  int size;
+  int *midpoint_idx; /* stores the midpoint idx for each edge of the 1-ring */
+  vertex_t *midpoint;
+};
 
 /* Precomputed regular stencil */
 const static float reg_sten[6] = {0.25 - __2W,  0.125 + __2W, -0.125 - __2W, 
