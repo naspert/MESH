@@ -1,4 +1,4 @@
-/* $Id: RawWidget.h,v 1.23 2002/01/15 17:02:04 aspert Exp $ */
+/* $Id: RawWidget.h,v 1.24 2002/01/30 15:41:15 aspert Exp $ */
 #ifndef RAWWIDGET_H
 #define RAWWIDGET_H
 
@@ -34,7 +34,7 @@ public slots:
   void setLight();
   void switchSync(bool state);
   void transfer(double dist,double *mvmat);
-  void switchDisplayedInfo(int state);
+
   
 signals:
   void transfervalue(double,double*);

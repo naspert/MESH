@@ -1,4 +1,4 @@
-/* $Id: RawWidget.cpp,v 1.33 2002/01/15 17:02:04 aspert Exp $ */
+/* $Id: RawWidget.cpp,v 1.34 2002/01/30 15:41:15 aspert Exp $ */
 
 #include <RawWidget.h>
 #include <qmessagebox.h>
@@ -138,26 +138,6 @@ void RawWidget::setLight() {
     check_gl_errors("setLight()");
     updateGL();
   }
-}
-
-
-void RawWidget::switchDisplayedInfo(int state) {
-  int capa = renderFlag & RW_CAPA_MASK;
-
-  makeCurrent();
-  switch(capa) {
-  case RW_LIGHT_TOGGLE:
-    fprintf(stderr, "Invalid call to switchDisplayedInfo\n");
-    break;
-  case RW_ERROR_ONLY:
-    rebuild_list();
-    break;
-  default:
-    fprintf(stderr, "Invalid call to SwitchDisplayedInfo %d\n", capa);
-    break;
-  }
-   
-  updateGL();
 }
 
 // display callback
