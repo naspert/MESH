@@ -1,4 +1,4 @@
-/* $Id: RawWidget.cpp,v 1.35 2002/02/20 17:32:04 dsanta Exp $ */
+/* $Id: RawWidget.cpp,v 1.36 2002/02/20 17:33:44 dsanta Exp $ */
 
 #include <RawWidget.h>
 #include <qmessagebox.h>
@@ -281,24 +281,24 @@ void RawWidget::rebuild_list() {
 	cur_face = &(model->mesh->faces[i]);
 	
 	
-	glNormal3d(model->mesh->normals[cur_face->f0].x,
+	glNormal3f(model->mesh->normals[cur_face->f0].x,
 		   model->mesh->normals[cur_face->f0].y,
 		   model->mesh->normals[cur_face->f0].z);
-	glVertex3d(model->mesh->vertices[cur_face->f0].x,
+	glVertex3f(model->mesh->vertices[cur_face->f0].x,
 		   model->mesh->vertices[cur_face->f0].y,
 		   model->mesh->vertices[cur_face->f0].z); 
 	
-	glNormal3d(model->mesh->normals[cur_face->f1].x,
+	glNormal3f(model->mesh->normals[cur_face->f1].x,
 		   model->mesh->normals[cur_face->f1].y,
 		   model->mesh->normals[cur_face->f1].z);  
-	glVertex3d(model->mesh->vertices[cur_face->f1].x,
+	glVertex3f(model->mesh->vertices[cur_face->f1].x,
 		   model->mesh->vertices[cur_face->f1].y,
 		   model->mesh->vertices[cur_face->f1].z); 
 	
-	glNormal3d(model->mesh->normals[cur_face->f2].x,
+	glNormal3f(model->mesh->normals[cur_face->f2].x,
 		   model->mesh->normals[cur_face->f2].y,
 		   model->mesh->normals[cur_face->f2].z); 
-	glVertex3d(model->mesh->vertices[cur_face->f2].x,
+	glVertex3f(model->mesh->vertices[cur_face->f2].x,
 		   model->mesh->vertices[cur_face->f2].y,
 		   model->mesh->vertices[cur_face->f2].z);       
       }
@@ -308,15 +308,15 @@ void RawWidget::rebuild_list() {
       for (i=0; i<model->mesh->num_faces; i++) {
 	cur_face = &(model->mesh->faces[i]);
 	
-	glVertex3d(model->mesh->vertices[cur_face->f0].x,
+	glVertex3f(model->mesh->vertices[cur_face->f0].x,
 		   model->mesh->vertices[cur_face->f0].y,
 		   model->mesh->vertices[cur_face->f0].z); 
 	
-	glVertex3d(model->mesh->vertices[cur_face->f1].x,
+	glVertex3f(model->mesh->vertices[cur_face->f1].x,
 		   model->mesh->vertices[cur_face->f1].y,
 		   model->mesh->vertices[cur_face->f1].z); 
 	
-	glVertex3d(model->mesh->vertices[cur_face->f2].x,
+	glVertex3f(model->mesh->vertices[cur_face->f2].x,
 		   model->mesh->vertices[cur_face->f2].y,
 		   model->mesh->vertices[cur_face->f2].z);       
       }
@@ -334,21 +334,21 @@ void RawWidget::rebuild_list() {
       cidx = (int) floor(7*(model->verror[cur_face->f0]-
                             model->min_verror)/drange);
       glColor3dv(colormap[cidx]);
-      glVertex3d(model->mesh->vertices[cur_face->f0].x,
+      glVertex3f(model->mesh->vertices[cur_face->f0].x,
 		 model->mesh->vertices[cur_face->f0].y,
 		 model->mesh->vertices[cur_face->f0].z); 
       
       cidx = (int) floor(7*(model->verror[cur_face->f1]-
                             model->min_verror)/drange);
       glColor3dv(colormap[cidx]);
-      glVertex3d(model->mesh->vertices[cur_face->f1].x,
+      glVertex3f(model->mesh->vertices[cur_face->f1].x,
 		 model->mesh->vertices[cur_face->f1].y,
 		 model->mesh->vertices[cur_face->f1].z); 
       
       cidx = (int) floor(7*(model->verror[cur_face->f2]-
                             model->min_verror)/drange);
       glColor3dv(colormap[cidx]);
-      glVertex3d(model->mesh->vertices[cur_face->f2].x,
+      glVertex3f(model->mesh->vertices[cur_face->f2].x,
 		 model->mesh->vertices[cur_face->f2].y,
 		 model->mesh->vertices[cur_face->f2].z);       
     }
