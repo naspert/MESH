@@ -1,4 +1,4 @@
-* Chnages from v1.5 to v1.6 :
+* Changes from v1.5 to v1.6 :
 	- Updated the paper status in copyright headers 
 	  (no longer 'submitted to' but 'accepted')
 	- Added a basic PLY reader (ASCII and binary)
