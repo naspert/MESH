@@ -1,4 +1,4 @@
-/* $Id: subdiv_main.c,v 1.3 2002/10/31 10:26:13 aspert Exp $ */
+/* $Id: subdiv_main.c,v 1.4 2002/11/01 10:06:14 aspert Exp $ */
 #include <3dutils.h>
 #include <subdiv.h>
 #include <subdiv_methods.h>
@@ -14,7 +14,7 @@ int main(int argc, char **argv) {
 
   if (argc != 4 && argc != 5) {
     fprintf(stderr, 
-	    "Usage: subdiv [-sph, -but, -loop, -loopb]"
+	    "Usage: subdiv [-sph, -but, -loop]"
             " infile outfile n_lev\n");
     exit(1);
   }
@@ -24,12 +24,10 @@ int main(int argc, char **argv) {
     sub_method = SUBDIV_BUTTERFLY;
   else if (strcmp(argv[1], "-loop") == 0)
     sub_method = SUBDIV_LOOP;
-  else if (strcmp(argv[1], "-loopb") == 0)
-    sub_method = SUBDIV_LOOP_BOUNDARY;
   else {
     fprintf(stderr, "Invalid subdivision method %s\n", argv[1]);
     fprintf(stderr, 
-	    "Usage: subdiv [-sph, -but, -loop, -loopb]"
+	    "Usage: subdiv [-sph, -but, -loop]"
             " infile outfile n_lev\n");
     exit(1);
   }
@@ -69,13 +67,9 @@ int main(int argc, char **argv) {
                          compute_midpoint_sph_crease, NULL);
       break;
     case SUBDIV_LOOP:
-      sub_model = subdiv(or_model, compute_midpoint_loop, NULL, 
-			 update_vertices_loop);
-      break;
-    case SUBDIV_LOOP_BOUNDARY:
       sub_model = subdiv(or_model, compute_midpoint_loop, 
 			 compute_midpoint_loop_crease,
-			 update_vertices_loop_crease);
+			 update_vertices_loop);
       break;
     case SUBDIV_BUTTERFLY:
       sub_model = subdiv(or_model, compute_midpoint_butterfly, 
