@@ -1,9 +1,9 @@
-/* $Id: compute_error.c,v 1.33 2001/08/16 15:03:27 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.34 2001/08/17 09:00:42 dsanta Exp $ */
 
 #include <compute_error.h>
 
 #include <geomutils.h>
-#include <mutils.h>
+#include <xalloc.h>
 #include <math.h>
 #include <assert.h>
 
@@ -150,15 +150,16 @@ static INLINE void neg_v(const vertex *v, vertex *vout)
  * sampling with n samples in each direction. If tse->err and tse->err_lin is
  * NULL new buffers are allocated. If tse->n_samples equals n nothing is
  * done. The allocation never fails (if out of memory the program is stopped,
- * as with xrealloc()) */
+ * as with xa_realloc()) */
 static void realloc_triag_sample_error(struct triag_sample_error *tse, int n)
 {
   int i;
   if (tse->n_samples == n) return;
   tse->n_samples = n;
   tse->n_samples_tot = n*(n+1)/2;
-  tse->err = xrealloc(tse->err,n*sizeof(*(tse->err)));
-  tse->err_lin = xrealloc(tse->err_lin,tse->n_samples_tot*sizeof(**(tse->err)));
+  tse->err = xa_realloc(tse->err,n*sizeof(*(tse->err)));
+  tse->err_lin = xa_realloc(tse->err_lin,
+                            tse->n_samples_tot*sizeof(**(tse->err)));
   if (n != 0) {
     tse->err[0] = tse->err_lin;
     for (i=1; i<n; i++) {
@@ -171,8 +172,8 @@ static void realloc_triag_sample_error(struct triag_sample_error *tse, int n)
 static void free_triag_sample_error(struct triag_sample_error *tse)
 {
   if (tse == NULL) return;
-  xfree(tse->err);
-  xfree(tse->err_lin);
+  free(tse->err);
+  free(tse->err_lin);
   tse->err = NULL;
   tse->err_lin = NULL;
 }
@@ -187,7 +188,7 @@ static void calc_normals_as_oriented_model(model *m,
   vertex *n;
 
   /* initialize all normals to zero */
-  m->normals = xrealloc(m->normals,m->num_vert*sizeof(*(m->normals)));
+  m->normals = xa_realloc(m->normals,m->num_vert*sizeof(*(m->normals)));
   memset(m->normals,0,m->num_vert*sizeof(*(m->normals)));
   /* add face normals to vertices, weighted by face area */
   for (k=0, kmax=m->num_faces; k < kmax; k++) {
@@ -442,9 +443,9 @@ static struct triangle_list* model_to_triangle_list(const model *m)
 
   /* Initialize and allocate storage */
   n = m->num_faces;
-  tl = xmalloc(sizeof(*tl));
+  tl = xa_malloc(sizeof(*tl));
   tl->n_triangles = n;
-  triags = xmalloc(sizeof(*tl->triangles)*n);
+  triags = xa_malloc(sizeof(*tl->triangles)*n);
   tl->triangles = triags;
   tl->area = 0;
 
@@ -535,7 +536,7 @@ static void sample_triangle(const vertex *a, const vertex *b, const vertex *c,
   /* initialize */
   a_cache = *a;
   s->n_samples = n*(n+1)/2;
-  s->sample = xrealloc(s->sample,sizeof(vertex)*s->n_samples);
+  s->sample = xa_realloc(s->sample,sizeof(vertex)*s->n_samples);
   /* get basis vectors */
   substract_v(b,a,&u);
   substract_v(c,a,&v);
@@ -590,11 +591,11 @@ static struct t_in_cell_list *triangles_in_cells(const struct triangle_list *tl,
   c_buf = NULL;
   c_buf_sz = 0;
   sl.sample = NULL;
-  lst = xmalloc(sizeof(*lst));
-  nt = xcalloc(grid_sz.x*grid_sz.y*grid_sz.z,sizeof(*nt));
-  tab = xcalloc(grid_sz.x*grid_sz.y*grid_sz.z,sizeof(*tab));
-  ecb = xcalloc((grid_sz.x*grid_sz.y*grid_sz.z+EC_BITMAP_T_BITS-1)/
-                EC_BITMAP_T_BITS,EC_BITMAP_T_SZ);
+  lst = xa_malloc(sizeof(*lst));
+  nt = xa_calloc(grid_sz.x*grid_sz.y*grid_sz.z,sizeof(*nt));
+  tab = xa_calloc(grid_sz.x*grid_sz.y*grid_sz.z,sizeof(*tab));
+  ecb = xa_calloc((grid_sz.x*grid_sz.y*grid_sz.z+EC_BITMAP_T_BITS-1)/
+                  EC_BITMAP_T_BITS,EC_BITMAP_T_SZ);
   lst->triag_idx = tab;
   lst->n_cells = grid_sz.x*grid_sz.y*grid_sz.z;
   lst->empty_cell = ecb;
@@ -619,7 +620,7 @@ static struct t_in_cell_list *triangles_in_cells(const struct triangle_list *tl,
         o_a == o_b && o_a == o_c) {
       /* The ABC triangle fits entirely into one cell => fast case */
       cell_idx = m_a+n_a*grid_sz.x+o_a*cell_stride_z;
-      tab[cell_idx] = xrealloc(tab[cell_idx],(nt[cell_idx]+2)*sizeof(**tab));
+      tab[cell_idx] = xa_realloc(tab[cell_idx],(nt[cell_idx]+2)*sizeof(**tab));
       tab[cell_idx][nt[cell_idx]++] = i;
       continue;
     }
@@ -671,7 +672,7 @@ static struct t_in_cell_list *triangles_in_cells(const struct triangle_list *tl,
       cell_idx = m + n*grid_sz.x + o*cell_stride_z;
       if (cell_idx != cell_idx_prev) {
         if (c_buf_sz <= h) {
-          c_buf = xrealloc(c_buf, (h+1)*sizeof(*c_buf));
+          c_buf = xa_realloc(c_buf, (h+1)*sizeof(*c_buf));
           c_buf_sz++;
         }
         c_buf[h++] = cell_idx;
@@ -683,7 +684,8 @@ static struct t_in_cell_list *triangles_in_cells(const struct triangle_list *tl,
     for (j=0; j<h; j++) {
       cell_idx = c_buf[j];
       if (nt[cell_idx] == 0 || tab[cell_idx][nt[cell_idx]-1] != i) {
-        tab[cell_idx] = xrealloc(tab[cell_idx],(nt[cell_idx]+2)*sizeof(**tab));
+        tab[cell_idx] = xa_realloc(tab[cell_idx],
+                                   (nt[cell_idx]+2)*sizeof(**tab));
         tab[cell_idx][nt[cell_idx]++] = i;
       }
     }
@@ -698,9 +700,9 @@ static struct t_in_cell_list *triangles_in_cells(const struct triangle_list *tl,
     }
   }
 
-  xfree(nt);
-  xfree(sl.sample);
-  xfree(c_buf);
+  free(nt);
+  free(sl.sample);
+  free(c_buf);
   return lst;
 }
 
@@ -754,10 +756,10 @@ static double dist_pt_surf(vertex p, const struct triangle_list *tl,
   tmpi = 2*grid_sz.x*grid_sz.y+2*grid_sz.x*grid_sz.z+2*grid_sz.y*grid_sz.z;
   if (cell_list == NULL) {
     cell_list_sz = tmpi;
-    cell_list = xmalloc(sizeof(*cell_list)*cell_list_sz);
+    cell_list = xa_malloc(sizeof(*cell_list)*cell_list_sz);
   } else if (cell_list_sz < tmpi) {
     cell_list_sz = tmpi;
-    cell_list = xrealloc(cell_list,sizeof(*cell_list)*cell_list_sz);
+    cell_list = xa_realloc(cell_list,sizeof(*cell_list)*cell_list_sz);
   }
 
   /* NOTE: tests have shown it is faster to scan each triangle, even
@@ -980,7 +982,7 @@ void dist_surf_surf(const model *m1, model *m2, int n_spt,
   fic = triangles_in_cells(tl2,grid_sz,cell_sz,bbox2_min);
 
   /* Allocate storage for errors */
-  *fe_ptr = xrealloc(*fe_ptr,m1->num_faces*sizeof(**fe_ptr));
+  *fe_ptr = xa_realloc(*fe_ptr,m1->num_faces*sizeof(**fe_ptr));
   fe = *fe_ptr;
   realloc_triag_sample_error(&tse,n_spt);
 
@@ -1049,20 +1051,20 @@ void dist_surf_surf(const model *m1, model *m2, int n_spt,
   }
 
   /* free temporary storage */
-  xfree(tl2->triangles);
-  xfree(tl2);
+  free(tl2->triangles);
+  free(tl2);
   for (k=0, kmax=fic->n_cells; k<kmax; k++) {
-    xfree(fic->triag_idx[k]);
+    free(fic->triag_idx[k]);
   }
-  xfree(fic->triag_idx);
-  xfree(fic->empty_cell);
-  xfree(fic);
+  free(fic->triag_idx);
+  free(fic->empty_cell);
+  free(fic);
   free_triag_sample_error(&tse);
-  xfree(ts.sample);
+  free(ts.sample);
 }
 
 /* See compute_error.h */
 void free_face_error(struct face_error *fe)
 {
-  xfree(fe);
+  free(fe);
 }

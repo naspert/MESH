@@ -1,6 +1,6 @@
-/* $Id: ColorMap.c,v 1.5 2001/08/07 14:11:44 dsanta Exp $ */
+/* $Id: ColorMap.c,v 1.6 2001/08/17 08:59:47 dsanta Exp $ */
 #include <ColorMap.h>
-#include <mutils.h>
+#include <xalloc.h>
 
 /* This function generates a colormap for the HSV colorspace using */
 /* normalized RGB values. */
@@ -11,10 +11,10 @@ double** HSVtoRGB(void)
   double r=-1, g=-1, b=-1, hue;
   int i, j=0, h;
 
-  colormap = (double **)xmalloc(8*sizeof(double*));
+  colormap = (double **)xa_malloc(8*sizeof(double*));
   
   for(i=0;i<8;i++)
-    colormap[i] = (double *)xmalloc(3*sizeof(double));
+    colormap[i] = (double *)xa_malloc(3*sizeof(double));
   
 
   for(h=0; h<240; h+=30){
