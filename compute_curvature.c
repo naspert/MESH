@@ -1,4 +1,4 @@
-/* $Id: compute_curvature.c,v 1.7 2001/11/06 10:37:55 dsanta Exp $ */
+/* $Id: compute_curvature.c,v 1.8 2001/11/12 15:27:02 dsanta Exp $ */
 #include <3dutils.h>
 #include <compute_error.h>
 #include <compute_curvature.h>
@@ -21,7 +21,7 @@ double get_top_angle(const vertex_t *v0, const vertex_t *v1,
 double get_top_angle2(const vertex_t *v0, const vertex_t *v1, 
 		      const vertex_t *v2) {
   vertex_t u0, u1, v, h;
-  double tmp;
+  float tmp;
 
   substract_v(v1, v0, &u0);
   substract_v(v2, v0, &u1);
@@ -90,7 +90,7 @@ void compute_mean_curvature_normal(const struct model *raw_model,
 			  &(raw_model->vertices[v0]));
     c = (cos(alpha)/sin(alpha) + cos(beta)/sin(beta));
 
-    add_prod_v(c, &tmp, sum_vert, sum_vert); 
+    add_prod_v((float)c, &tmp, sum_vert, sum_vert); 
 
   }
   
@@ -149,7 +149,7 @@ void compute_mean_curvature_normal(const struct model *raw_model,
     }
   }
   
-  prod_v(0.5/(*mixed_area), sum_vert, sum_vert);
+  prod_v(0.5f/(float)(*mixed_area), sum_vert, sum_vert);
   *gauss_curv /= *mixed_area;
   *mean_curv = 0.5*norm_v(sum_vert);
   

@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.67 2001/11/12 13:42:18 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.68 2001/11/12 15:27:02 dsanta Exp $ */
 
 #include <compute_error.h>
 
@@ -237,7 +237,7 @@ static void calc_normals_as_oriented_model(struct model *m,
   /* add face normals to vertices, weighted by face area */
   for (k=0, kmax=m->num_faces; k < kmax; k++) {
     vertex_d2f_v(&(tl->triangles[k].normal),&n); /* convert double to float */
-    prod_v(tl->triangles[k].s_area,&n,&n);
+    prod_v((float)tl->triangles[k].s_area,&n,&n);
     add_v(&n,&(m->normals[m->faces[k].f0]),&(m->normals[m->faces[k].f0]));
     add_v(&n,&(m->normals[m->faces[k].f1]),&(m->normals[m->faces[k].f1]));
     add_v(&n,&(m->normals[m->faces[k].f2]),&(m->normals[m->faces[k].f2]));
