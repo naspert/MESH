@@ -9,7 +9,7 @@ topologies can be compared.
 
 * Requirements
 To compile the program the Qt libraries, version 2.3.0 or later with the
-support OpenGL compiled in, are required. 
+support OpenGL compiled in, are required, in addition to a C and C++ compiler.
 The Qt library source code can be downloaded for free at Trolltech's website 
 (http://www.trolltech.com/developer/download ) for all the Unix-like systems. 
 For Windows users, a precompiled Qt v2.3.0 is also available for free 
