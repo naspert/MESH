@@ -1,4 +1,4 @@
-/* $Id: debug_print.h,v 1.1 2002/11/13 12:18:22 aspert Exp $ */
+/* $Id: debug_print.h,v 1.2 2002/11/13 12:53:06 aspert Exp $ */
 
 #ifndef DEBUG_PRINT_PROTO
 #define DEBUG_PRINT_PROTO
@@ -13,11 +13,16 @@ do {                                                            \
   printf(format , ## args );                                    \
 } while(0)
 
+#elif defined(_MSC_VER)
+/* Microsoft Visual C++ does not know about __FUNCTION__, nor about
+ * varargs macros... */
+/* Of course, if this is in a loop, do not forget the brackets, 'cause
+ * this is kind of a hack.... */
+# define DEBUG_PRINT printf("[%s:%d]: ", __FILE__, __LINE__);printf
 #else 
 /* we just alias DEBUG_PRINT to 'printf', still works, be almost
  * useless for debugging, since we don't know at all what line prints
  * information... */
-# warning DEBUG mode without gcc gives *terse* reporting...
 # define DEBUG_PRINT printf
 #endif
 

@@ -1,4 +1,4 @@
-/* $Id: normals.c,v 1.35 2002/11/13 12:18:24 aspert Exp $ */
+/* $Id: normals.c,v 1.36 2002/11/13 12:53:06 aspert Exp $ */
 #include <3dmodel.h>
 #include <geomutils.h>
 #include <normals.h>
@@ -221,11 +221,12 @@ struct face_tree** bfs_build_spanning_tree(const struct model *raw_model,
   }
 
 #ifdef NORM_DEBUG_BFS
-  for (i=0; i<dual_graph->num_edges_dual; i++) 
+  for (i=0; i<dual_graph->num_edges_dual; i++) {
     DEBUG_PRINT("%d dual %d %d primal %d %d\n", 
                 dual_graph->num_edges_dual, dual_graph->edges[i].face0, 
                 dual_graph->edges[i].face1, dual_graph->edges[i].common.v0, 
                 dual_graph->edges[i].common.v1);
+  }
 #endif
 
 #ifdef NORM_VERB
