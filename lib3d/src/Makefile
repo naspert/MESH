@@ -1,10 +1,10 @@
-# $Id: Makefile,v 1.59 2004/10/12 12:32:11 aspert Exp $
+# $Id: Makefile,v 1.60 2004/10/25 11:37:41 aspert Exp $
 
 #Set PROFILE to something to enable profiling
 #PROFILE=1
 
 #Set DEBUG to something to enable debug prints
-#DEBUG=1
+DEBUG=1
 
 OS := $(shell uname -s)
 ARCH := $(shell uname -m)

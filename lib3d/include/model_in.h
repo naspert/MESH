@@ -1,4 +1,4 @@
-/* $Id: model_in.h,v 1.26 2004/10/12 12:32:10 aspert Exp $ */
+/* $Id: model_in.h,v 1.27 2004/10/25 11:37:40 aspert Exp $ */
 
 
 /*
@@ -151,7 +151,7 @@ struct file_data {
 #define MESH_FF_IV        3 /* Inventor 2 ascii */
 #define MESH_FF_PLY       4 /* Ply ascii */
 #define MESH_FF_SMF       5 /* SMF format (from QSlim) */
-#define MESH_FF_OFF	  6 /* OFF format (from geomview) */
+#define MESH_FF_OFF       6 /* OFF format (from geomview) */
 
 /* --------------------------------------------------------------------------
    ERROR CODES (always negative)

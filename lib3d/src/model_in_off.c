@@ -1,4 +1,4 @@
-/* $Id: model_in_off.c,v 1.6 2004/10/21 16:24:40 aspert Exp $ */
+/* $Id: model_in_off.c,v 1.7 2004/10/25 11:37:41 aspert Exp $ */
 /*
  *
  *  Copyright (C) 2004 EPFL (Swiss Federal Institute of Technology,
@@ -67,31 +67,31 @@ static int read_off_vertices(vertex_t *vtcs, struct file_data *data,
   skip_ws_comm(data);
 
   for (i=0; i<n_vtcs; i++) {
-	
-	  /* read one line of data */
-	  k=0;
-	  do {
-		tmp = getc(data);
-		line_buf[k++] = tmp;
-	  } while (tmp != '\n' && tmp != '\r' && tmp != EOF && k < LINE_BUF_SIZE);
-
-	  if (tmp == EOF || (k == LINE_BUF_SIZE && tmp != '\n' && tmp != '\r')) 
-		  return MESH_CORRUPTED;
-	  line_buf[--k] = '\0';
-	  if (sscanf(line_buf, "%f %f %f", &(vtcs[i].x), &(vtcs[i].y), &(vtcs[i].z)) != 3)
-		  return MESH_CORRUPTED;
-	  
-	  skip_ws_comm(data);
+    /* read one line of data */
+    k=0;
+    do {
+      tmp = getc(data);
+      line_buf[k++] = tmp;
+    } while (tmp != '\n' && tmp != '\r' && tmp != EOF && k < LINE_BUF_SIZE);
+    
+    if (tmp == EOF || (k == LINE_BUF_SIZE && tmp != '\n' && tmp != '\r')) 
+      return MESH_CORRUPTED;
+    line_buf[--k] = '\0';
+    if (sscanf(line_buf, "%f %f %f", 
+	       &(vtcs[i].x), &(vtcs[i].y), &(vtcs[i].z)) != 3)
+      return MESH_CORRUPTED;
+    
+    skip_ws_comm(data);
 #ifdef DEBUG
     DEBUG_PRINT("i=%d x=%f y=%f z=%f\n", i, vtcs[i].x, vtcs[i].y, vtcs[i].z);
 #endif
     
-      if (vtcs[i].x < bbmin.x) bbmin.x = vtcs[i].x;
-      if (vtcs[i].x > bbmax.x) bbmax.x = vtcs[i].x;
-      if (vtcs[i].y < bbmin.y) bbmin.y = vtcs[i].y;
-      if (vtcs[i].y > bbmax.y) bbmax.y = vtcs[i].y;
-      if (vtcs[i].z < bbmin.z) bbmin.z = vtcs[i].z;
-      if (vtcs[i].z > bbmax.z) bbmax.z = vtcs[i].z;
+    if (vtcs[i].x < bbmin.x) bbmin.x = vtcs[i].x;
+    if (vtcs[i].x > bbmax.x) bbmax.x = vtcs[i].x;
+    if (vtcs[i].y < bbmin.y) bbmin.y = vtcs[i].y;
+    if (vtcs[i].y > bbmax.y) bbmax.y = vtcs[i].y;
+    if (vtcs[i].z < bbmin.z) bbmin.z = vtcs[i].z;
+    if (vtcs[i].z > bbmax.z) bbmax.z = vtcs[i].z;
   }
   if (n_vtcs == 0) {
     memset(&bbmin,0,sizeof(bbmin));
@@ -100,7 +100,6 @@ static int read_off_vertices(vertex_t *vtcs, struct file_data *data,
   *bbox_min = bbmin;
   *bbox_max = bbmax;
   return 0;
- 
 }
 
 static int read_off_faces(face_t *faces, struct file_data *data, int n_faces,
@@ -110,30 +109,30 @@ static int read_off_faces(face_t *faces, struct file_data *data, int n_faces,
   char line_buf[LINE_BUF_SIZE];
   int tmp;
   for (i=0; i<n_faces; i++) {
-	  /* read one line of data */
-	  k=0;
-	  do {
-		tmp = getc(data);
-		line_buf[k++] = tmp;
-	  } while (tmp != '\n' && tmp != '\r' && 
-		   tmp != EOF && k < LINE_BUF_SIZE);
-
-	  if ((tmp == EOF && i < n_faces - 1) || 
-	      (k == LINE_BUF_SIZE && tmp != '\n' && tmp != '\r')) 
-		  return MESH_CORRUPTED;
-	  line_buf[--k] = '\0';
-	  if (sscanf(line_buf, "%d %d %d %d", &order, &(faces[i].f0), &(faces[i].f1), &(faces[i].f2)) != 4)
-		  return MESH_CORRUPTED;
-	  if (order != 3)
-		  return MESH_NOT_TRIAG;
+    /* read one line of data */
+    k=0;
+    do {
+      tmp = getc(data);
+      line_buf[k++] = tmp;
+    } while (tmp != '\n' && tmp != '\r' && 
+	     tmp != EOF && k < LINE_BUF_SIZE);
     
-	  skip_ws_comm(data);
+    if ((tmp == EOF && i < n_faces - 1) || 
+	(k == LINE_BUF_SIZE && tmp != '\n' && tmp != '\r')) 
+      return MESH_CORRUPTED;
+    line_buf[--k] = '\0';
+    if (sscanf(line_buf, "%d %d %d %d", &order, 
+	       &(faces[i].f0), &(faces[i].f1), &(faces[i].f2)) != 4)
+      return MESH_CORRUPTED;
+    if (order != 3)
+      return MESH_NOT_TRIAG;
+    
+    skip_ws_comm(data);
 #ifdef DEBUG
     DEBUG_PRINT("i=%d f0=%d f1=%d f2=%d\n", i, faces[i].f0,
                 faces[i].f1, faces[i].f2);
 #endif
 
-    
     if (faces[i].f0 < 0 || faces[i].f0 >= n_vtcs ||
         faces[i].f1 < 0 || faces[i].f1 >= n_vtcs ||
         faces[i].f2 < 0 || faces[i].f2 >= n_vtcs) 
@@ -157,7 +156,7 @@ int read_off_tmesh(struct model **tmesh_ref,struct file_data *data)
   
   if(data == NULL)
     return MESH_CORRUPTED;
- 
+  
   do {
     tmp = skip_ws_comm(data);
     i = 0;
@@ -188,11 +187,11 @@ int read_off_tmesh(struct model **tmesh_ref,struct file_data *data)
   skip_ws_comm(data);
   /* read the number of verts, faces and edges */
   if (int_scanf(data, &vert_num) != 1)
-     return MESH_CORRUPTED;
+    return MESH_CORRUPTED;
   if (int_scanf(data, &face_num) != 1)
-     return MESH_CORRUPTED;
+    return MESH_CORRUPTED;
   if (int_scanf(data, &edge_num) != 1)
-     return MESH_CORRUPTED;
+    return MESH_CORRUPTED;
   if (vert_num < 3 || face_num <= 0)
     return MESH_CORRUPTED;
   /* otherwise alloc needed buffers/structs */
@@ -215,7 +214,7 @@ int read_off_tmesh(struct model **tmesh_ref,struct file_data *data)
   
   *tmesh_ref = tmesh;
   return 1;
-
+  
  err_read_off_tmesh:
   free(tmesh->vertices);
   free(tmesh->faces);
