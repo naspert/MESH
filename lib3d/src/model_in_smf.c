@@ -1,4 +1,4 @@
-/* $Id: model_in_smf.c,v 1.5 2002/11/04 15:38:26 aspert Exp $ */
+/* $Id: model_in_smf.c,v 1.6 2002/11/04 15:42:57 aspert Exp $ */
 
 
 /*
@@ -78,7 +78,7 @@ int read_smf_tmesh(struct model **tmesh_ref, struct file_data *data) {
   tmesh = (struct model*)calloc(1, sizeof(struct model));
 
   rcode = init_block_list(head_verts, sizeof(vertex_t));
-  if(rcode<0) 
+  if(rcode < 0) 
     return rcode;
 
   rcode = init_block_list(head_faces, sizeof(face_t));
@@ -97,8 +97,10 @@ int read_smf_tmesh(struct model **tmesh_ref, struct file_data *data) {
       if (cur_vert->elem_filled == cur_vert->nelem) { 
 	/* Reallocate storage if needed */
 	cur_vert = get_next_block(cur_vert);
-	if (cur_vert == NULL)
+	if (cur_vert == NULL) {
 	  rcode = MESH_NO_MEM;
+          break;
+        }
       }
       if (float_scanf(data, &x) != 1) {
         rcode = MESH_CORRUPTED;
@@ -180,7 +182,7 @@ int read_smf_tmesh(struct model **tmesh_ref, struct file_data *data) {
       break;
     }
 
-  } while(c != EOF  && rcode > 0);
+  } while(c != EOF  && rcode >= 0);
 
   if (max_vidx >= nvtcs)
     rcode = MESH_CORRUPTED;
