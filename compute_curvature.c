@@ -1,4 +1,4 @@
-/* $Id: compute_curvature.c,v 1.4 2001/10/10 12:57:56 aspert Exp $ */
+/* $Id: compute_curvature.c,v 1.5 2001/10/25 12:30:45 aspert Exp $ */
 #include <3dutils.h>
 #include <compute_error.h>
 #include <compute_curvature.h>
@@ -62,7 +62,7 @@ void compute_mean_curvature_normal(const struct model *raw_model,
 				   struct info_vertex *info, 
 				   int v0, const struct ring_info *rings, 
 				   vertex_t *sum_vert, double *mixed_area, 
-				   double *gauss_curv) {
+				   double *gauss_curv, double *mean_curv) {
   int v1, v1_idx, v2f, v2b, v2b_idx, v2, i;
   int n=rings[v0].size;
   vertex_t tmp;
@@ -151,7 +151,7 @@ void compute_mean_curvature_normal(const struct model *raw_model,
   
   prod_v(0.5/(*mixed_area), sum_vert, sum_vert);
   *gauss_curv /= *mixed_area;
-  
+  *mean_curv = 0.5*norm_v(sum_vert);
   
 }
 
@@ -160,7 +160,7 @@ void compute_curvature(const struct model *raw_model,
 		       struct info_vertex *info, 
 		       const struct ring_info *rings) {
   int i;
-  double k, k2, delta;
+ 
 
   for (i=0; i<raw_model->num_vert; i++) {
     if (rings[i].type != 0) {
@@ -171,18 +171,9 @@ void compute_curvature(const struct model *raw_model,
     compute_mean_curvature_normal(raw_model, info, i, rings, 
 				  &(info[i].mean_curv_normal), 
 				  &(info[i].mixed_area), 
-				  &(info[i].gauss_curv));
-    k2 = 0.25*norm2_v(&(info[i].mean_curv_normal));
-    k = 0.5*norm_v(&(info[i].mean_curv_normal));
-    delta = k2 - info[i].gauss_curv;
-    if (delta <= 0.0) {
-#ifdef __CURV_DEBUG
-      printf("Strange delta=%f at vertex %d\n", delta, i);
-#endif
-      delta = 0.0;
-    }
-    info[i].k1 = k + sqrt(delta);
-    info[i].k2 = k - sqrt(delta);
+				  &(info[i].gauss_curv), 
+				  &(info[i].mean_curv));
+
 
 #ifdef __CURV_DEBUG
     printf("Vertex %d\n", i);
@@ -191,8 +182,8 @@ void compute_curvature(const struct model *raw_model,
     printf("Mixed area = %f\n", info[i].mixed_area);
     printf("Vertex normal = %f %f %f\n", raw_model->normals[i].x, 
 	   raw_model->normals[i].y, raw_model->normals[i].z);
-    printf("Vertex %d :Gauss_k=%f k1=%f k2=%f\n\n", i, info[i].gauss_curv,  
- 	   info[i].k1, info[i].k2); 
+    printf("Vertex %d :Gauss_k=%f km=%f\n\n", i, info[i].gauss_curv,  
+ 	   info[i].mean_curv); 
 #endif
   }
 }
@@ -251,65 +242,51 @@ void compute_curvature_error(struct model_error *model1,
   
 
   /* The model 1 displays the curvature error when RawWidget is constructed */
-  model1->k1_error = (double*)malloc(model1->mesh->num_vert*sizeof(double));
-  model1->k2_error = (double*)malloc(model1->mesh->num_vert*sizeof(double));
+  model1->km_error = (double*)malloc(model1->mesh->num_vert*sizeof(double));
   model1->kg_error = (double*)malloc(model1->mesh->num_vert*sizeof(double));
 
-  model1->min_k1_error = FLT_MAX;
-  model1->max_k1_error = -FLT_MAX;
-  model1->mean_k1_error = 0.0;
-
-  model1->min_k2_error = FLT_MAX;
-  model1->max_k2_error = -FLT_MAX;
-  model1->mean_k2_error = 0.0;
+  model1->min_km_error = FLT_MAX;
+  model1->max_km_error = -FLT_MAX;
+  model1->mean_km_error = 0.0;
 
   model1->min_kg_error = FLT_MAX;
   model1->max_kg_error = -FLT_MAX;
   model1->mean_kg_error = 0.0;
   
   for (i=0; i<model1->mesh->num_vert; i++) {
-    model1->k1_error[i] = fabs(info1[i].k1 - info2[i].k1);
-    model1->k2_error[i] = fabs(info1[i].k2 - info2[i].k2);
+    model1->km_error[i] = fabs(info1[i].mean_curv - info2[i].mean_curv);
     model1->kg_error[i] = fabs(info1[i].gauss_curv - info2[i].gauss_curv);
     
-    if (model1->k1_error[i] > model1->max_k1_error)
-      model1->max_k1_error = model1->k1_error[i];
-    if (model1->k2_error[i] > model1->max_k2_error)
-      model1->max_k2_error = model1->k2_error[i];
+    if (model1->km_error[i] > model1->max_km_error)
+      model1->max_km_error = model1->km_error[i];
     if (model1->kg_error[i] > model1->max_kg_error)
       model1->max_kg_error = model1->kg_error[i];
 
-    if (model1->k1_error[i] < model1->min_k1_error)
-      model1->min_k1_error = model1->k1_error[i];
-    if (model1->k2_error[i] < model1->min_k2_error)
-      model1->min_k2_error = model1->k2_error[i];
+    if (model1->km_error[i] < model1->min_km_error)
+      model1->min_km_error = model1->km_error[i];
     if (model1->kg_error[i] < model1->min_kg_error)
       model1->min_kg_error = model1->kg_error[i];
     
-    model1->mean_k1_error += info1[i].mixed_area*model1->k1_error[i];
-    model1->mean_k2_error += info1[i].mixed_area*model1->k2_error[i];
+
+    model1->mean_km_error += info1[i].mixed_area*model1->km_error[i];
     model1->mean_kg_error += info1[i].mixed_area*model1->kg_error[i];
   }
 
   
-  model1->mean_k1_error /= model1->mesh->total_area;
-  model1->mean_k2_error /= model1->mesh->total_area;
+  model1->mean_km_error /= model1->mesh->total_area;
   model1->mean_kg_error /= model1->mesh->total_area;
 
   /* Print the results */
   fprintf(out, "       Curvature difference between model 1 to model 2\n\n");
   fprintf(out, "        \t   Absolute\n");
-  fprintf(out, "Min_K1 :\t%11g\n", model1->min_k1_error);
-  fprintf(out, "Max_K1 :\t%11g\n", model1->max_k1_error);
-  fprintf(out, "Min_K2 :\t%11g\n", model1->min_k2_error);
-  fprintf(out, "Max_K2 :\t%11g\n", model1->max_k2_error);
+  fprintf(out, "Min_KM :\t%11g\n", model1->min_km_error);
+  fprintf(out, "Max_KM :\t%11g\n", model1->max_km_error);
   fprintf(out, "Min_KG :\t%11g\n", model1->min_kg_error);
   fprintf(out, "Max_KG :\t%11g\n", model1->max_kg_error);
   fprintf(out, "\n\n");
   
   fprintf(out, "       \t   Mean\n");
-  fprintf(out, "K1    :\t%11g\n", model1->mean_k1_error);
-  fprintf(out, "K2    :\t%11g\n", model1->mean_k2_error);
+  fprintf(out, "KM    :\t%11g\n", model1->mean_km_error);
   fprintf(out, "KG    :\t%11g\n", model1->mean_kg_error);
   
 }

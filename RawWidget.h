@@ -1,4 +1,4 @@
-/* $Id: RawWidget.h,v 1.20 2001/10/02 08:34:38 dsanta Exp $ */
+/* $Id: RawWidget.h,v 1.21 2001/10/25 12:30:45 aspert Exp $ */
 #ifndef RAWWIDGET_H
 #define RAWWIDGET_H
 
@@ -16,10 +16,9 @@
 #define RW_CAPA_MASK 0x03
 
 // These flags are used to define which kind of info is displayed on 
-// the 1st model : Hausdorff error, or curvature error (k1, k2 or kg)
+// the 1st model : Hausdorff error, or curvature error (km or kg)
 #define RW_COLOR_ERROR 0x00
-#define RW_COLOR_K1 0x10
-#define RW_COLOR_K2 0x20
+#define RW_COLOR_KM 0x20
 #define RW_COLOR_KG 0x30
 
 #define RW_DISPLAY_MASK 0x30

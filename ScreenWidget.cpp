@@ -1,4 +1,4 @@
-/* $Id: ScreenWidget.cpp,v 1.21 2001/10/10 12:57:55 aspert Exp $ */
+/* $Id: ScreenWidget.cpp,v 1.22 2001/10/25 12:30:45 aspert Exp $ */
 #include <ScreenWidget.h>
 
 
@@ -17,7 +17,7 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   RawWidget *glModel1, *glModel2;
   ColorMapWidget *errorColorBar;
   QPushButton *quitBut;
-  QRadioButton *erBut, *k1But, *k2But, *kgBut;
+  QRadioButton *erBut, *kmBut, *kgBut;
   QButtonGroup *radGrp=NULL;
   bool drawCurv=FALSE;
 
@@ -61,7 +61,7 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
 
 
   // Create the colorbar and the 2 GL windows.
-  if (model1->k1_error != NULL) 
+  if (model1->kg_error != NULL) 
     drawCurv = TRUE;
 
   if (drawCurv)
@@ -133,14 +133,12 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
     radGrp = new QButtonGroup(1, Qt::Vertical, this);
     erBut = new QRadioButton("Haus. error", radGrp);
     erBut->setChecked(TRUE);
-    k1But = new QRadioButton("k1 error", radGrp);
-    k2But = new QRadioButton("k2 error", radGrp);
+    kmBut = new QRadioButton("km error", radGrp);
     kgBut = new QRadioButton("kg error", radGrp);
     
   // This is only needed to set the button ids to our RW_* values
     radGrp->insert(erBut, RW_COLOR_ERROR);
-    radGrp->insert(k1But, RW_COLOR_K1);
-    radGrp->insert(k2But, RW_COLOR_K2);
+    radGrp->insert(kmBut, RW_COLOR_KM);
     radGrp->insert(kgBut, RW_COLOR_KG);
 
     connect(radGrp, SIGNAL(clicked(int)), 
@@ -203,11 +201,8 @@ void ScreenWidget::updateColorBar(int id) {
   case RW_COLOR_ERROR:
     emit actualUpdate(model_data->min_verror, model_data->max_verror);
     break;
-  case RW_COLOR_K1:
-    emit actualUpdate(model_data->min_k1_error, model_data->max_k1_error);
-    break;
-  case RW_COLOR_K2:
-    emit actualUpdate(model_data->min_k2_error, model_data->max_k2_error);
+  case RW_COLOR_KM:
+    emit actualUpdate(model_data->min_km_error, model_data->max_km_error);
     break;
   case RW_COLOR_KG:
     emit actualUpdate(model_data->min_kg_error, model_data->max_kg_error);

@@ -1,4 +1,4 @@
-/* $Id: RawWidget.cpp,v 1.29 2001/10/01 17:33:44 dsanta Exp $ */
+/* $Id: RawWidget.cpp,v 1.30 2001/10/25 12:30:45 aspert Exp $ */
 
 #include <RawWidget.h>
 #include <qmessagebox.h>
@@ -142,14 +142,14 @@ void RawWidget::switchDisplayedInfo(int state) {
     fprintf(stderr, "Invalid call to switchDisplayedInfo\n");
     break;
   case RW_ERROR_ONLY:
-    if (state == RW_COLOR_K1 || state == RW_COLOR_K2 || state == RW_COLOR_KG)
+    if (state == RW_COLOR_KM || state == RW_COLOR_KG)
       fprintf(stderr, "Invalid call to switchDisplayedInfo\n");
     else
       rebuild_list();
     break;
   case RW_ERROR_AND_CURV:
-    if (state == RW_COLOR_K1 || state == RW_COLOR_K2 || 
-	state == RW_COLOR_KG || state == RW_COLOR_ERROR) {
+    if (state == RW_COLOR_KM || state == RW_COLOR_KG || 
+	state == RW_COLOR_ERROR) {
       renderFlag = capa + state;
       rebuild_list();
     } else
@@ -407,60 +407,29 @@ void RawWidget::rebuild_list() {
       glEnd();
       glEndList();
       break;
-    case RW_COLOR_K1:
-      drange = model->max_k1_error - model->min_k1_error;
+    case RW_COLOR_KM:
+      drange = model->max_km_error - model->min_km_error;
       if (drange < FLT_MIN*100) drange = 1;
       glNewList(model_list, GL_COMPILE);
       glBegin(GL_TRIANGLES);  
       for (i=0; i<model->mesh->num_faces; i++) {
 	cur_face = &(model->mesh->faces[i]);
-	cidx = (int) floor(7*(model->k1_error[cur_face->f0]-
-			      model->min_k1_error)/drange);
+	cidx = (int) floor(7*(model->km_error[cur_face->f0]-
+			      model->min_km_error)/drange);
 	glColor3dv(colormap[cidx]);
 	glVertex3d(model->mesh->vertices[cur_face->f0].x,
 		   model->mesh->vertices[cur_face->f0].y,
 		   model->mesh->vertices[cur_face->f0].z); 
 	
-	cidx = (int) floor(7*(model->k1_error[cur_face->f1]-
-			      model->min_k1_error)/drange);
+	cidx = (int) floor(7*(model->km_error[cur_face->f1]-
+			      model->min_km_error)/drange);
 	glColor3dv(colormap[cidx]);
 	glVertex3d(model->mesh->vertices[cur_face->f1].x,
 		   model->mesh->vertices[cur_face->f1].y,
 		   model->mesh->vertices[cur_face->f1].z); 
 	
-	cidx = (int) floor(7*(model->k1_error[cur_face->f2]-
-			      model->min_k1_error)/drange);
-	glColor3dv(colormap[cidx]);
-	glVertex3d(model->mesh->vertices[cur_face->f2].x,
-		   model->mesh->vertices[cur_face->f2].y,
-		   model->mesh->vertices[cur_face->f2].z);       
-      }
-      glEnd();
-      glEndList();
-      break;
-    case RW_COLOR_K2:
-      drange = model->max_k2_error - model->min_k2_error;
-      if (drange < FLT_MIN*100) drange = 1;
-      glNewList(model_list, GL_COMPILE);
-      glBegin(GL_TRIANGLES);  
-      for (i=0; i<model->mesh->num_faces; i++) {
-	cur_face = &(model->mesh->faces[i]);
-	cidx = (int) floor(7*(model->k2_error[cur_face->f0]-
-			      model->min_k2_error)/drange);
-	glColor3dv(colormap[cidx]);
-	glVertex3d(model->mesh->vertices[cur_face->f0].x,
-		   model->mesh->vertices[cur_face->f0].y,
-		   model->mesh->vertices[cur_face->f0].z); 
-	
-	cidx = (int) floor(7*(model->k2_error[cur_face->f1]-
-			      model->min_k2_error)/drange);
-	glColor3dv(colormap[cidx]);
-	glVertex3d(model->mesh->vertices[cur_face->f1].x,
-		   model->mesh->vertices[cur_face->f1].y,
-		   model->mesh->vertices[cur_face->f1].z); 
-	
-	cidx = (int) floor(7*(model->k2_error[cur_face->f2]-
-			      model->min_k2_error)/drange);
+	cidx = (int) floor(7*(model->km_error[cur_face->f2]-
+			      model->min_km_error)/drange);
 	glColor3dv(colormap[cidx]);
 	glVertex3d(model->mesh->vertices[cur_face->f2].x,
 		   model->mesh->vertices[cur_face->f2].y,

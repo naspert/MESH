@@ -1,4 +1,4 @@
-/* $Id: compute_curvature.h,v 1.3 2001/10/10 12:57:56 aspert Exp $ */
+/* $Id: compute_curvature.h,v 1.4 2001/10/25 12:30:45 aspert Exp $ */
 #ifndef _COMPUTE_CURVATURE_PROTO
 #define _COMPUTE_CURVATURE_PROTO
 
@@ -12,7 +12,7 @@ extern "C" {
   void compute_mean_curvature_normal(const struct model*, 
 				     struct info_vertex*, int, 
 				     const struct ring_info*, vertex_t*, 
-				     double*, double*);
+				     double*, double*, double*);
   void compute_curvature(const struct model*, struct info_vertex*, 
 			 const struct ring_info*);
   void compute_curvature_error(struct model_error*, struct model_error*, 

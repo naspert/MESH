@@ -1,4 +1,4 @@
-/* $Id: compute_error.h,v 1.16 2001/09/27 13:19:14 aspert Exp $ */
+/* $Id: compute_error.h,v 1.17 2001/10/25 12:30:46 aspert Exp $ */
 #ifndef _COMPUTE_ERROR_PROTO
 #define _COMPUTE_ERROR_PROTO
 
@@ -47,16 +47,13 @@ struct model_error {
   float min_verror;       /* The minimum vertex error for the model */
   float max_verror;       /* The maximum vertex error for the model */
   
-  double *k1_error;
-  double min_k1_error;
-  double max_k1_error;
-  double mean_k1_error;
+  /* Mean curvature km = 0.5*(k1 + k2) */
+  double *km_error;
+  double min_km_error;
+  double max_km_error;
+  double mean_km_error;
 
-  double *k2_error;
-  double min_k2_error;
-  double max_k2_error;
-  double mean_k2_error;
-
+  /* Gaussian curvature kg = k1*k2 */
   double *kg_error;
   double min_kg_error;
   double max_kg_error;
