@@ -94,10 +94,6 @@ LINK32=link.exe
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat;for;f90"
 # Begin Source File
 
-SOURCE=.\lib3d\src\3dmodel_io.c
-# End Source File
-# Begin Source File
-
 SOURCE=.\colormap.c
 # End Source File
 # Begin Source File
@@ -150,10 +146,6 @@ SOURCE=.\lib3d\src\model_in.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\lib3d\src\normals.c
-# End Source File
-# Begin Source File
-
 SOURCE=.\RawWidget.cpp
 # End Source File
 # Begin Source File
@@ -179,14 +171,6 @@ SOURCE=.\xalloc.c
 # Begin Source File
 
 SOURCE=.\lib3d\include\3dmodel.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\lib3d\include\3dmodel_io.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\lib3d\include\3dutils.h
 # End Source File
 # Begin Source File
 
@@ -224,10 +208,6 @@ InputName=ColorMapWidget
 
 !ENDIF 
 
-# End Source File
-# Begin Source File
-
-SOURCE=.\compute_curvature.h
 # End Source File
 # Begin Source File
 
@@ -289,10 +269,6 @@ SOURCE=.\model_analysis.h
 # Begin Source File
 
 SOURCE=.\lib3d\include\model_in.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\lib3d\include\normals.h
 # End Source File
 # Begin Source File
 
