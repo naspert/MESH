@@ -1,4 +1,4 @@
-/* $Id: mesh_run.c,v 1.15 2002/03/15 16:32:14 aspert Exp $ */
+/* $Id: mesh_run.c,v 1.16 2002/03/27 08:27:39 dsanta Exp $ */
 
 
 /*
@@ -125,6 +125,7 @@ void mesh_run(const struct args *args, struct model_error *model1,
   model2->mesh = read_model_file(args->m2_fname);
   outbuf_printf(out,"Done (%.2f secs)\n",
                 (double)(clock()-start_time)/CLOCKS_PER_SEC);
+  outbuf_flush(out);
 
   /* Analyze models (we don't need normals for model 1, so we don't request
    * for it to be oriented). */
