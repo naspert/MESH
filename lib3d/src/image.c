@@ -1,5 +1,5 @@
-/* $Id: image.c,v 1.1 2001/03/12 14:50:32 aspert Exp $ */
-#include "image.h"
+/* $Id: image.c,v 1.2 2001/03/12 15:57:23 aspert Exp $ */
+#include <image.h>
 
 
 /* Pseudo - destructors of images
