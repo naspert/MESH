@@ -6,6 +6,8 @@
 	- Default to Penitum IV only builds with PGCC and ICC compilers
 	- When detecting the file format, check for file error before
 	  returning.
+	- Fixed incorrect handling of unknown nodes (color and texCoord). They
+	  are now skipped (hopefully) without failure.
 
 * Changes from v1.1 to v1.2 :
 	- Fixed a bug in the reading low-level functions : 'buf_getc'
