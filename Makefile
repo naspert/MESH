@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.29 2002/02/26 10:37:56 dsanta Exp $
+# $Id: Makefile,v 1.30 2002/02/26 10:39:17 dsanta Exp $
 
 #
 # If the make variable PROFILE is defined to a non-empty value, profiling
@@ -196,7 +196,7 @@ LIB3D_SLIB = $(addprefix $(LIBDIR)/,lib3d.a)
 # of another build on same directory (e.g., Visual C++)
 
 # Main targets
-default: clean_moc $(MESH_EXE)
+default: all
 
 all: dirs $(MESH_EXE)
 
