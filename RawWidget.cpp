@@ -1,4 +1,4 @@
-/* $Id: RawWidget.cpp,v 1.45 2002/02/27 12:09:30 aspert Exp $ */
+/* $Id: RawWidget.cpp,v 1.46 2002/02/28 12:07:16 aspert Exp $ */
 
 #include <RawWidget.h>
 #include <qmessagebox.h>
@@ -12,7 +12,7 @@
 // This is a derived class from QGLWidget used to render models
 // 
 
-RawWidget::RawWidget(struct model_error *model, int renderType, 
+RawWidget::RawWidget(struct model_error *model_err, int renderType, 
 		     QWidget *parent, const char *name)
   :QGLWidget(parent, name), no_err_value(0.25) { 
   
@@ -30,7 +30,7 @@ RawWidget::RawWidget(struct model_error *model, int renderType,
   colormap = colormap_hsv(CMAP_LENGTH);
 
   // Get the structure containing the model
-  this->model = model;
+  this->model = model_err;
 
   // Get the flags
   renderFlag = renderType;
@@ -45,18 +45,18 @@ RawWidget::RawWidget(struct model_error *model, int renderType,
   downsampling = 1;
 
   // Compute the center of the bounding box of the model
-  add_v(&(model->mesh->bBox[0]), &(model->mesh->bBox[1]), &center);
+  add_v(&(model_err->mesh->bBox[0]), &(model_err->mesh->bBox[1]), &center);
   prod_v(0.5, &center, &center);
 
   // Center the model around (0, 0, 0)
-  for (i=0; i<model->mesh->num_vert; i++) 
-    substract_v(&(model->mesh->vertices[i]), &center, 
-		&(model->mesh->vertices[i]));
+  for (i=0; i<model_err->mesh->num_vert; i++) 
+    substract_v(&(model_err->mesh->vertices[i]), &center, 
+		&(model_err->mesh->vertices[i]));
 
   
   
   // This should be enough to see the whole model when starting
-  distance = dist_v(&(model->mesh->bBox[0]), &(model->mesh->bBox[1]))/
+  distance = dist_v(&(model_err->mesh->bBox[0]), &(model_err->mesh->bBox[1]))/
     tan(FOV*M_PI_2/180.0);
 
 
@@ -597,14 +597,14 @@ void RawWidget::initializeGL() {
 // 'display' function called by the paintGL call back
 // clears the buffers, computes correct transformation matrix
 // and calls the model's display list
-void RawWidget::display(double distance) {
+void RawWidget::display(double dist) {
   GLfloat lpos[] = {-1.0, 1.0, 1.0, 0.0} ;
 
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glLoadIdentity();
   /* Set the light position relative to eye point */
   glLightfv(GL_LIGHT0, GL_POSITION, lpos);  
-  glTranslated(0.0, 0.0, -distance); /* Translate the object along z axis */
+  glTranslated(0.0, 0.0, -dist); /* Translate the object along z axis */
   glMultMatrixd(mvmatrix); /* Perform rotation */
   glCallList(model_list);
 }

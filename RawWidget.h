@@ -1,4 +1,4 @@
-/* $Id: RawWidget.h,v 1.28 2002/02/24 20:18:35 dsanta Exp $ */
+/* $Id: RawWidget.h,v 1.29 2002/02/28 12:07:16 aspert Exp $ */
 #ifndef RAWWIDGET_H
 #define RAWWIDGET_H
 
@@ -23,7 +23,7 @@ class RawWidget : public QGLWidget
   Q_OBJECT 
 
 public:  
-  RawWidget(struct model_error *model, int renderType, QWidget *parent=0, 
+  RawWidget(struct model_error *model_err, int renderType, QWidget *parent=0, 
 	    const char *name=0); // Constructor
   ~RawWidget(); // Destructor
   QSize sizeHint() const;
@@ -55,7 +55,7 @@ protected:
 
 private:  
 // functions 
-  void display(double distance);
+  void display(double dist);
   void rebuildList();
   void setLight();
   static void checkGlErrors(const char* where);
