@@ -1,4 +1,4 @@
-/* $Id: 3dmodel_io.c,v 1.8 2001/04/03 11:46:20 aspert Exp $ */
+/* $Id: 3dmodel_io.c,v 1.9 2001/06/05 11:31:06 jacquet Exp $ */
 #include <3dmodel.h>
 
 
@@ -78,17 +78,17 @@ model* alloc_read_model(FILE *pf, int nvert, int nfaces, int nnorms) {
     raw_model->vertices[i].z = 1.0*z;
      if (raw_model->vertices[i].x > raw_model->bBox[1].x) 
       raw_model->bBox[1].x = raw_model->vertices[i].x;
-    else if (raw_model->vertices[i].x < raw_model->bBox[0].x)
+     if (raw_model->vertices[i].x < raw_model->bBox[0].x)
       raw_model->bBox[0].x = raw_model->vertices[i].x;
 
     if (raw_model->vertices[i].y > raw_model->bBox[1].y) 
       raw_model->bBox[1].y = raw_model->vertices[i].y;
-    else if (raw_model->vertices[i].y < raw_model->bBox[0].y)
+    if (raw_model->vertices[i].y < raw_model->bBox[0].y)
       raw_model->bBox[0].y = raw_model->vertices[i].y;
 
     if (raw_model->vertices[i].z > raw_model->bBox[1].z) 
       raw_model->bBox[1].z = raw_model->vertices[i].z;
-    else if (raw_model->vertices[i].z < raw_model->bBox[0].z)
+    if (raw_model->vertices[i].z < raw_model->bBox[0].z)
       raw_model->bBox[0].z = raw_model->vertices[i].z;
   }
   
