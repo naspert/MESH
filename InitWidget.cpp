@@ -1,4 +1,4 @@
-/* $Id: InitWidget.cpp,v 1.14 2002/02/04 17:34:16 dsanta Exp $ */
+/* $Id: InitWidget.cpp,v 1.15 2002/02/13 10:38:39 dsanta Exp $ */
 
 #include <InitWidget.h>
 
@@ -24,7 +24,7 @@ InitWidget::InitWidget(struct args defArgs,
   QListBox *qlboxSplStep;
   QGridLayout *bigGrid;
   QHBoxLayout *smallGrid1, *smallGrid2, *smallGrid3, *smallGrid4, *smallGrid5;
-  QHBoxLayout *smallGrid6;
+  QHBoxLayout *smallGrid6, *smallGrid7;
 
   /* Initialize */
   pargs = defArgs;
@@ -65,6 +65,11 @@ InitWidget::InitWidget(struct args defArgs,
                              this);
   chkSymDist->setChecked(pargs.do_symmetric);
 
+  /* Force sample all checkbox */
+  chkForceSampleAll = new QCheckBox("Force at least a sample in all triangles",
+                                    this);
+  chkForceSampleAll->setChecked(pargs.force_sample_all);
+
   /* Log window checkbox */
   chkLogWindow = new QCheckBox("Log output in external window", this);
   chkLogWindow->setChecked(pargs.do_wlog);
@@ -98,8 +103,10 @@ InitWidget::InitWidget(struct args defArgs,
   smallGrid5 = new QHBoxLayout(bigGrid);
   smallGrid5->addWidget(chkSymDist);
 
+  /* Build grid layout for force sample all checkbox */
+  smallGrid7 = new QHBoxLayout(bigGrid);
+  smallGrid7->addWidget(chkForceSampleAll);
 
-  
   /* Build grid layout for external log window */
   smallGrid6 = new QHBoxLayout(bigGrid);
   smallGrid6->addWidget(chkLogWindow);
@@ -172,6 +179,7 @@ void InitWidget::meshSetUp() {
   pargs.m2_fname = (char *) qledMesh2->text().latin1();
   pargs.sampling_step = atof((char*)qledSplStep->text().latin1())/100;
   pargs.do_symmetric = chkSymDist->isChecked() == TRUE;
+  pargs.force_sample_all = chkForceSampleAll->isChecked() == TRUE;
   pargs.do_wlog = chkLogWindow->isChecked() == TRUE;
 
   if (!pargs.do_wlog) {

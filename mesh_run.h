@@ -1,4 +1,4 @@
-/* $Id: mesh_run.h,v 1.5 2002/01/15 17:02:06 aspert Exp $ */
+/* $Id: mesh_run.h,v 1.6 2002/02/13 10:38:40 dsanta Exp $ */
 
 #ifndef _MESH_RUN_PROTO
 #define _MESH_RUN_PROTO
@@ -25,6 +25,8 @@ struct args {
   int quiet;      /* do not display extra info flag*/
   double sampling_step; /* The sampling step, as fraction of the bounding box
                          * diagonal of model 2. */
+  int force_sample_all; /* Force to have at least one sample per triangle of
+                         * model 1. */
   int do_symmetric; /* do symmetric error measure */
   int do_wlog; /* log the output into an external window */
 };

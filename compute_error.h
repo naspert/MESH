@@ -1,4 +1,4 @@
-/* $Id: compute_error.h,v 1.22 2002/02/10 17:57:51 dsanta Exp $ */
+/* $Id: compute_error.h,v 1.23 2002/02/13 10:38:39 dsanta Exp $ */
 #ifndef _COMPUTE_ERROR_PROTO
 #define _COMPUTE_ERROR_PROTO
 
@@ -76,9 +76,11 @@ struct dist_surf_surf_stats {
 
 /* Calculates the distance from model m1 to model m2. The triangles of m1 are
  * sampled so that the sampling density (number of samples per unit surface)
- * is sampling_density. The per face (of m1) error metrics are returned in a
- * new array (of length m1->num_faces) allocated at *fe_ptr. The overall
- * distance metrics and other statistics are returned in stats. Optionally, if
+ * is sampling_density. If force_sample_all is non-zero, all triangles of m1
+ * have at least one sample, even if the specified sampling density is too
+ * low for that. The per face (of m1) error metrics are returned in a new
+ * array (of length m1->num_faces) allocated at *fe_ptr. The overall distance
+ * metrics and other statistics are returned in stats. Optionally, if
  * calc_normals is non-zero and m2 has no normals or face normals, the normals
  * will be calculated and added to m2 (only normals, not face normals). The
  * normals are calculated assuming that the model m2 is oriented, if it is not
@@ -88,7 +90,7 @@ struct dist_surf_surf_stats {
  * allocated at *fe_ptr should be freed by calling
  * free_face_error(*fe_ptr). */
 void dist_surf_surf(const struct model *m1, struct model *m2, 
-		    double sampling_step,
+		    double sampling_step, int force_sample_all,
                     struct face_error *fe_ptr[],
                     struct dist_surf_surf_stats *stats, int calc_normals,
                     struct prog_reporter *prog);

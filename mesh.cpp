@@ -1,4 +1,4 @@
-/* $Id: mesh.cpp,v 1.15 2002/02/10 17:57:51 dsanta Exp $ */
+/* $Id: mesh.cpp,v 1.16 2002/02/13 10:38:40 dsanta Exp $ */
 
 #include <time.h>
 #include <string.h>
@@ -51,6 +51,13 @@ static void print_usage(FILE *out)
   fprintf(out,"      \tof side length s). A probabilistic model is used so\n");
   fprintf(out,"      \tthat the resulting number is as close as possible to\n");
   fprintf(out,"      \tthe target. The default is 0.5\n\n");
+  fprintf(out,"  -f\tForce to have at least one sample per triangle of\n");
+  fprintf(out,"    \tmodel 1. Otherwise, depending on the sampling step\n");
+  fprintf(out,"    \tsize and number of triangles in model 1, it can happen\n");
+  fprintf(out,"    \tthat some triangles of model 1 have no samples.\n");
+  fprintf(out,"    \tForcing at least one sample per triangle can improve\n");
+  fprintf(out,"    \tprecision in some situations, at the expense of larger\n");
+  fprintf(out,"    \trunning time.\n\n");
   fprintf(out,"  -wlog\tDisplay textual results in a window instead of on\n");
   fprintf(out,"       \tstandard output. Not compatible with the -t option.\n");
   fprintf(out,"\n");
@@ -88,8 +95,9 @@ static void parse_args(int argc, char **argv, struct args *pargs)
           fprintf(stderr,"ERROR: invalid number for -l option\n");
           exit(1);
         }
-      }
-      else if (strcmp(argv[i], "-wlog") == 0) { /* log into window */
+      } else if (strcmp(argv[i], "-f") == 0) { /* sample all triangles */
+        pargs->force_sample_all = 1;
+      } else if (strcmp(argv[i], "-wlog") == 0) { /* log into window */
 	pargs->do_wlog = 1;
       } else { /* unrecognized option */
         fprintf(stderr,
