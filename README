@@ -31,13 +31,10 @@ and Solaris (with the Sun compiler). Other configurations might require some
 (hopefully minor) modifications.
 
 * Specific notes for RedHat :
-      - If you expereience crashes and/or various troubles with OpenGL apps, 
+      - If you experience crashes and/or various troubles with OpenGL apps, 
 	and you are using NVidia's driver, please check that you are using 
-	Nvidia's *latest* drivers (1.0-4191 currently). Apparently they solved
-	quite some issues in this release.
-      - If you want to compile Mesh with RedHat's Qt 2.3.1 you have to
-	add libpthread at link time. To do so, edit the Makefile,
-	and add '-lpthread' to the 'LDLIBS' var. (line 348). 
+	*recent* drivers (version 1.0-4191 or more, apparently they solved
+	quite some issues in this release).
 
 * Notes for using Intel compiler (ICC) or Portland Group compiler (PGCC)
 This section only applies for Linux. The Makefile will try to detect your
