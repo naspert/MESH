@@ -1,8 +1,8 @@
-/* $Id: model_analysis.c,v 1.2 2001/08/16 15:04:42 dsanta Exp $ */
+/* $Id: model_analysis.c,v 1.3 2001/08/17 09:05:56 dsanta Exp $ */
 
 #include <model_analysis.h>
 
-#include <mutils.h>
+#include <xalloc.h>
 
 /* --------------------------------------------------------------------------*
  *                            Local functions                                *
@@ -113,7 +113,7 @@ void analyze_model(const model *m, const struct face_list *flist,
     nf = flist[i].n_faces;
     if (nf == 0) continue; /* An isolated vertex (no face uses it): ignore */
     if (vfaces_sz < nf) {
-      vfaces = xrealloc(vfaces,sizeof(*vfaces)*nf);
+      vfaces = xa_realloc(vfaces,sizeof(*vfaces)*nf);
       vfaces_sz = nf;
     }
     memcpy(vfaces,flist[i].face,sizeof(*vfaces)*nf);
@@ -199,13 +199,13 @@ void analyze_model(const model *m, const struct face_list *flist,
       info->closed = 0;
     }
   }
-  xfree(vfaces);
+  free(vfaces);
   vfaces = NULL;
 
   /* Search number of disjoint elements */
   info->n_disjoint_parts = 0;
   start_idx = 0;
-  visited_vertex = xcalloc(m->num_vert,sizeof(*visited_vertex));
+  visited_vertex = xa_calloc(m->num_vert,sizeof(*visited_vertex));
   n_visited_vertices = 0;
   do {
     while (visited_vertex[start_idx]) { /* Search for root of next element */
@@ -215,7 +215,7 @@ void analyze_model(const model *m, const struct face_list *flist,
     walk_vertices(m->faces,flist,start_idx,visited_vertex,
                   &n_visited_vertices,info);
   } while (n_visited_vertices != m->num_vert);
-  xfree(visited_vertex);
+  free(visited_vertex);
   visited_vertex = NULL;
 
   if (local_flist) {
@@ -231,16 +231,19 @@ struct face_list *faces_of_vertex(const model *m)
   int v0,v1,v2;         /* current triangle's vertex indices */
   struct face_list *fl; /* the face list to return */
 
-  fl = xcalloc(m->num_vert,sizeof(*fl));
+  fl = xa_calloc(m->num_vert,sizeof(*fl));
   for (j=0, jmax=m->num_faces; j<jmax; j++) {
     v0 = m->faces[j].f0;
     v1 = m->faces[j].f1;
     v2 = m->faces[j].f2;
-    fl[v0].face = xrealloc(fl[v0].face,(fl[v0].n_faces+1)*sizeof(*(fl->face)));
+    fl[v0].face =
+      xa_realloc(fl[v0].face,(fl[v0].n_faces+1)*sizeof(*(fl->face)));
     fl[v0].face[fl[v0].n_faces++] = j;
-    fl[v1].face = xrealloc(fl[v1].face,(fl[v1].n_faces+1)*sizeof(*(fl->face)));
+    fl[v1].face =
+      xa_realloc(fl[v1].face,(fl[v1].n_faces+1)*sizeof(*(fl->face)));
     fl[v1].face[fl[v1].n_faces++] = j;
-    fl[v2].face = xrealloc(fl[v2].face,(fl[v2].n_faces+1)*sizeof(*(fl->face)));
+    fl[v2].face =
+      xa_realloc(fl[v2].face,(fl[v2].n_faces+1)*sizeof(*(fl->face)));
     fl[v2].face[fl[v2].n_faces++] = j;
   }
   return fl;
@@ -252,8 +255,8 @@ void free_face_lists(struct face_list *fl, int n)
   int i;
   if (fl == NULL) return;
   for (i=0; i<n; i++) {
-    xfree(fl[i].face);
+    free(fl[i].face);
   }
-  xfree(fl);
+  free(fl);
 }
 
