@@ -1,4 +1,4 @@
-/* $Id: model_in.h,v 1.19 2002/08/30 09:18:45 aspert Exp $ */
+/* $Id: model_in.h,v 1.20 2002/10/16 13:02:46 aspert Exp $ */
 
 
 /*
@@ -133,8 +133,9 @@ struct file_data {
 #else
   gzFile f;
 #endif
-  unsigned char *block; /* data block = 16KB */
-  int nbytes; /* actual number of bytes in block */
+  unsigned char *block; /* data block */
+  int size; /* size of the block */
+  int nbytes; /* actual number of valid bytes in block */
   int pos; /* current position in block */
   int eof_reached;
 };
@@ -168,9 +169,9 @@ struct file_data {
 /* Maximum allowed word length */
 #define MAX_WORD_LEN 60
 /* Default initial number of elements for an array */
-#define SZ_INIT_DEF 240
+#define SZ_INIT_DEF 16384
 /* Maximum number of elements by which an array is grown */
-#define SZ_MAX_INCR 2048
+#define SZ_MAX_INCR 16384
 
 /* Characters that are considered whitespace in VRML */
 #define VRML_WS_CHARS " \t,\n\r"

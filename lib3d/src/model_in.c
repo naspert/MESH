@@ -1,4 +1,4 @@
-/* $Id: model_in.c,v 1.34 2002/08/30 09:18:46 aspert Exp $ */
+/* $Id: model_in.c,v 1.35 2002/10/16 13:02:47 aspert Exp $ */
 
 
 /*
@@ -72,10 +72,12 @@
 
 
 /* Buffer size (in bytes) for gzread  */
-#define GZ_BUF_SZ 16384
+#define GZ_BUF_SZ   16384
 /* Real number of bytes read by gzread = 95% of GZ_BUF_SZ. Some supplementary 
    bytes are read from the file until we reach a valid separator */
-#define GZ_RBYTES 15565
+#define GZ_RBYTES   16000
+/* Increment for the size of the buffer, just in case ... */
+#define GZ_BUF_INCR 512
 
 /* Converts argument into string, without replacing defines in argument */
 #define STRING_Q(N) #N
@@ -169,6 +171,15 @@ static int refill_buffer(struct file_data* data)
       return 1; /* kinda OK... */
     }
     data->block[data->nbytes++] = (unsigned char)tmp;
+    if (data->nbytes == data->size-1) { /* we need more space */
+      data->block = grow_array(data->block, sizeof(unsigned char), 
+                               &(data->size), GZ_BUF_INCR);
+#ifdef DEBUG 
+      printf("New block size = %d bytes\n", data->size);
+#endif 
+      if (data->block == NULL)
+        return MESH_NO_MEM;
+    }
   }
   memset(&(data->block[data->nbytes]), 0, 
          (GZ_BUF_SZ-data->nbytes)*sizeof(unsigned char));
@@ -220,46 +231,71 @@ int int_scanf(struct file_data *data, int *out)
 }
 
 /* This function is an equivalent for 'sscanf(data->block, "%f", out)'
- * except that it uses 'strtol' that is faster... */
+ * except that it uses 'strtol' that is faster... 
+ * Two versions: the one for Window$ makes a copy of the number into a
+ * buffer, s.t. strtol does not waste more time in strlen calls. 
+ * It is still _much_ slower than the glibc implementation, but it 
+ * improves things.
+ */
+#ifdef _WIN32
 int float_scanf(struct file_data *data, float *out) 
 {
-  char *endptr=NULL;
+  char buf[512];
   float tmp;
+  int c, i=-1;
+
+  do {
+    c = getc(data);
+  } while ((c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '#' ||
+            c == '\"' || c ==',') && c != EOF);
+  if (c != EOF)
+    ungetc(c, data);
+
+  do {
+    buf[++i] = getc(data);
+  } while ((buf[i] >= '0' && buf[i] <= '9') || buf[i] == 'e' || 
+           buf[i] == 'E' || buf[i] == '+' || buf[i] == '-' || 
+           buf[i] == '.');
+  buf[++i] = '\0';
+
+  if (i == 1) /* screwed up ! */
+    return 0;
+
+  tmp = (float)atof(buf);
+
+  if (data->pos == data->nbytes-1) {
+    refill_buffer(data);
+  }
+  *out = tmp;
+  return 1;
+}
+#else
+int float_scanf(struct file_data *data, float *out) 
+{
+  float tmp;
+  char *endptr = NULL;
   int c;
 
   do {
     c = getc(data);
   } while ((c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '#' ||
-           c == '\"' || c ==',') && c != EOF);
+            c == '\"' || c ==',') && c != EOF);
   if (c != EOF)
     ungetc(c, data);
 
-
-  tmp = (float)strtod((char*)&(data->block[data->pos]), &endptr);
-  if (endptr == (char*)&(data->block[data->pos]) || endptr==NULL) {
-#ifdef DEBUG
-    printf("[float_scanf] pos=%d block= %s\n", data->pos, 
-	   &(data->block[data->pos]));
-#endif
+  tmp = strtod((char*)&(data->block[data->pos]), &endptr);
+  if (endptr == (char*)&(data->block[data->pos]) || endptr==NULL) 
     return 0;
-  }  
 
   data->pos += (endptr - (char*)&(data->block[data->pos]))*sizeof(char);
 
   if (data->pos == data->nbytes-1) {
-#ifdef DEBUG
-    printf("[float_scanf] block = %s\n", &(data->block[data->pos]));
-    printf("[float_scanf] calling refill_buffer\n");
-#endif
     refill_buffer(data);
   }
-#ifdef DEBUG
-  printf("[float_scanf] %f\n", tmp);
-#endif
   *out = tmp;
   return 1;
 }
-
+#endif
 
 /* Reads a word until a separator is encountered. This is the
  * equivalent of doing a [sf]canf(data, "%60[^ \t,\n\r#\"]", out)
@@ -642,6 +678,7 @@ int read_fmodel(struct model **models_ref, const char *fname,
 
   if (data->f == NULL) return MESH_BAD_FNAME;
   /* initialize file_data structure */
+  data->size = GZ_BUF_SZ;
   data->eof_reached = 0;
   data->nbytes = 0;
   data->pos = 1;
