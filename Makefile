@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.3 2001/05/30 15:00:15 jacquet Exp $
+# $Id: Makefile,v 1.4 2001/06/01 09:43:11 jacquet Exp $
 
 CC = gcc
 CPP = g++
@@ -48,22 +48,22 @@ lib3d :  $(LIB3DDIR)/obj/3dmodel_io.o $(LIB3DDIR)/obj/normals.o  $(LIB3DDIR)/obj
 	$(CC) -g -shared -o $(LIB3DDIR)/lib/lib3d.so $^
 
 $(OBJDIR)/viewer.o : viewer.cpp
-	$(CPP) -O2 -ansi -lm $(QTINCFLAGS) $(GL_CFLAGS) -c $< -o $@
+	$(CPP) -D_METRO -O2 -ansi -lm $(QTINCFLAGS) $(GL_CFLAGS) -c $< -o $@
 
 $(OBJDIR)/moc_RawWidget.o : moc_RawWidget.cpp
-	$(CPP) -O2 -ansi -lm $(QTINCFLAGS) $(GL_CFLAGS) -c $< -o $@
+	$(CPP) -D_METRO -O2 -ansi -lm $(QTINCFLAGS) $(GL_CFLAGS) -c $< -o $@
 
 moc_RawWidget.cpp : RawWidget.h
-	$(MOC) $< -o $@
+	$(MOC) -D_METRO $< -o $@
 
 $(LIB3DDIR)/obj/%.o : $(LIB3DDIR)/src/%.c
 	$(CC) $(BASE_CFLAGS) -D_METRO -c $< -o $@
 
 $(OBJDIR)/%.o : %.c
-	$(CC)  $(BASE_CFLAGS) -c $< -o $@	
+	$(CC)  $(BASE_CFLAGS) -D_METRO -c $< -o $@	
 
 $(OBJDIR)/%.o : %.cpp
-	$(CPP) $(BASE_CFLAGS) $(QTINCFLAGS) -c $< -o $@
+	$(CPP) $(BASE_CFLAGS) $(QTINCFLAGS) -D_METRO -c $< -o $@
 
 
 
