@@ -1,5 +1,5 @@
 #! /bin/sh
-# $Id: subdiv.sh,v 1.1 2002/03/25 09:55:43 aspert Exp $
+# $Id: subdiv.sh,v 1.2 2002/03/25 10:06:02 aspert Exp $
 
 
 bin_path=/home/sun1/aspert/devel/lib3d/bin
@@ -48,22 +48,23 @@ for meth in "-but" "-sph" "-loop"
 do
   prev_model=$or_model
   tmp=`echo $meth | sed 's/^\-//'`
-  echo -n "Method : $tmp ..."
-  for ((i=1; i<=nlev; i++))
-  do
-     case "$meth" in
-	"-but" )
-	outfile=${sub_model_root}_b${i}.raw
-	;;
-   	
-	"-sph" )
-	outfile=${sub_model_root}_s${i}.raw 
+  suffix=${tmp:0:1}
+  case "$meth" in
+        "-but" )
+        echo -n "Method : Butterfly ... "
 	;;
 
-	"-loop" )
-	outfile=${sub_model_root}_l${i}.raw
-        ;;
-     esac
+        "-sph" )
+        echo -n "Method : Spherical ... "
+	;;
+
+        "-loop" )
+        echo -n "Method : Loop ... "
+	;;
+  esac
+  for ((i=1; i<=nlev; i++))
+  do
+     outfile=${sub_model_root}_${suffix}${i}.raw 
      $sub_exec $meth $prev_model $outfile > $logfile 2>&1
      prev_model=$outfile
   done
