@@ -106,10 +106,6 @@ SOURCE=.\ColorMapWidget.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\compute_curvature.c
-# End Source File
-# Begin Source File
-
 SOURCE=.\compute_error.c
 # End Source File
 # Begin Source File
@@ -147,6 +143,10 @@ SOURCE=.\moc_ScreenWidget.cpp
 # Begin Source File
 
 SOURCE=.\model_analysis.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\lib3d\src\model_in.c
 # End Source File
 # Begin Source File
 
@@ -277,6 +277,10 @@ SOURCE=.\mesh_run.h
 # Begin Source File
 
 SOURCE=.\model_analysis.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\lib3d\include\model_in.h
 # End Source File
 # Begin Source File
 
