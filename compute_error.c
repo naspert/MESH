@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.80 2002/02/20 23:43:49 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.81 2002/02/21 09:15:18 dsanta Exp $ */
 
 #include <compute_error.h>
 
@@ -285,8 +285,8 @@ static void calc_normals_as_oriented_model(struct model *m,
  * resulting sampling density is s_density in average. */
 static int get_sampling_freq(double t_area, double s_density)
 {
-  double rv,p;
-  double n_samples,n;
+  double rv,p,n_samples;
+  int n;
 
   /* NOTE: we use a random variable so that the expected (i.e. statistical
    * average) number of samples is n_samples=t_area/s_density. Given a
@@ -297,7 +297,7 @@ static int get_sampling_freq(double t_area, double s_density)
    * that is the expected value is n_samples. */
   rv = rand()/(RAND_MAX+1.0); /* rand var. in [0,1) interval */
   n_samples = t_area*s_density;
-  n = floor(sqrt(0.25+2*n_samples)-0.5);
+  n = (int)floor(sqrt(0.25+2*n_samples)-0.5);
   p = (n+2)*0.5-n_samples/(n+1);
   return (rv<p) ? n : n+1;
 }
@@ -1483,9 +1483,9 @@ void calc_vertex_error(struct model_error *me, int *nv_empty, int *nf_empty)
         me->verror[me->mesh->faces[i].f2] = -2; /* special flag value */
       }
     } else {
-      me->verror[me->mesh->faces[i].f0] = me->fe[i].serror[0];
-      me->verror[me->mesh->faces[i].f1] = me->fe[i].serror[n*(n+1)/2-1];
-      me->verror[me->mesh->faces[i].f2] = me->fe[i].serror[n-1];
+      me->verror[me->mesh->faces[i].f0] = (float)me->fe[i].serror[0];
+      me->verror[me->mesh->faces[i].f1] = (float)me->fe[i].serror[n*(n+1)/2-1];
+      me->verror[me->mesh->faces[i].f2] = (float)me->fe[i].serror[n-1];
     }
   }
 

@@ -1,4 +1,4 @@
-/* $Id: geomutils.h,v 1.26 2002/02/19 15:15:50 aspert Exp $ */
+/* $Id: geomutils.h,v 1.27 2002/02/21 09:15:19 dsanta Exp $ */
 #include <3dmodel.h>
 
 #ifndef _GEOMUTILS_PROTO_
@@ -590,7 +590,7 @@ extern "C" {
  */
 #ifndef __norm_v
 #define __norm_v(v)                             \
-        sqrt((v).x*(v).x + (v).y*(v).y + (v).z*(v).z)
+        ((float)sqrt((v).x*(v).x + (v).y*(v).y + (v).z*(v).z))
 #endif
 
 /* 

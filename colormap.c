@@ -1,4 +1,4 @@
-/* $Id: colormap.c,v 1.1 2002/02/20 18:09:07 dsanta Exp $ */
+/* $Id: colormap.c,v 1.2 2002/02/21 09:15:18 dsanta Exp $ */
 
 #include <colormap.h>
 #include <stdlib.h>
@@ -12,10 +12,10 @@ static void hue2rgb(float hue, float *r, float *g, float *b) {
   int k;
 
   /* Get principal component of angle */
-  hue -= 360*floor(hue/360);
+  hue -= 360*(float)floor(hue/360);
   /* Get section */
   hue /= 60;
-  k = floor(hue);
+  k = (int)floor(hue);
   if (k==6) {
     k = 5;
   } else if (k < 0) {
