@@ -1,4 +1,4 @@
-/* $Id: xalloc.h,v 1.3 2002/03/15 16:32:18 aspert Exp $ */
+/* $Id: xalloc.h,v 1.4 2002/03/29 17:20:30 dsanta Exp $ */
 
 
 /*
@@ -57,16 +57,24 @@
 #define END_DECL
 #endif
 
+/* Give hints for more optimization */
+#if defined(__GNUC__) && (__GNUC__ > 2 || __GNUC__ == 2 && __GNUC_MINOR__ >= 96)
+#define XALLOC_ATTR __attribute__ ((__malloc__))
+#else
+#define XALLOC_ATTR
+#endif
+
 BEGIN_DECL
 #undef BEGIN_DECL
 
 /* Same as malloc, but exits if out of memory. */
-void * xa_malloc(size_t size);
+void * xa_malloc(size_t size) XALLOC_ATTR;
 
 /* Same as calloc, but exits if out of memory. */
-void * xa_calloc(size_t nmemb, size_t size);
+void * xa_calloc(size_t nmemb, size_t size) XALLOC_ATTR;
 
-/* Same as realloc, but exits if out of memory. */
+/* Same as realloc, but exits if out of memory. Not suitable for the
+ * XALLOC_ATTR since it might return the same address multiple times. */
 void * xa_realloc(void *ptr, size_t size);
 
 END_DECL

@@ -1,4 +1,4 @@
-/* $Id: model_analysis.c,v 1.25 2002/03/29 17:15:49 dsanta Exp $ */
+/* $Id: model_analysis.c,v 1.26 2002/03/29 17:20:30 dsanta Exp $ */
 
 
 /*
@@ -57,6 +57,13 @@
 # define INLINE __inline__
 #elif defined (__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)
 # define INLINE inline
+#endif
+
+/* Give hints for more optimization */
+#if defined(__GNUC__) && (__GNUC__ > 2 || __GNUC__ == 2 && __GNUC_MINOR__ >= 96)
+#define BMAP_CALLOC_ATTR __attribute__ ((__malloc__))
+#else
+#define BMAP_CALLOC_ATTR
 #endif
 
 /* Type for bitmaps */
@@ -123,6 +130,7 @@ struct adj_faces {
 /* Allocates a bitmap of size sz bits, initialized to zero (i.e. all bits
  * cleared). The storage can be freed by calling free on the returned
  * pointer. */
+static bmap_t * bmap_calloc(size_t sz) BMAP_CALLOC_ATTR;
 static bmap_t * bmap_calloc(size_t sz)
 {
   return xa_calloc((sz+BMAP_T_BITS-1)/BMAP_T_BITS,sizeof(bmap_t));

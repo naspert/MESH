@@ -1,4 +1,4 @@
-/* $Id: reporting.h,v 1.3 2002/03/15 16:32:17 aspert Exp $ */
+/* $Id: reporting.h,v 1.4 2002/03/29 17:20:30 dsanta Exp $ */
 
 
 /*
@@ -57,6 +57,13 @@
 #define END_DECL
 #endif
 
+#ifdef __GNUC__
+#define REPORTING_PRINTF_ATTR(m,n) \
+  __attribute__ ((format (__printf__, (m) , (n))))
+#else
+#define REPORTING_PRINTF_ATTR(m,n)
+#endif
+
 BEGIN_DECL
 #undef BEGIN_DECL
 
@@ -112,7 +119,8 @@ void outbuf_flush(struct outbuf *ob);
 /* Performs printf using the given format and stores the output in the ob
  * output buffer. The string produced by this call should not exceed
  * OUTBUF_MAX_SZ characters in length, including the terminating nul. */
-void outbuf_printf(struct outbuf *ob, const char *format, ...);
+void outbuf_printf(struct outbuf *ob, const char *format, ...)
+  REPORTING_PRINTF_ATTR(2,3); /* allow GCC to check format string */
 
 /* Reports the progress p to pr. */
 void prog_report(struct prog_reporter *pr, int p);
