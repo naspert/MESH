@@ -1,4 +1,4 @@
-/* $Id: normals.c,v 1.19 2002/01/25 09:57:12 aspert Exp $ */
+/* $Id: normals.c,v 1.20 2002/02/14 09:31:13 aspert Exp $ */
 #include <3dmodel.h>
 #include <geomutils.h>
 #include <normals.h>
@@ -391,19 +391,14 @@ void destroy_tree(struct face_tree *tree) {
 
 /* Compares two edges (s.t. they are in lexico. order after qsort) */
 int compar(const void* ed0, const void* ed1) {
-  struct edge_sort *e0, *e1;
   int tmp;
- 
-  e0 = (struct edge_sort*)ed0;
-  e1 = (struct edge_sort*)ed1;
-  
-  tmp = e0->prim.v0 - e1->prim.v0;
-  if (tmp)
+
+  if ((tmp=((struct edge_sort*)ed0)->prim.v0-
+       ((struct edge_sort*)ed1)->prim.v0))
     return tmp;
   else 
-    return  e0->prim.v1 - e1->prim.v1;
-  
-
+    return  (((struct edge_sort*)ed0)->prim.v1 - 
+      ((struct edge_sort*)ed1)->prim.v1);
 }
 
 /* Adds an edge in the dual graph and returns the last elt. in the graph */
