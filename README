@@ -30,6 +30,18 @@ GNU make and supports Linux (with GCC), IRIX (with the MIPSPro compilers)
 and Solaris (with the Sun compiler). Other configurations might require some 
 (hopefully minor) modifications.
 
+* Specific notes for RedHat-7.3 :
+Several things are broken, on RedHat's side:
+      - You cannot use the OpenGL window, since calling the QGLWidget 
+	constructor does a segfault in Qt internals (reported as 
+	bug #65338 in RedHat's BugZilla), both with the Qt 2.3.1 and
+	Qt 3.0.3 provided by RedHat. Solution : get the latest Qt tarball 
+	from TrollTech, compile it (*sigh*) and link MESH against it. Running
+	MESH in 'text-only' mode does not cause any problem.
+      - If you want to compile Mesh with RedHat's Qt 2.3.1 you have to
+	add libpthread at link time (why ??). To do so, edit the Makefile,
+	and add '-lpthread' to the 'LDLIBS' var. (line 348)
+
 * Notes for using Intel compiler (ICC) or Portland Group compiler (PGCC)
 This section only applies for Linux. The Makefile will try to detect your
 CPU model via '/proc/cpuinfo'. You can always override the detection by
