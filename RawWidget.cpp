@@ -1,4 +1,4 @@
-/* $Id: RawWidget.cpp,v 1.60 2002/08/30 09:18:40 aspert Exp $ */
+/* $Id: RawWidget.cpp,v 1.61 2002/11/04 15:36:09 aspert Exp $ */
 
 
 /*
@@ -240,12 +240,12 @@ void RawWidget::setColorMap(int newSpace) {
 
 // Returns the ceil(log(v)/log(2)), if v is zero or less it returns zero
 int RawWidget::ceilLog2(int v) {
-  int i;
-  i = 0;
+  int i=0;
+
   v -= 1;
-  while ((v >> i) > 0) {
+  while ((v >> i) > 0) 
     i++;
-  }
+  
   return i;
 }
 
@@ -253,7 +253,7 @@ int RawWidget::ceilLog2(int v) {
 int RawWidget::fillTexture(const struct face_error *fe,
                            GLubyte *texture) const {
   int i,j,i2,j2,k,n,sz,cidx;
-  GLubyte r,g,b;
+  GLubyte r=0, g=0, b=0; // to keep compiler happy
   float drange;
   float e1,e2,e3;
 
@@ -267,9 +267,8 @@ int RawWidget::fillTexture(const struct face_error *fe,
     return 1;
   } else {
     sz = 1<<ceilLog2(n);
-    drange = model->max_error-model->min_error;
+    drange = model->max_error - model->min_error;
     if (drange < FLT_MIN*100) drange = 1;
-    r = g = b = 0; // to keep compiler happy
     for (i2=-1, k=0; i2<=sz; i2++) {
       i = (i2 >= 0) ? ((i2 < sz) ? i2 : sz-1) : 0;
       for (j2=-1; j2<=sz; j2++) {
@@ -283,7 +282,7 @@ int RawWidget::fillTexture(const struct face_error *fe,
           b = (GLubyte) (255*colormap[cidx][2]);
         } else if (j == n-i) {
           /* diagonal border texel, can be used in GL_LINEAR texture mode */
-          e1 = (i>0&&j>0) ? fe->serror[(j-1)+(i-1)*(2*n-(i-1)+1)/2] : 0;
+          e1 = (i>0 && j>0) ? fe->serror[(j-1)+(i-1)*(2*n-(i-1)+1)/2] : 0;
           e2 = (j>0) ? fe->serror[(j-1)+i*(2*n-i+1)/2] : 0;
           e3 = (i>0) ? fe->serror[j+(i-1)*(2*n-(i-1)+1)/2] : 0;
           cidx = (int) (CMAP_LENGTH*(e2+e3-e1-model->min_error)/drange);
@@ -311,6 +310,7 @@ void RawWidget::genErrorTextures() {
   static const GLint internalformat = GL_R3_G3_B2;
   GLubyte *texture;
   GLint tw,max_n;
+  QString tmps;
   int i;
 
   // Only in error mapping mode and if not disabled
@@ -334,7 +334,6 @@ void RawWidget::genErrorTextures() {
   glGetIntegerv(GL_MAX_TEXTURE_SIZE,&tw);
   checkGlErrors("error texture size check");
   if (tw < max_n) {
-    QString tmps;
     tmps.sprintf("The OpenGL implementation does not support\n"
                  "the required texture size (%ix%i).\n"
                  "Using plain white color",max_n,max_n);
