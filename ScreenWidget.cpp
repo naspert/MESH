@@ -1,11 +1,18 @@
-/* $Id: ScreenWidget.cpp,v 1.34 2002/02/25 07:12:30 dsanta Exp $ */
+/* $Id: ScreenWidget.cpp,v 1.35 2002/02/25 15:14:17 aspert Exp $ */
 #include <ScreenWidget.h>
 
 #include <qhbox.h>
+#include <qlayout.h>
+#include <qaction.h>
+#include <qapplication.h>
+#include <qmessagebox.h>
+#include <qmenubar.h>
+#include <qpushbutton.h>
+#include <qradiobutton.h>
 #include <qhbuttongroup.h>
 #include <qvbuttongroup.h>
-#include <qlabel.h>
-#include <qspinbox.h>
+#include <qgroupbox.h>
+#include <qslider.h>
 #include <RawWidget.h>
 #include <ColorMapWidget.h>
 
@@ -25,9 +32,9 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   QPushButton *quitBut;
   QRadioButton *verrBut, *fmerrBut, *serrBut;
   QRadioButton *linBut, *logBut;
-  QButtonGroup *radGrp=NULL, *histoGrp=NULL;
-  QSpinBox *qsbDownsampling;
-  QLabel *qlabDownsampling;
+  QButtonGroup *dispInfoGrp=NULL, *histoGrp=NULL;
+  QSlider *qslidDispSampDensity;
+  QString tmp;
   const float p = 0.95f; // max proportion of screen to use
   int max_ds; // maximum downsampling value
   int i;
@@ -123,30 +130,44 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   connect(glModel2, SIGNAL(toggleLine()),lineSwitch2, SLOT(toggle()));
 
   // Build error mode selection buttons
-  radGrp = new QHButtonGroup("Displayed information (left model)",this);
-  radGrp->layout()->setMargin(3);
-  verrBut = new QRadioButton("Vertex error", radGrp);
+  dispInfoGrp = new QHButtonGroup("Displayed information (left model)",this);
+  dispInfoGrp->layout()->setMargin(3);
+  verrBut = new QRadioButton("Vertex error", dispInfoGrp);
   verrBut->setChecked(TRUE);
-  fmerrBut = new QRadioButton("Face mean error", radGrp);
-  serrBut = new QRadioButton("Sample error", radGrp);
-  radGrp->insert(verrBut, RawWidget::VERTEX_ERROR);
-  radGrp->insert(fmerrBut, RawWidget::MEAN_FACE_ERROR);
-  radGrp->insert(serrBut, RawWidget::SAMPLE_ERROR);
-  connect(radGrp, SIGNAL(clicked(int)), glModel1, SLOT(setErrorMode(int)));
+  fmerrBut = new QRadioButton("Face mean error", dispInfoGrp);
+  serrBut = new QRadioButton("Sample error", dispInfoGrp);
+  dispInfoGrp->insert(verrBut, RawWidget::VERTEX_ERROR);
+  dispInfoGrp->insert(fmerrBut, RawWidget::MEAN_FACE_ERROR);
+  dispInfoGrp->insert(serrBut, RawWidget::SAMPLE_ERROR);
+  connect(dispInfoGrp, SIGNAL(clicked(int)), 
+          glModel1, SLOT(setErrorMode(int)));
+  connect(dispInfoGrp, SIGNAL(clicked(int)), this, SLOT(disableSlider(int)));
 
   // Build downsampling control
   for (i=0, max_ds=1; i<model1->mesh->num_faces; i++) {
     if (model1->fe[i].sample_freq > max_ds) max_ds = model1->fe[i].sample_freq;
   }
-  qsbDownsampling = new QSpinBox(1,max_ds,1,this);
-  qsbDownsampling->setButtonSymbols(QSpinBox::PlusMinus);
-  qlabDownsampling = new QLabel("Vertex error downsampling:",this);
-  connect(qsbDownsampling, SIGNAL(valueChanged(int)),
-          glModel1, SLOT(setVEDownSampling(int)));
-  qsbDownsampling->setValue(max_ds);
+  // This is needed s.t. we can add children widget to the GroupBox
+  qgbSlider = new 
+    QGroupBox(1, Qt::Horizontal, 
+              tmp.sprintf("Subsampling factor of the error = %d", max_ds), 
+              this);
+
+  qslidDispSampDensity = new QSlider(1, max_ds, 1, max_ds, 
+                                     QSlider::Horizontal, qgbSlider);
+  qslidDispSampDensity->setTickInterval((max_ds-1)/5);
+  qslidDispSampDensity->setTickmarks(QSlider::Both);
+  qslidDispSampDensity->setTracking(FALSE);
+  glModel1->setVEDownSampling(max_ds); // Initialization
   
+
+  connect(qslidDispSampDensity, SIGNAL(valueChanged(int)),
+          glModel1, SLOT(setVEDownSampling(int)));
+  connect(qslidDispSampDensity, SIGNAL(valueChanged(int)), 
+          this, SLOT(changeGroupBoxTitle(int)));
+
   // Build scale selection buttons
-  histoGrp = new QVButtonGroup("X axis",this);
+  histoGrp = new QVButtonGroup("X scale",this);
   linBut = new QRadioButton("Linear", histoGrp);
   linBut->setChecked(TRUE);
   logBut = new QRadioButton("Log", histoGrp);
@@ -156,7 +177,7 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
           errorColorBar, SLOT(doHistogram(int)));
 
   // Build the topmost grid layout
-  bigGrid = new QGridLayout (this, 3, 7, 5, -1, "big");
+  bigGrid = new QGridLayout (this, 3, 7, 5, -1);
   bigGrid->setMenuBar(mainBar);
   bigGrid->addWidget(errorColorBar, 0, 0);
   bigGrid->addMultiCellWidget(frameModel1, 0, 0, 1, 3);
@@ -165,10 +186,11 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   bigGrid->addWidget(lineSwitch2, 1, 5, Qt::AlignCenter);
   bigGrid->addMultiCellWidget(syncBut, 1, 1, 3, 4, Qt::AlignCenter);
   bigGrid->addMultiCellWidget(histoGrp, 1, 2, 0, 0, Qt::AlignCenter);
-  smallGrid = new QGridLayout(1, 4, 3, "small");
-  smallGrid->addWidget(radGrp, 0, 0, Qt::AlignLeft);
-  smallGrid->addWidget(qlabDownsampling, 0, 1, Qt::AlignRight);
-  smallGrid->addWidget(qsbDownsampling, 0, 2, Qt::AlignLeft);
+
+  // sub layout for dispInfoGrp and Quit button -> avoid resize problems
+  smallGrid = new QGridLayout(1, 4, 3);
+  smallGrid->addWidget(dispInfoGrp, 0, 0, Qt::AlignLeft);
+  smallGrid->addMultiCellWidget(qgbSlider, 0, 0, 1, 2);
   smallGrid->addWidget(quitBut, 0, 3, Qt::AlignCenter);
   bigGrid->addMultiCellLayout(smallGrid, 2, 2, 1, 6);
 
@@ -235,6 +257,28 @@ void ScreenWidget::infoModel(struct model_error *model, int id)
     break;
   }
   
+}
+
+void ScreenWidget::changeGroupBoxTitle(int n) 
+{
+  QString tmp;
+
+  qgbSlider->setTitle(tmp.sprintf("Subsampling factor of the error = %d", n));
+}
+
+void ScreenWidget::disableSlider(int errMode) 
+{
+  switch (errMode) {
+  case (RawWidget::VERTEX_ERROR):
+    qgbSlider->setDisabled(FALSE);
+    break;
+  case (RawWidget::MEAN_FACE_ERROR): 
+  case (RawWidget::SAMPLE_ERROR):
+    qgbSlider->setDisabled(TRUE);
+    break;
+  default: /* should never get here */
+    return;
+  }
 }
 
 void ScreenWidget::aboutKeys()

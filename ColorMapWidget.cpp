@@ -1,4 +1,4 @@
-/* $Id: ColorMapWidget.cpp,v 1.19 2002/02/22 12:54:28 aspert Exp $ */
+/* $Id: ColorMapWidget.cpp,v 1.20 2002/02/25 15:14:17 aspert Exp $ */
 #include <ColorMapWidget.h>
 #include <qapplication.h>
 #include <qpainter.h>
@@ -115,13 +115,11 @@ void ColorMapWidget::paintEvent(QPaintEvent *) {
     doHistogram(scaleState);
     colormap = colormap_hsv(cmap_len);
   }
-  tmpDisplayedText.sprintf( "%.3f",dmax/scale);
-  p.drawText(40, yoff+ysub, tmpDisplayedText);
+  p.drawText(40, yoff+ysub, tmpDisplayedText.sprintf( "%.3f",dmax/scale));
   for(i=0; i<N_LABELS-1; i++) {
     res = dmax - (i+1)*(dmax - dmin)/(double)(N_LABELS-1);
-    tmpDisplayedText.sprintf( "%.3f",res/scale);
     p.drawText(40, yoff+ysub+(int)((i+1)*(h/(double)(N_LABELS-1))),
-               tmpDisplayedText);
+               tmpDisplayedText.sprintf( "%.3f",res/scale));
   }
   for(i=0; i<cmap_len; i++){
     cidx = cmap_len-1-i;
