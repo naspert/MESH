@@ -1,6 +1,7 @@
-/* $Id: maps_lsq.c,v 1.10 2003/03/04 16:29:05 aspert Exp $ */
+/* $Id: maps_lsq.c,v 1.11 2003/06/30 09:08:27 aspert Exp $ */
 #include <3dutils.h>
 #include <ring.h>
+#include <curvature.h>
 #include <gsl/gsl_multifit.h>
 
 
@@ -10,7 +11,7 @@
 /* Computes the principal curvatures for each vertex */
 /* using a least-squares fitting on the neighborhood */
 static void lsq_fit(struct model *raw_model, struct ring_info *rings, 
-  		    struct info_vertex *curv) {
+  		    struct vertex_curvature *curv) {
   int i, j;
   vertex_t **t;
   vertex_t vi_j; /* vi - vj */
@@ -186,14 +187,14 @@ static void lsq_fit(struct model *raw_model, struct ring_info *rings,
 
 static void compute_curvature_lsq(struct model *raw_model) {
   int i;
-  struct info_vertex *curv;
+  struct vertex_curvature *curv;
   struct ring_info *rings;
 
   
 
   raw_model->area = (float*)malloc(raw_model->num_faces*sizeof(float));
-  curv = (struct info_vertex*)
-    malloc(raw_model->num_vert*sizeof(struct info_vertex));
+  curv = (struct vertex_curvature*)
+    malloc(raw_model->num_vert*sizeof(struct vertex_curvature));
   rings= (struct ring_info*)
     malloc(raw_model->num_vert*sizeof(struct ring_info));
   /* Compute normals of each face of the model */
