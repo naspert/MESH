@@ -2,7 +2,7 @@
  * GL2PS, an OpenGL to Postscript Printing Library
  * Copyright (C) 1999-2001  Christophe Geuzaine 
  *
- * $Id: gl2ps.c,v 1.2 2001/07/03 12:22:26 aspert Exp $
+ * $Id: gl2ps.c,v 1.3 2001/09/14 15:22:22 aspert Exp $
  *
  * E-mail: Christophe.Geuzaine@AdValvas.be
  * URL: http://www.geuz.org/gl2ps/
@@ -1185,14 +1185,14 @@ GLvoid gl2psPrintPostscriptPrimitive(GLvoid *a, GLvoid *b){
 	      prim->verts[1].rgba[2], prim->verts[0].xyz[0],
 	      prim->verts[0].xyz[1], prim->verts[0].rgba[0],
 	      prim->verts[0].rgba[1], prim->verts[0].rgba[2],
-	      0.35*prim->width);
+	      0.2*prim->width);
     }
     else{
       fprintf(gl2ps.stream, "%g %g %g %g %g %g %g %g L\n",
 	      prim->verts[1].xyz[0], prim->verts[1].xyz[1],
 	      prim->verts[0].xyz[0], prim->verts[0].xyz[1],
 	      prim->verts[0].rgba[0], prim->verts[0].rgba[1], 
-	      prim->verts[0].rgba[2], 0.35*prim->width);
+	      prim->verts[0].rgba[2], 0.2*prim->width);
     }
     if(prim->dash)
       fprintf(gl2ps.stream, "[] 0 setdash\n");
@@ -1368,7 +1368,7 @@ GLvoid gl2psText(char *str, char *fontname, GLint fontsize){
   glGetFloatv(GL_CURRENT_RASTER_COLOR, prim->verts[0].rgba);
   prim->text = (GL2PSstring*)gl2psMalloc(sizeof(GL2PSstring));
   if((len = strlen(str))){
-    prim->text->str = (char*)gl2psMalloc(len*sizeof(char));
+    prim->text->str = (char*)gl2psMalloc((len+1)*sizeof(char));
     strcpy(prim->text->str, str);
   }
   else
