@@ -1,11 +1,11 @@
-/* $Id: ScreenWidget.cpp,v 1.15 2001/09/12 15:03:39 dsanta Exp $ */
+/* $Id: ScreenWidget.cpp,v 1.16 2001/09/12 15:23:17 aspert Exp $ */
 #include <ScreenWidget.h>
 
 ScreenWidget::ScreenWidget(model_error *model1, model_error *model2, 
 			   QWidget *parent, 
 			   const char *name ):QWidget(parent,name) {
   QAction *fileQuitAction;
-  QPushButton *syncBut;
+  QPushButton *syncBut, *lineSwitch1, *lineSwitch2;
   QMenuBar *mainBar;
   QPopupMenu *fileMenu, *helpMenu;
   QFrame *frameModel1, *frameModel2;
@@ -75,30 +75,45 @@ ScreenWidget::ScreenWidget(model_error *model1, model_error *model2,
 	  glModel1, SLOT(transfer(double,double*)));
 
 
-  // Build two buttons
+  // Build synchro and quit buttons
   syncBut = new QPushButton("Synchronize viewpoints", this);
   syncBut->setMinimumSize(40, 30);
   syncBut->setToggleButton(TRUE);
-  
-  quitBut = new QPushButton("Quit", this);
-  quitBut->setMinimumSize(20, 30);
-  
+
   connect(syncBut, SIGNAL(toggled(bool)), 
 	  glModel1, SLOT(switchSync(bool))); 
   connect(syncBut, SIGNAL(toggled(bool)), 
 	  glModel2, SLOT(switchSync(bool)));
   connect(glModel1, SIGNAL(toggleSync()),syncBut, SLOT(toggle()));
   connect(glModel2, SIGNAL(toggleSync()),syncBut, SLOT(toggle()));
-  
+
+  quitBut = new QPushButton("Quit", this);
+  quitBut->setMinimumSize(20, 30);
   
 
+  // Build the two line/fill toggle buttons
+  lineSwitch1 = new QPushButton("Line/Fill", this);
+  lineSwitch1->setToggleButton(TRUE);
+
+  connect(lineSwitch1, SIGNAL(toggled(bool)), 
+	  glModel1, SLOT(setLine(bool)));
+
+  lineSwitch2 = new QPushButton("Line/Fill", this);
+  lineSwitch2->setToggleButton(TRUE);
+
+  connect(lineSwitch2, SIGNAL(toggled(bool)), 
+	  glModel2, SLOT(setLine(bool)));
+
+
   // Build the topmost grid layout
-  bigGrid = new QGridLayout (this, 4, 3, 5);
+  bigGrid = new QGridLayout (this, 5, 3, 5);
   bigGrid->addWidget(colorBar, 1, 0);
   bigGrid->addWidget(frameModel1, 1, 1);
   bigGrid->addWidget(frameModel2, 1, 2);
-  bigGrid->addWidget(syncBut, 2, 1, Qt::AlignCenter);
-  bigGrid->addWidget(quitBut, 3, 1, Qt::AlignCenter);
+  bigGrid->addWidget(lineSwitch1, 2, 1, Qt::AlignCenter);
+  bigGrid->addWidget(lineSwitch2, 2, 2, Qt::AlignCenter);
+  bigGrid->addWidget(syncBut, 3, 1, Qt::AlignCenter);
+  bigGrid->addWidget(quitBut, 4, 1, Qt::AlignCenter);
   
 
 }

@@ -1,4 +1,4 @@
-/* $Id: RawWidget.cpp,v 1.18 2001/09/12 15:03:39 dsanta Exp $ */
+/* $Id: RawWidget.cpp,v 1.19 2001/09/12 15:23:16 aspert Exp $ */
 #include <RawWidget.h>
 #include <qmessagebox.h>
 
@@ -8,7 +8,7 @@
 
 RawWidget::RawWidget(model_error *model, int renderType, 
 		     QWidget *parent, const char *name)
-  :QGLWidget( parent, name) { 
+  :QGLWidget(parent, name) { 
   
   int i;
   vertex center;
@@ -53,6 +53,9 @@ RawWidget::RawWidget(model_error *model, int renderType,
   // This is the increment used when moving closer/farther from the object
   dstep = distance*0.01;
 
+
+
+
 }
 
 
@@ -73,14 +76,26 @@ void RawWidget::switchSync(bool state) {
     move_state = 0;
 }
 
-void RawWidget::setLine() {
+
+void RawWidget::setLine(bool state) {
+  // state=TRUE -> switch to line
+  // state=FALSE -> switch to fill
   GLint line_state[2]; // front and back values
 
+  // Forces the widget to be the current context. Undefined otherwise
+  // and this causes a _silly_ behaviour !
+  makeCurrent();
+
+
+
+
+
   glGetIntegerv(GL_POLYGON_MODE,line_state);
-  if (line_state[0]==GL_FILL && line_state[1]==GL_FILL) {
+  if (line_state[0]==GL_FILL && line_state[1]==GL_FILL && state==TRUE) {
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     glDraw();
-  } else if (line_state[0]==GL_LINE && line_state[1]==GL_LINE) {
+  } else if (line_state[0]==GL_LINE && line_state[1]==GL_LINE && 
+	     state==FALSE) {
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     glDraw(); 
   } else {
@@ -368,11 +383,13 @@ void RawWidget::mouseMoveEvent(QMouseEvent *event) {
 
 void RawWidget::keyPressEvent(QKeyEvent *k) {
   GLboolean light_state;
+  GLint line_state;
   int i;
   
   switch(k->key()) {
   case Key_F1:
-    setLine();
+    glGetIntegerv(GL_POLYGON_MODE,&line_state);
+    setLine(line_state==GL_FILL);
     break;
   case Key_F2:
     setLight();

@@ -1,4 +1,4 @@
-/* $Id: RawWidget.h,v 1.13 2001/09/12 15:03:39 dsanta Exp $ */
+/* $Id: RawWidget.h,v 1.14 2001/09/12 15:23:16 aspert Exp $ */
 #ifndef RAWWIDGET_H
 #define RAWWIDGET_H
 
@@ -32,7 +32,7 @@ public:
 
   
 public slots: 
-  void setLine();
+  void setLine(bool state);
   void setLight();
   void switchSync(bool state);
   void transfer(double dist,double *mvmat);
@@ -71,8 +71,8 @@ private:
   int left_button_state;
   int middle_button_state;
   int right_button_state;
-
   int move_state;
+  int computed_normals; // flag if normals have been computed or loaded
   int not_orientable_warned;
 };
 
