@@ -1,4 +1,4 @@
-/* $Id: rawview_utils.c,v 1.7 2003/03/04 14:44:02 aspert Exp $ */
+/* $Id: rawview_utils.c,v 1.8 2003/04/08 13:54:29 aspert Exp $ */
 #include <3dutils.h>
 #include <rawview.h>
 #include <rawview_misc.h>
@@ -22,7 +22,8 @@ void verbose_printf(int verbose, char *fmt, ...)
  * Transforms a hue (in degrees) to the RGB equivalent. The saturation and
  * value are taken as the maximum. 
  */
-static void hue2rgb(float hue, float *r, float *g, float *b) {
+static void hue2rgb(float hue, float *r, float *g, float *b) 
+{
   float p,n;
   int k;
 
@@ -105,7 +106,8 @@ void free_colormap(float **cmap)
 }
 
 
-void set_light_on() {
+void set_light_on() 
+{
   glEnable(GL_LIGHTING);
   glLightfv(GL_LIGHT0, GL_AMBIENT, amb);
   glLightfv(GL_LIGHT0, GL_DIFFUSE, dif);
@@ -120,14 +122,16 @@ void set_light_on() {
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
-void set_light_off() {
+void set_light_off() 
+{
   glDisable(GL_LIGHTING);
   glColor3f(1.0, 1.0, 1.0);
   glFrontFace(GL_CCW);
   glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 }
 
-int do_normals(struct model* raw_model, int verbose) {
+int do_normals(struct model* raw_model, int verbose) 
+{
   struct ring_info *tmp;
   int i,rcode=0;
 
@@ -157,7 +161,8 @@ int do_normals(struct model* raw_model, int verbose) {
   return rcode;
 }
 
-int do_spanning_tree(struct model *raw_model, int verbose) {
+int do_spanning_tree(struct model *raw_model, int verbose) 
+{
   struct ring_info* tmp;
   int i, ret=0;
 
@@ -185,7 +190,8 @@ int do_spanning_tree(struct model *raw_model, int verbose) {
 }
 
 /* tree destructor */
-void destroy_tree(struct face_tree **tree, int num_faces) {
+void destroy_tree(struct face_tree **tree, int num_faces) 
+{
   int i;
 
   for (i=0; i<num_faces; i++)
@@ -195,7 +201,8 @@ void destroy_tree(struct face_tree **tree, int num_faces) {
 
 
 
-int do_curvature(struct gl_render_context *gl_ctx) {
+int do_curvature(struct gl_render_context *gl_ctx) 
+{
   int i;
   struct model* raw_model = gl_ctx->raw_model;
   face_t *cur_face;
