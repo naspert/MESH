@@ -1,4 +1,4 @@
-/* $Id: viewer.cpp,v 1.18 2001/07/06 12:57:14 jacquet Exp $ */
+/* $Id: viewer.cpp,v 1.19 2001/07/09 14:45:14 jacquet Exp $ */
 
 #include <qapplication.h>
 #include <ScreenWidget.h>
@@ -134,8 +134,8 @@ int main( int argc, char **argv )
   else if(raw_model2->num_faces<100000)
     facteur=20;
 
-  if (raw_model2->num_faces/raw_model1->num_faces>50)
-    facteur/=2;
+//   if (raw_model2->num_faces/raw_model1->num_faces>50)
+//     facteur/=2;
 
   ccube=min3(bbox1.x-bbox0.x,bbox1.y-bbox0.y,bbox1.z-bbox0.z)/facteur;
 

@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.8 2001/07/03 07:58:07 aspert Exp $ */
+/* $Id: compute_error.c,v 1.9 2001/07/09 14:45:14 jacquet Exp $ */
 
 #include <compute_error.h>
 
@@ -463,7 +463,7 @@ cell=(cellules *)malloc((raw_model->num_faces)*sizeof(cellules));
      if(o==-1)
        o=0;
 
-     cellule=m+n*grille.x+o*grille.y*grille.z;
+     cellule=m+n*grille.x+o*grille.y*grille.x;
 
      for(k=0; k<h; k++){
        if(cellule==cell[i].cube[k]){
@@ -566,7 +566,7 @@ test.z=point.z-bbox0.z;
  if(o==(int)grille.z)
    o=(int)grille.z-1;
  
- cellule=m+n*grille.x+o*grille.y*grille.z;
+ cellule=m+n*grille.x+o*grille.y*grille.x;
 /* printf("cellule: %d\n",cellule); */
 /* printf("%lf %lf %lf\n",point.x,point.y,point.z);  */
 /* printf("%d %d %d\n",m,n,o);  */
@@ -576,7 +576,7 @@ test.z=point.z-bbox0.z;
    for(c=o-k;c<=o+k;c++){ 
      for(b=n-k;b<=n+k;b++){
        for(a=m-k;a<=m+k;a++){
-	 cellule=a+b*grille.x+c*grille.y*grille.z;
+	 cellule=a+b*grille.x+c*grille.y*grille.x;
 	 if(cellule>=0 && cellule<grille.x*grille.y*grille.z){
 	   if(repface[cellule][0]!=-1){
 	     state=1;
@@ -598,7 +598,7 @@ test.z=point.z-bbox0.z;
    for(b=n-k;b<=n+k;b++){
      for(a=m-k;a<=m+k;a++){
        j=0;
-       cellule=a+b*grille.x+c*grille.y*grille.z;
+       cellule=a+b*grille.x+c*grille.y*grille.x;
        if(cellule>=0 && cellule<grille.x*grille.y*grille.z){
 
 	 /* on garde en memoire les cellules deja traitees */
@@ -647,7 +647,7 @@ test.z=point.z-bbox0.z;
      for(a=m-k;a<=m+k;a++){
        state=0;
        j=0;
-       cellule=a+b*grille.x+c*grille.y*grille.z;
+       cellule=a+b*grille.x+c*grille.y*grille.x;
        if(cellule>=0 && cellule<grille.x*grille.y*grille.z){
 	 /* on regarde si on a pas deja traite cette cellule */
 	 for(i=0;i<rang;i++){
