@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.34 2002/04/03 09:04:37 aspert Exp $
+# $Id: Makefile,v 1.35 2002/04/22 10:27:24 aspert Exp $
 
 
 OS := $(shell uname -s)
@@ -12,7 +12,7 @@ TARGETS = torus cone dirac compare_curv
 GSL_TARGETS = maps_lsq
 ifeq ($(OS), Linux)
 CC = gcc
-XTRA_CFLAGS = -g  -pipe -ansi -pedantic -Wall #-DREAD_TIME -DDONT_USE_ZLIB \
+XTRA_CFLAGS = -g  -pipe -ansi -pedantic -Wall -DREAD_TIME #-DDONT_USE_ZLIB \
 	-D__DONT_USE_DISPLAY_LISTS_	
 
 

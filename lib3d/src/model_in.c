@@ -1,4 +1,4 @@
-/* $Id: model_in.c,v 1.25 2002/04/22 10:26:05 aspert Exp $ */
+/* $Id: model_in.c,v 1.26 2002/04/22 10:27:24 aspert Exp $ */
 
 
 /*
@@ -1733,9 +1733,7 @@ static int read_smf_tmesh(struct model **tmesh_ref, struct file_data *data) {
                           *  file */
 
     c = getc(data); /* get 1st char of the current line */
-#ifdef DEBUG
-    printf("[read_smf_tmesh] nread=%d line_buf=%s\n", nread, line_buf);
-#endif
+    
     switch (c) {
     case 'v': /* vertex line found */
       if (nvtcs == l_vertices) { /* Reallocate storage if needed */
