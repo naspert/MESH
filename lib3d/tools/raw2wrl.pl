@@ -1,27 +1,35 @@
 #!/usr/bin/perl -w
-# $Id: raw2wrl.pl,v 1.2 2001/03/13 10:22:33 aspert Exp $
+# $Id: raw2wrl.pl,v 1.3 2002/02/01 12:00:13 aspert Exp $
 
 use VRML::VRML2::Standard;
 
-# This sub writes a .wrl file 
+# --------------------------- #
+#       WRL file writer       #
+# --------------------------- #
 sub write_wrl_frame {
   my @pointHolder = @{$_[0]}; # Array containing vertices list
   my @faceHolder = @{$_[1]}; # Array containing face list
-  my $fname = $_[2]; # filename
+  my @normHolder = @{$_[2]};
+  my $fname = $_[3]; # filename
 
   $vrml = new VRML::VRML2::Standard;
+
   if ($fname !~ /\.wrl/) {
     $fname .= ".wrl";
   }
-  $vrml->Shape(
-	       sub{    
+
+  $vrml->Shape(sub{
 		 $vrml->IndexedFaceSet(sub {
 					 $vrml->Coordinate(@pointHolder);
-				       }, [@faceHolder])
+				       },
+				       [@faceHolder],
+				       sub {
+					 $vrml->Normal(@normHolder);
+				       } )
 	       } ,
-	       sub{    
+	       sub{
 		 $vrml->Appearance(sub{
-				     $vrml->Material('diffuseColor'=> 
+				     $vrml->Material('diffuseColor'=>
 						     '0.7 0.7 0.7',
 						     'ambientIntensity' => 
 						     '0.7')
@@ -30,66 +38,81 @@ sub write_wrl_frame {
 	      );
   $vrml->save($fname);
 }
-#---------------------------------------------------------------------------
 
-
+# ---------------------------- #
+#       Raw file reader        #
+# ---------------------------- #
 sub read_raw_file {
   my $fname = $_[0]; #input file
   my $numvert;
   my $numface;
   my $i = 0;
-  my @facearr = @{$_[1]};
-  my @vertarr = @{$_[2]};
-  my $j = 0;
+  my $vertArray = \@{$_[1]};
+  my $faceArray = \@{$_[2]};
+  my $normArray = \@{$_[3]};
+
 
   if ($fname !~ /\.raw/) {
     $fname .= ".raw";
   }
 
   open(INFILE, "$fname") || die ("Unable to open $fname\n");
-  
+
   $header = <INFILE>;
   @tmp = split(/\ /,$header);
+
   if ($#tmp == 1) {
     $numvert = $tmp[0];
     $numface = $tmp[1];
+    $numnorm = 0;
     print "$numvert $numface\n";
+  } elsif ($#tmp == 2 || $#tmp == 3) {
+    $numvert = $tmp[0];
+    $numface = $tmp[1];
+    $numnorm = $tmp[2];
+    print "$numvert $numface $numnorm\n";
   }
-  while ($i < $numvert) {
+
+  print "Reading vertices...\n";
+  for ($i = 0; $i < $numvert; $i++) {
     $_ = <INFILE>;
     chomp;
-#    print "$_";
     s/^\s*//;
     s/\s*$//;
-    @tmp = split(/\ /);
-    $j = 0;
-    while ($j <= $#tmp) {
-      push(@vertarr, $tmp[$j]);
-#      print "$tmp[$j]\n";
-      $j++;
-    }
-    $i++
+    s/\ /,\ /g;
+    push(@$vertArray, $_);
   }
-  $i = 0;
-  while ($i < $numface) {
-    <INFILE>;
+
+  print "Reading faces...\n";
+  for ($i = 0; $i < $numface; $i++) {
+    $_ = <INFILE>;
     s/^\s*//;
     s/\s*$//;
-    @tmp = split(/\ /);
-    $j = 0;
-    while ($j <= $#tmp) {
-      push(@facearr, $tmp[$j]);
-      $j++;
+    s/\ /,\ /g;
+    push(@$faceArray, $_);
+  }
+
+  if ($numnorm > 0) {
+    print "Reading normals...\n";
+    for ($i = 0; $i < $numnorm; $i++) {
+      $_ = <INFILE>;
+      s/^\s*//;
+      s/\s*$//;
+      s/\ /,\ /g;
+      push(@$vertArray, $_);
     }
-    $i++
   }
   close(INFILE);
 }
 
 
-#------------ MAIN ----------------
+# --------------------------------- #
+#               MAIN                #
+# --------------------------------- #
+
 my @facearr = ();
 my @vertarr = ();
+my @normarr = ();
 my $j = 0;
 
 if ($#ARGV != 1) {
@@ -103,37 +126,7 @@ if ($fname !~ /\.raw/) {
   $fname .= ".raw";
 }
 
-open(INFILE, "$fname") || die ("Unable to open $fname\n");
+read_raw_file($fname, \@vertarr, \@facearr, \@normarr);
 
-$header = <INFILE>;
-@tmp = split(/\ /,$header);
-if ($#tmp == 1) {
-  $numvert = $tmp[0];
-  $numface = $tmp[1];
-  print "$numvert $numface\n";
-}
-$i = 0;
-$j = 0;
-while ($i < $numvert) {#vertex loop
-  $_ = <INFILE>;
-  chomp;
-  s/^\s*//;
-  s/\s*$//;
-  s/\ /,\ /g;
-  push(@vertarr, $_);
-  $i++
-}
-$i = 0;
-while ($i < $numface) {#face loop
-  $_ = <INFILE>;
-  chomp;
-  s/^\s*//;
-  s/\s*$//;
-  s/\ /,\ /g;
-  push(@facearr, $_);
-  $i++
-}
 
-close(INFILE);
-
-write_wrl_frame(\@vertarr, \@facearr, $outfile)
+write_wrl_frame(\@vertarr, \@facearr, \@normarr, $outfile)
