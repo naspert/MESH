@@ -1,4 +1,4 @@
-/* $Id: model_in.h,v 1.12 2002/08/09 15:26:45 aspert Exp $ */
+/* $Id: model_in.h,v 1.13 2002/08/15 15:39:01 aspert Exp $ */
 
 
 /*
@@ -114,6 +114,21 @@ BEGIN_DECL
 #undef BEGIN_DECL
 
 /* --------------------------------------------------------------------------
+   BUFFERED FILE DATA STRUCTURE
+   -------------------------------------------------------------------------- */
+struct file_data {
+#ifdef DONT_USE_ZLIB
+  FILE *f;
+#else
+  gzFile f;
+#endif
+  unsigned char *block; /* data block = 16KB */
+  int nbytes; /* actual number of bytes in block */
+  int pos; /* current position in block */
+  int eof_reached;
+};
+
+/* --------------------------------------------------------------------------
    FILE FORMATS
    -------------------------------------------------------------------------- */
 
@@ -135,23 +150,31 @@ BEGIN_DECL
 #define MESH_BAD_FF    -5   /* not a recognized file format */
 #define MESH_BAD_FNAME -6   /* Could not open file name */
 
+/* --------------------------------------------------------------------------
+   PARAMETERS FOR FF READERS
+   -------------------------------------------------------------------------- */
+
+/* Maximum allowed word length */
+#define MAX_WORD_LEN 60
+/* Default initial number of elements for an array */
+#define SZ_INIT_DEF 240
+/* Maximum number of elements by which an array is grown */
+#define SZ_MAX_INCR 2048
+
+/* Characters that are considered whitespace in VRML */
+#define VRML_WS_CHARS " \t,\n\r"
+/* Characters that start a comment in VRML */
+#define VRML_COMM_ST_CHARS "#"
+/* Characters that start a quoted string in VRML */
+#define VRML_STR_ST_CHARS "\""
+/* Characters that are whitespace, or that start a comment in VRML */
+#define VRML_WSCOMM_CHARS VRML_WS_CHARS VRML_COMM_ST_CHARS
+/* Characters that are whitespace, or that start a comment or string in VRML */
+#define VRML_WSCOMMSTR_CHARS VRML_WS_CHARS VRML_COMM_ST_CHARS VRML_STR_ST_CHARS
+
 /* -------------------------------------------------------------------------
    EXTERNAL FUNCTIONS
    ------------------------------------------------------------------------- */
-
-
-
-struct file_data {
-#ifdef DONT_USE_ZLIB
-  FILE *f;
-#else
-  gzFile f;
-#endif
-  unsigned char *block; /* data block = 16KB */
-  int nbytes; /* actual number of bytes in block */
-  int pos; /* current position in block */
-  int eof_reached;
-};
 
 
 /* 
@@ -163,6 +186,23 @@ struct file_data {
 # undef ungetc
 # define ungetc buf_ungetc
 
+/* These two macros aliased to 'getc' and 'ungetc' in
+ * 'model_in.h'. They behave (or at least should behave) identically
+ * to glibc's 'getc' and 'ungetc', except that they read from a buffer
+ * in memory instead of reading from a file. 'buf_getc' is able to
+ * refill the buffer if there is no data left to be read in the block
+ */
+#ifndef buf_getc
+#define buf_getc(stream)                                        \
+(((stream)->nbytes > 0 && (stream)->pos < (stream)->nbytes)?    \
+ ((int)(stream)->block[((stream)->pos)++]):buf_getc_func(stream))
+#endif
+
+#ifndef buf_ungetc
+#define buf_ungetc(c, stream)                   \
+(((c) != EOF && (stream)->pos > 0) ?            \
+ ((stream)->block[--((stream)->pos)]):EOF)
+#endif
 
 /*
  * Adapt all calls to the situation. If we use zlib, use the gz* functions. 
@@ -191,6 +231,32 @@ struct file_data {
 # undef loc_getc
 # define loc_getc gzgetc
 #endif
+
+
+/* Low-level functions used by model readers - see model_in.c for
+ * details. Although they are exported, they should only be used in
+ * the model_in*.c files  */
+int buf_getc_func(struct file_data*);
+int int_scanf(struct file_data*, int*);
+int float_scanf(struct file_data*, float*);
+int string_scanf(struct file_data*, char*);
+int buf_fscanf_1arg(struct file_data*, const char*, void*);
+void* grow_array(void*, size_t, int*, int);
+int skip_ws_comm(struct file_data*);
+int skip_ws_comm_str(struct file_data*);
+int find_chars(struct file_data*, const char*);
+int find_string(struct file_data*, const char*);
+
+/* File format reader functions - should be accessed only through
+ * read_[f]model. See the model_in*.c files for more details about
+ * their behaviour (esp. wrt. error handling and/or [un]implemented
+ * features of each file format) */
+int read_raw_tmesh(struct model**, struct file_data*);
+int read_smf_tmesh(struct model**, struct file_data*);
+int read_ply_tmesh(struct model**, struct file_data*);
+int read_vrml_tmesh(struct model**, struct file_data*, int);
+int read_iv_tmesh(struct model**, struct file_data*);
+
 
 /* Reads the 3D triangular mesh models from the input '*data' stream, in the
  * file format specified by 'fformat'. The model meshes are returned in the
