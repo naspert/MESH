@@ -1,4 +1,4 @@
-/* $Id: rawview_disp.c,v 1.1 2002/06/04 13:06:40 aspert Exp $ */
+/* $Id: rawview_disp.c,v 1.2 2002/06/04 13:55:39 aspert Exp $ */
 
 #include <rawview_misc.h>
 
@@ -15,6 +15,9 @@ void rebuild_list(struct gl_render_context *gl_ctx,
   vertex_t center1, center2;
   face_t *cur_face2;
   int j, face1=-1, face2=-1;
+  const struct model *r_m = gl_ctx->raw_model; /* just to make it more
+                                                * readable ... */
+
 
   /* delete all lists */
   if (glIsList(dl_idx->model_list) == GL_TRUE)
@@ -55,47 +58,46 @@ void rebuild_list(struct gl_render_context *gl_ctx,
   light_mode = glIsEnabled(GL_LIGHTING);
   if (light_mode && !glIsEnabled(GL_NORMAL_ARRAY)) {
     glEnableClientState(GL_NORMAL_ARRAY);
-    glNormalPointer(GL_FLOAT, 0, (float*)(gl_ctx->raw_model->normals));
+    glNormalPointer(GL_FLOAT, 0, (float*)(r_m->normals));
   }
   if (!glIsEnabled(GL_VERTEX_ARRAY)) {
     glEnableClientState(GL_VERTEX_ARRAY);
-    glVertexPointer(3, GL_FLOAT, 0, (float*)(gl_ctx->raw_model->vertices));
+    glVertexPointer(3, GL_FLOAT, 0, (float*)(r_m->vertices));
   }
   
 
 #ifdef DEBUG
   printf("dn = %d lm = %d nf = %d\n", gl_ctx->draw_normals, light_mode, 
-	 gl_ctx->raw_model->num_faces); 
+	 r_m->num_faces); 
 #endif
-  
 
   if (gl_ctx->draw_spanning_tree == 1) {
 
     glNewList(dl_idx->tree_list, GL_COMPILE);
     glColor3f(1.0, 1.0, 0.0);
     glBegin(GL_LINES);
-    for (j=0; j<gl_ctx->raw_model->num_faces; j++) {
-      face1 = (gl_ctx->raw_model->tree)[j]->face_idx;
-      cur_face = &(gl_ctx->raw_model->faces[face1]);
-      add3_sc_v(0.333, &(gl_ctx->raw_model->vertices[cur_face->f0]), 
-		&(gl_ctx->raw_model->vertices[cur_face->f1]), 
-		&(gl_ctx->raw_model->vertices[cur_face->f2]), &center1);
-      if ((gl_ctx->raw_model->tree)[j]->left != NULL) {
-	face2 = ((gl_ctx->raw_model->tree)[j]->left)->face_idx;
-	cur_face2 = &(gl_ctx->raw_model->faces[face2]);
-	add3_sc_v(0.333, &(gl_ctx->raw_model->vertices[cur_face2->f0]), 
-		  &(gl_ctx->raw_model->vertices[cur_face2->f1]), 
-		  &(gl_ctx->raw_model->vertices[cur_face2->f2]), &center2);
+    for (j=0; j<r_m->num_faces; j++) {
+      face1 = (r_m->tree)[j]->face_idx;
+      cur_face = &(r_m->faces[face1]);
+      add3_sc_v(0.333, &(r_m->vertices[cur_face->f0]), 
+		&(r_m->vertices[cur_face->f1]), 
+		&(r_m->vertices[cur_face->f2]), &center1);
+      if ((r_m->tree)[j]->left != NULL) {
+	face2 = ((r_m->tree)[j]->left)->face_idx;
+	cur_face2 = &(r_m->faces[face2]);
+	add3_sc_v(0.333, &(r_m->vertices[cur_face2->f0]), 
+		  &(r_m->vertices[cur_face2->f1]), 
+		  &(r_m->vertices[cur_face2->f2]), &center2);
 	glVertex3fv((float*)(&center1));
 	glVertex3fv((float*)(&center2));
 
       }
-      if ((gl_ctx->raw_model->tree)[j]->right != NULL) {
-	face2 = ((gl_ctx->raw_model->tree)[j]->right)->face_idx;
-	cur_face2 = &(gl_ctx->raw_model->faces[face2]);
-	add3_sc_v(0.333, &(gl_ctx->raw_model->vertices[cur_face2->f0]), 
-		  &(gl_ctx->raw_model->vertices[cur_face2->f1]), 
-		  &(gl_ctx->raw_model->vertices[cur_face2->f2]), &center2);
+      if ((r_m->tree)[j]->right != NULL) {
+	face2 = ((r_m->tree)[j]->right)->face_idx;
+	cur_face2 = &(r_m->faces[face2]);
+	add3_sc_v(0.333, &(r_m->vertices[cur_face2->f0]), 
+		  &(r_m->vertices[cur_face2->f1]), 
+		  &(r_m->vertices[cur_face2->f2]), &center2);
 	glVertex3fv((float*)(&center1));
 	glVertex3fv((float*)(&center2));
 
@@ -108,17 +110,14 @@ void rebuild_list(struct gl_render_context *gl_ctx,
 
   }
 
-
-
-
-/* Model drawing (w. or wo. lighting) */
+  /* Model drawing (w. or wo. lighting) */
   glNewList(dl_idx->model_list, GL_COMPILE);
   if (gl_ctx->tr_mode == 1)
     glBegin(GL_TRIANGLES);
   else 
     glBegin(GL_POINTS);
-  for (i=0; i<gl_ctx->raw_model->num_faces; i++) {
-    cur_face = &(gl_ctx->raw_model->faces[i]);
+  for (i=0; i<r_m->num_faces; i++) {
+    cur_face = &(r_m->faces[i]);
     glArrayElement(cur_face->f0);
     glArrayElement(cur_face->f1);
     glArrayElement(cur_face->f2);
@@ -129,20 +128,20 @@ void rebuild_list(struct gl_render_context *gl_ctx,
 
 
   if (gl_ctx->draw_normals) {
-    scale_fact = NORMALS_DISPLAY_FACTOR*dist_v(&(gl_ctx->raw_model->bBox[0]), 
-					       &(gl_ctx->raw_model->bBox[1]));
+    scale_fact = NORMALS_DISPLAY_FACTOR*dist_v(&(r_m->bBox[0]), 
+					       &(r_m->bBox[1]));
 
     glNewList(dl_idx->normal_list, GL_COMPILE);
     glColor3f(1.0, 0.0, 0.0);
     glBegin(GL_LINES);
-    for (i=0; i<gl_ctx->raw_model->num_vert; i++) {
+    for (i=0; i<r_m->num_vert; i++) {
       glArrayElement(i);
-      glVertex3f(gl_ctx->raw_model->vertices[i].x + 
-		 scale_fact*gl_ctx->raw_model->normals[i].x,
-		 gl_ctx->raw_model->vertices[i].y + 
-		 scale_fact*gl_ctx->raw_model->normals[i].y,
-		 gl_ctx->raw_model->vertices[i].z + 
-		 scale_fact*gl_ctx->raw_model->normals[i].z);
+      glVertex3f(r_m->vertices[i].x + 
+		 scale_fact*r_m->normals[i].x,
+		 r_m->vertices[i].y + 
+		 scale_fact*r_m->normals[i].y,
+		 r_m->vertices[i].z + 
+		 scale_fact*r_m->normals[i].z);
     }
     glEnd();
     glColor3f(1.0, 1.0, 1.0);
