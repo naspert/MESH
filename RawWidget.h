@@ -1,4 +1,4 @@
-/* $Id: RawWidget.h,v 1.19 2001/10/01 16:50:38 dsanta Exp $ */
+/* $Id: RawWidget.h,v 1.20 2001/10/02 08:34:38 dsanta Exp $ */
 #ifndef RAWWIDGET_H
 #define RAWWIDGET_H
 
@@ -63,7 +63,7 @@ private:
 // functions 
   void display(double distance);
   void rebuild_list();
-
+  void check_gl_errors(const char* where);
 
 // vars
   int renderFlag; // flag to indicate whether the widget can be set in
