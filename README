@@ -7,16 +7,23 @@ The MESH tool measures the distance between two discrete surfaces described as
 triangular meshes. The topology of the meshes needs not be the same, arbitrary
 topologies can be compared.
 
-To compile the program the QT libraries, version 2.3.0 or later with the
-support OpenGL compiled in, are required. The QTDIR environment variable
-should point to the QT installation directory.
+* Requirements
+To compile the program the Qt libraries, version 2.3.0 or later with the
+support OpenGL compiled in, are required. 
+The Qt library source code can be downloaded for free at Trolltech's website (http://www.trolltech.com/developer/download ) for all the Unix-like systems. For Windows users, a precompiled Qt v2.3.0 is also available for free (provided it is used for non-commercial purposes). The MESH tool works identically with both *nix/Windows versions of Qt.
 
+* Installation - Unix
+The QTDIR environment variable should point to the QT installation directory.
 Type 'make all' at the command prompt and the executable, mesh, will be
 installed in the ./bin directory. To get a command line syntax, type
 './bin/mesh -h' at the command line prompt. The current Makefile requires
 GNU make and supports Linux (with GCC) and IRIX (with the MIPSPro
-compilers). Other systems might require some modifications.
+compilers). Other systems might require some (hopefully minor) modifications.
 
+* Installation - Windows
+You *MUST* install the Qt library prior to any other step. Please note that you have to install it in a path that does not contain a space (e.g. not in 'C:\Program Files\Qt', but for instance in 'C:\Qt'). We provide the Micro$oft Visual C++ 6 dsp and dsw files needed to build the program.
+
+* Input data format 
 The input file format for the triangular meshes is a raw ASCII format, which
 describes the vertices, the vertex connectivity and optionally the vertex
 normals. The first line should contain two or three decimal numbers with the
@@ -25,7 +32,7 @@ number of vertices, the number of triangles and the number of vertex normals
 equal the number of vertices. Follow the X, Y, Z affine coordinates for each
 vertex and then the indices of the three vertices of each triangular face. The
 vertex indices are zero based. If the vertex normals are given follows the X,
-Y, Z affine coordinates of the vertex normal vectorss, in the same order as
+Y, Z affine coordinates of the vertex normal vectors, in the same order as
 the vertices. The normal vectors should all be normalized.
 
 Please report any bugs to:
