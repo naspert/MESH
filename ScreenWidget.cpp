@@ -1,4 +1,4 @@
-/* $Id: ScreenWidget.cpp,v 1.39 2002/03/01 09:57:52 aspert Exp $ */
+/* $Id: ScreenWidget.cpp,v 1.40 2002/03/07 11:59:13 aspert Exp $ */
 #include <ScreenWidget.h>
 
 #include <qhbox.h>
@@ -37,11 +37,18 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   QCheckBox  *qcbLight;
   QString tmp;
   const float p = 0.95f; // max proportion of screen to use
+  const float wLF = 0.2f; // proportion for width of Line/Fill switch
+  const float wSync = 0.3f; // proportion for width of Sync. switch
+  const float wQ = 0.15f; // proportion for width of Quit button
   int max_ds; // maximum downsampling value
   int i;
   
   tmp.sprintf("MESH %s - Visualization", version);
   setCaption(tmp);
+  setMinimumWidth(400); // this is a reasonable assumption... and
+                        // we need it to have a correct appearance of
+                        // all the buttons in this widget (in fact
+                        // only when using Qt >= 3.0.0)
 
   fileQuitAction = new QAction( "Quit", "Quit", CTRL+Key_Q, this, "quit" );
   connect(fileQuitAction, SIGNAL(activated()) , 
@@ -105,6 +112,7 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   // Build synchro and quit buttons
   syncBut = new QPushButton("Synchronize\nviewpoints", this);
   syncBut->setToggleButton(TRUE);
+  syncBut->setMinimumWidth((int)(minimumWidth()*wSync));
 
   connect(syncBut, SIGNAL(toggled(bool)), 
 	  glModel1, SLOT(switchSync(bool))); 
@@ -115,11 +123,12 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
 
   quitBut = new QPushButton("Quit", this);
   connect(quitBut, SIGNAL(clicked()), this, SLOT(close()));
-
+  quitBut->setMinimumWidth((int)(minimumWidth()*wQ));
 
   // Build the two line/fill toggle buttons
   lineSwitch1 = new QPushButton("Line/Fill", this);
   lineSwitch1->setToggleButton(TRUE);
+  lineSwitch1->setMinimumWidth((int)(minimumWidth()*wLF));
 
   connect(lineSwitch1, SIGNAL(toggled(bool)), 
 	  glModel1, SLOT(setLine(bool)));
@@ -128,6 +137,7 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
 
   lineSwitch2 = new QPushButton("Line/Fill", this);
   lineSwitch2->setToggleButton(TRUE);
+  lineSwitch2->setMinimumWidth((int)(minimumWidth()*wLF));
 
   connect(lineSwitch2, SIGNAL(toggled(bool)), 
 	  glModel2, SLOT(setLine(bool)));
@@ -154,9 +164,11 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   if (model2->mesh->normals) { // parameters make sense if the
                                // model has normals...
     qcbLight->setChecked(TRUE);
-    connect(qcbLight, SIGNAL(toggled(bool)), glModel2, SLOT(setLight(bool)));
+    connect(qcbLight, SIGNAL(toggled(bool)), 
+            glModel2, SLOT(setLight(bool)));
     connect(glModel2, SIGNAL(toggleLight()), qcbLight, SLOT(toggle()));
-    connect(qcbLight, SIGNAL(toggled(bool)), this, SLOT(updatecbStatus(bool)));
+    connect(qcbLight, SIGNAL(toggled(bool)), 
+            this, SLOT(updatecbStatus(bool)));
   } 
   else
     qcbLight->setDisabled(TRUE);
@@ -177,11 +189,13 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
     serrBut->setDisabled(TRUE);
   connect(dispInfoGrp, SIGNAL(clicked(int)), 
           glModel1, SLOT(setErrorMode(int)));
-  connect(dispInfoGrp, SIGNAL(clicked(int)), this, SLOT(disableSlider(int)));
+  connect(dispInfoGrp, SIGNAL(clicked(int)), 
+          this, SLOT(disableSlider(int)));
 
   // Build downsampling control
   for (i=0, max_ds=1; i<model1->mesh->num_faces; i++) {
-    if (model1->fe[i].sample_freq > max_ds) max_ds = model1->fe[i].sample_freq;
+    if (model1->fe[i].sample_freq > max_ds) 
+      max_ds = model1->fe[i].sample_freq;
   }
   // This is needed s.t. we can add children widget to the GroupBox
   qgbSlider = new 
@@ -251,6 +265,7 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
     prefSize.setHeight((int)(p*screenSize.height()));
   }
   resize(prefSize.width(),prefSize.height());
+
 }
 
 void ScreenWidget::infoLeftModel()

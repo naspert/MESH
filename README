@@ -17,6 +17,9 @@ For Windows users, a precompiled Qt v2.3.0 is also available for free
 The MESH tool works identically with both *nix/Windows versions of Qt. We 
 have been able to compile and run it successfully under Linux, Solaris 5.8, 
 IRIX 6.5, Windows 98/Me/2000.
+The MESH tool has also been tested to work using Qt version 3. You need to
+have at least Qt 3.0.2 to make MESH work properly (due to layout bugs in
+Qt 3.0.x, x < 2).
 
 * Installation - Unix
 The QTDIR environment variable should point to the QT installation directory.

@@ -1,7 +1,6 @@
-/* $Id: InitWidget.cpp,v 1.25 2002/03/06 14:55:34 aspert Exp $ */
+/* $Id: InitWidget.cpp,v 1.26 2002/03/07 11:59:13 aspert Exp $ */
 
 #include <InitWidget.h>
-#include <meshIcon.xpm>
 #include <mesh.h>
 #include <qlabel.h>
 #include <qlayout.h>
@@ -15,6 +14,11 @@
 #include <qtimer.h>
 #include <qapplication.h>
 #include <qprogressdialog.h>
+
+#ifndef _MESHICON_XPM
+# define _MESHICON_XPM
+# include <meshIcon.xpm>
+#endif
 
 InitWidget::InitWidget(struct args defArgs,
                        struct model_error *m1, struct model_error *m2,
@@ -117,8 +121,9 @@ InitWidget::InitWidget(struct args defArgs,
 
 
   /* Build grid layout for OK button */
-  bigGrid->addMultiCellWidget(OK, 9, 9, 0, 2, Qt::AlignCenter);
-  
+  setMinimumWidth(100);
+  OK->setMinimumWidth((int)(0.4*minimumWidth()));
+  bigGrid->addWidget(OK, 9, 1, Qt::AlignCenter);
   qpxMeshIcon = new QPixmap((const char**)meshIcon);
   setIcon(*qpxMeshIcon);
   tmp.sprintf("MESH %s",version);
