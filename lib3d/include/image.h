@@ -1,4 +1,4 @@
-/* $Id: image.h,v 1.1 2001/03/12 14:50:32 aspert Exp $ */
+/* $Id: image.h,v 1.2 2001/03/13 10:17:26 aspert Exp $ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -37,8 +37,11 @@ typedef struct
   int max_val;
 }image_int;
 
+#endif
 /* Some useful template declarations follow */
 
+#ifndef _IMAGE_PROTO
+#define _IMAGE_PROTO
 /*Destructors*/
 void free_image_uchar(image_uchar*);
 void free_image_int(image_int*);
