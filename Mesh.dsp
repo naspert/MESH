@@ -158,7 +158,7 @@ SOURCE=.\RawWidget.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\report.c
+SOURCE=.\reporting.c
 # End Source File
 # Begin Source File
 
@@ -317,7 +317,7 @@ InputName=RawWidget
 # End Source File
 # Begin Source File
 
-SOURCE=.\report.h
+SOURCE=.\reporting.h
 # End Source File
 # Begin Source File
 
