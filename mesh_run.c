@@ -1,4 +1,4 @@
-/* $Id: mesh_run.c,v 1.16 2002/03/27 08:27:39 dsanta Exp $ */
+/* $Id: mesh_run.c,v 1.17 2002/03/29 13:34:46 dsanta Exp $ */
 
 
 /*
@@ -141,7 +141,8 @@ void mesh_run(const struct args *args, struct model_error *model1,
   abs_sampling_dens = 1/(abs_sampling_step*abs_sampling_step);
 
   /* Print available model information */
-  outbuf_printf(out,"\n                      Model information\n\n");
+  outbuf_printf(out,"\n                      Model information\n"
+                "     (degenerate faces ignored for manifold/closed info)\n\n");
   outbuf_printf(out,"Number of vertices:     \t%11d\t%11d\n",
                 model1->mesh->num_vert,model2->mesh->num_vert);
   outbuf_printf(out,"Number of triangles:    \t%11d\t%11d\n",
@@ -300,7 +301,7 @@ void mesh_run(const struct args *args, struct model_error *model1,
                    stats_rev.grid_sz.z)*100.0);
   }
   outbuf_printf(out,"\n");
-  outbuf_printf(out,"Execution time (secs.):\t%.2f\n",
+  outbuf_printf(out,"Analysis and measuring time (secs.):\t%.2f\n",
                 (double)(clock()-start_time)/CLOCKS_PER_SEC);
   outbuf_flush(out);
 

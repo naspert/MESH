@@ -1,4 +1,4 @@
-/* $Id: model_analysis.h,v 1.7 2002/03/29 09:55:54 dsanta Exp $ */
+/* $Id: model_analysis.h,v 1.8 2002/03/29 13:34:46 dsanta Exp $ */
 
 
 /*
@@ -93,17 +93,18 @@ struct model_info {
  *                       Exported functions                                  *
  * --------------------------------------------------------------------------*/
 
-/* Analyzes model m, returning the information in *info. The list of faces
- * incident on each vertex (as obtained by faces_of_vertex()) is given by
- * flist. If NULL a list is locally generated. If do_orient is non-zero and
- * the model is orientable, the model m will be modified so as to be oriented
- * (if the model is not orientable, no modification is done). The entries for
- * each vertex in flist are reordered, but the contents are the same. */
+/* Analyzes model m, returning the information in *info. Degenerate faces in m
+ * are ignored in the analysis. The list of faces incident on each vertex (as
+ * obtained by faces_of_vertex()) is given by flist. If NULL a list is locally
+ * generated. If do_orient is non-zero and the model is orientable, the model
+ * m will be modified so as to be oriented (if the model is not orientable, no
+ * modification is done). The entries for each vertex in flist are reordered,
+ * but the contents are the same. */
 void analyze_model(struct model *m, const struct face_list *flist,
                    struct model_info *info, int do_orient);
 
 /* Returns an array of length m->num_vert with the list of faces incident on
- * each vertex. */
+ * each vertex. Degenerate faces are ignored. */
 struct face_list *faces_of_vertex(const struct model *m);
 
 /* Frees the storage for the array of face lists fl, of length n */

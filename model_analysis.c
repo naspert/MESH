@@ -1,4 +1,4 @@
-/* $Id: model_analysis.c,v 1.23 2002/03/29 09:55:54 dsanta Exp $ */
+/* $Id: model_analysis.c,v 1.24 2002/03/29 13:34:46 dsanta Exp $ */
 
 
 /*
@@ -189,12 +189,6 @@ static INLINE int stack_pop(struct stack *s, void *e)
   }
 }
 
-/* Returns one if face is degenerate and zero if not.*/
-static INLINE int is_degenerate(face_t face)
-{
-  return (face.f0 == face.f1 || face.f1 == face.f2 || face.f2 == face.f0);
-}
-
 /* --------------------------------------------------------------------------*
  *                         Model analysis functions                          *
  * --------------------------------------------------------------------------*/
@@ -370,13 +364,11 @@ static void get_vertex_topology(const face_t *mfaces, int vidx,
       flist->face[n_vfaces] = fidx;
       v2_was_in_list = vtx_in_list_or_add(vlist,v2,&vtx_buf_sz);
       if (v2_was_in_list) {
-        if (v2 == vstart) vstart_was_in_list = 1;
-        /* v2 appearing more than once is only admissible in a manifold if the
-         * triangle is degenerate or if it is the last triangle and it closes
-         * a cycle */
-        if (!(n_vfaces == 0 && v2 == vstart) && !is_degenerate(mfaces[fidx])) {
-          ltop->manifold = 0;
-        }
+        if (v2 == vstart) vstart_was_in_list = 1; /* handle duplicate */
+        /* v2 appearing twice is only addmissible in a manifold if it is the
+         * last face and it closes a disk (and of course we didn't already
+         * detect as non-manifold) */
+        if (!(n_vfaces == 0 && v2 == vstart)) ltop->manifold = 0;
       }
     } else { /* no of the not yet visited faces share's v2! */
       /* vertex vidx can be at a border or there is really a non-manifold */
@@ -487,7 +479,6 @@ static struct adj_faces * find_adjacent_faces(const face_t *mfaces, int n_faces,
     aflist[k].face_on_edge[1] = -1;
     aflist[k].face_on_edge[2] = -1;
     aflist[k].extra = NULL;
-    if (is_degenerate(mfaces[k])) continue; /* degenerates are irrelevant */
     f0 = mfaces[k].f0;
     f1 = mfaces[k].f1;
     f2 = mfaces[k].f2;
@@ -680,7 +671,6 @@ static bmap_t * model_orientation(const face_t *mfaces, int n_faces,
     assert(!BMAP_ISSET(face_revo,cur.fidx));
     BMAP_SET(face_oriented,cur.fidx);
     n_oriented_faces++;
-    if (is_degenerate(mfaces[cur.fidx])) continue;
     cur.eidx = 0;
     cur.epos = 0;
     /* do a walk on all connected faces, checking orientation */
@@ -871,19 +861,17 @@ struct face_list *faces_of_vertex(const struct model *m)
     v0 = m->faces[j].f0;
     v1 = m->faces[j].f1;
     v2 = m->faces[j].f2;
+    /* degenerate faces not included */
+    if (v0 == v1 || v0 == v2 || v1 == v2) continue;
     fl[v0].face =
       xa_realloc(fl[v0].face,(fl[v0].n_faces+1)*sizeof(*(fl->face)));
     fl[v0].face[fl[v0].n_faces++] = j;
-    if (v1 != v0) { /* avoid double inclusion in degenerate cases */
-      fl[v1].face =
-        xa_realloc(fl[v1].face,(fl[v1].n_faces+1)*sizeof(*(fl->face)));
-      fl[v1].face[fl[v1].n_faces++] = j;
-    }
-    if (v2 != v0 && v2 != v1) { /* avoid double inclusion in degenerate cases */
-      fl[v2].face =
-        xa_realloc(fl[v2].face,(fl[v2].n_faces+1)*sizeof(*(fl->face)));
-      fl[v2].face[fl[v2].n_faces++] = j;
-    }
+    fl[v1].face =
+      xa_realloc(fl[v1].face,(fl[v1].n_faces+1)*sizeof(*(fl->face)));
+    fl[v1].face[fl[v1].n_faces++] = j;
+    fl[v2].face =
+      xa_realloc(fl[v2].face,(fl[v2].n_faces+1)*sizeof(*(fl->face)));
+    fl[v2].face[fl[v2].n_faces++] = j;
   }
   return fl;
 }
@@ -898,4 +886,3 @@ void free_face_lists(struct face_list *fl, int n)
   }
   free(fl);
 }
-
