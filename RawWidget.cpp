@@ -1,4 +1,4 @@
-/* $Id: RawWidget.cpp,v 1.38 2002/02/20 23:35:18 dsanta Exp $ */
+/* $Id: RawWidget.cpp,v 1.39 2002/02/21 09:26:25 dsanta Exp $ */
 
 #include <RawWidget.h>
 #include <qmessagebox.h>
@@ -165,24 +165,28 @@ int RawWidget::ceil_log2(int v) {
 // creates the error texture for fe and stores it in texture
 int RawWidget::fillTexture(const struct face_error *fe,
                            GLubyte *texture) const {
-  int i,j,k,n,sz,cidx;
+  int i,j,i2,j2,k,n,sz,cidx;
   GLubyte r,g,b;
   float drange;
   float e1,e2,e3;
 
   n = fe->sample_freq;
   if (n == 0) { /* no samples, using no error value gray */
-    texture[0] = (GLubyte) (255*no_err_value);
-    texture[1] = (GLubyte) (255*no_err_value);
-    texture[2] = (GLubyte) (255*no_err_value);
+    for (i=0, k=0; i<9; i++) { /* set border and center to no_err_value */
+      texture[k++] = (GLubyte) (255*no_err_value);
+      texture[k++] = (GLubyte) (255*no_err_value);
+      texture[k++] = (GLubyte) (255*no_err_value);
+    }
     return 1;
   } else {
     sz = 1<<ceil_log2(n);
     drange = model->max_error-model->min_error;
     if (drange < FLT_MIN*100) drange = 1;
     r = g = b = 0; // to keep compiler happy
-    for (i=0, k=0; i<sz; i++) {
-      for (j=0; j<sz; j++) {
+    for (i2=-1, k=0; i2<=sz; i2++) {
+      i = (i2 >= 0) ? ((i2 < sz) ? i2 : sz-1) : 0;
+      for (j2=-1; j2<=sz; j2++) {
+        j = (j2 >= 0) ? ((j2 < sz) ? j2 : sz-1) : 0;
         if (i<n && j<(n-i)) { /* sample point */
           cidx = (int) floor((CMAP_LENGTH-1)*(fe->serror[j+i*(2*n-i+1)/2]-
                                               model->min_error)/drange+0.5);
@@ -237,7 +241,7 @@ void RawWidget::genErrorTextures() {
   }
   max_n = 1<<ceil_log2(max_n); // round (towards infinity) to power of two
   // Test if OpenGL implementation can deal with maximum texture size
-  glTexImage2D(GL_PROXY_TEXTURE_2D,0,internalformat,max_n,max_n,0,GL_RGB,
+  glTexImage2D(GL_PROXY_TEXTURE_2D,0,internalformat,max_n+2,max_n+2,1,GL_RGB,
                GL_UNSIGNED_BYTE,NULL);
   glGetTexLevelParameteriv(GL_PROXY_TEXTURE_2D, 0,GL_TEXTURE_WIDTH, &tw);
   check_gl_errors("error texture size check");
@@ -255,15 +259,15 @@ void RawWidget::genErrorTextures() {
   // What follows is a potentially slow operation
   QApplication::setOverrideCursor(Qt::waitCursor);
   // Allocate temporary texture storage
-  texture = (GLubyte*) xa_malloc(sizeof(*texture)*3*max_n*max_n);
+  texture = (GLubyte*) xa_malloc(sizeof(*texture)*3*(max_n+2)*(max_n+2));
   glPixelStorei(GL_UNPACK_ALIGNMENT,1); /* pixel rows aligned on bytes only */
   for (i=0; i<model->mesh->num_faces; i++) {
     glBindTexture(GL_TEXTURE_2D,etex_id[i]);
     etex_sz[i] = fillTexture(&(model->fe[i]),texture);
-    glTexImage2D(GL_TEXTURE_2D,0,internalformat,etex_sz[i],etex_sz[i],0,
+    glTexImage2D(GL_TEXTURE_2D,0,internalformat,etex_sz[i]+2,etex_sz[i]+2,1,
                  GL_RGB,GL_UNSIGNED_BYTE,texture);
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP);
     // Default GL_TEXTURE_MIN_FILTER requires mipmaps!
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
   }
