@@ -1,4 +1,4 @@
-/* $Id: compute_curvature.c,v 1.5 2001/10/25 12:30:45 aspert Exp $ */
+/* $Id: compute_curvature.c,v 1.6 2001/10/30 09:50:35 aspert Exp $ */
 #include <3dutils.h>
 #include <compute_error.h>
 #include <compute_curvature.h>
@@ -215,8 +215,8 @@ void compute_curvature_error(struct model_error *model1,
 
 
   printf("Computing vertex normals...\n");
-  model1->mesh->area = (double*)malloc(model1->mesh->num_faces*sizeof(double));
-  model2->mesh->area = (double*)malloc(model2->mesh->num_faces*sizeof(double));
+  model1->mesh->area = (float*)malloc(model1->mesh->num_faces*sizeof(float));
+  model2->mesh->area = (float*)malloc(model2->mesh->num_faces*sizeof(float));
   compute_vertex_normal(model1->mesh, info1, 
 			model1->mesh->face_normals); 
   compute_vertex_normal(model2->mesh, info2, 
