@@ -1,8 +1,11 @@
-/* $Id: rawview3.c,v 1.19 2001/09/14 15:16:22 aspert Exp $ */
-
+/* $Id: rawview3.c,v 1.20 2001/09/19 14:31:44 aspert Exp $ */
+#ifdef _WIN32
+#include <windows.h>
+#endif
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <GL/glut.h>
+
 #include <3dutils.h>
 #include <image.h>
 #include <gl2ps.h>
