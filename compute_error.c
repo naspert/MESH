@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.73 2002/02/10 17:57:50 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.74 2002/02/10 18:37:11 dsanta Exp $ */
 
 #include <compute_error.h>
 
@@ -15,7 +15,7 @@
 
 /* Ratio used to derive the cell size. It is the ratio between the cubic cell
  * side length and the side length of an average equilateral triangle. */
-#define CELL_TRIAG_RATIO 3
+#define CELL_TRIAG_RATIO 1
 
 /* If defined statistics for the dist_pt_surf() function are computed */
 /* #define DO_DIST_PT_SURF_STATS */
