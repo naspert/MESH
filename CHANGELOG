@@ -2,6 +2,12 @@
 	- Fixed a bug in the reading low-level functions : 'buf_getc'
 	  did not read the last char of the data block
 	- Added possibility to read basic Inventor 2.x and SMF files
+	- Fixed a mishandling of vertices having only one incident faces when
+	  analyzing the model
+	- Fixed a bad initialization of 'data->pos' to 0 that caused a read
+	  at -1 (thx Valgrind ...)
+	- Fixed : field 'builtin_normals' of 'struct model' should only be 
+          set if the vertex normals are present (not for the face normals) 
 
 * Changes from v1.0 to v1.1 :
 	- Added possibility to read gzipped VRML using zlib
@@ -9,4 +15,5 @@
 	- Better output in the external window
 	- Fixed potential bug in VRML parsing : cases when there is no 
 	  space between a keyword and a '[' or a '{' were badly handled.
+	- Removed many unrelevant files in the VC++ project file
 
