@@ -1,5 +1,6 @@
-/* $Id: InitWidget.cpp,v 1.4 2001/09/20 16:15:17 dsanta Exp $ */
+/* $Id: InitWidget.cpp,v 1.5 2001/09/20 16:46:46 dsanta Exp $ */
 #include <InitWidget.h>
+#include <qcheckbox.h>
 
 InitWidget::InitWidget(QWidget *parent, const char *name):
   QWidget( parent, name) {
@@ -8,10 +9,10 @@ InitWidget::InitWidget(QWidget *parent, const char *name):
   QPushButton *B1, *B2, *OK;
   QListBox *qlboxSplStep;
   QGridLayout *bigGrid;
-  QHBoxLayout *smallGrid1, *smallGrid2, *smallGrid3, *smallGrid4;
+  QHBoxLayout *smallGrid1, *smallGrid2, *smallGrid3, *smallGrid4, *smallGrid5;
 
   /* Initialize */
-  isValid = 0;
+  isValid = FALSE;
 
   /* First mesh */
   qledMesh1 = new QLineEdit("mesh1.raw", this);
@@ -37,6 +38,10 @@ InitWidget::InitWidget(QWidget *parent, const char *name):
   qlboxSplStep->insertItem("0.02");
   connect(qlboxSplStep, SIGNAL(highlighted(const QString&)), 
 	  qledSplStep, SLOT(setText(const QString&)));
+
+  /* Symmetric distance checkbox */
+  chkSymDist = new QCheckBox("Calculte the symmetric distance (double run)",
+                             this);
 
   /* OK button */
   OK = new QPushButton("OK",this);
@@ -64,6 +69,10 @@ InitWidget::InitWidget(QWidget *parent, const char *name):
   smallGrid3->addWidget(qledSplStep, 0, 1);
   smallGrid3->addWidget(qlboxSplStep, 0, 2);
 
+  /* Build grid layout for symmetric distance checkbox */
+  smallGrid5 = new QHBoxLayout();
+  smallGrid5->addWidget(chkSymDist);
+
   /* Build grid layout fir OK button */
   smallGrid4 = new QHBoxLayout();
   smallGrid4->addSpacing(100);
@@ -73,7 +82,8 @@ InitWidget::InitWidget(QWidget *parent, const char *name):
   bigGrid->addLayout(smallGrid1, 0, 0);
   bigGrid->addLayout(smallGrid2, 1, 0);
   bigGrid->addLayout(smallGrid3, 2, 0);
-  bigGrid->addLayout(smallGrid4, 3, 0);
+  bigGrid->addLayout(smallGrid5, 3, 0);
+  bigGrid->addLayout(smallGrid4, 4, 0);
  
 }
 
@@ -102,11 +112,13 @@ void InitWidget::getParameters() {
   tmpSplStep = qledSplStep->text();
   step = (char*)tmpSplStep.latin1();
 
+  doSymmetric = chkSymDist->isChecked();
+
   if(tmpMesh1=="mesh1.raw" || tmpMesh2=="mesh2.raw" || 
      tmpSplStep=="sampling step")
     incompleteFields();
   else {
-    isValid = 1;
+    isValid = TRUE;
     emit(exit());
   }
   

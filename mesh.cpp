@@ -1,4 +1,4 @@
-/* $Id: mesh.cpp,v 1.3 2001/09/20 16:15:29 dsanta Exp $ */
+/* $Id: mesh.cpp,v 1.4 2001/09/20 16:46:56 dsanta Exp $ */
 
 #include <time.h>
 #include <string.h>
@@ -169,6 +169,7 @@ int main( int argc, char **argv )
     pargs.m1_fname = b->mesh1;
     pargs.m2_fname = b->mesh2;
     pargs.sampling_step = atof(b->step)/100;
+    pargs.do_symmetric = b->doSymmetric == TRUE;
   }
   
   /* Read models from input files */
