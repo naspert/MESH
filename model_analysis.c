@@ -1,4 +1,4 @@
-/* $Id: model_analysis.c,v 1.20 2002/03/28 06:42:00 dsanta Exp $ */
+/* $Id: model_analysis.c,v 1.21 2002/03/28 17:34:29 dsanta Exp $ */
 
 
 /*
@@ -216,8 +216,8 @@ static INLINE int vtx_in_list_or_add(struct vtx_list *list, int v, int *sz)
  * that *face must be incident on the center_vidx vertex. This is used to
  * obtain the starting vertices to do an oriented walk of the vertices around
  * center_vidx. */
-static void get_ordered_vtcs(const face_t *face, int center_vidx,
-                             int *start_vidx, int *edge_vidx)
+static INLINE void get_ordered_vtcs(const face_t *face, int center_vidx,
+                                    int *start_vidx, int *edge_vidx)
 {
   if (center_vidx == face->f0) {
     *start_vidx = face->f1;
@@ -369,22 +369,31 @@ static void get_vertex_topology(const face_t *mfaces, int vidx,
   free(vfaces);
 }
 
-/* Adds the face_idx to the list of adjacent faces *af, as adjacent on the
- * edge edge_idx. */
-static void add_adj_face(struct adj_faces *af, int edge_idx, int face_idx)
+/* Adds the face_idx to the list of extra adjacent faces *af, as adjacent on
+ * the edge edge_idx. */
+static void add_adj_face_extra(struct adj_faces *af, int edge_idx, int face_idx)
 {
   int j;
 
+  if (af->extra == NULL) { /* no extra lists for no edge yet */
+    af->extra = xa_calloc(1,sizeof(*(af->extra)));
+  }
+  j = (af->extra->n_faces_on_edge[edge_idx])++;
+  af->extra->faces_on_edge[edge_idx] =
+    xa_realloc(af->extra->faces_on_edge[edge_idx],j+1);
+  af->extra->faces_on_edge[edge_idx][j] = face_idx;
+  
+}
+
+/* Adds the face_idx to the list of adjacent faces *af, as adjacent on the
+ * edge edge_idx. */
+static INLINE void add_adj_face(struct adj_faces *af, int edge_idx,
+                                int face_idx)
+{
   if (af->face_on_edge[edge_idx] < 0) {
     af->face_on_edge[edge_idx] = face_idx;
-  } else { /* already one face adjacent on the edge_idx edge => add as extra */
-    if (af->extra == NULL) { /* no extra lists for no edge yet */
-      af->extra = xa_calloc(1,sizeof(*(af->extra)));
-    }
-    j = (af->extra->n_faces_on_edge[edge_idx])++;
-    af->extra->faces_on_edge[edge_idx] =
-      xa_realloc(af->extra->faces_on_edge[edge_idx],j+1);
-    af->extra->faces_on_edge[edge_idx][j] = face_idx;
+  } else {
+    add_adj_face_extra(af,edge_idx,face_idx);
   }
 }
 
@@ -466,40 +475,71 @@ static struct adj_faces * find_adjacent_faces(const face_t *mfaces, int n_faces,
   return aflist;
 }
 
-/* Returns the next face in the list of adjacent faces *af. The search starts
- * at edge edge_idx and at position edge_pos within that edge. The values edge
- * and position for the next search are returned in *edge_idx and
- * *edge_pos. The index of the edge on which the adjacent face is found is
- * returned in *join_eidx. If there are no more adjacent faces -1 is
- * returned. */
-static int get_next_adj_face(struct adj_faces *af, int *edge_idx,
-                             int *edge_pos, int *join_eidx)
+/* Returns the next face in the list of adjacent faces aflist[fidx]. The
+ * search starts at edge *edge_idx and at position *edge_pos within that
+ * edge. The values edge and position for the next search are returned in
+ * *edge_idx and *edge_pos. The index of the edge of fidx on which the
+ * adjacent face is found is returned in *join_eidx. If there are no more
+ * adjacent faces -1 is returned. Otherwise fidx is removed from
+ * aflist[next_fidx], where next_fidx is the returned value (i.e. the
+ * symmetric face adjacency is removed). */
+static INLINE int get_next_adj_face_rm(struct adj_faces *aflist, int fidx,
+                                       int *edge_idx, int *edge_pos,
+                                       int *join_eidx)
 {
   int next_fidx;
-  int eidx,epos;
+  int eidx,epos,jeidx;
+  struct adj_faces *af;
 
   eidx = *edge_idx;
   epos = *edge_pos;
 
-  assert(eidx >= 0);
-  if (eidx >= 3) return -1; /* already at end */
+  assert(eidx >= 0 && eidx < 3);
+  af = &aflist[fidx];
   do {
     if (epos == 0) { /* take from main adjacent faces */
       next_fidx = af->face_on_edge[eidx];
+      jeidx = eidx;
+      if (af->extra != NULL && epos < af->extra->n_faces_on_edge[eidx]) {
+        epos++;
+      } else {
+        eidx++;
+      }
     } else { /* take from extra adjacent faces */
       next_fidx = af->extra->faces_on_edge[eidx][epos-1];
+      jeidx = eidx;
+      if (epos < af->extra->n_faces_on_edge[eidx]) {
+        epos++;
+      } else {
+        eidx++;
+        epos = 0;
+      }
     }
     /* get indices of next adjacent face */
-    *join_eidx = eidx;
-    if (af->extra != NULL && epos < af->extra->n_faces_on_edge[eidx]) {
-      epos++;
-    } else {
-      eidx++;
-      epos = 0;
-    }
   } while (next_fidx < 0 && eidx < 3);
+  if (next_fidx < 0) return -1; /* none found */
+  /* return values */
   *edge_idx = eidx;
   *edge_pos = epos;
+  *join_eidx = jeidx;
+  /* remove symmetric adjacency from next_fidx */
+  af = &aflist[next_fidx];
+  for (eidx=0; eidx<3; eidx++) { /* remove from main adjacent faces */
+    if (af->face_on_edge[eidx] == fidx) {
+      af->face_on_edge[eidx] = -1;
+      return next_fidx; /* done */
+    }
+  }
+  if (af->extra != NULL) { /* not in main adjacent faces => remove from extra */
+    for (eidx=0; eidx<3; eidx++) {
+      for (epos=0; epos < af->extra->n_faces_on_edge[eidx]; epos++) {
+        if (af->extra->faces_on_edge[eidx][epos] == fidx) {
+          af->extra->faces_on_edge[eidx][epos] = -1;
+          return next_fidx; /* done */
+        }
+      }
+    }
+  }
   return next_fidx;
 }
 
@@ -507,9 +547,10 @@ static int get_next_adj_face(struct adj_faces *af, int *edge_idx,
  * of the already oriented face and adjacent face *oriented_face. The
  * orientation of the oriented face is orientation. The index of the edge of
  * *oriented_face where *new_face is adjacent is of join_eidx. */
-static signed char get_orientation(const face_t *new_face,
-                                   const face_t *oriented_face,
-                                   signed char orientation, int of_join_eidx)
+static INLINE signed char get_orientation(const face_t *new_face,
+                                          const face_t *oriented_face,
+                                          signed char orientation,
+                                          int of_join_eidx)
 {
   int v0,v1; /* ordered vertices of the joining edge */
 
@@ -585,9 +626,10 @@ static signed char * model_orientation(const face_t *mfaces, int n_faces,
     /* do a walk on all connected faces, checking orientation */
     do {
       /* get next face that is adjacent to current one */
-      next_fidx = get_next_adj_face(&aflist[cur.fidx],&cur.eidx,&cur.epos,
-                                    &join_eidx);
-      if (next_fidx >= 0) { /* still an adjacent face */
+      if (cur.eidx < 3 &&
+          (next_fidx = get_next_adj_face_rm(aflist,cur.fidx,&cur.eidx,
+                                            &cur.epos,&join_eidx)) >= 0) {
+        /* still an adjacent face */
         assert(face_orientation[cur.fidx] != 0);
         next_orientation =
           get_orientation(&mfaces[next_fidx],&mfaces[cur.fidx],
@@ -614,7 +656,6 @@ static signed char * model_orientation(const face_t *mfaces, int n_faces,
         }
       }
     } while (1);
-    cur.fidx = 0; /* restart rescanning from beggining */
   }
   free_adj_face_list(aflist,n_faces);
   stack_fini(&stack);
