@@ -1,4 +1,4 @@
-/* $Id: viewer.cpp,v 1.39 2001/08/18 16:02:14 dsanta Exp $ */
+/* $Id: viewer.cpp,v 1.40 2001/08/20 12:04:16 dsanta Exp $ */
 
 #include <time.h>
 #include <string.h>
@@ -204,13 +204,13 @@ int main( int argc, char **argv )
   printf("        \t   Absolute\t%% BBox diag\n");
   printf("        \t           \t  (Model 2)\n");
   printf("Min:    \t%11g\t%11g\n",
-         stats.min_dist,stats.min_dist/bbox2_diag);
+         stats.min_dist,stats.min_dist/bbox2_diag*100);
   printf("Max:    \t%11g\t%11g\n",
-         stats.max_dist,stats.max_dist/bbox2_diag);
+         stats.max_dist,stats.max_dist/bbox2_diag*100);
   printf("Mean:   \t%11g\t%11g\n",
-         stats.mean_dist,stats.mean_dist/bbox2_diag);
+         stats.mean_dist,stats.mean_dist/bbox2_diag*100);
   printf("RMS:    \t%11g\t%11g\n",
-         stats.rms_dist,stats.rms_dist/bbox2_diag);
+         stats.rms_dist,stats.rms_dist/bbox2_diag*100);
   printf("\n");
   printf("Calculated error in %g seconds\n",
          (double)(clock()-start_time)/CLOCKS_PER_SEC);
