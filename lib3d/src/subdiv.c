@@ -1,4 +1,4 @@
-/* $Id: subdiv.c,v 1.7 2001/10/14 12:32:10 aspert Exp $ */
+/* $Id: subdiv.c,v 1.8 2001/10/16 14:15:23 aspert Exp $ */
 #include <3dutils.h>
 #include <subdiv_methods.h>
 #include <assert.h>
@@ -27,7 +27,7 @@ struct model* subdiv(struct model *raw_model,
   int nedges = 0;
   int vert_idx = raw_model->num_vert;
   int face_idx = 0;
-  int *done; /* *middpoint_idx; */
+  unsigned char *done;
   int *midpoint_idx;
   face_t *temp_face;
 
@@ -55,7 +55,7 @@ struct model* subdiv(struct model *raw_model,
 	continue; 
 
       /* 2 boundary v. -> do nothing */
-      if (rings[i].type==1 && rings[rings[i].ord_vert[j]].type==1) 
+      if (rings[i].type==1 || rings[rings[i].ord_vert[j]].type==1) 
 	  continue;
       
       midpoint_func(rings, i, j, raw_model, &p);
@@ -97,7 +97,7 @@ struct model* subdiv(struct model *raw_model,
     update_func(raw_model, subdiv_model, rings);
 
   
-  done = (int*)calloc(nedges, sizeof(int));
+  done = (unsigned char*)calloc(nedges, sizeof(unsigned char));
   midpoint_idx = (int*)malloc(nedges*sizeof(int));
   
   for (j=0; j<raw_model->num_faces; j++) {
@@ -119,7 +119,7 @@ struct model* subdiv(struct model *raw_model,
       if(edge_list[i].edge.v0 != edge.v0)
 	continue;
       if(edge_list[i].edge.v1 == edge.v1) {
-	if (done[i] == 0) {
+	if (!done[i]) {
 	  subdiv_model->vertices[vert_idx] = edge_list[i].p;
 	  u0 = vert_idx;
 	  ufound_bm |= U0_FOUND;
@@ -145,7 +145,7 @@ struct model* subdiv(struct model *raw_model,
       if(edge_list[i].edge.v0 != edge.v0)
 	continue;
       if(edge_list[i].edge.v1 == edge.v1) {
-	if (done[i] == 0) {
+	if (!done[i]) {
 	  subdiv_model->vertices[vert_idx] = edge_list[i].p;
 	  u1 = vert_idx;
 	  ufound_bm |= U1_FOUND;
@@ -171,7 +171,7 @@ struct model* subdiv(struct model *raw_model,
       if(edge_list[i].edge.v0 != edge.v0)
 	continue;
       if(edge_list[i].edge.v1 == edge.v1) {
-	if (done[i] == 0) {
+	if (!done[i]) {
 	  subdiv_model->vertices[vert_idx] = edge_list[i].p;
 	  u2 = vert_idx;
 	  ufound_bm |= U2_FOUND;
@@ -185,7 +185,7 @@ struct model* subdiv(struct model *raw_model,
 	break;
       }
     }
-    
+  
     switch(ufound_bm) {
     case 7:
       subdiv_model->faces[face_idx].f0 = v0;
@@ -240,6 +240,17 @@ struct model* subdiv(struct model *raw_model,
       subdiv_model->faces[face_idx].f2 = v2;
       face_idx++;
       break;
+    case 4: /* u2 found */
+      subdiv_model->faces[face_idx].f0 = v0;
+      subdiv_model->faces[face_idx].f1 = v1;
+      subdiv_model->faces[face_idx].f2 = u2;
+      face_idx++;
+
+      subdiv_model->faces[face_idx].f0 = v1;
+      subdiv_model->faces[face_idx].f1 = u2;
+      subdiv_model->faces[face_idx].f2 = v2;
+      face_idx++;
+      break;
     case 3: /* u0 & u1 found */
       subdiv_model->faces[face_idx].f0 = v0;
       subdiv_model->faces[face_idx].f1 = u1;
@@ -256,13 +267,35 @@ struct model* subdiv(struct model *raw_model,
       subdiv_model->faces[face_idx].f2 = u1;
       face_idx++;
       break;
-    case 0:
+    case 2: /* u1 found */
+      subdiv_model->faces[face_idx].f0 = v0;
+      subdiv_model->faces[face_idx].f1 = u1;
+      subdiv_model->faces[face_idx].f2 = v2;
+      face_idx++;
+
+      subdiv_model->faces[face_idx].f0 = v1;
+      subdiv_model->faces[face_idx].f1 = v0;
+      subdiv_model->faces[face_idx].f2 = u1;
+      face_idx++;
+      break;
+    case 1: /* u0 found */
+      subdiv_model->faces[face_idx].f0 = v0;
+      subdiv_model->faces[face_idx].f1 = u0;
+      subdiv_model->faces[face_idx].f2 = v2;
+      face_idx++;
+
+      subdiv_model->faces[face_idx].f0 = v1;
+      subdiv_model->faces[face_idx].f1 = u0;
+      subdiv_model->faces[face_idx].f2 = v2;
+      face_idx++;
+      break;
+    case 0: /* none found */
       subdiv_model->faces[face_idx].f0 = v0;
       subdiv_model->faces[face_idx].f1 = v1;
       subdiv_model->faces[face_idx].f2 = v2;    
       face_idx++;
       break;
-    default:
+    default: /* should never get here */
       fprintf(stderr, "Trouble ufound_bm = %d\n", ufound_bm);
     }
   }
@@ -330,19 +363,24 @@ int main(int argc, char **argv) {
     }
 
     /* performs the subdivision */
-    if (sub_method == SUBDIV_SPH) {
+    switch (sub_method) {
+    case SUBDIV_SPH:
       sub_model = subdiv(or_model, compute_midpoint_sph, NULL);
-    }
-    else if (sub_method == SUBDIV_BUTTERFLY) 
-      sub_model = subdiv(or_model, compute_midpoint_butterfly, NULL);
-    else if (sub_method == SUBDIV_LOOP)
+      break;
+    case SUBDIV_LOOP:
       sub_model = subdiv(or_model, compute_midpoint_loop, 
 			 update_vertices_loop);
-    else {
+      break;
+    case SUBDIV_BUTTERFLY:
+      sub_model = subdiv(or_model, compute_midpoint_butterfly, NULL);
+      break;
+    default:
       fprintf(stderr, "ERROR : Invalid subdivision method found = %d\n", 
 	      sub_method);
       exit(1);
+      break;
     }
+
     
     free_raw_model(or_model);
     
