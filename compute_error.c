@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.49 2001/08/23 13:37:56 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.50 2001/08/23 17:22:20 dsanta Exp $ */
 
 #include <compute_error.h>
 
@@ -26,6 +26,9 @@
 
 /* Maximum number of cells in the grid. */
 #define GRID_CELLS_MAX 512000
+
+/* The value of 1/sqrt(3) */
+#define SQRT_1_3 0.5773502691896258
 
 /* Define inlining directive for C99 or as compiler specific C89 extension */
 #if defined(__GNUC__) /* GCC's interpretation is inverse of C99 */
@@ -297,12 +300,11 @@ static double get_cell_size(const struct triangle_list *tl,
 /* Gets the list of non-empty cells that are at distance k in the X, Y or Z
  * direction from the center cell with grid coordinates cell_gr_coord. The
  * list is stored in dlists->list[k] and dlists->n_dists is updated to reflect
- * the number of calculated distances. The list of cells at distances less
- * than k must have already been calculated. The list of empty cells is
- * obtained from the list of faces in each cell, fic. The size of the cell
- * grid is given by grid_sz. The distance between two cells is the minimum
- * distance between points in each cell. For distance zero the center cell is
- * also included in the list. */
+ * the number of calculated distances. The list of empty cells is obtained
+ * from the list of faces in each cell, fic. The size of the cell grid is
+ * given by grid_sz. The distance between two cells is the minimum distance
+ * between points in each cell. For distance zero the center cell is also
+ * included in the list. */
 static void get_cells_at_distance(struct dist_cell_lists *dlists,
                                   struct size3d cell_gr_coord,
                                   struct size3d grid_sz, int k,
@@ -319,7 +321,7 @@ static void get_cells_at_distance(struct dist_cell_lists *dlists,
   int min_m,max_m,min_n,max_n,min_o,max_o;
   int d;
 
-  assert(k == 0 || dlists->n_dists == k);
+  assert(k == 0 || dlists->n_dists <= k);
 
   /* Initialize */
   cell_stride_z = grid_sz.y*grid_sz.x;
@@ -327,6 +329,11 @@ static void get_cells_at_distance(struct dist_cell_lists *dlists,
 
   /* Expand storage for distance cell list */
   dlists->list = xa_realloc(dlists->list,(k+1)*sizeof(*(dlists->list)));
+  if (k > dlists->n_dists){
+    /* set to NULL new elements that will not be filled */
+    memset(dlists->list+dlists->n_dists,0,
+           (k-dlists->n_dists)*sizeof(*(dlists->list)));
+  }
   dlists->n_dists = k+1;
 
   /* Get the cells that are at distance k in the X, Y or Z direction from the
@@ -965,14 +972,17 @@ static struct t_in_cell_list *triangles_in_cells(const struct triangle_list *tl,
  * occurs, the counters are increased). The list of cells distant of k cells
  * in the X, Y or Z direction, for each cell, is cached in dcl, which must be
  * an array of length grid_sz.x*grid_sz.y*grid_sz.z and must be initialized to
- * all zero on the first call to this function. */
+ * all zero on the first call to this function. The distance obtained from a
+ * previous point *prev_p is prev_d (it is used to minimize the work). For the
+ * first call set prev_d as zero. */
 static double dist_pt_surf(vertex p, const struct triangle_list *tl,
                            const struct t_in_cell_list *fic,
 #ifdef DO_DIST_PT_SURF_STATS
                            struct dist_pt_surf_stats *stats,
 #endif
                            struct size3d grid_sz, double cell_sz,
-                           vertex bbox_min, struct dist_cell_lists *dcl)
+                           vertex bbox_min, struct dist_cell_lists *dcl,
+                           const vertex *prev_p, double prev_d)
 {
   vertex p_rel;         /* coordinates of p relative to bbox_min */
   struct size3d grid_coord; /* coordinates of cell in which p is */
@@ -992,6 +1002,7 @@ static double dist_pt_surf(vertex p, const struct triangle_list *tl,
   int *end_cell;        /* one past the last cell in the current cell list */
   ec_bitmap_t *fic_empty_cell; /* stack copy of fic->empty_cell (faster) */
   int **fic_triag_idx;  /* stack copy of fic->triag_idx (faster) */
+  double dmin;          /* minimum possible distance to any triangle */
 
   /* NOTE: tests have shown it is faster to scan each triangle, even
    * repeteadly, than to track which triangles have been scanned (too much
@@ -1027,8 +1038,13 @@ static double dist_pt_surf(vertex p, const struct triangle_list *tl,
     grid_coord.z = grid_sz.z-1;
   }
 
+  /* Determine starting k, based on previous point (which is typically close
+   * to current point) and its distance to closest triangle */
+  dmin = prev_d-dist_v(&p,prev_p);
+  k = floor(dmin*SQRT_1_3/cell_sz)-2;
+  if (k <0) k = 0;
+
   /* Scan cells, at sequentially increasing index distance k */
-  k = 0;
   kmax = max3(grid_sz.x,grid_sz.y,grid_sz.z);
   dmin_sqr = DBL_MAX;
   cell_sz_sqr = cell_sz*cell_sz;
@@ -1037,7 +1053,7 @@ static double dist_pt_surf(vertex p, const struct triangle_list *tl,
      * not been previously tested. Only non-empty cells are included in the
      * list. */
     cell_idx = grid_coord.x+grid_coord.y*grid_sz.x+grid_coord.z*cell_stride_z;
-    if (dcl[cell_idx].n_dists <= k) {
+    if (dcl[cell_idx].n_dists <= k || dcl[cell_idx].list == NULL) {
       get_cells_at_distance(&(dcl[cell_idx]),grid_coord,grid_sz,k,fic);
     }
 
@@ -1089,7 +1105,7 @@ static double dist_pt_surf(vertex p, const struct triangle_list *tl,
     exit(1);
   }
 
-  return sqrt(dmin_sqr);
+  return  sqrt(dmin_sqr);
 }
 
 /* --------------------------------------------------------------------------*
@@ -1114,6 +1130,8 @@ void dist_surf_surf(const model *m1, model *m2, int n_spt,
   int report_step;            /* The step to update the progress report */
   struct dist_cell_lists *dcl;/* Cache for the list of non-empty cells at each
                                * distance, for each cell. */
+  vertex prev_p;              /* previous point */
+  double prev_d;              /* distance for previous point */
 #ifdef DO_DIST_PT_SURF_STATS
   struct dist_pt_surf_stats dps_stats; /* Statistics */
 #endif
@@ -1129,7 +1147,11 @@ void dist_surf_surf(const model *m1, model *m2, int n_spt,
   bbox_max.x = max(m1->bBox[1].x,m2->bBox[1].x);
   bbox_max.y = max(m1->bBox[1].y,m2->bBox[1].y);
   bbox_max.z = max(m1->bBox[1].z,m2->bBox[1].z);
-  
+  prev_p.x = 0;
+  prev_p.y = 0;
+  prev_p.z = 0;
+  prev_d = 0;
+
   /* Get the triangle list from model 2 and determine the grid and cell size */
   tl2 = model_to_triangle_list(m2);
   cell_sz = get_cell_size(tl2,&bbox_min,&bbox_max,&grid_sz);
@@ -1174,7 +1196,10 @@ void dist_surf_surf(const model *m1, model *m2, int n_spt,
 #ifdef DO_DIST_PT_SURF_STATS
                                     &dps_stats,
 #endif
-                                    grid_sz,cell_sz,bbox_min,dcl);
+                                    grid_sz,cell_sz,bbox_min,dcl,
+                                    &prev_p,prev_d);
+      prev_p = ts.sample[i];
+      prev_d = tse.err_lin[i];
     }
     error_stat_triag(&tse,&fe[k]);
     /* Update overall statistics */
