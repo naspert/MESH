@@ -1,6 +1,6 @@
-/* $Id: ColorMapWidget.cpp,v 1.12 2001/11/12 15:25:03 dsanta Exp $ */
+/* $Id: ColorMapWidget.cpp,v 1.13 2002/02/01 09:03:51 aspert Exp $ */
 #include <ColorMapWidget.h>
-
+#include <stdio.h>
 #include <qapplication.h>
 #include <qpainter.h>
 #include <ColorMap.h>
@@ -78,7 +78,7 @@ void ColorMapWidget::paintEvent(QPaintEvent *) {
 		    (int)floor(255*colormap[7-i][2])));
     p.drawRect(10, yoff+i*(h/8), 20, (h+7)/8);
     p.setPen(Qt::white);
-    res = dmax - i*(dmax - dmin)/7.0;
+    res = dmax - (i+1)*(dmax - dmin)/8.0;
     tmpDisplayedText.sprintf( "%.3f",res/scale);
     p.drawText(35, yoff+ysub+(i+1)*(h/8), tmpDisplayedText);
   }
