@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.7 2001/06/28 13:46:48 aspert Exp $
+# $Id: Makefile,v 1.8 2001/07/02 09:14:41 jacquet Exp $
 
 CC = gcc
 CPP = g++
@@ -25,7 +25,7 @@ GL_CFLAGS = $(GLINCLFLAGS) $(XTRA_CFLAGS)
 
 LIB3D_FLAGS = -L$(LIB3DDIR)/lib -l3d #-limage
 BASE_LIBFLAGS = -L$(LIBDIR)  -lm
-GL_LIBFLAGS = -L$(LIBDIR) -L/usr/X11R6/lib  -lglut -lGLU -lGL -lXmu -lXext -lX11 $(LIB3D_FLAGS) -lm
+GL_LIBFLAGS = -L$(LIBDIR) -L/usr/X11R6/lib  -lglut -lGL -lGLU -lXmu -lXext -lX11 $(LIB3D_FLAGS) -lm
 
 
 BASE_LDFLAGS = -g -O2  $(BASE_LIBFLAGS)

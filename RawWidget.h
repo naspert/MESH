@@ -14,7 +14,7 @@ class RawWidget : public QGLWidget
 
   Q_OBJECT // To please 'moc' but useless otherwise ...
 public:  
-  RawWidget(model *raw_model,QWidget *parent=0, const char *name=0 );
+  RawWidget(model *raw_model,QWidget *parent=0, const char *name=0);
   void display(double distance);
   void rebuild_list(double **colormap,model *raw_model);
   

@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.6 2001/06/13 14:13:38 jacquet Exp $ */
+/* $Id: compute_error.c,v 1.7 2001/07/02 09:14:41 jacquet Exp $ */
 
 #include <compute_error.h>
 
@@ -422,44 +422,6 @@ sample* echantillon(vertex a, vertex b, vertex c,double k)
   return(sample1);
 
 }
-
-/****************************************************************************/
-/* fonction qui echantillonne et calcule la plus distance                   */
-/****************************************************************************/
-double echantillondist(vertex point,vertex a, vertex b, vertex c,double k)
-{
-  double i,j;
-  vertex l1,l2,sample;
-  double d,dmin=200;
-
-
-  l1.x=b.x-a.x;
-  l1.y=b.y-a.y;
-  l1.z=b.z-a.z;
-
-  l2.x=c.x-a.x;
-  l2.y=c.y-a.y;
-  l2.z=c.z-a.z;
-
-
-  for (i=0;i<=1;i+=k) {
-    for (j=0;j<=1;j+=k) {
-      if (i+j<1.000001) {
-
-        sample.x=a.x+i*l1.x+j*l2.x;
-        sample.y=a.y+i*l1.y+j*l2.y;
-        sample.z=a.z+i*l1.z+j*l2.z;
-	d=dist(point,sample);
-	if(d<dmin)
-	  dmin=d;
-	}
-    }
-  }
-  
-  return(dmin);
-
-}
-
 
 /****************************************************************************/
 /* fonction qui repertorie pour chaque face les cellules avec lesquelles    */
