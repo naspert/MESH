@@ -1,4 +1,4 @@
-/* $Id: dirac.c,v 1.6 2002/11/14 16:44:28 aspert Exp $ */
+/* $Id: dirac.c,v 1.7 2002/11/14 16:47:27 aspert Exp $ */
 #include <3dutils.h>
 
 int main(int argc, char **argv) {
@@ -8,7 +8,7 @@ int main(int argc, char **argv) {
   struct model *dirac;
 
  if (argc != 4) {
-    fprintf(stderr, "Usage: dirac height valence nrings outfile\n");
+    fprintf(stderr, "Usage: dirac height valence outfile\n");
     exit(-1);
   }
   
