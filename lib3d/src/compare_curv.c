@@ -1,4 +1,4 @@
-/* $Id: compare_curv.c,v 1.1 2001/09/24 15:01:11 aspert Exp $ */
+/* $Id: compare_curv.c,v 1.2 2001/09/25 09:07:14 aspert Exp $ */
 #include <3dutils.h>
 
 
@@ -197,10 +197,13 @@ int main(int argc, char **argv) {
   ring_info *rings1, *rings2;
   int i;
   char *filename1, *filename2;
-
+  double *deltak1, *deltak2, *deltakg;
+  double maxk1=-FLT_MAX, maxk2=-FLT_MAX, maxkg=-FLT_MAX;
+  double max_rel_k1=-FLT_MAX, max_rel_k2=-FLT_MAX, max_rel_kg=-FLT_MAX;
+  double mean_dk1=0.0, mean_dk2=0.0, mean_dkg=0.0;
 
   if (argc != 3) {
-    fprintf(stderr, "Usage: compare_curv file1.raw file2.raw\n");
+    fprintf(stderr, "Usage: compare_curv or_file.raw mod_file.raw\n");
     exit(-1);
   }
   filename1 = argv[1];
@@ -244,6 +247,57 @@ int main(int argc, char **argv) {
   compute_curvature(raw_model2, info2, rings2);
   printf("done\n");  
 
+  deltak1 = (double*)malloc(raw_model2->num_vert*sizeof(double));
+  deltak2 = (double*)malloc(raw_model2->num_vert*sizeof(double));
+  deltakg = (double*)malloc(raw_model2->num_vert*sizeof(double));
+
+  for (i=0; i<raw_model1->num_vert; i++) {
+    if (info1[i].k1 > maxk1)
+      maxk1 = info1[i].k1;
+
+    deltak1[i] = fabs(info1[i].k1 - info2[i].k1);
+
+    if (info1[i].k2 > maxk2)
+      maxk2 = info1[i].k2;
+
+    deltak2[i] = fabs(info1[i].k2 - info2[i].k2);
+
+    if (info1[i].gauss_curv > maxkg)
+      maxkg = info1[i].gauss_curv;
+
+    deltakg[i] = fabs(info1[i].gauss_curv - info2[i].gauss_curv);
+   
+  }
+  /* Compute relative error */
+  for (i=0; i<raw_model1->num_vert; i++) {
+    deltak1[i] /= maxk1;
+    deltak2[i] /= maxk2;
+    deltakg[i] /= maxkg;
+
+    mean_dk1 += deltak1[i];
+    mean_dk2 += deltak2[i];
+    mean_dkg += deltakg[i];
+
+    if (deltak1[i] > max_rel_k1)
+      max_rel_k1 = deltak1[i];
+    if (deltak2[i] > max_rel_k2)
+      max_rel_k2 = deltak2[i];
+    if (deltakg[i] > max_rel_kg)
+      max_rel_kg = deltakg[i];
+
+  }
+
+  mean_dk1 /= (double)raw_model1->num_vert;
+  mean_dk2 /= (double)raw_model1->num_vert;
+  mean_dkg /= (double)raw_model1->num_vert;
+  
+  printf("max_dk1 = %f\n", max_rel_k1);
+  printf("max_dk2 = %f\n", max_rel_k2);
+  printf("max_dkg = %f\n", max_rel_kg);
+  printf("mean_dk1 = %f\n", mean_dk1);
+  printf("mean_dk2 = %f\n", mean_dk2);
+  printf("mean_dkg = %f\n", mean_dkg);
+
   for (i=0; i<raw_model1->num_vert; i++) {
     free(info1[i].list_face);
     free(rings1[i].ord_vert);
@@ -254,6 +308,9 @@ int main(int argc, char **argv) {
   free(rings1);
   free(info2);
   free(rings2);
+  free(deltak1);
+  free(deltak2);
+  free(deltakg);
   free_raw_model(raw_model1);
   free_raw_model(raw_model2);
   return 0;
