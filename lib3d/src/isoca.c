@@ -1,9 +1,10 @@
-/* $Id: isoca.c,v 1.7 2002/03/22 16:11:34 aspert Exp $ */
+/* $Id: isoca.c,v 1.8 2002/11/05 10:18:55 aspert Exp $ */
 #include <3dutils.h>
 #include <subdiv.h>
 
-void midpoint_sph(struct ring_info *rings, int center, int v1, 
-                  struct model *raw_model, vertex_t *vout) {
+static void midpoint_sph(const struct ring_info *rings, const int center, 
+		 	 const int v1, 
+	                 const struct model *raw_model, vertex_t *vout) {
   int center2 = rings[center].ord_vert[v1];
   vertex_t p;
 
