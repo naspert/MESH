@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.76 2002/02/13 10:38:39 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.77 2002/02/15 12:17:31 dsanta Exp $ */
 
 #include <compute_error.h>
 
@@ -837,7 +837,7 @@ static void error_stat_triag(const struct triag_sample_error *tse,
   double **s_err;
 
   n = tse->n_samples;
-  fe->n_samples = n;
+  fe->n_samples = tse->n_samples_tot;
   if (n == 0) { /* no samples in this triangle */
     fe->min_error = 0;
     fe->max_error = 0;
