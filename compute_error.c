@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.70 2001/11/19 18:00:21 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.71 2002/02/10 15:35:08 dsanta Exp $ */
 
 #include <compute_error.h>
 
@@ -311,7 +311,7 @@ static double get_cell_size(const struct triangle_list *tl,
   f_gsz_z = ceil((bbox_max->z-bbox_min->z)/cell_sz);
   if (f_gsz_z <= 0) f_gsz_z = 1;
   if (f_gsz_x*f_gsz_y*f_gsz_z > GRID_CELLS_MAX) {
-    cell_sz = pow(f_gsz_x*f_gsz_y*f_gsz_z/GRID_CELLS_MAX,1/3);
+    cell_sz *= pow(f_gsz_x*f_gsz_y*f_gsz_z/GRID_CELLS_MAX,1.0/3);
     f_gsz_x = ceil((bbox_max->x-bbox_min->x)/cell_sz);
     if (f_gsz_x <= 0) f_gsz_x = 1;
     f_gsz_y = ceil((bbox_max->y-bbox_min->y)/cell_sz);
