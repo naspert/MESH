@@ -1,4 +1,4 @@
-/* $Id: ring.c,v 1.2 2002/05/13 14:47:41 aspert Exp $ */
+/* $Id: ring.c,v 1.3 2002/06/04 08:48:00 aspert Exp $ */
 
 
 /*
@@ -191,6 +191,14 @@ void build_star_global(const struct model *raw_model,
     ring[i].n_faces = n_faces;
     ring[i].ord_face = (int*)malloc(n_faces*sizeof(int));
     memcpy(ring[i].ord_face, face_star, n_faces*sizeof(int));
+
+#if 0
+    printf("vertex %d Tr: ", i);
+    for (j=0; j<ring[i].n_faces; j++) {
+      printf("%d ", ring[i].ord_face[j]);
+    }
+    printf("\n");
+#endif
 
     free(final_star);
     free(face_star);
