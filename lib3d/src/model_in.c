@@ -1,4 +1,4 @@
-/* $Id: model_in.c,v 1.30 2002/08/09 15:26:45 aspert Exp $ */
+/* $Id: model_in.c,v 1.31 2002/08/15 13:34:15 aspert Exp $ */
 
 
 /*
@@ -48,7 +48,7 @@
  * Author: Diego Santa Cruz
  *
  * N. Aspert is guilty for all the stuff that are zlib/block-read
- * related + the Inventor & SMF parsers.
+ * related + the Inventor, PLY & SMF parsers.
  */
 
 #include <assert.h>
@@ -1858,6 +1858,159 @@ static int read_smf_tmesh(struct model **tmesh_ref, struct file_data *data) {
   return rcode;
 }
 
+static int read_ply_tmesh(struct model **tmesh_ref, struct file_data *data) {
+  char stmp[MAX_WORD_LEN+1];
+  vertex_t bbmin, bbmax;
+  struct model* tmesh;
+  int rcode = 0;
+  int c, f0, f1, f2, i;
+  
+  bbmin.x = bbmin.y = bbmin.z = FLT_MAX;
+  bbmax.x = bbmax.y = bbmax.z = -FLT_MAX;
+  
+  tmesh = (struct model*)calloc(1, sizeof(struct model));
+
+  /* read the header */
+  /* check of the format is ASCII */
+  skip_ws_comm(data);
+  if (string_scanf(data, stmp) == 1 && strcmp(stmp, "format") == 0) {
+    skip_ws_comm(data);
+    if (string_scanf(data, stmp) == 1) { 
+      /* check whether we have ASCII or binary stuff */
+      if (strcmp(stmp, "binary_little_endian") == 0 || 
+          strcmp(stmp, "binary_big_endian") == 0) {
+        fprintf(stderr, "PLY binary format not supported. Sorry.\n");
+        rcode = MESH_BAD_FF;
+      } else if (strcmp(stmp, "ascii") == 0) {
+        skip_ws_comm(data);
+        if (string_scanf(data, stmp) != 1 || strcmp(stmp, "1.0") != 0) {
+          rcode = MESH_CORRUPTED;
+        }
+      } else {
+        rcode = MESH_CORRUPTED;
+      }
+    } else {
+      rcode = MESH_CORRUPTED;
+    }
+  } else
+    rcode = MESH_CORRUPTED;
+
+  if (rcode == 0) {
+    do {
+      if ((c = find_string(data, "element")) != EOF) {
+        skip_ws_comm(data);
+        if (string_scanf(data, stmp) == 1) {
+          if (strcmp(stmp, "vertex") == 0) {
+            rcode = (int_scanf(data, &(tmesh->num_vert)) == 1)?0:MESH_CORRUPTED;
+#ifdef DEBUG
+            fprintf(stderr, "[read_ply_tmesh] num_vert = %d\n", tmesh->num_vert);
+#endif
+          } else if (strcmp(stmp, "face") == 0) {
+            rcode = (int_scanf(data, &(tmesh->num_faces)) == 1)?0:MESH_CORRUPTED;
+#ifdef DEBUG
+            fprintf(stderr, "[read_ply_tmesh] num_faces = %d\n", tmesh->num_faces);
+#endif
+          } else if (strcmp(stmp, "edge") == 0) {
+            fprintf(stderr, "'edge' field not supported !\n");
+          } else {
+            rcode = MESH_CORRUPTED;
+          }
+        }
+      } else
+        rcode = MESH_CORRUPTED;
+    } while (rcode == 0 && (tmesh->num_faces == 0 || tmesh->num_vert == 0));
+    /* Ignore everything else from the header */
+    if ((c = find_string(data, "end_header")) == EOF)
+      rcode = MESH_CORRUPTED;
+    else {
+      /* Read vertices */
+      tmesh->vertices = (vertex_t*)malloc(tmesh->num_vert*sizeof(vertex_t));
+      for (i=0; i< tmesh->num_vert; i++) {
+        if (float_scanf(data, &(tmesh->vertices[i].x)) != 1) {
+          rcode = MESH_CORRUPTED;
+          break;
+        }
+        if (float_scanf(data, &(tmesh->vertices[i].y)) != 1) {
+          rcode = MESH_CORRUPTED;
+          break;
+        }
+        if (float_scanf(data, &(tmesh->vertices[i].z)) != 1) {
+          rcode = MESH_CORRUPTED;
+          break;
+        }
+
+        /* skip the rest of the current line, which can contain
+         * additional informations (e.g. color), but currently ignored
+         */
+        do {
+          c = getc(data);
+        } while (c != '\n' && c != '\r' && c != EOF);
+
+        if (c == EOF) {
+          rcode = MESH_CORRUPTED;
+          break;
+        }
+
+        if (tmesh->vertices[i].x < bbmin.x) bbmin.x = tmesh->vertices[i].x;
+        if (tmesh->vertices[i].y < bbmin.y) bbmin.y = tmesh->vertices[i].y;
+        if (tmesh->vertices[i].z < bbmin.z) bbmin.z = tmesh->vertices[i].z;
+        if (tmesh->vertices[i].x > bbmax.x) bbmax.x = tmesh->vertices[i].x;
+        if (tmesh->vertices[i].y > bbmax.y) bbmax.y = tmesh->vertices[i].y;
+        if (tmesh->vertices[i].z > bbmax.z) bbmax.z = tmesh->vertices[i].z;
+      }
+      /* Read face list */
+      tmesh->faces = (face_t*)malloc(tmesh->num_faces*sizeof(face_t));
+      for(i=0; i<tmesh->num_faces; i++) {
+        if (int_scanf(data, &c) != 1) {
+          rcode = MESH_CORRUPTED;
+          break;
+        }
+        if (c != 3) { /* Non-triangular mesh -> bail out */
+          rcode = MESH_NOT_TRIAG;
+          break;
+        }
+        
+        /* Read faces */
+        if (int_scanf(data, &f0) != 1) {
+          rcode = MESH_CORRUPTED;
+          break;
+        }
+        if (int_scanf(data, &f1) != 1) {
+          rcode = MESH_CORRUPTED;
+          break;
+        }
+        if (int_scanf(data, &f2) != 1) {
+          rcode = MESH_CORRUPTED;
+          break;
+        }
+
+        if (f0 < 0 || f1 < 0 || f2 < 0 || f0 >= tmesh->num_vert || 
+            f1 >= tmesh->num_vert || f2 >= tmesh->num_vert ) {
+          rcode = MESH_CORRUPTED;
+          break;
+        }
+        tmesh->faces[i].f0 = f0;
+        tmesh->faces[i].f1 = f1;
+        tmesh->faces[i].f2 = f2;
+      } /* end face loop */
+    }
+  }
+
+  if (rcode != 0) { /* something went wrong */
+    if (tmesh->vertices != NULL)
+      free(tmesh->vertices);
+    if (tmesh->faces != NULL)
+      free(tmesh->faces);
+    free(tmesh);
+  } else {
+    tmesh->bBox[0] = bbmin;
+    tmesh->bBox[1] = bbmax;
+    *tmesh_ref = tmesh;
+  }
+
+  return rcode;
+}
+
 /* Detect the file format of the '*data' stream, returning the detected
  * type. The header identifying the file format, if any, is stripped out and
  * the '*data' stream is positioned just after it. If an I/O error occurs
@@ -1925,15 +2078,8 @@ static int detect_file_format(struct file_data *data)
   } else if (c == 'p') { /* Probably ply */
     c = ungetc(c,data);
     if (c != EOF) {
-      if (buf_fscanf_1arg(data,swfmt,stmp) == 1 && strcmp(stmp,"ply") == 0) {
-        if (buf_fscanf_1arg(data,swfmt,stmp) == 1 && strcmp(stmp,"format") == 0 &&
-            buf_fscanf_1arg(data,swfmt,stmp) == 1 && strcmp(stmp,"ascii") == 0 &&
-            buf_fscanf_1arg(data,swfmt,stmp) == 1 && strcmp(stmp,"1.0") == 0 &&
-            ((c = getc(data)) == '\n' || getc(data) == '\r')) {
-          rcode = MESH_FF_PLY;
-        } else {
-          rcode = ferror((FILE*)data->f) ? MESH_CORRUPTED : MESH_BAD_FF;
-        }
+      if (string_scanf(data, stmp) == 1 && strcmp(stmp, "ply") == 0) {
+        rcode = MESH_FF_PLY;
       } else {
         rcode = ferror((FILE*)data->f) ? MESH_CORRUPTED : MESH_BAD_FF;
       }
@@ -1972,10 +2118,10 @@ int read_model(struct model **models_ref, struct file_data *data,
 
   switch (fformat) {
   case MESH_FF_RAW:
-    rcode = read_raw_tmesh(&models,data);
+    rcode = read_raw_tmesh(&models, data);
     break;
   case MESH_FF_VRML:
-    rcode = read_vrml_tmesh(&models,data,concat);
+    rcode = read_vrml_tmesh(&models, data, concat);
     break;
   case MESH_FF_IV:
     rcode = read_iv_tmesh(&models, data);
@@ -1984,6 +2130,8 @@ int read_model(struct model **models_ref, struct file_data *data,
     rcode = read_smf_tmesh(&models, data);
     break;
   case MESH_FF_PLY:
+    rcode = read_ply_tmesh(&models, data);
+    break;
   default:
     rcode = MESH_BAD_FF;
   }
