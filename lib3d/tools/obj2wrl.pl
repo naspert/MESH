@@ -1,5 +1,5 @@
 #!/usr/bin/perl
-# $Id: obj2wrl.pl,v 1.1 2002/04/19 06:31:35 aspert Exp $
+# $Id: obj2wrl.pl,v 1.2 2002/05/03 12:41:22 aspert Exp $
 #############################################################################
 #                                                                           #
 #  WHO:    John L. Moreland + fmb                                           #
@@ -457,7 +457,7 @@ print OUTPUT "      ] # coordIndex\n";
 
 print OUTPUT "    } # IndexedFaceSet\n";
 print OUTPUT "  } # Shape\n";
-print OUTPUT "} # children, Transform\n\n";
+print OUTPUT "] } # children, Transform\n\n";
 
 close( OUTPUT );
 
