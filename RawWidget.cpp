@@ -1,4 +1,4 @@
-/* $Id: RawWidget.cpp,v 1.19 2001/09/12 15:23:16 aspert Exp $ */
+/* $Id: RawWidget.cpp,v 1.20 2001/09/12 16:16:29 dsanta Exp $ */
 #include <RawWidget.h>
 #include <qmessagebox.h>
 
@@ -383,13 +383,11 @@ void RawWidget::mouseMoveEvent(QMouseEvent *event) {
 
 void RawWidget::keyPressEvent(QKeyEvent *k) {
   GLboolean light_state;
-  GLint line_state;
   int i;
   
   switch(k->key()) {
   case Key_F1:
-    glGetIntegerv(GL_POLYGON_MODE,&line_state);
-    setLine(line_state==GL_FILL);
+    emit toggleLine();
     break;
   case Key_F2:
     setLight();

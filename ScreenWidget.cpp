@@ -1,4 +1,4 @@
-/* $Id: ScreenWidget.cpp,v 1.16 2001/09/12 15:23:17 aspert Exp $ */
+/* $Id: ScreenWidget.cpp,v 1.17 2001/09/12 16:16:30 dsanta Exp $ */
 #include <ScreenWidget.h>
 
 ScreenWidget::ScreenWidget(model_error *model1, model_error *model2, 
@@ -97,12 +97,14 @@ ScreenWidget::ScreenWidget(model_error *model1, model_error *model2,
 
   connect(lineSwitch1, SIGNAL(toggled(bool)), 
 	  glModel1, SLOT(setLine(bool)));
+  connect(glModel1, SIGNAL(toggleLine()),lineSwitch1, SLOT(toggle()));
 
   lineSwitch2 = new QPushButton("Line/Fill", this);
   lineSwitch2->setToggleButton(TRUE);
 
   connect(lineSwitch2, SIGNAL(toggled(bool)), 
 	  glModel2, SLOT(setLine(bool)));
+  connect(glModel2, SIGNAL(toggleLine()),lineSwitch2, SLOT(toggle()));
 
 
   // Build the topmost grid layout

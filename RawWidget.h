@@ -1,4 +1,4 @@
-/* $Id: RawWidget.h,v 1.14 2001/09/12 15:23:16 aspert Exp $ */
+/* $Id: RawWidget.h,v 1.15 2001/09/12 16:16:30 dsanta Exp $ */
 #ifndef RAWWIDGET_H
 #define RAWWIDGET_H
 
@@ -41,6 +41,7 @@ public slots:
 signals:
   void transfervalue(double,double*);
   void toggleSync();
+  void toggleLine();
    
 protected:
   void initializeGL();
