@@ -1,4 +1,4 @@
-/* $Id: RawWidget.cpp,v 1.46 2002/02/28 12:07:16 aspert Exp $ */
+/* $Id: RawWidget.cpp,v 1.47 2002/03/01 09:57:52 aspert Exp $ */
 
 #include <RawWidget.h>
 #include <qmessagebox.h>
@@ -130,14 +130,15 @@ void RawWidget::setLine(bool state) {
   updateGL();
 }
 
-void RawWidget::setLight() {
+void RawWidget::setLight(bool state) {
   GLboolean light_state;
 
   // Get state from renderer
   if ((renderFlag & RW_CAPA_MASK) ==  RW_LIGHT_TOGGLE) {
     makeCurrent();
     light_state = glIsEnabled(GL_LIGHTING);
-
+    if (light_state != !state) // harmless
+      printf("Mismatched state between qcbLight/light_state\n");
     if (light_state==GL_FALSE){ // We are now switching to lighted mode
       if (model->mesh->normals !=NULL){// Are these ones computed ?
 	glEnable(GL_LIGHTING);
@@ -839,16 +840,49 @@ void RawWidget::mouseMoveEvent(QMouseEvent *event) {
 
 }
 
-void RawWidget::keyPressEvent(QKeyEvent *k) {
-  GLboolean light_state;
+
+void RawWidget::invertNormals(bool state) {
+  GLboolean lightState=state;
   int i;
+
+  if ((renderFlag & RW_CAPA_MASK) == RW_LIGHT_TOGGLE) {
+    makeCurrent();
+    QApplication::setOverrideCursor(Qt::waitCursor);
+    lightState = glIsEnabled(GL_LIGHTING);
+    if (lightState == GL_TRUE) {
+      for (i=0; i<model->mesh->num_vert; i++) 
+	neg_v(&(model->mesh->normals[i]), &(model->mesh->normals[i]));
+      
+	rebuildList();
+        updateGL();
+    }
+    QApplication::restoreOverrideCursor();
+  }
+}
+
+void RawWidget::setTwoSidedMaterial(bool state) {
+  
+  if ((renderFlag & RW_CAPA_MASK) == RW_LIGHT_TOGGLE) {
+    if (state != two_sided_material) // harmless ...
+      printf("Mismatched state qcbTwoSide/two_sided_material\n");
+    makeCurrent();
+    QApplication::setOverrideCursor(Qt::waitCursor);
+    two_sided_material = !two_sided_material;
+    rebuildList();
+    updateGL();
+    QApplication::restoreOverrideCursor();
+  }
+}
+
+void RawWidget::keyPressEvent(QKeyEvent *k) {
   
   switch(k->key()) {
   case Key_F1:
     emit toggleLine();
     break;
   case Key_F2:
-    setLight();
+//    setLight();
+    emit toggleLight();
     break;
   case Key_F3:
     // if we are going to sync make sure other widgets get out transformation
@@ -858,25 +892,10 @@ void RawWidget::keyPressEvent(QKeyEvent *k) {
     emit toggleSync();
     break;
   case Key_F4:
-    makeCurrent();
-    if ((renderFlag & RW_CAPA_MASK) == RW_LIGHT_TOGGLE) {
-      light_state = glIsEnabled(GL_LIGHTING);
-      if (light_state == GL_TRUE) { // Invert normals
-	for (i=0; i<model->mesh->num_vert; i++) 
-	  neg_v(&(model->mesh->normals[i]), &(model->mesh->normals[i]));
-	
-	rebuildList();
-        updateGL();
-      }
-    }
+    emit toggleNormals();
     break;
   case Key_F5:
-    if ((renderFlag & RW_CAPA_MASK) == RW_LIGHT_TOGGLE) {
-      makeCurrent();
-      two_sided_material = !two_sided_material;
-      rebuildList();
-      updateGL();
-    }
+    emit toggleTwoSidedMaterial();
     break;
   default:
     break;

@@ -1,7 +1,7 @@
-/* $Id: InitWidget.cpp,v 1.22 2002/02/27 07:51:59 aspert Exp $ */
+/* $Id: InitWidget.cpp,v 1.23 2002/03/01 09:57:52 aspert Exp $ */
 
 #include <InitWidget.h>
-
+#include <mesh.h>
 #include <qlabel.h>
 #include <qlayout.h>
 #include <qpushbutton.h>
@@ -23,8 +23,8 @@ InitWidget::InitWidget(struct args defArgs,
   QPushButton *B1, *B2, *OK;
   QListBox *qlboxSplStep;
   QGridLayout *bigGrid;
-
-
+  QString tmp;
+  
 
   /* Initialize */
   pargs = defArgs;
@@ -119,6 +119,8 @@ InitWidget::InitWidget(struct args defArgs,
   
   qpxMeshIcon = new QPixmap((const char**)meshIcon);
   setIcon(*qpxMeshIcon);
+  tmp.sprintf("MESH %s",version);
+  setCaption(tmp);
 }
 
 InitWidget::~InitWidget() {

@@ -1,4 +1,4 @@
-/* $Id: RawWidget.h,v 1.29 2002/02/28 12:07:16 aspert Exp $ */
+/* $Id: RawWidget.h,v 1.30 2002/03/01 09:57:52 aspert Exp $ */
 #ifndef RAWWIDGET_H
 #define RAWWIDGET_H
 
@@ -16,7 +16,10 @@
 #define RW_CAPA_MASK 0x03
 
 #define RW_DISPLAY_MASK 0x30
- 
+
+// Colormap length
+#define CMAP_LENGTH 256
+
 class RawWidget : public QGLWidget 
 { 
 
@@ -39,11 +42,17 @@ public slots:
   void transfer(double dist,double *mvmat);
   void setErrorMode(int emode);
   void setVEDownSampling(int n);
-  
+  void invertNormals(bool state);
+  void setTwoSidedMaterial(bool state);
+  void setLight(bool state);
+
 signals:
   void transferValue(double,double*);
   void toggleSync();
+  void toggleLight();
   void toggleLine();
+  void toggleTwoSidedMaterial();
+  void toggleNormals();
    
 protected:
   void initializeGL();
@@ -57,7 +66,6 @@ private:
 // functions 
   void display(double dist);
   void rebuildList();
-  void setLight();
   static void checkGlErrors(const char* where);
   void genErrorTextures();
   int fillTexture(const struct face_error *fe, GLubyte *texture) const;
@@ -91,8 +99,8 @@ private:
   int not_orientable_warned;
   int two_sided_material;
   int error_mode;
-// constants
-  enum constIntHack { CMAP_LENGTH = 256 };
+
+
 };
 
 #endif

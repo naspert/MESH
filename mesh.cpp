@@ -1,4 +1,4 @@
-/* $Id: mesh.cpp,v 1.28 2002/02/26 14:46:45 aspert Exp $ */
+/* $Id: mesh.cpp,v 1.29 2002/03/01 09:57:53 aspert Exp $ */
 
 #include <time.h>
 #include <string.h>
@@ -13,7 +13,7 @@
 #include <3dmodel.h>
 
 /* The version string, also parsed by Makefile */
-const char *version = "0.9";
+const char *version = "1.0-rc1";
 
 /* The Copyright */
 const char *copyright = "2001-2002 EPFL";

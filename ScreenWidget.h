@@ -1,4 +1,4 @@
-/* $Id: ScreenWidget.h,v 1.21 2002/02/27 12:09:31 aspert Exp $ */
+/* $Id: ScreenWidget.h,v 1.22 2002/03/01 09:57:53 aspert Exp $ */
 #ifndef SCREENWIDGET_H
 #define SCREENWIDGET_H
 
@@ -7,6 +7,7 @@
 #include <qhgroupbox.h>
 #include <qslider.h>
 #include <qspinbox.h>
+#include <qcheckbox.h>
 #include <compute_error.h>
 
 
@@ -28,11 +29,13 @@ protected slots:
   void aboutKeys();
   void aboutBugs();
   void aboutMesh();
+  void updatecbStatus(bool state);
 
 private:
   QHGroupBox *qgbSlider;
   QSlider *qslidDispSampDensity;
   QSpinBox *qspSampDensity;
+  QCheckBox *qcbInvNorm, *qcbTwoSide;
 // local copies of the parameters passed to the constructor
   struct model_error *locMod1, *locMod2; 
   enum whichModel {LEFT_MODEL=0, RIGHT_MODEL=1};

@@ -1,4 +1,4 @@
-/* $Id: ScreenWidget.cpp,v 1.38 2002/02/27 12:09:30 aspert Exp $ */
+/* $Id: ScreenWidget.cpp,v 1.39 2002/03/01 09:57:52 aspert Exp $ */
 #include <ScreenWidget.h>
 
 #include <qhbox.h>
@@ -11,6 +11,7 @@
 #include <qradiobutton.h>
 #include <qhbuttongroup.h>
 #include <qvbuttongroup.h>
+#include <qcheckbox.h>
 #include <qstring.h>
 #include <RawWidget.h>
 #include <ColorMapWidget.h>
@@ -32,13 +33,15 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   QPushButton *quitBut;
   QRadioButton *verrBut, *fmerrBut, *serrBut;
   QRadioButton *linBut, *logBut;
-  QButtonGroup *dispInfoGrp=NULL, *histoGrp=NULL;
+  QButtonGroup *dispInfoGrp=NULL, *histoGrp=NULL, *rmodGrp;
+  QCheckBox  *qcbLight;
   QString tmp;
   const float p = 0.95f; // max proportion of screen to use
   int max_ds; // maximum downsampling value
   int i;
-
-  setCaption("Mesh: visualization");
+  
+  tmp.sprintf("MESH %s - Visualization", version);
+  setCaption(tmp);
 
   fileQuitAction = new QAction( "Quit", "Quit", CTRL+Key_Q, this, "quit" );
   connect(fileQuitAction, SIGNAL(activated()) , 
@@ -100,7 +103,7 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
 
 
   // Build synchro and quit buttons
-  syncBut = new QPushButton("Synchronize viewpoints", this);
+  syncBut = new QPushButton("Synchronize\nviewpoints", this);
   syncBut->setToggleButton(TRUE);
 
   connect(syncBut, SIGNAL(toggled(bool)), 
@@ -122,15 +125,46 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
 	  glModel1, SLOT(setLine(bool)));
   connect(glModel1, SIGNAL(toggleLine()),lineSwitch1, SLOT(toggle()));
 
+
   lineSwitch2 = new QPushButton("Line/Fill", this);
   lineSwitch2->setToggleButton(TRUE);
 
   connect(lineSwitch2, SIGNAL(toggled(bool)), 
 	  glModel2, SLOT(setLine(bool)));
   connect(glModel2, SIGNAL(toggleLine()),lineSwitch2, SLOT(toggle()));
+  
+  // Build the checkboxes for right-model parameters
+  rmodGrp = new QVButtonGroup("Right model", this);
+
+  qcbInvNorm = new QCheckBox("Invert normals", rmodGrp);
+  connect(qcbInvNorm, SIGNAL(toggled(bool)), 
+	  glModel2, SLOT(invertNormals(bool)));
+  connect(glModel2, SIGNAL(toggleNormals()),qcbInvNorm,
+	  SLOT(toggle()));
+  rmodGrp->insert(qcbInvNorm);
+
+  qcbTwoSide = new QCheckBox("One-sided material", rmodGrp);
+  connect(qcbTwoSide, SIGNAL(toggled(bool)), 
+	  glModel2, SLOT(setTwoSidedMaterial(bool)));
+  connect(glModel2, SIGNAL(toggleTwoSidedMaterial()),qcbTwoSide, 
+	  SLOT(toggle()));
+  rmodGrp->insert(qcbTwoSide);
+
+  qcbLight = new QCheckBox("Light mode", rmodGrp);
+  if (model2->mesh->normals) { // parameters make sense if the
+                               // model has normals...
+    qcbLight->setChecked(TRUE);
+    connect(qcbLight, SIGNAL(toggled(bool)), glModel2, SLOT(setLight(bool)));
+    connect(glModel2, SIGNAL(toggleLight()), qcbLight, SLOT(toggle()));
+    connect(qcbLight, SIGNAL(toggled(bool)), this, SLOT(updatecbStatus(bool)));
+  } 
+  else
+    qcbLight->setDisabled(TRUE);
+
+  rmodGrp->insert(qcbLight);
 
   // Build error mode selection buttons
-  dispInfoGrp = new QHButtonGroup("Displayed information (left model)",this);
+  dispInfoGrp = new QVButtonGroup("Displayed information (left)",this);
   dispInfoGrp->layout()->setMargin(3);
   verrBut = new QRadioButton("Vertex error", dispInfoGrp);
   verrBut->setChecked(TRUE);
@@ -195,13 +229,14 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   bigGrid->addWidget(lineSwitch1, 1, 2, Qt::AlignCenter);
   bigGrid->addWidget(lineSwitch2, 1, 5, Qt::AlignCenter);
   bigGrid->addMultiCellWidget(syncBut, 1, 1, 3, 4, Qt::AlignCenter);
-  bigGrid->addMultiCellWidget(histoGrp, 1, 2, 0, 0, Qt::AlignCenter);
+  bigGrid->addMultiCellWidget(histoGrp, 1, 2, 0, 0, Qt::AlignTop);
 
   // sub layout for dispInfoGrp and Quit button -> avoid resize problems
-  smallGrid = new QGridLayout(1, 4, 3);
-  smallGrid->addWidget(dispInfoGrp, 0, 0, Qt::AlignLeft);
-  smallGrid->addMultiCellWidget(qgbSlider, 0, 0, 1, 2);
-  smallGrid->addWidget(quitBut, 0, 3, Qt::AlignCenter);
+  smallGrid = new QGridLayout(1, 5, 3);
+  smallGrid->addWidget(dispInfoGrp, 0, 0, Qt::AlignCenter);
+  smallGrid->addMultiCellWidget(qgbSlider, 0, 0, 1, 2, Qt::AlignCenter);
+  smallGrid->addWidget(rmodGrp, 0, 3, Qt::AlignCenter);
+  smallGrid->addWidget(quitBut, 0, 4, Qt::AlignCenter);
   bigGrid->addMultiCellLayout(smallGrid, 2, 2, 1, 6);
 
   // Now set a sensible default widget size
@@ -314,6 +349,17 @@ void ScreenWidget::trapChanges(int n)
     changeGroupBoxTitle(n);
     emit dsValChange(n);  
   }
+}
+
+void ScreenWidget::updatecbStatus(bool state) {
+  if (!state) { // no light
+    qcbTwoSide->setDisabled(TRUE);
+    qcbInvNorm->setDisabled(TRUE);
+  } else {
+    qcbTwoSide->setDisabled(FALSE);
+    qcbInvNorm->setDisabled(FALSE);
+  }
+    
 }
 
 void ScreenWidget::aboutMesh()
