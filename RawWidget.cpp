@@ -1,4 +1,4 @@
-/* $Id: RawWidget.cpp,v 1.61 2002/11/04 15:36:09 aspert Exp $ */
+/* $Id: RawWidget.cpp,v 1.62 2003/01/13 12:18:23 aspert Exp $ */
 
 
 /*
@@ -112,8 +112,12 @@ RawWidget::RawWidget(struct model_error *model_err, int renderType,
   // This is the increment used when moving closer/farther from the object
   dstep = distance*0.01;
 
-
-
+   // Connect the timer stuff
+  demo_mode_timer = new QTimer(this);
+  timer_state = 0;
+  timer_speed = 1;
+  connect(demo_mode_timer, SIGNAL(timeout()), this,
+          SLOT(handleTimerEvent()));
 
 }
 
@@ -237,6 +241,23 @@ void RawWidget::setColorMap(int newSpace) {
     updateGL();
   }
 }
+
+void RawWidget::setTimer(bool state) {
+  if (state) {
+    timer_state = 1;
+    if (move_state == 1)
+      emit toggleSync(); // avoid to re-compute all parameters for
+                         // all RawWidget's (the slot is connected
+                         // to the same signal from ScreenWidget)
+    demo_mode_timer->start(100); // Set the step top 100ms
+  }
+  else {
+    timer_state = 0;
+    demo_mode_timer->stop();
+  }
+    
+}
+
 
 // Returns the ceil(log(v)/log(2)), if v is zero or less it returns zero
 int RawWidget::ceilLog2(int v) {
@@ -885,6 +906,24 @@ else
   middle_button_state=0;
 }
 
+
+void RawWidget::handleTimerEvent() {
+  makeCurrent();
+  glPushMatrix(); 
+  glLoadIdentity();
+  glRotated(timer_speed*0.5, 0.0, 1.0, 0.0);
+  glMultMatrixd(mvmatrix); 
+  glGetDoublev(GL_MODELVIEW_MATRIX, mvmatrix); 
+  glPopMatrix(); 
+  updateGL();
+  if(move_state==1)
+    emit(transferValue(distance, mvmatrix));
+}
+
+void RawWidget::changeSpeed(int value) {
+  timer_speed = value;
+}
+
 /* ********************************************************* */
 /* Callback function when the mouse is dragged in the window */
 /* Only does sthg when a button is pressed                   */
@@ -982,11 +1021,13 @@ void RawWidget::setTwoSidedMaterial(bool state) {
 void RawWidget::keyPressEvent(QKeyEvent *k) {
   
   switch(k->key()) {
+  case Key_T:
+    emit toggleTimer();
+    break;
   case Key_F1:
     emit toggleLine();
     break;
   case Key_F2:
-//    setLight();
     emit toggleLight();
     break;
   case Key_F3:

@@ -1,4 +1,4 @@
-/* $Id: ScreenWidget.h,v 1.28 2002/08/30 09:18:41 aspert Exp $ */
+/* $Id: ScreenWidget.h,v 1.29 2003/01/13 12:18:24 aspert Exp $ */
 
 
 /*
@@ -53,9 +53,11 @@
 /* QT includes */
 #include <qwidget.h>
 #include <qhgroupbox.h>
+#include <qvgroupbox.h>
 #include <qslider.h>
 #include <qspinbox.h>
 #include <qcheckbox.h>
+#include <qpushbutton.h>
 #include <compute_error.h>
 
 
@@ -74,17 +76,21 @@ protected slots:
   void infoLeftModel();
   void infoRightModel();
   void disableSlider(int errMode);
+  void disableSync(bool state);
   void trapChanges(int n);
   void aboutKeys();
   void aboutBugs();
   void aboutMesh();
   void updatecbStatus(bool state);
+  
 
 private:
   QHGroupBox *qgbSlider;
+  QVGroupBox *qgbTimer;
   QSlider *qslidDispSampDensity;
-  QSpinBox *qspSampDensity;
-  QCheckBox *qcbInvNorm, *qcbTwoSide;
+  QSpinBox *qspSampDensity, *qspTimerSpeed;
+  QCheckBox *qcbInvNorm, *qcbTwoSide, *qcbTimer;
+  QPushButton *syncBut;
 // local copies of the parameters passed to the constructor
   struct model_error *locMod1, *locMod2; 
   enum whichModel {LEFT_MODEL=0, RIGHT_MODEL=1};

@@ -1,4 +1,4 @@
-/* $Id: RawWidget.h,v 1.37 2002/08/30 09:18:40 aspert Exp $ */
+/* $Id: RawWidget.h,v 1.38 2003/01/13 12:18:23 aspert Exp $ */
 
 
 /*
@@ -52,6 +52,7 @@
 
 #include <compute_error.h>
 #include <qgl.h>
+#include <qtimer.h>
 #include <ColorMapWidget.h>
 
 #define FOV 40.0 // Vertical field of view for the rendering
@@ -95,6 +96,9 @@ public slots:
   void setTwoSidedMaterial(bool state);
   void setLight(bool state);
   void setColorMap(int newSpace);
+  void setTimer(bool state);
+  void handleTimerEvent();
+  void changeSpeed(int value);
 
 signals:
   void transferValue(double,double*);
@@ -103,14 +107,17 @@ signals:
   void toggleLine();
   void toggleTwoSidedMaterial();
   void toggleNormals();
+  void toggleTimer();
+
    
 protected:
   void initializeGL();
-  void resizeGL( int, int );   
+  void resizeGL( int, int );
   void mouseMoveEvent(QMouseEvent*);
   void mousePressEvent(QMouseEvent*);
   void keyPressEvent(QKeyEvent*);
   void paintGL();
+
 
 private:  
 // functions 
@@ -146,6 +153,9 @@ private:
   int middle_button_state;
   int right_button_state;
   int move_state;
+  int timer_state;
+  int timer_speed;
+  QTimer *demo_mode_timer;
   int computed_normals; // flag if normals have been computed or loaded
   int not_orientable_warned;
   int two_sided_material;

@@ -1,4 +1,4 @@
-/* $Id: ScreenWidget.cpp,v 1.49 2002/08/30 09:18:40 aspert Exp $ */
+/* $Id: ScreenWidget.cpp,v 1.50 2003/01/13 12:18:24 aspert Exp $ */
 
 
 /*
@@ -59,6 +59,7 @@
 #include <qradiobutton.h>
 #include <qhbuttongroup.h>
 #include <qvbuttongroup.h>
+#include <qvgroupbox.h>
 #include <qcheckbox.h>
 #include <qstring.h>
 #include <qlabel.h>
@@ -73,10 +74,11 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
                            QWidget *parent, 
                            const char *name ):QWidget(parent,name) {
   QAction *fileQuitAction;
-  QPushButton *syncBut, *lineSwitch1, *lineSwitch2;
+  QPushButton *lineSwitch1, *lineSwitch2;
   QMenuBar *mainBar;
   QPopupMenu *fileMenu, *infoMenu, *helpMenu;
   QHBox *frameModel1, *frameModel2;
+  QHBox *qhbTimer;
   QGridLayout *bigGrid, *smallGrid;
   RawWidget *glModel1, *glModel2;
   ColorMapWidget *errorColorBar;
@@ -86,7 +88,8 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   QRadioButton *gsBut, *hsvBut;
   QButtonGroup *dispInfoGrp=NULL, *histoGrp=NULL, *histoColGrp=NULL, *rmodGrp;
   QCheckBox  *qcbLight;
-  QLabel *qlM1Name, *qlM2Name;
+  QVGroupBox *qgbTimer;
+  QLabel *qlM1Name, *qlM2Name, *qlTimer;
   QString tmp;
   int do_texture = pargs->do_texture;
   const float p = 0.95f; // max proportion of screen to use
@@ -281,6 +284,28 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   connect(this, SIGNAL(dsValChange(int)), 
           glModel1, SLOT(setVEDownSampling(int)));
 
+  // Build the demo mode stuff (toggle + speed vario.)
+  qgbTimer = new QVGroupBox("Demo mode parameters", this);
+  qhbTimer = new QHBox(qgbTimer);
+
+  qspTimerSpeed = new QSpinBox(1, 100, 1, qhbTimer);
+  qlTimer = new QLabel("Speed", qhbTimer);
+  qcbTimer = new QCheckBox("Demo mode on/off", qgbTimer);
+  qcbTimer->setChecked(FALSE);
+
+  connect(qcbTimer, SIGNAL(toggled(bool)), glModel1,
+          SLOT(setTimer(bool)));
+  connect(qcbTimer, SIGNAL(toggled(bool)), glModel2,
+          SLOT(setTimer(bool)));
+  connect(qspTimerSpeed, SIGNAL(valueChanged(int)), glModel1,
+          SLOT(changeSpeed(int)));
+  connect(qspTimerSpeed, SIGNAL(valueChanged(int)), glModel2,
+          SLOT(changeSpeed(int)));
+  connect(glModel1, SIGNAL(toggleTimer()), qcbTimer, SLOT(toggle()));
+  connect(glModel2, SIGNAL(toggleTimer()), qcbTimer, SLOT(toggle()));
+  connect(qcbTimer, SIGNAL(toggled(bool)), this, SLOT(disableSync(bool)));
+  
+
   // Build scale selection buttons for the histogram
   histoGrp = new QVButtonGroup("X scale",this);
   linBut = new QRadioButton("Linear", histoGrp);
@@ -318,11 +343,12 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   bigGrid->addWidget(histoColGrp, 3, 0, Qt::AlignTop);
 
   // sub layout for dispInfoGrp and Quit button -> avoid resize problems
-  smallGrid = new QGridLayout(1, 5, 3);
+  smallGrid = new QGridLayout(1, 6, 3);
   smallGrid->addWidget(dispInfoGrp, 0, 0, Qt::AlignCenter);
   smallGrid->addMultiCellWidget(qgbSlider, 0, 0, 1, 2, Qt::AlignCenter);
-  smallGrid->addWidget(rmodGrp, 0, 3, Qt::AlignCenter);
-  smallGrid->addWidget(quitBut, 0, 4, Qt::AlignCenter);
+  smallGrid->addWidget(qgbTimer, 0, 3, Qt::AlignCenter);
+  smallGrid->addWidget(rmodGrp, 0, 4, Qt::AlignCenter);
+  smallGrid->addWidget(quitBut, 0, 5, Qt::AlignCenter);
   bigGrid->addMultiCellLayout(smallGrid, 3, 3, 1, 6);
 
   // Now set a sensible default widget size
@@ -415,6 +441,13 @@ void ScreenWidget::disableSlider(int errMode)
   default: /* should never get here */
     return;
   }
+}
+
+void ScreenWidget::disableSync(bool state) {
+  if (state)
+    syncBut->setDisabled(TRUE);
+  else
+    syncBut->setDisabled(FALSE);
 }
 
 void ScreenWidget::trapChanges(int n) 
