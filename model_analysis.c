@@ -1,4 +1,4 @@
-/* $Id: model_analysis.c,v 1.5 2001/09/27 13:19:14 aspert Exp $ */
+/* $Id: model_analysis.c,v 1.6 2002/02/04 15:51:56 dsanta Exp $ */
 
 #include <model_analysis.h>
 
@@ -192,6 +192,7 @@ static void analyze_faces_rec(const face_t *mfaces, int vidx, int pfidx,
           fidx = vfaces[j];
           if (fidx != -1) break;
         }
+        assert(fidx >= 0);
         vfaces[j] = -1;
         nf_left--;
         /* Get new first face vertices */
@@ -314,13 +315,13 @@ void analyze_model(struct model *m, const struct face_list *flist,
   st.visited_vertex = xa_calloc(m->num_vert,sizeof(*(st.visited_vertex)));
   st.face_orientation = xa_calloc(m->num_faces,sizeof(*(st.face_orientation)));
   st.n_visited_vertices = 0;
-  do {
+  while (st.n_visited_vertices != m->num_vert) {
     while (st.visited_vertex[start_idx]) { /* Search for root of next element */
       start_idx++;
     }
     /* Walk all the vertices connected to root */
     walk_vertex_tree(m->faces,start_idx,&st);
-  } while (st.n_visited_vertices != m->num_vert);
+  }
 
   /* Save original oriented state */
   st.minfo.orig_oriented = st.minfo.oriented;
