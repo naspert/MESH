@@ -1,4 +1,4 @@
-/* $Id: viewer.cpp,v 1.44 2001/09/05 11:45:36 dsanta Exp $ */
+/* $Id: viewer.cpp,v 1.45 2001/09/10 15:07:43 dsanta Exp $ */
 
 #include <time.h>
 #include <string.h>
@@ -18,7 +18,8 @@ struct args {
   char *m2_fname; /* filename of model 2 */
   int  no_gui;    /* text only flag */
   int quiet;      /* do not display extra info flag*/
-  int sampling_freq; /* sampling frequency */
+  double sampling_step; /* The sampling step, as fraction of the bounding box
+                         * diagonal of model 2. */
   int do_symmetric; /* do symmetric error measure */
 };
 
@@ -50,14 +51,14 @@ static void print_usage(FILE *out)
   fprintf(out,"\n");
   fprintf(out,"  -t\tDisplay only textual results, do not display the GUI.\n");
   fprintf(out,"\n");
-  fprintf(out,"  -f n\tSet the sampling frequency to n. The triangles of\n");
-  fprintf(out,"      \tthe first model are sampled in order to calculate\n");
-  fprintf(out,"      \tan approximation of the distance. Each triangle\n");
-  fprintf(out,"      \tis sampled n times along each side direction,\n");
-  fprintf(out,"      \tresulting in n*(n+1)/2 samples per triangle. The\n");
-  fprintf(out,"      \thigher the sampling frequency, the more accurate the\n");
-  fprintf(out,"      \tapproximation, but the longer the execution time.\n");
-  fprintf(out,"      \tIt is 10 by default.\n");
+  fprintf(out,"  -l s\tSet the sampling step to s, which is a percentage of\n");
+  fprintf(out,"      \tthe bounding box diagonal of the second model. The\n");
+  fprintf(out,"      \ttriangles of the first model are sampled, in order\n");
+  fprintf(out,"      \tto calculate an approximation of the distance, so\n");
+  fprintf(out,"      \tthat the maximum distance between samples in any\n");
+  fprintf(out,"      \ttriangle is no more than s. Each triangle of the\n");
+  fprintf(out,"      \tfirst model gets at least one sample, whatever the\n");
+  fprintf(out,"      \tsampling step. The default is 0.5.\n");
 }
 
 /* Initializes *pargs to default values and parses the command line arguments
@@ -68,7 +69,7 @@ static void parse_args(int argc, char **argv, struct args *pargs)
   int i;
 
   memset(pargs,0,sizeof(*pargs));
-  pargs->sampling_freq = 10;
+  pargs->sampling_step = 0.5;
   i = 1;
   while (i < argc) {
     if (argv[i][0] == '-') { /* Option */
@@ -81,14 +82,15 @@ static void parse_args(int argc, char **argv, struct args *pargs)
         pargs->quiet = 1;
       } else if (strcmp(argv[i],"-s") == 0) { /* symmetric distance */
         pargs->do_symmetric = 1;
-      } else if (strcmp(argv[i],"-f") == 0) { /* sampling freq */
+      } else if (strcmp(argv[i],"-l") == 0) { /* sampling step */
         if (argc <= i+1) {
-          fprintf(stderr,"ERROR: missing argument for -f option\n");
+          fprintf(stderr,"ERROR: missing argument for -l option\n");
           exit(1);
         }
-        pargs->sampling_freq = strtol(argv[++i],&endptr,10);
-        if (argv[i][0] == '\0' || *endptr != '\0' || pargs->sampling_freq < 0) {
-          fprintf(stderr,"ERROR: invalid number for -f option\n");
+        pargs->sampling_step = strtod(argv[++i],&endptr);
+        if (argv[i][0] == '\0' || *endptr != '\0' ||
+            pargs->sampling_step <= 0) {
+          fprintf(stderr,"ERROR: invalid number for -l option\n");
           exit(1);
         }
       } else { /* unrecognized option */
@@ -109,6 +111,7 @@ static void parse_args(int argc, char **argv, struct args *pargs)
     }
     i++; /* next argument */
   }
+  pargs->sampling_step /= 100; /* convert percent to fraction */
 }
 
 /*****************************************************************************/
@@ -167,7 +170,7 @@ int main( int argc, char **argv )
     
     pargs.m1_fname = b->mesh1;
     pargs.m2_fname = b->mesh2;
-    pargs.sampling_freq = (int)ceil(atof(b->freq));
+    pargs.sampling_step = atof(b->step)/100;
   }
   
   /* Read models from input files */
@@ -176,6 +179,7 @@ int main( int argc, char **argv )
 
   /* Analyze models (we don't need normals for model 1, so we don't request
    * for it to be oriented). */
+  start_time = clock();
   bbox1_diag = dist(raw_model1->bBox[0], raw_model1->bBox[1]);
   bbox2_diag = dist(raw_model2->bBox[0], raw_model2->bBox[1]);
   vfl = faces_of_vertex(raw_model1);
@@ -185,6 +189,8 @@ int main( int argc, char **argv )
     free_face_lists(vfl,raw_model1->num_vert);
     vfl = NULL;
   }
+  /* Adjust sampling step size */
+  pargs.sampling_step *= bbox2_diag;
 
   /* Print available model information */
   printf("\n                      Model information\n\n");
@@ -210,9 +216,8 @@ int main( int argc, char **argv )
   fflush(stdout);
 
   /* Compute the distance from one model to the other */
-  start_time = clock();
-  dist_surf_surf(raw_model1,raw_model2,pargs.sampling_freq,&fe,&stats,
-                 m2info.oriented&&(!pargs.no_gui),pargs.quiet);
+  dist_surf_surf(raw_model1,raw_model2,pargs.sampling_step,
+                 &fe,&stats,m2info.oriented&&(!pargs.no_gui),pargs.quiet);
 
   /* Print results */
   printf("Surface area:           \t%11g\t%11g\n",
@@ -233,8 +238,8 @@ int main( int argc, char **argv )
 
   if (pargs.do_symmetric) { /* Invert models and recompute distance */
     printf("       Distance from model 2 to model 1\n\n");
-    dist_surf_surf(raw_model2,raw_model1,pargs.sampling_freq,&fe_rev,&stats_rev,
-                   0,pargs.quiet);
+    dist_surf_surf(raw_model2,raw_model1,pargs.sampling_step,
+                   &fe_rev,&stats_rev,0,pargs.quiet);
     free_face_error(fe_rev);
     fe_rev = NULL;
     printf("        \t   Absolute\t%% BBox diag\n");
@@ -268,20 +273,49 @@ int main( int argc, char **argv )
     printf("\n");
   }
 
-  printf("Calculated error in %g seconds\n",
-         (double)(clock()-start_time)/CLOCKS_PER_SEC);
-  printf("Used %d samples per triangle of model 1 (%d total)\n",
-         (pargs.sampling_freq)*(pargs.sampling_freq+1)/2,
-         (pargs.sampling_freq)*(pargs.sampling_freq+1)/2*raw_model1->num_faces);
-  if (pargs.do_symmetric) {
-    printf("Used %d samples per triangle of model 2 (%d total)\n",
-           (pargs.sampling_freq)*(pargs.sampling_freq+1)/2,
-           (pargs.sampling_freq)*(pargs.sampling_freq+1)/2*
-           raw_model2->num_faces);
+  printf("               \t       Absolute\t   %% BBox diag model 2\n");
+  printf("Sampling step: \t%15g\t%22g\n",pargs.sampling_step,
+         pargs.sampling_step/bbox2_diag*100);
+  printf("\n");
+  if (!pargs.do_symmetric) {
+    printf("        \t    Total\tAvg. / triangle\t"
+           "      Avg. / triangle\n"
+           "        \t         \t     of model 1\t"
+           "           of model 2\n");
+    printf("Samples:\t%9d\t%15.2f\t%21.2f\n",
+           stats.m1_samples,((double)stats.m1_samples)/raw_model1->num_faces,
+           ((double)stats.m1_samples)/raw_model2->num_faces);
+  } else {
+    printf("                 \t    Total\tAvg. / triangle\t"
+           "      Avg. / triangle\n"
+           "                 \t         \t     of model 1\t"
+           "           of model 2\n");
+    printf("Samples (1 to 2):\t%9d\t%15.2f\t%21.2f\n",
+           stats.m1_samples,((double)stats.m1_samples)/raw_model1->num_faces,
+           ((double)stats.m1_samples)/raw_model2->num_faces);
+    printf("Samples (2 to 1):\t%9d\t%15.2f\t%21.2f\n",
+           stats_rev.m1_samples,
+           ((double)stats_rev.m1_samples)/raw_model1->num_faces,
+           ((double)stats_rev.m1_samples)/raw_model2->num_faces);
   }
-  printf("Size of partitioning grid (X,Y,Z): %d %d %d (%d total)\n",
-         stats.grid_sz.x,stats.grid_sz.y,stats.grid_sz.z,
-         stats.grid_sz.x*stats.grid_sz.y*stats.grid_sz.z);
+  printf("\n");
+  if (!pargs.do_symmetric) {
+    printf("                       \t     X\t    Y\t   Z\t   Total\n");
+    printf("Partitioning grid size:\t%6d\t%5d\t%4d\t%8d\n",
+           stats.grid_sz.x,stats.grid_sz.y,stats.grid_sz.z,
+           stats.grid_sz.x*stats.grid_sz.y*stats.grid_sz.z);
+  } else {
+    printf("                                \t     X\t    Y\t   Z\t   Total\n");
+    printf("Partitioning grid size (1 to 2):\t%6d\t%5d\t%4d\t%8d\n",
+           stats.grid_sz.x,stats.grid_sz.y,stats.grid_sz.z,
+           stats.grid_sz.x*stats.grid_sz.y*stats.grid_sz.z);
+    printf("Partitioning grid size (2 to 1):\t%6d\t%5d\t%4d\t%8d\n",
+           stats_rev.grid_sz.x,stats_rev.grid_sz.y,stats_rev.grid_sz.z,
+           stats_rev.grid_sz.x*stats_rev.grid_sz.y*stats_rev.grid_sz.z);
+  }
+  printf("\n");
+  printf("Execution time (secs.):\t%.2f\n",
+         (double)(clock()-start_time)/CLOCKS_PER_SEC);
   fflush(stdout);
 
   if(pargs.no_gui){

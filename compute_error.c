@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.54 2001/09/05 12:00:54 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.55 2001/09/10 15:07:42 dsanta Exp $ */
 
 #include <compute_error.h>
 
@@ -124,6 +124,7 @@ struct triag_sample_error {
                       * n_samples-1, followed by errors for i equal 1 and j
                       * from 1 to n_samples-2, and so on. */
   int n_samples_tot; /* The total number of samples in the triangle */
+  int buf_sz;        /* The allocated err_lin buffer size (number of elements)*/
 };
 
 /* A list of triangles with their associated information */
@@ -191,18 +192,20 @@ static INLINE void neg_v(const vertex *v, vertex *vout)
 
 /* Reallocates the buffers of tse to store the sample errors for a triangle
  * sampling with n samples in each direction. If tse->err and tse->err_lin is
- * NULL new buffers are allocated. If tse->n_samples equals n nothing is
- * done. The allocation never fails (if out of memory the program is stopped,
- * as with xa_realloc()) */
+ * NULL new buffers are allocated. The allocation never fails (if out of
+ * memory the program is stopped, as with xa_realloc()) */
 static void realloc_triag_sample_error(struct triag_sample_error *tse, int n)
 {
   int i;
-  if (tse->n_samples == n) return;
+
   tse->n_samples = n;
   tse->n_samples_tot = n*(n+1)/2;
-  tse->err = xa_realloc(tse->err,n*sizeof(*(tse->err)));
-  tse->err_lin = xa_realloc(tse->err_lin,
-                            tse->n_samples_tot*sizeof(**(tse->err)));
+  if (tse->n_samples_tot >  tse->buf_sz) {
+    tse->err = xa_realloc(tse->err,n*sizeof(*(tse->err)));
+    tse->err_lin = xa_realloc(tse->err_lin,
+                              tse->n_samples_tot*sizeof(**(tse->err)));
+    tse->buf_sz = tse->n_samples_tot;
+  }
   if (n != 0) {
     tse->err[0] = tse->err_lin;
     for (i=1; i<n; i++) {
@@ -245,6 +248,28 @@ static void calc_normals_as_oriented_model(model *m,
   for (k=0, kmax=m->num_vert; k<kmax; k++) {
     normalize_v(&(m->normals[k]));
   }
+}
+
+/* Returns the sampling frequency for a triangle given by the 3 vertices *a *b
+ * *c, so that the distance between two samples on the longest side of the
+ * triangle is not larger than step, and as close as possible. Note that,
+ * depending on the triangle's shape, the distance between samples along other
+ * sides might be much shorter than step. */
+static int get_sampling_freq(const vertex *a, const vertex *b, const vertex *c,
+                             double step)
+{
+  double ab_len_sqr;
+  double ac_len_sqr;
+  double bc_len_sqr;
+  double max_len_sqr;
+
+  /* Search for longest side */
+  ab_len_sqr = dist2_v(a,b);
+  ac_len_sqr = dist2_v(a,c);
+  bc_len_sqr = dist2_v(b,c);
+  max_len_sqr = max3(ab_len_sqr,ac_len_sqr,bc_len_sqr);
+  /* Return the sampling frequency */
+  return (int)floor(sqrt(max_len_sqr)/step)+1;
 }
 
 /* Given a the triangle list tl of a model, and the minimum and maximum
@@ -1186,7 +1211,7 @@ static double dist_pt_surf(vertex p, const struct triangle_list *tl,
  * --------------------------------------------------------------------------*/
 
 /* See compute_error.h */
-void dist_surf_surf(const model *m1, model *m2, int n_spt,
+void dist_surf_surf(const model *m1, model *m2, double sampling_step,
                     struct face_error *fe_ptr[],
                     struct dist_surf_surf_stats *stats, int calc_normals,
                     int quiet)
@@ -1196,6 +1221,7 @@ void dist_surf_surf(const model *m1, model *m2, int n_spt,
   struct t_in_cell_list *fic; /* list of faces intersecting each cell */
   struct sample_list ts;      /* list of sample from a triangle */
   struct triag_sample_error tse; /* the errors at the triangle samples */
+  int n;                      /* sampling frequency for current triangle */
   int i,k,kmax;               /* counters and loop limits */
   double cell_sz;             /* side length of the cubic cells */
   struct size3d grid_sz;      /* number of cells in the X, Y and Z directions */
@@ -1236,9 +1262,9 @@ void dist_surf_surf(const model *m1, model *m2, int n_spt,
   /* Allocate storage for errors */
   *fe_ptr = xa_realloc(*fe_ptr,m1->num_faces*sizeof(**fe_ptr));
   fe = *fe_ptr;
-  realloc_triag_sample_error(&tse,n_spt);
 
   /* Initialize overall statistics */
+  stats->m1_samples = 0;
   stats->m1_area = 0;
   stats->m2_area = tl2->area;
   stats->min_dist = DBL_MAX;
@@ -1261,9 +1287,14 @@ void dist_surf_surf(const model *m1, model *m2, int n_spt,
     fe[k].face_area = tri_area(m1->vertices[m1->faces[k].f0],
                                m1->vertices[m1->faces[k].f1],
                                m1->vertices[m1->faces[k].f2]);
+    n = get_sampling_freq(&(m1->vertices[m1->faces[k].f0]),
+                          &(m1->vertices[m1->faces[k].f1]),
+                          &(m1->vertices[m1->faces[k].f2]),sampling_step);
+    stats->m1_samples += (n*(n+1))/2;
+    realloc_triag_sample_error(&tse,n);
     sample_triangle(&(m1->vertices[m1->faces[k].f0]),
                     &(m1->vertices[m1->faces[k].f1]),
-                    &(m1->vertices[m1->faces[k].f2]),n_spt,&ts);
+                    &(m1->vertices[m1->faces[k].f2]),n,&ts);
     for (i=0; i<tse.n_samples_tot; i++) {
       tse.err_lin[i] = dist_pt_surf(ts.sample[i],tl2,fic,
 #ifdef DO_DIST_PT_SURF_STATS
@@ -1285,17 +1316,15 @@ void dist_surf_surf(const model *m1, model *m2, int n_spt,
   if (!quiet) printf("\r              \r"); /* Remove progress message */
 #ifdef DO_DIST_PT_SURF_STATS
   if (!quiet) {
-    int n_tot_samples;
-    n_tot_samples = n_spt*(n_spt+1)/2*m1->num_faces;
     printf("Average number of scanned non-empty cells per sample: %g\n",
-           (double)(dps_stats.n_cell_scans)/n_tot_samples);
+           ((double)dps_stats.n_cell_scans)/stats->m1_samples);
     printf("Average number of cells per sample for which triangles are "
            "scanned: %g\n",
-           (double)(dps_stats.n_cell_t_scans)/n_tot_samples);
+           ((double)dps_stats.n_cell_t_scans)/stats->m1_samples);
     printf("Average number of triangles scanned per sample: %g\n",
-           (double)(dps_stats.n_triag_scans)/n_tot_samples);
+           ((double)dps_stats.n_triag_scans)/stats->m1_samples);
     printf("Average maximum cell to cell distance: %g\n",
-           (double)(dps_stats.sum_kmax)/n_tot_samples);
+           ((double)dps_stats.sum_kmax)/stats->m1_samples);
   }
 #endif
   /* Finalize overall statistics */

@@ -1,4 +1,4 @@
-/* $Id: InitWidget.h,v 1.2 2001/08/10 08:24:13 aspert Exp $ */
+/* $Id: InitWidget.h,v 1.3 2001/09/10 15:07:42 dsanta Exp $ */
 
 #ifndef INITW_H
 #define INITW_H
@@ -18,7 +18,7 @@ class InitWidget : public QWidget {
 
 public:
   InitWidget(QWidget *parent=0, const char *name=0 );
-  char *mesh1, *mesh2, *freq;
+  char *mesh1, *mesh2, *step;
 
 public slots:
     void loadMesh1();
@@ -30,7 +30,7 @@ signals:
     void exit();
 
 private:
-    QLineEdit *qledMesh1, *qledMesh2, *qledSplFreq; 
+    QLineEdit *qledMesh1, *qledMesh2, *qledSplStep; 
 
 };
 

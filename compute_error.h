@@ -1,4 +1,4 @@
-/* $Id: compute_error.h,v 1.12 2001/08/16 15:02:49 dsanta Exp $ */
+/* $Id: compute_error.h,v 1.13 2001/09/10 15:07:43 dsanta Exp $ */
 #ifndef _COMPUTE_ERROR_PROTO
 #define _COMPUTE_ERROR_PROTO
 
@@ -41,6 +41,7 @@ struct face_error {
 
 /* Statistics from the dist_surf_surf function */
 struct dist_surf_surf_stats {
+  int m1_samples;   /* Total number of samples taken on model 1 */
   double m1_area;   /* Area of model 1 surface */
   double m2_area;   /* Area of model 2 surface */
   double min_dist;  /* Minimum distance from model 1 to model 2 */
@@ -57,18 +58,19 @@ struct dist_surf_surf_stats {
  * --------------------------------------------------------------------------*/
 
 /* Calculates the distance from model m1 to model m2. The triangles of m1 are
- * sampled using n_spt samples in each direction. The per face (of m1) error
- * metrics are returned in a new array (of length m1->num_faces) allocated at
- * *fe_ptr. The overall distance metrics and other statistics are returned in
- * stats. Optionally, if calc_normals is non-zero and m2 has no normals or
- * face normals, the normals will be calculated and added to m2 (only normals,
- * not face normals). The normals are calculated assuming that the model m2 is
- * oriented, if it is not the case the resulting normals can be
- * incorrect. Information already used to calculate the distance is reused to
- * compute the normals, so it is very fast. If quiet is zero a progress meter
- * is displayed in stdout. The memory allocated at *fe_ptr should be freed by
- * calling free_face_error(*fe_ptr). */
-void dist_surf_surf(const model *m1, model *m2, int n_spt,
+ * sampled so that the maximum distance between samples in any triangle side
+ * is sampling_step. The per face (of m1) error metrics are returned in a new
+ * array (of length m1->num_faces) allocated at *fe_ptr. The overall distance
+ * metrics and other statistics are returned in stats. Optionally, if
+ * calc_normals is non-zero and m2 has no normals or face normals, the normals
+ * will be calculated and added to m2 (only normals, not face normals). The
+ * normals are calculated assuming that the model m2 is oriented, if it is not
+ * the case the resulting normals can be incorrect. Information already used
+ * to calculate the distance is reused to compute the normals, so it is very
+ * fast. If quiet is zero a progress meter is displayed in stdout. The memory
+ * allocated at *fe_ptr should be freed by calling
+ * free_face_error(*fe_ptr). */
+void dist_surf_surf(const model *m1, model *m2, double sampling_step,
                     struct face_error *fe_ptr[],
                     struct dist_surf_surf_stats *stats, int calc_normals,
                     int quiet);
