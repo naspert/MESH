@@ -1,6 +1,6 @@
-/* $Id: 3dmodel_io.c,v 1.13 2001/07/06 12:56:37 aspert Exp $ */
+/* $Id: 3dmodel_io.c,v 1.14 2001/09/03 11:40:11 aspert Exp $ */
 #include <3dmodel.h>
-
+#include <normals.h>
 
 int read_header(FILE *pf, int *nvert, int *nfaces, int *nnorms, int *nfnorms) {
   char buffer[300];
@@ -71,7 +71,11 @@ model* alloc_read_model(FILE *pf, int nvert, int nfaces, int nnorms, int nfnorms
   raw_model->normals = NULL;
   raw_model->face_normals = NULL;
   raw_model->area = NULL;
-  
+  raw_model->tree = NULL;
+#ifdef _METRO
+  raw_model->error = NULL;
+#endif
+
   raw_model->bBox[0].x = FLT_MAX;
   raw_model->bBox[0].y = FLT_MAX;
   raw_model->bBox[0].z = FLT_MAX;
@@ -284,6 +288,26 @@ void write_raw_model(model *raw_model, char *filename) {
 	 
   }
   fclose(pf);
+}
+
+void free_raw_model(model *raw_model) {
+  free(raw_model->vertices);
+  free(raw_model->faces);
+  if (raw_model->normals != NULL)
+    free(raw_model->normals);
+  if (raw_model->face_normals != NULL)
+    free(raw_model->face_normals);
+  if (raw_model->area != NULL)
+    free(raw_model->area);
+  if (raw_model->tree != NULL)
+    destroy_tree(*(raw_model->tree));
+
+#ifdef _METRO
+  if (raw_model->error != NULL)
+    free(raw_model->error);
+#endif
+
+  free(raw_model);
 }
 
 void write_brep_file(model *raw_model, char *filename, int grid_size_x,

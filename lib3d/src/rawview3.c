@@ -1,10 +1,16 @@
-/* $Id: rawview3.c,v 1.14 2001/06/14 08:41:09 aspert Exp $ */
+/* $Id: rawview3.c,v 1.15 2001/09/03 11:40:11 aspert Exp $ */
 
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <GL/glut.h>
 #include <3dutils.h>
 #include <image.h>
+
+#define TEST_GL2PS
+
+#ifdef TEST_GL2PS
+#include <gl2ps.h>
+#endif
 
 /* ****************** */
 /* Useful Global vars */
@@ -23,10 +29,12 @@ int left_button_state;
 int middle_button_state;
 int right_button_state;
 int tr_mode = 1; /* Default = draw triangles */
-int light_mode = 0;
+
 int draw_normals = 0;
 int draw_vtx_labels = 0;
 int draw_spanning_tree = 0;
+int wf_bc = 0; /* draw wireframe w. backface cull. */
+int ps_rend = 0; /* 1 if we render to a PS */
 
 vertex center;
 int normals_done = 0;
@@ -177,6 +185,7 @@ void reshape(int width, int height) {
 /* ************************************************************* */
 void rebuild_list(model *raw_model) {
   int i;
+  GLboolean light_mode;
   face *cur_face;
 
 #ifdef FACE_NORM_DRAW_DEBUG
@@ -221,7 +230,9 @@ void rebuild_list(model *raw_model) {
     }
   }
 
-  
+  /* Get the state of the lighting */
+  light_mode = glIsEnabled(GL_LIGHTING);
+
 #ifdef DEBUG
   printf("dn = %d lm = %d nf = %d\n", draw_normals, light_mode, 
 	 raw_model->num_faces); 
@@ -283,7 +294,7 @@ void rebuild_list(model *raw_model) {
 
   }
 
-  if (light_mode == 0) { /* Store a wireframe model */
+  if (light_mode == GL_FALSE) { /* Store a wireframe model */
     glNewList(model_list, GL_COMPILE);
     if (tr_mode == 1)
       glBegin(GL_TRIANGLES);
@@ -415,15 +426,8 @@ void gfx_init(model *raw_model) {
     mesa += 5;
     if (sscanf(mesa, "%i.%i", &mesa_major, &mesa_minor) != 2) {
       printf("Error checking Mesa version\n");
-      free(raw_model->vertices);
-      free(raw_model->faces);
-      if (raw_model->normals != NULL)
-	free(raw_model->normals);
-      if (raw_model->face_normals != NULL)
-	free(raw_model->face_normals);
-      if (raw_model->area != NULL)
-	free(raw_model->area);
-      free(raw_model);
+
+      free_raw_model(raw_model);
       exit(1);
     }
     if (mesa_major != 3) {
@@ -435,15 +439,8 @@ void gfx_init(model *raw_model) {
     mesa_minor = 4; /* same behaviour as recent Mesa version */
   else { /* Unknown OpenGL */
     printf("Error checking OpenGL version\n");
-    free(raw_model->vertices);
-    free(raw_model->faces);
-    if (raw_model->normals != NULL)
-      free(raw_model->normals);
-    if (raw_model->face_normals != NULL)
-      free(raw_model->face_normals);
-    if (raw_model->area != NULL)
-      free(raw_model->area);
-    free(raw_model);
+
+    free_raw_model(raw_model);
     exit(1);
   }
 
@@ -468,6 +465,94 @@ void gfx_init(model *raw_model) {
   glGetDoublev(GL_MODELVIEW_MATRIX, mvmatrix); /* Initialize the temp matrix */
 }
 
+void display_vtx_labels() {
+  int i, len;
+  char str[42],fmt[24];
+
+  glPushAttrib(GL_ALL_ATTRIB_BITS);
+  glDisable(GL_LIGHTING);
+  glColor3f(0.0, 1.0, 0.0);
+
+  glListBase(char_list);
+  strcpy(fmt, "%i");
+  for (i=0; i<r_model->num_vert; i++) {
+    glRasterPos3f(r_model->vertices[i].x,
+		  r_model->vertices[i].y,
+		  r_model->vertices[i].z);
+    glBitmap(0,0,0,0,7,7,NULL); /* Add an offset to avoid drawing the label on the vertex*/
+    len = sprintf(str, fmt, i);
+    glCallLists(len, GL_UNSIGNED_BYTE, str);
+  }
+  
+  glPopAttrib();
+}
+
+
+/* ***************************************************************** */
+/* Display function : clear buffers, build correct MODELVIEW matrix, */
+/* call display list and swap the buffers                            */
+/* ***************************************************************** */
+void display() {
+  GLenum errorCode;
+  GLboolean light_mode;
+  int i;
+  
+  light_mode = glIsEnabled(GL_LIGHTING);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glLoadIdentity();
+  glTranslated(0.0, 0.0, -distance); /* Translate the object along z */
+  glMultMatrixd(mvmatrix); /* Perform rotation */
+  if (!light_mode)
+    for (i=0; i<=wf_bc; i++) {
+      switch (i) {
+      case 0:
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	if (!ps_rend)
+	  glColor3f(1.0, 1.0, 1.0);
+	else
+	  glColor3f(0.0, 0.0, 0.0);
+	break;
+      case 1:
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	if (!ps_rend) {
+	  glEnable(GL_POLYGON_OFFSET_FILL);
+	  glPolygonOffset(1.0, 1.0);
+	  glColor4f(0.0, 0.0, 0.0, 0.0);
+      }
+	else {
+	  gl2psEnable(GL2PS_POLYGON_OFFSET_FILL);
+	  glPolygonOffset(1.0, 1.0);
+	  glColor4f(1.0, 1.0, 1.0, 0.0);
+	}
+	break;
+      }
+      glCallList(model_list);
+      glDisable(GL_POLYGON_OFFSET_FILL);
+      if (ps_rend)
+	gl2psDisable(GL2PS_POLYGON_OFFSET_FILL);
+    }
+  else
+    glCallList(model_list);
+  if (draw_normals)
+    glCallList(normal_list);
+
+  if (draw_vtx_labels)
+    display_vtx_labels();
+
+
+  if(draw_spanning_tree)
+    glCallList(tree_list);
+  
+  
+ /* Check for errors (leave at the end) */
+  while ((errorCode = glGetError()) != GL_NO_ERROR) {
+    fprintf(stderr,"GL error: %s\n",(const char *)gluErrorString(errorCode));
+  }
+  glutSwapBuffers();
+
+
+}
+
 /* **************************** */
 /* Callback for the normal keys */
 /* **************************** */
@@ -475,15 +560,7 @@ void norm_key_pressed(unsigned char key, int x, int y) {
   switch(key) {
   case 'q':
   case 'Q':
-    free(raw_model->vertices);
-    free(raw_model->faces);
-    if (raw_model->normals != NULL)
-      free(raw_model->normals);
-    if (raw_model->face_normals != NULL)
-      free(raw_model->face_normals);
-    if (raw_model->area != NULL)
-      free(raw_model->area);
-    free(raw_model);
+    free_raw_model(raw_model);
     exit(0);
     break;
   }
@@ -502,10 +579,14 @@ void sp_key_pressed(int key, int x, int y) {
   GLfloat amb_light[] = {0.6, 0.6, 0.6, 1.0};
   GLfloat shine[] = {0.6};
   GLfloat lpos[4];
+  GLboolean light_mode;
   info_vertex *curv;
   face_tree_ptr top;
   int i;
-
+#ifdef TEST_GL2PS
+  int bufsize = 0, state = GL2PS_OVERFLOW;
+  FILE *ps_file;
+#endif
 
 
   
@@ -519,7 +600,7 @@ void sp_key_pressed(int key, int x, int y) {
     lpos[2] = 1.0; 
   lpos[3] = 0.0;
   
-
+  light_mode = glIsEnabled(GL_LIGHTING);
   switch(key) {
   case GLUT_KEY_F1:/* Print MODELVIEW matrix */
     glGetDoublev(GL_MODELVIEW_MATRIX, tmp);
@@ -529,8 +610,8 @@ void sp_key_pressed(int key, int x, int y) {
 	     tmp[4*i+3]); 
     break;
   case GLUT_KEY_F2: /* Toggle Light+filled mode */
-    if (light_mode == 0) {
-      light_mode = 1;
+    if (light_mode == GL_FALSE) {
+/*       light_mode = 1; */
       printf("Lighted mode\n");
       if (normals_done != 1) {/* We have to build the normals */
 	printf("Computing normals...");
@@ -572,7 +653,7 @@ void sp_key_pressed(int key, int x, int y) {
 	  glutPostRedisplay();
 	} else {
 	  printf("Unable to compute normals... non-manifold model\n");
-	  light_mode = 0;
+/* 	  light_mode = 0; */
 	}
       } else {
 	glEnable(GL_LIGHTING);
@@ -592,8 +673,8 @@ void sp_key_pressed(int key, int x, int y) {
 	glutPostRedisplay();
       }
       break;
-    } else if (light_mode == 1) {
-      light_mode = 0;
+    } else if (light_mode == GL_TRUE) {
+/*       light_mode = 0; */
       printf("Wireframe mode\n");
       glDisable(GL_LIGHTING);
       glColor3f(1.0, 1.0, 1.0);
@@ -724,6 +805,50 @@ void sp_key_pressed(int key, int x, int y) {
     glutPostRedisplay();
     break;
 
+#ifdef TEST_GL2PS
+  case GLUT_KEY_F10:
+    printf("Rendering to a PostScript file...\n");
+    ps_file = fopen("test_gl2ps.ps", "w");
+    ps_rend = 1;
+    glClearColor(1.0, 1.0, 1.0, 0.0);
+    while (state == GL2PS_OVERFLOW) {
+      bufsize += 1024*1024;
+      gl2psBeginPage("Test", "LaTeX", GL2PS_SIMPLE_SORT, 
+		     GL2PS_SIMPLE_LINE_OFFSET, 
+		     GL_RGBA, 0, NULL, bufsize, ps_file);
+
+      display();
+      state = gl2psEndPage();
+    }
+    printf("Buffer was %d bytes\n", bufsize);
+    ps_rend = 0;
+    glClearColor(0.0, 0.0, 0.0, 0.0);
+    fclose(ps_file);
+    printf("done\n");
+    glutPostRedisplay();
+    break;
+#endif
+
+  case GLUT_KEY_F11:
+    if (wf_bc) { /* goto classic wf mode */
+      wf_bc = 0;
+/*       glDisable(GL_LIGHTING); */
+/*       glColor3f(1.0, 1.0, 1.0); */
+/*       glFrontFace(GL_CCW); */
+/*       glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); */
+/*       rebuild_list(raw_model); */
+    } else {
+      wf_bc = 1;
+   
+/*       glDisable(GL_LIGHTING); */
+/*       glColor3f(1.0, 1.0, 1.0); */
+/*       glFrontFace(GL_CCW); */
+/*       glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); */
+/*       rebuild_list(raw_model); */
+    }
+    glutPostRedisplay();
+    break;
+
   case GLUT_KEY_UP:
     glPushMatrix(); /* Save transform context */
     glLoadIdentity();
@@ -782,59 +907,9 @@ void sp_key_pressed(int key, int x, int y) {
 }
 
 
-void display_vtx_labels() {
-  int i, len;
-  char str[42],fmt[24];
-
-  glPushAttrib(GL_ALL_ATTRIB_BITS);
-  glDisable(GL_LIGHTING);
-  glColor3f(0.0, 1.0, 0.0);
-
-  glListBase(char_list);
-  strcpy(fmt, "%i");
-  for (i=0; i<r_model->num_vert; i++) {
-    glRasterPos3f(r_model->vertices[i].x,
-		  r_model->vertices[i].y,
-		  r_model->vertices[i].z);
-    glBitmap(0,0,0,0,7,7,NULL); /* Add an offset to avoid drawing the label on the vertex*/
-    len = sprintf(str, fmt, i);
-    glCallLists(len, GL_UNSIGNED_BYTE, str);
-  }
-  
-  glPopAttrib();
-}
 
 
-/* ***************************************************************** */
-/* Display function : clear buffers, build correct MODELVIEW matrix, */
-/* call display list and swap the buffers                            */
-/* ***************************************************************** */
-void display() {
-  GLenum errorCode;
 
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  glLoadIdentity();
-  glTranslated(0.0, 0.0, -distance); /* Translate the object along z */
-  glMultMatrixd(mvmatrix); /* Perform rotation */
-  glCallList(model_list);
-  if (draw_normals)
-    glCallList(normal_list);
-
-  if (draw_vtx_labels)
-    display_vtx_labels();
-
-
-  if(draw_spanning_tree)
-    glCallList(tree_list);
-
- /* Check for errors (leave at the end) */
-  while ((errorCode = glGetError()) != GL_NO_ERROR) {
-    fprintf(stderr,"GL error: %s\n",(const char *)gluErrorString(errorCode));
-  }
-  glutSwapBuffers();
-
-
-}
 
 /* ************************************************************ */
 /* Main function : read model, compute initial bounding box/vp, */
