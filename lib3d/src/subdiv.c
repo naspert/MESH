@@ -1,4 +1,4 @@
-/* $Id: subdiv.c,v 1.27 2002/11/13 12:18:25 aspert Exp $ */
+/* $Id: subdiv.c,v 1.28 2002/11/15 15:08:31 aspert Exp $ */
 #include <3dutils.h>
 #include <subdiv_methods.h>
 #include <subdiv.h>
@@ -32,12 +32,13 @@ struct model* subdiv(struct model *raw_model,
 
   vertex_t p;
   int nedges = 0;
-  int vert_idx = raw_model->num_vert;
   int face_idx = 0;
   struct midpoint_info *mp_info;
   int v_idx=raw_model->num_vert;
   face_t *temp_face;
-
+#ifdef SUBDIV_DEBUG
+  int vert_idx = raw_model->num_vert;
+#endif
 
   rings = (struct ring_info*)
     malloc(raw_model->num_vert*sizeof(struct ring_info));
