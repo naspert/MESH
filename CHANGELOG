@@ -1,3 +1,7 @@
+* Changes from v1.9 to v1.10:
+	- Added support for panning the 3D views, activated with Ctrl key +
+          left button mouse dragging.
+
 * Changes from v1.8 to v1.9:
 	- Added support for reading raw format with binary data: it provides
           much faster I/O, at the expense of portability.
