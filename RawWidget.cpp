@@ -1,4 +1,4 @@
-/* $Id: RawWidget.cpp,v 1.17 2001/09/12 14:38:57 dsanta Exp $ */
+/* $Id: RawWidget.cpp,v 1.18 2001/09/12 15:03:39 dsanta Exp $ */
 #include <RawWidget.h>
 #include <qmessagebox.h>
 
@@ -378,7 +378,11 @@ void RawWidget::keyPressEvent(QKeyEvent *k) {
     setLight();
     break;
   case Key_F3:
-    switchSync(!move_state);
+    // if we are going to sync make sure other widgets get out transformation
+    // matrix first
+    if (move_state==0) emit transfervalue(distance, mvmatrix);
+    // now send the signal that we need to toggle synchronization
+    emit toggleSync();
     break;
   case Key_F4:
     if (renderFlag == RW_LIGHT_TOGGLE) {

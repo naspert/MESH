@@ -1,4 +1,4 @@
-/* $Id: ScreenWidget.cpp,v 1.14 2001/09/11 16:31:27 dsanta Exp $ */
+/* $Id: ScreenWidget.cpp,v 1.15 2001/09/12 15:03:39 dsanta Exp $ */
 #include <ScreenWidget.h>
 
 ScreenWidget::ScreenWidget(model_error *model1, model_error *model2, 
@@ -71,7 +71,7 @@ ScreenWidget::ScreenWidget(model_error *model1, model_error *model2,
   // to another
   connect(glModel1, SIGNAL(transfervalue(double,double*)), 
 	  glModel2, SLOT(transfer(double,double*)));
-  connect(glModel1, SIGNAL(transfervalue(double,double*)), 
+  connect(glModel2, SIGNAL(transfervalue(double,double*)), 
 	  glModel1, SLOT(transfer(double,double*)));
 
 
@@ -85,6 +85,10 @@ ScreenWidget::ScreenWidget(model_error *model1, model_error *model2,
   
   connect(syncBut, SIGNAL(toggled(bool)), 
 	  glModel1, SLOT(switchSync(bool))); 
+  connect(syncBut, SIGNAL(toggled(bool)), 
+	  glModel2, SLOT(switchSync(bool)));
+  connect(glModel1, SIGNAL(toggleSync()),syncBut, SLOT(toggle()));
+  connect(glModel2, SIGNAL(toggleSync()),syncBut, SLOT(toggle()));
   
   
 
