@@ -1,4 +1,4 @@
-/* $Id: model_in_ply.c,v 1.8 2002/08/26 13:04:26 aspert Exp $ */
+/* $Id: model_in_ply.c,v 1.9 2002/08/26 13:44:22 aspert Exp $ */
 
 /*
  *
@@ -47,7 +47,8 @@
  * a bug, check if a 'corrupted' file can be 'recovered' by
  * hand-editing the file and by changing the 'binary_big_endian' into
  * a 'binary_little_endian' field (on the contrary) does not improve
- * things... 
+ * things, especially if you have used 'ply2binary' to create your
+ * binary file (see the README for more details).
  *
  * Please note that only _triangular_ meshes are read, and that only
  * the vertices' coordinates and the indices of faces are read. All
@@ -73,8 +74,9 @@ static int skip_ws_str_scanf(struct file_data *data, char *out)
  * negative value if a failure occurs. */
 static int skip_bytes(struct file_data *data, size_t nbytes) 
 {
-  int i, c;
-  int rcode = 0;
+  size_t i;
+  int c;
+  int rcode=0;
 
   for (i=0; i<nbytes; i++) {
     c = getc(data);

@@ -95,8 +95,15 @@ transforms, begin/end ...).
 * The PLY parser only reads vertices and triangular faces. It will not
 read any unneeded 'property' field. The ASCII and binary format are
 supported. If a binary model cannot be read, try to hand-edit the
-header, turning the 'binary_little_endian' field into
-'binary_big_endian' (or the contrary).
+header, turning the 'binary_big_endian' field into
+'binary_little_endian' (or the contrary). This often occurs if you use
+the 'ply2binary' tool, provided with the PLY package, which does not
+test the endianness of the platform on which it is run. As a
+consequence, if you run it under Linux (or another little-endian
+platform), you will end up with a 'binary_big_endian' in your header,
+whereas the bytes (written using 'fwrite') are in little-endian
+order...
+
 
 
 Please report any bugs or comments to:
