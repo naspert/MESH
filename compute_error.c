@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.45 2001/08/22 09:55:36 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.46 2001/08/22 13:43:27 dsanta Exp $ */
 
 #include <compute_error.h>
 
@@ -693,15 +693,25 @@ static double dist_sqr_pt_triag(const struct triangle_info *t, const vertex *p)
 }
 
 /* Calculates the square of the distance between a point p in cell
- * (gr_x,gr_y,gr_z) and cell (m,n,o). The coordinates of p are relative to the
- * minimum X,Y,Z coordinates of the bounding box from where the cell grid is
- * derived. All the cells are cubic, with a side of length cell_sz. If the
- * point p is in the cell (m,n,o) the distance is zero. */
-static double dist_sqr_pt_cell(const vertex *p, int gr_x, int gr_y, int gr_z,
-                               int m, int n, int o, double cell_sz)
+ * (gr_x,gr_y,gr_z) and cell cell_idx (liner index). The coordinates of p are
+ * relative to the minimum X,Y,Z coordinates of the bounding box from where
+ * the cell grid is derived. All the cells are cubic, with a side of length
+ * cell_sz. If the point p is in the cell (m,n,o) the distance is zero. The
+ * number of cells in the grid along X is given by grid_sz_x, and the
+ * separation between adjacent cells along Z is given by cell_stride_z. */
+static INLINE double dist_sqr_pt_cell(const vertex *p, int gr_x, int gr_y,
+                                      int gr_z, int cell_idx, int grid_sz_x,
+                                      int cell_stride_z, double cell_sz)
 {
   double d2,tmp;
+  int m,n,o,tmpi;
 
+  /* Get 3D indices of cell cell_idx */
+  o = cell_idx/cell_stride_z;
+  tmpi = cell_idx%cell_stride_z;
+  n = tmpi/grid_sz_x;
+  m = tmpi%grid_sz_x;
+  /* Calculate distance */
   d2 = 0;
   if (gr_x != m) { /* if not on same cell x wise */
     tmp = (m > gr_x) ? m*cell_sz-p->x : p->x-(m+1)*cell_sz;
@@ -1020,7 +1030,6 @@ static double dist_pt_surf(vertex p, const struct triangle_list *tl,
   struct size3d grid_coord; /* coordinates of cell in which p is */
   int k;                /* cell index distance of current scan */
   int kmax;             /* maximum limit for k (avoid infinite loops) */
-  int m,n,o;            /* 3D cell indices */
   int cell_idx;         /* linear cell index */
   double dmin_sqr;      /* minimum distance squared */
   double dist_sqr;      /* current distance squared */
@@ -1034,7 +1043,6 @@ static double dist_pt_surf(vertex p, const struct triangle_list *tl,
   int *cell_list;       /* list of cells to scan for the current k */
   int cll;              /* length of cell list */
   int j;                /* counter */
-  int tmpi;             /* temporary integer */
   ec_bitmap_t *fic_empty_cell; /* stack copy of fic->empty_cell (faster) */
   int **fic_triag_idx;  /* stack copy of fic->triag_idx (faster) */
 
@@ -1092,17 +1100,14 @@ static double dist_pt_surf(vertex p, const struct triangle_list *tl,
     for (j=0; j<cll; j++) {
       cell_idx = cell_list[j];
       cell_tl = fic_triag_idx[cell_idx];
-      o = cell_idx/cell_stride_z;
-      tmpi = cell_idx%cell_stride_z;
-      n = tmpi/grid_sz.x;
-      m = tmpi%grid_sz.x;
       /* If minimum distance from point to cell is larger than already
        * found minimum distance we can skip all triangles in the cell */
 #ifdef DO_DIST_PT_SURF_STATS
       stats->n_cell_scans++;
 #endif
       if (dmin_sqr < dist_sqr_pt_cell(&p_rel,grid_coord.x,grid_coord.y,
-                                      grid_coord.z,m,n,o,cell_sz)) {
+                                      grid_coord.z,cell_idx,grid_sz.x,
+                                      cell_stride_z,cell_sz)) {
         continue;
       }
       /* Scan all triangles (i.e. faces) in the cell */
