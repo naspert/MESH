@@ -1,4 +1,4 @@
-/* $Id: viewer.cpp,v 1.22 2001/07/11 08:06:09 jacquet Exp $ */
+/* $Id: viewer.cpp,v 1.23 2001/07/11 14:43:38 jacquet Exp $ */
 
 #include <qapplication.h>
 #include <ScreenWidget.h>
@@ -226,41 +226,42 @@ int main( int argc, char **argv )
  printf("err_max_rel = %f %%\nerr_moyenne_rel = %f %%\n", superdmax*100/diag, 
 	meanerror*100/diag);
 
- /* on assigne une couleur a chaque vertex qui est proportionnelle */
- /* a la moyenne de l'erreur sur les faces incidentes */
- raw_model1->error=(int *)malloc(raw_model1->num_vert*sizeof(int));
- raw_model2->error=(int *)calloc(raw_model2->num_vert,sizeof(int));
-
-
- for(i=0;i<raw_model1->num_vert;i++){
-   dmoy=0;
-   surfacemoy=0;
-   for(j=0;j<nbfaces[i];j++){
-     dmoy+=error_per_face[list_face[i][j]][0];
-     surfacemoy+=error_per_face[list_face[i][j]][1];
-   }
-   dmoy/=surfacemoy/*nbfaces[i]*/;
-   if(dmoy>dmoymax)
-     dmoymax=dmoy;
-   if(dmoy<dmoymin)
-     dmoymin=dmoy;
- }
-
- for(i=0;i<raw_model1->num_vert;i++){
-   surfacemoy=0;
-   dmoy=0;
-   for(j=0;j<nbfaces[i];j++){
-     dmoy+=error_per_face[list_face[i][j]][0];
-     surfacemoy+=error_per_face[list_face[i][j]][1];
-   }
-   dmoy/=surfacemoy/*nbfaces[i]*/;
-   raw_model1->error[i]=(int)floor(7*(dmoy-dmoymin)/(dmoymax-dmoymin));
-   if(raw_model1->error[i]<0)
-     raw_model1->error[i]=0;
- }
-
-
  if(text == 1){
+   /* on assigne une couleur a chaque vertex qui est proportionnelle */
+   /* a la moyenne de l'erreur sur les faces incidentes */
+   raw_model1->error=(int *)malloc(raw_model1->num_vert*sizeof(int));
+   raw_model2->error=(int *)calloc(raw_model2->num_vert,sizeof(int));
+
+
+   for(i=0;i<raw_model1->num_vert;i++){
+     dmoy=0;
+     surfacemoy=0;
+     for(j=0;j<nbfaces[i];j++){
+       dmoy+=error_per_face[list_face[i][j]][0];
+       surfacemoy+=error_per_face[list_face[i][j]][1];
+     }
+     dmoy/=surfacemoy/*nbfaces[i]*/;
+     if(dmoy>dmoymax)
+       dmoymax=dmoy;
+     if(dmoy<dmoymin)
+       dmoymin=dmoy;
+   }
+   
+   for(i=0;i<raw_model1->num_vert;i++){
+     surfacemoy=0;
+     dmoy=0;
+     for(j=0;j<nbfaces[i];j++){
+       dmoy+=error_per_face[list_face[i][j]][0];
+       surfacemoy+=error_per_face[list_face[i][j]][1];
+     }
+     dmoy/=surfacemoy/*nbfaces[i]*/;
+     raw_model1->error[i]=(int)floor(7*(dmoy-dmoymin)/(dmoymax-dmoymin));
+     if(raw_model1->error[i]<0)
+       raw_model1->error[i]=0;
+   }
+   
+   
+   
    ScreenWidget c(raw_model1,raw_model2,superdmin,superdmax);
    a.setMainWidget( &c );
    c.show(); 
