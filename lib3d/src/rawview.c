@@ -1,4 +1,4 @@
-/* $Id: rawview.c,v 1.27 2002/11/13 12:18:24 aspert Exp $ */
+/* $Id: rawview.c,v 1.28 2002/11/13 13:43:51 aspert Exp $ */
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -201,7 +201,6 @@ static void norm_key_pressed(unsigned char key, int x, int y) {
       glutPostRedisplay();
     } else 
       fprintf(stderr, "Butterfly subdivision failed\n");
-    break;
     break;
   case 'g':
   case 'G': /* Enable Gaussian curvature display */
@@ -547,7 +546,7 @@ int main(int argc, char **argv) {
 
   int i, rcode=0;
   char *title;
-  const char s_title[]="Raw Mesh Viewer $Revision: 1.27 $ - ";
+  const char s_title[]="Raw Mesh Viewer $Revision: 1.28 $ - ";
   vertex_t center;
   struct model* raw_model;
 
