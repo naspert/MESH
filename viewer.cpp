@@ -1,4 +1,4 @@
-/* $Id: viewer.cpp,v 1.36 2001/08/16 13:11:16 dsanta Exp $ */
+/* $Id: viewer.cpp,v 1.37 2001/08/16 15:04:06 dsanta Exp $ */
 
 #include <time.h>
 #include <string.h>
@@ -219,7 +219,7 @@ int main( int argc, char **argv )
   fflush(stdout);
 
   if(pargs.no_gui){
-    free(fe);
+    free_face_error(fe);
     fe = NULL;
   } else {
    /* on assigne une couleur a chaque vertex qui est proportionnelle */
@@ -248,7 +248,7 @@ int main( int argc, char **argv )
    /* Free now useless data */
    free_face_lists(vfl,raw_model1->num_vert);
    vfl = NULL;
-   free(fe);
+   free_face_error(fe);
    fe = NULL;
 
    for(i=0;i<raw_model1->num_vert;i++){
