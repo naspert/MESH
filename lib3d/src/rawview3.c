@@ -1,4 +1,4 @@
-/* $Id: rawview3.c,v 1.9 2001/04/19 07:59:13 aspert Exp $ */
+/* $Id: rawview3.c,v 1.10 2001/05/01 12:34:39 aspert Exp $ */
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <GL/glut.h>
@@ -442,7 +442,7 @@ void sp_key_pressed(int key, int x, int y) {
 	raw_model->area = (double*)malloc(raw_model->num_faces*sizeof(double));
 	curv = (info_vertex*)malloc(raw_model->num_vert*sizeof(info_vertex));
 
-	raw_model->face_normals = compute_face_normals(raw_model);
+	raw_model->face_normals = compute_face_normals(raw_model, curv);
 
 #ifdef FACE_NORM_DRAW_DEBUG	
 	for (i=0; i<raw_model->num_faces; i++)
@@ -540,7 +540,7 @@ void sp_key_pressed(int key, int x, int y) {
 	fflush(stdout);
 	raw_model->area = (double*)malloc(raw_model->num_faces*sizeof(double));
 	curv = (info_vertex*)malloc(raw_model->num_vert*sizeof(info_vertex));
-	raw_model->face_normals = compute_face_normals(raw_model);
+	raw_model->face_normals = compute_face_normals(raw_model, curv);
 	if (raw_model->face_normals != NULL) {
 	  compute_vertex_normal(raw_model, curv, raw_model->face_normals);
 	  for (i=0; i<raw_model->num_vert; i++) 
@@ -684,9 +684,7 @@ int main(int argc, char **argv) {
 
   in_filename = argv[1]; 
   raw_model = read_raw_model(in_filename);
- 
 
-  
   if (raw_model->builtin_normals == 1) {
     normals_done = 1;
     printf("The model has builtin normals\n");

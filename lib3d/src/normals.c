@@ -1,67 +1,10 @@
-/* $Id: normals.c,v 1.2 2001/03/12 16:47:13 aspert Exp $ */
+/* $Id: normals.c,v 1.3 2001/05/01 12:34:39 aspert Exp $ */
 #include <3dmodel.h>
 #include <geomutils.h>
 
 
-
-/* FIND  face containing the vertices v0 & v1 not  being face_excl */
-int list_faces_excl(model *raw_model, int v0, int v1, int face_excl) {
-  int i;
-  face *cur;
-  
- 
-  for (i=0; i<raw_model->num_faces; i++) {
-    if (i == face_excl)
-      continue;
-    else {
-      cur = &(raw_model->faces[i]);
-      if (cur->f0==v0 && (cur->f1==v1 || cur->f2==v1))
-	return i;
-      else if (cur->f1==v0 && (cur->f0==v1 || cur->f2==v1))
-	return i;
-      else if (cur->f2==v0 && (cur->f0==v1 || cur->f1==v1))
-	return i;
-    }
-  }
-  return -1;
-}
-
-/* FIND  face containing the vertices v0 & v1  */
-int* list_faces(model *raw_model, int v0, int v1) {
-  int i, *res ;
-  face *cur;
-  int nfaces = 0;
-
-  res = (int*)malloc(sizeof(int));
-  res[0] = 0;
-  for (i=0; i<raw_model->num_faces; i++) {
-      cur = &(raw_model->faces[i]);
-      if (cur->f0==v0 && (cur->f1==v1 || cur->f2==v1)) {
-	nfaces++;
-	res = (int*)realloc(res,(nfaces+1)*sizeof(int));
-	res[nfaces] = i;
-      }
-      else if (cur->f1==v0 && (cur->f0==v1 || cur->f2==v1)) {
-	nfaces++;
-	res = (int*)realloc(res,(nfaces+1)*sizeof(int));
-	res[nfaces] = i;
-      }
-      else if (cur->f2==v0 && (cur->f0==v1 || cur->f1==v1)) {
-	nfaces++;
-	res = (int*)realloc(res,(nfaces+1)*sizeof(int));
-	res[nfaces] = i;
-      }
-  }
-  res[0] = nfaces;
-  return res;
-  
-}
-
-
-
 /* find the 1-ring of vertex v */
 ring_info build_star2(model *raw_model, int v) {
-
 
   int i,j,k;
   int num_edges=0; /* number of edges in the 1-ring */
@@ -225,56 +168,7 @@ ring_info build_star2(model *raw_model, int v) {
 
 
 
-/* Returns 0 if the model has a non-manifold edge */
-int manifold_edges(model *raw_model, face_tree_ptr *tree){
-  int i;
 
-  int *test;
-
-  test = NULL;
-  for (i=0; i<raw_model->num_faces; i++) {
-    if (tree[i]->left != NULL) {
-      test = list_faces(raw_model, 
-			tree[i]->prim_left.v0, 
-			tree[i]->prim_left.v1);
-      if (test[0] > 2) {
-	printf("Non manifold edge : %d %d\n", tree[i]->prim_left.v0, 
-	       tree[i]->prim_left.v1);
-	free(test);
-	return 0;
-      } else
-	free(test);
-    }
-    if (tree[i]->right != NULL) {
-      test = list_faces(raw_model, 
-			tree[i]->prim_right.v0, 
-			tree[i]->prim_right.v1);
-      if (test[0] > 2) {
-	printf("Non manifold edge : %d %d\n", tree[i]->prim_left.v0, 
-	       tree[i]->prim_left.v1);
-	free(test);
-	return 0;
-      } else 
-	free(test);
-    }
-
-  }
-  return 1;
-}
-
-int test_cycle(face_tree_ptr tree, int test_idx) {
-
-  if (tree->face_idx == test_idx)
-    return 1;
-
-  if ((tree->left != NULL) && (test_cycle(tree->left, test_idx) == 1))
-     return 1;
-  
-  if ((tree->right != NULL) && (test_cycle(tree->right, test_idx) == 1))
-     return 1;
-
-  return 0;
-}
 
 
 
@@ -300,96 +194,261 @@ void destroy_tree(face_tree_ptr tree) {
 
 
 
-edge_list_ptr add_edge(edge_list_ptr list, int face0, int face1, 
-		       int v0, int v1) {
+/* Compares two edges (s.t. they are in lexico. order after qsort) */
+int compar(const void* ed0, const void* ed1) {
+  edge_sort *e0, *e1;
 
+  e0 = (edge_sort*)ed0;
+  e1 = (edge_sort*)ed1;
 
-  list->edge.face0 = face0;
-  list->edge.face1 = face1;
-  list->edge.common.v0 = v0;
-  list->edge.common.v1 = v1;
+  if (e0->prim.v0 > e1->prim.v0)
+    return 1;
+  else if (e0->prim.v0 < e1->prim.v0)
+    return -1;
+  else {/* e1->v0 = e0->v0 */
+    if(e0->prim.v1 > e1->prim.v1)
+      return 1;
+    else if(e0->prim.v1 < e1->prim.v1)
+      return -1;
+    else 
+      return 0;
+  }
+}
+
+/* Adds an edge in the dual graph and returns the last elt. in the graph */
+edge_list_ptr add_edge_dg(edge_list_ptr list, edge_sort e0, edge_sort e1) {
+  list->edge.face0 = e0.face;
+  list->edge.face1 = e1.face;
+  list->edge.common.v0 = e0.prim.v0;
+  list->edge.common.v1 = e0.prim.v1;
   list->next = (edge_list_ptr)malloc(sizeof(edge_list));
+  (list->next)->prev = list;
   list = list->next;
   list->next = NULL;
   return list;
 
 }
 
-
-int find_adj_edges(model *raw_model, int cur_face, edge_list_ptr list) {
-  int v0, v1, v2;
+/* Returns the number of edges from the dual graph or -1 if a non-manifold */
+/* edge is encoutered. The list of faces surrounding each vertex is done */
+/* at the same time */
+int build_edge_list(model *raw_model, edge_list_ptr *dual_graph, 
+		    info_vertex *curv){
+  edge_sort *list;
+  edge_list_ptr tmp, prev;
   int i;
-  int num_added = 0; /* Number of edges added*/
-  face *cur;
-  edge_list_ptr cur_item;
+  int v0, v1, v2;
+  int nedges=0;
+  int ne_dual=0;
   
-/*  printf("find_adj_edges: %d\n", cur_face);*/
-  v0 = raw_model->faces[cur_face].f0;
-  v1 = raw_model->faces[cur_face].f1;
-  v2 = raw_model->faces[cur_face].f2;
+  list = (edge_sort*)malloc(3*raw_model->num_faces*sizeof(edge_sort));
 
-  /* Go to the end of the list */
-  cur_item = list;
-  while(cur_item->next != NULL)
-    cur_item = cur_item->next;
-   
+  
   for (i=0; i<raw_model->num_faces; i++) {
-    if (i == cur_face)
-      continue;
-    else {
-      cur = &(raw_model->faces[i]);
-      if (cur->f0==v0 && (cur->f1==v1 || cur->f2==v1)) {
-	cur_item = add_edge(cur_item,  cur_face, i, v0, v1);
-	num_added++;
-      }
-      else if (cur->f1==v0 && (cur->f0==v1 || cur->f2==v1)) {
-	cur_item = add_edge(cur_item, cur_face, i, v0, v1);
-	num_added++;
-      }
-      else if (cur->f2==v0 && (cur->f0==v1 || cur->f1==v1)) {
-	cur_item  = add_edge(cur_item, cur_face, i, v0, v1);
-	num_added++;
-      }
-      else if (cur->f0==v0 && (cur->f1==v2 || cur->f2==v2)) {
-	cur_item = add_edge(cur_item, cur_face, i, v0, v2);
-	num_added++;
-      }
-      else if (cur->f1==v0 && (cur->f0==v2 || cur->f2==v2)) {
-	cur_item = add_edge(cur_item, cur_face, i, v0, v2);
-	num_added++;
-      }
-      else if (cur->f2==v0 && (cur->f0==v2 || cur->f1==v2)) {
-	cur_item  = add_edge(cur_item, cur_face, i, v0, v2);
-	num_added++;
-      }
-      else if (cur->f0==v1 && (cur->f1==v2 || cur->f2==v2)) {
-	cur_item = add_edge(cur_item, cur_face, i, v1, v2);
-	num_added++;
-      }
-      else if (cur->f1==v1 && (cur->f0==v2 || cur->f2==v2)) {
-	cur_item = add_edge(cur_item, cur_face, i, v1, v2);
-	num_added++;
-      }
-      else if (cur->f2==v1 && (cur->f0==v2 || cur->f1==v2)) {
-	cur_item  = add_edge(cur_item, cur_face, i, v1, v2);
-	num_added++;
+    v0 = raw_model->faces[i].f0;
+    v1 = raw_model->faces[i].f1;
+    v2 = raw_model->faces[i].f2;
+
+    /* Update the list of faces surrounding each vertex */
+    if(curv[v0].num_faces > 0) 
+      curv[v0].list_face = (int*)realloc(curv[v0].list_face, 
+					(curv[v0].num_faces + 1)*sizeof(int));
+    if(curv[v1].num_faces > 0) 
+      curv[v1].list_face = (int*)realloc(curv[v1].list_face, 
+					(curv[v1].num_faces + 1)*sizeof(int));
+    if(curv[v2].num_faces > 0) 
+      curv[v2].list_face = (int*)realloc(curv[v2].list_face, 
+					(curv[v2].num_faces + 1)*sizeof(int));
+      
+
+    curv[v0].list_face[curv[v0].num_faces] = i;
+    curv[v0].num_faces ++;
+    curv[v1].list_face[curv[v1].num_faces] = i;
+    curv[v1].num_faces ++;
+    curv[v2].list_face[curv[v2].num_faces] = i;
+    curv[v2].num_faces ++;
+
+    if(v0 > v1) {
+      list[nedges].prim.v0 = v1;
+      list[nedges].prim.v1 = v0;
+    } else {
+      list[nedges].prim.v0 = v0;
+      list[nedges].prim.v1 = v1;
+    }
+    list[nedges].face = i;
+    nedges++;
+
+    if(v1 > v2) {
+      list[nedges].prim.v0 = v2;
+      list[nedges].prim.v1 = v1;
+    } else {
+      list[nedges].prim.v0 = v1;
+      list[nedges].prim.v1 = v2;
+    }
+    list[nedges].face = i;
+    nedges++;
+    
+    if(v2 > v0) {
+      list[nedges].prim.v0 = v0;
+      list[nedges].prim.v1 = v2;
+    } else {
+      list[nedges].prim.v0 = v2;
+      list[nedges].prim.v1 = v0;
+    }
+    list[nedges].face = i;
+    nedges++;
+    
+  }
+  
+  qsort(list, nedges, sizeof(edge_sort), compar);
+
+
+  *dual_graph = (edge_list_ptr)malloc(sizeof(edge_list));
+
+  tmp = *dual_graph;
+  prev = NULL;
+  (*dual_graph)->next = NULL;
+  (*dual_graph)->prev = NULL;
+  
+  for (i=0; i<3*raw_model->num_faces-1; i++) {
+    if (compar(&(list[i]), &(list[i+1])) == 0) {
+      /* New entry in the dual graph */
+      tmp = add_edge_dg(tmp, list[i], list[i+1]);
+      ne_dual++;
+      
+      if (i<3*raw_model->num_faces-2 && compar(&(list[i+1]), &(list[i+2]))==0){
+	printf("Non-manifold edge %d %d\n", list[i].prim.v0, list[i].prim.v1);
+	return -1;
       }
     }
   }
-/*  printf("find_adj_edges: %d %d\n", list->edge.face0, list->edge.face1);*/
-  return num_added;
+      
+  free(list);        
+
+#ifdef NORM_DEBUG
+  printf("[build_edge_list]:%d edges in dual graph\n", ne_dual);
+#endif
+
+  return ne_dual;
+
 }
 
-face_tree_ptr* bfs_build_spanning_tree(model *raw_model) {
+/* Remove dual edges containing 'cur_face' from 'dual_graph' and put'em */
+/* into 'bot' and update 'ne_dual'*/
+/* we assume that 'bot' points on the last non-NULL elt of the and we return */
+/* the last elt. of this list afterwards */
+edge_list_ptr find_dual_edges(int cur_face, int *ne_dual, int*nfound, 
+		    edge_list_ptr *dual_graph, edge_list_ptr bot) {
+
+  edge_list_ptr tmp=*dual_graph, old; 
+  int i, tmp_dual=*ne_dual;
+  int test=0;
+  
+  for (i=0; i<*ne_dual; i++) {
+#ifdef NORM_DEBUG
+       printf("[find_dual_edges]: Item %d %d p %d %d \n", tmp->edge.face0, 
+	      tmp->edge.face1, tmp->edge.common.v0, tmp->edge.common.v1);
+#endif
+    if (tmp->edge.face0 == cur_face) {
+#ifdef NORM_DEBUG
+      printf("[find_dual_edges]: Adding %d %d p %d %d to the stack\n", 
+	     tmp->edge.face0, tmp->edge.face1, tmp->edge.common.v0, 
+	     tmp->edge.common.v1);
+#endif
+      bot->edge = tmp->edge;
+      bot->next = (edge_list_ptr)malloc(sizeof(edge_list));
+      bot = bot->next;
+      bot->next = NULL;
+      old = tmp;
+
+      if (tmp->prev != NULL) {
+	(tmp->prev)->next = tmp->next;
+	(tmp->next)->prev = tmp->prev;
+      } else {
+	*dual_graph = tmp->next;
+	(*dual_graph)->prev = NULL;
+      }      
+
+      tmp = tmp->next;
+      free(old);
+      tmp_dual--;
+      (*nfound)++;
+      test++;
+    } else if (tmp->edge.face1 == cur_face) {
+      bot->edge.face1 = tmp->edge.face0;
+      bot->edge.face0 = tmp->edge.face1;
+      bot->edge.common = tmp->edge.common;
+      bot->next = (edge_list_ptr)malloc(sizeof(edge_list));
+      bot = bot->next;
+      bot->next = NULL;
+      old = tmp;
+
+      if (tmp->prev != NULL) {
+	(tmp->prev)->next = tmp->next;
+	(tmp->next)->prev = tmp->prev;
+      } else {
+	*dual_graph = tmp->next;
+	(*dual_graph)->prev = NULL;
+      }
+
+      tmp = tmp->next;
+      free(old);
+      tmp_dual--;
+      (*nfound)++;
+      test++;
+    } else
+      tmp = tmp->next;
+
+    if (test==3) { /* if the model is manifold, each face has at most */
+      /* _3_ neighbours */
+      *ne_dual = tmp_dual;
+      return bot;
+    }
+
+  }
+
+  *ne_dual = tmp_dual;
+  return bot;
+}
+
+
+/* Builds the spanning tree of the dual graph */
+face_tree_ptr* bfs_build_spanning_tree(model *raw_model, info_vertex *curv) {
   int faces_traversed = 0;
 
-  edge_list_ptr list, cur_list, old;
+  edge_list_ptr  cur_list, old;
+  edge_list_ptr *dual_graph, *list, bot;
+#ifdef NORM_DEBUG
+  edge_list_ptr tmp;
+#endif
+  
   face_tree_ptr *tree, cur_node, new_node, top;
   int list_size = 0, i;
+  int ne_dual = 0;
 
+  printf("Dual graph build ");
+  dual_graph = (edge_list_ptr*)malloc(sizeof(edge_list_ptr));
+  ne_dual = build_edge_list(raw_model, dual_graph, curv);
+  printf("done\n");
+  if (ne_dual == -1) {
+    printf("No edges in dual graph ??\n");
+    return NULL;
+  }
 
-  list = (edge_list_ptr)malloc(sizeof(edge_list));
+#ifdef NORM_DEBUG
+  tmp = *dual_graph;
+  for (i=0; i<ne_dual; i++) {
+    printf("[bfs_build_spanning_tree]: %d dual %d %d primal %d %d\n", 
+	   ne_dual, tmp->edge.face0, 
+	   tmp->edge.face1, tmp->edge.common.v0, tmp->edge.common.v1);
+    tmp = tmp->next;
+  }
+#endif
 
+  list = (edge_list_ptr*)malloc(sizeof(edge_list_ptr)); 
+  *list = (edge_list_ptr)malloc(sizeof(edge_list));
+  (*list)->next = NULL;
+  (*list)->prev = NULL;
   tree = (face_tree_ptr*)malloc(raw_model->num_faces*sizeof(face_tree_ptr));
   /* Initialize all cells */
   for (i=0; i<raw_model->num_faces; i++) {
@@ -405,15 +464,28 @@ face_tree_ptr* bfs_build_spanning_tree(model *raw_model) {
   tree[0]->face_idx = 0;
   tree[0]->node_type=0;
   tree[0]->visited = 1;
-  list->next = NULL;
+
   cur_node = tree[0]; /* Initialized to the root of the tree */
   top = tree[0];
-
+  bot = *list; 
+  (*list)->next = NULL;
   /* Build 1st node */
-  list_size += find_adj_edges(raw_model, 0, list);   
-  cur_list = list;/* local copy of the full list */
-  faces_traversed ++;
+  
+#ifdef NORM_DEBUG
+  printf("[bfs_build_spanning_tree]:before ndual = %d ls = %d\n", ne_dual, 
+	 list_size);  
+#endif
 
+  bot = find_dual_edges(0, &ne_dual, &list_size, dual_graph, bot);   
+
+#ifdef NORM_DEBUG
+  printf("[bfs_build_spanning_tree]:after ndual = %d ls = %d\n", ne_dual, 
+	 list_size);  
+#endif
+
+  cur_list = *list;
+  faces_traversed ++;
+ 
   while(list_size > 0) {
     if (tree[cur_list->edge.face1]->visited == 0) { /* if 1 we have a cycle */
       /* Add the face to the tree */
@@ -422,7 +494,7 @@ face_tree_ptr* bfs_build_spanning_tree(model *raw_model) {
 	cur_node->left = tree[cur_list->edge.face1];
 	cur_node->prim_left = cur_list->edge.common;
 #ifdef NORM_DEBUG
-	printf("face0=%d face1=%d left %d %d\n", 
+	printf("[bfs_build_spanning_tree]: face0=%d face1=%d left %d %d\n", 
 	       (cur_list->edge).face0, (cur_list->edge).face1, 
 	       cur_node->prim_left.v0, cur_node->prim_left.v1);
 #endif
@@ -440,7 +512,7 @@ face_tree_ptr* bfs_build_spanning_tree(model *raw_model) {
 	cur_node->prim_right = cur_list->edge.common;
 	cur_node->right = tree[cur_list->edge.face1];
 #ifdef NORM_DEBUG
-	printf("face0=%d face1=%d right %d %d\n", 
+	printf("[bfs_build_spanning_tree]: face0=%d face1=%d right %d %d\n", 
  	       (cur_list->edge).face0, (cur_list->edge).face1, 
 	       cur_node->prim_right.v0, cur_node->prim_right.v1);
 #endif
@@ -461,7 +533,7 @@ face_tree_ptr* bfs_build_spanning_tree(model *raw_model) {
 	new_node->left = cur_node;/*this is arbitrary...*/
 	new_node->prim_left = cur_list->edge.common;
 #ifdef NORM_DEBUG
-	printf("face0=%d face1=%d up %d %d\n", 
+	printf("[bfs_build_spanning_tree]: face0=%d face1=%d up %d %d\n", 
  	       cur_list->edge.face0, cur_list->edge.face1,
 	       new_node->prim_left.v0, new_node->prim_left.v1);
 #endif
@@ -476,15 +548,32 @@ face_tree_ptr* bfs_build_spanning_tree(model *raw_model) {
       else {
 	printf("Non-manifold edge %d %d !\n", cur_list->edge.face0, 
 	       cur_list->edge.face1);
-	exit(-1);
+	return NULL;
       }
       /* Add adjacent edges to the list */
-      list_size += find_adj_edges(raw_model, old->edge.face1,  
- 				  cur_list); 
+
+#ifdef NORM_DEBUG
+      printf("[bfs_build_spanning_tree]:before ndual = %d ls = %d\n", ne_dual,
+	     list_size); 
+#endif
+
+      bot = find_dual_edges(old->edge.face1, &ne_dual, &list_size, 
+			    dual_graph, bot);
       
+#ifdef NORM_DEBUG
+       printf("[bfs_build_spanning_tree]:after ndual = %d ls = %d\n", ne_dual,
+	      list_size);  
+#endif
+
       free(old);
     } else { /* discard this face from the list */
       old = cur_list;
+
+#ifdef NORM_DEBUG
+       printf("[bfs_build_spanning_tree]: Removing %d %d\n", 
+	      cur_list->edge.face0, cur_list->edge.face1);
+#endif
+
       cur_list = cur_list->next;
       list_size--;
       free(old);
@@ -492,10 +581,14 @@ face_tree_ptr* bfs_build_spanning_tree(model *raw_model) {
   }
 
 #ifdef NORM_DEBUG
-   printf("faces_traversed = %d num_faces = %d\n", faces_traversed,  
- 	 raw_model->num_faces); 
+  printf("[bfs_build_spanning_tree]:faces_traversed = %d num_faces = %d\n", 
+	 faces_traversed, raw_model->num_faces); 
 #endif
-  
+  free(bot->next); /* should be alloc'd but nothing inside */
+  free(bot);
+  free(*dual_graph);
+  free(dual_graph);
+  free(list);
   return tree;
 }
 
@@ -682,28 +775,30 @@ void build_normals(model *raw_model, face_tree_ptr tree, vertex* normals) {
 }
 
 /* Compute consistent normals for each face of the model */
-vertex* compute_face_normals(model* raw_model) {
+vertex* compute_face_normals(model* raw_model, info_vertex *curv) {
   
   vertex *normals;
   face_tree_ptr *tree, top;
   int i;
 
+
+  for(i=0; i<raw_model->num_vert; i++) {
+    curv[i].list_face = (int*)malloc(sizeof(int));
+    curv[i].num_faces = 0;
+  }
   printf("Building spanning tree\n");
   /* Compute spanning tree of the dual graph */
 
-  tree = bfs_build_spanning_tree(raw_model); 
+
+  tree = bfs_build_spanning_tree(raw_model, curv); 
+  if (tree == NULL)
+    return NULL;
   top = tree[0];
   while (top->parent != NULL)
     top = top->parent;
   printf("Spanning tree done\n");
   /* Finally, compute the normals for each face */
   
-  if (manifold_edges(raw_model, tree) == 0) {
-    for (i=0; i<raw_model->num_faces; i++)
-      free(tree[i]);
-    free(tree);
-    return NULL;
-  }
   printf("The model is manifold ...\n");
   normals = (vertex*)malloc(raw_model->num_faces*sizeof(vertex));
   build_normals(raw_model, top, normals);
@@ -728,30 +823,6 @@ void compute_vertex_normal(model* raw_model, info_vertex* curv,
 			   vertex *model_normals) {
   int i,j;
   vertex tmp, p1, p2, p3;
-
-  for(i=0; i<raw_model->num_vert; i++) {
-    curv[i].list_face = (int*)malloc(sizeof(int));
-    curv[i].num_faces = 0;
-  }
-
-
-  /* For each vertex, build list of faces */
-  for (i=0; i<raw_model->num_vert; i++) {
-    for(j=0; j<raw_model->num_faces; j++)
-      if(raw_model->faces[j].f0 == i ||
-	 raw_model->faces[j].f1 == i ||
-	 raw_model->faces[j].f2 == i) {
-	if(curv[i].num_faces > 0) {
-	  curv[i].list_face = (int*)realloc(curv[i].list_face, 
-			      (curv[i].num_faces + 1)*sizeof(int));
-	  
-	}
-	curv[i].list_face[curv[i].num_faces] = j;
-	curv[i].num_faces ++;
-      }
-
-  }
-
 
 
 

@@ -1,4 +1,7 @@
-/* $Id: 3dmodel.h,v 1.3 2001/04/30 10:53:25 aspert Exp $ */
+/* $Id: 3dmodel.h,v 1.4 2001/05/01 12:34:39 aspert Exp $ */
+#ifdef MPATROL_TEST
+#include <mpatrol.h>
+#endif
 #ifdef MEM_DEBUG
 #include <purify.h>
 #endif
@@ -26,7 +29,6 @@ typedef struct {
 }face;
 
 
-
 typedef struct {
   int num_faces;
   int num_vert;
@@ -41,6 +43,7 @@ typedef struct {
   int *error; 
 #endif
 }model;
+
 
 
 typedef struct {
@@ -61,9 +64,11 @@ typedef struct {
 
 
 typedef struct {
-    int v0;
-    int v1;
+  int v0;
+  int v1;
 }edge_v;
+
+
 
 typedef struct {
   int face0;
@@ -76,8 +81,12 @@ typedef struct {
   int s,t; /* An edge contains 2 vertices */
   int l,r;/*left & right faces index*/
   /* l,r = -1 -> undefined face...*/
-}edge;
+}edge_tr;
 
+typedef struct {
+  edge_v prim;
+  int face;
+}edge_sort;
 
 typedef struct fnode *face_tree_ptr;
 
@@ -98,6 +107,7 @@ typedef struct dual_list *edge_list_ptr;
 typedef struct dual_list {
   edge_dual edge;
   edge_list_ptr next;
+  edge_list_ptr prev;
 }edge_list;
 
 typedef struct {
@@ -106,13 +116,13 @@ typedef struct {
   int size;
 }ring_info;
 
+
 typedef struct {
   edge_v edge;
   vertex p;
 }edge_sub;
 
 #ifdef _METRO
-
 typedef struct {
   vertex* sample;
   int nbsamples;
@@ -122,7 +132,6 @@ typedef struct {
   int *cube;
   int nbcube;
 }cellules;
-
 #endif
 
 #endif
