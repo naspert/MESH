@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.61 2001/09/20 15:21:00 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.62 2001/09/20 15:22:31 dsanta Exp $ */
 
 #include <compute_error.h>
 
@@ -1390,7 +1390,7 @@ void calc_vertex_error(struct model_error *me, const struct face_error *fe,
     vfl_local = NULL;
   }
   me->verror = xa_realloc(me->verror,me->mesh->num_vert*sizeof(*(me->verror)));
-  me->min_verror = DBL_MAX;
+  me->min_verror = FLT_MAX;
   me->max_verror = 0;
 
   /* Calculate vertex error and look for minimum and maximum */
