@@ -1,4 +1,4 @@
-/* $Id: rawview3.c,v 1.22 2001/09/27 11:44:46 aspert Exp $ */
+/* $Id: rawview3.c,v 1.23 2001/09/27 13:38:15 aspert Exp $ */
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -250,27 +250,15 @@ void rebuild_list(struct model *raw_model) {
     for (j=0; j<raw_model->num_faces; j++) {
       face1 = (raw_model->tree)[j]->face_idx;
       cur_face = &(raw_model->faces[face1]);
-      center1.x = (raw_model->vertices[cur_face->f0].x +
-		   raw_model->vertices[cur_face->f1].x +
-		   raw_model->vertices[cur_face->f2].x)/3.0;
-      center1.y = (raw_model->vertices[cur_face->f0].y +
-		   raw_model->vertices[cur_face->f1].y +
-		   raw_model->vertices[cur_face->f2].y)/3.0;
-      center1.z = (raw_model->vertices[cur_face->f0].z +
-		   raw_model->vertices[cur_face->f1].z +
-		   raw_model->vertices[cur_face->f2].z)/3.0;
+      add3_sc_v(1.0/3.0, &(raw_model->vertices[cur_face->f0]), 
+		&(raw_model->vertices[cur_face->f0]), 
+		&(raw_model->vertices[cur_face->f0]), &center1);
       if ((raw_model->tree)[j]->left != NULL) {
 	face2 = ((raw_model->tree)[j]->left)->face_idx;
 	cur_face2 = &(raw_model->faces[face2]);
-	center2.x = (raw_model->vertices[cur_face2->f0].x +
-		     raw_model->vertices[cur_face2->f1].x +
-		     raw_model->vertices[cur_face2->f2].x)/3.0;
-	center2.y = (raw_model->vertices[cur_face2->f0].y +
-		     raw_model->vertices[cur_face2->f1].y +
-		     raw_model->vertices[cur_face2->f2].y)/3.0;
-	center2.z = (raw_model->vertices[cur_face2->f0].z +
-		     raw_model->vertices[cur_face2->f1].z +
-		     raw_model->vertices[cur_face2->f2].z)/3.0;
+	add3_sc_v(1.0/3.0, &(raw_model->vertices[cur_face2->f0]), 
+		  &(raw_model->vertices[cur_face2->f0]), 
+		  &(raw_model->vertices[cur_face2->f0]), &center2);
 	glVertex3d(center1.x, center1.y, center1.z);
 	glVertex3d(center2.x, center2.y, center2.z);
 
@@ -278,15 +266,9 @@ void rebuild_list(struct model *raw_model) {
       if ((raw_model->tree)[j]->right != NULL) {
 	face2 = ((raw_model->tree)[j]->right)->face_idx;
 	cur_face2 = &(raw_model->faces[face2]);
-	center2.x = (raw_model->vertices[cur_face2->f0].x +
-		     raw_model->vertices[cur_face2->f1].x +
-		     raw_model->vertices[cur_face2->f2].x)/3.0;
-	center2.y = (raw_model->vertices[cur_face2->f0].y +
-		     raw_model->vertices[cur_face2->f1].y +
-		     raw_model->vertices[cur_face2->f2].y)/3.0;
-	center2.z = (raw_model->vertices[cur_face2->f0].z +
-		     raw_model->vertices[cur_face2->f1].z +
-		     raw_model->vertices[cur_face2->f2].z)/3.0;
+	add3_sc_v(1.0/3.0, &(raw_model->vertices[cur_face2->f0]), 
+		  &(raw_model->vertices[cur_face2->f0]), 
+		  &(raw_model->vertices[cur_face2->f0]), &center2);
 	glVertex3d(center1.x, center1.y, center1.z);
 	glVertex3d(center2.x, center2.y, center2.z);
 
@@ -670,11 +652,9 @@ void sp_key_pressed(int key, int x, int y) {
   case GLUT_KEY_F3: /* invert normals */
     if (light_mode || draw_normals) {
       printf("Inverting normals\n");
-      for (i=0; i<raw_model->num_vert; i++) {
-	raw_model->normals[i].x = -raw_model->normals[i].x;
-	raw_model->normals[i].y = -raw_model->normals[i].y;
-	raw_model->normals[i].z = -raw_model->normals[i].z;
-      }
+      for (i=0; i<raw_model->num_vert; i++) 
+	neg_v(&(raw_model->normals[i]), &(raw_model->normals[i]));
+      
 
       rebuild_list(raw_model);
       glutPostRedisplay();
@@ -900,20 +880,19 @@ int main(int argc, char **argv) {
 	 raw_model->bBox[1].y, raw_model->bBox[1].z);
 #endif
 
-  center.x = 0.5*(raw_model->bBox[1].x + raw_model->bBox[0].x);
-  center.y = 0.5*(raw_model->bBox[1].y + raw_model->bBox[0].y);
-  center.z = 0.5*(raw_model->bBox[1].z + raw_model->bBox[0].z);
+  add_v(&(raw_model->bBox[0]), &(raw_model->bBox[1]), &center);
+  prod_v(0.5, &center, &center);
 
 
-  for (i=0; i<raw_model->num_vert; i++) {
-    raw_model->vertices[i].x -= center.x;
-    raw_model->vertices[i].y -= center.y;
-    raw_model->vertices[i].z -= center.z;
-  }
+
+  for (i=0; i<raw_model->num_vert; i++) 
+    substract_v(&(raw_model->vertices[i]), &center, &(raw_model->vertices[i]));
+  
+  
   
 
 
-  distance = dist(raw_model->bBox[0], raw_model->bBox[1])/
+  distance = dist_v(&(raw_model->bBox[0]), &(raw_model->bBox[1]))/
     tan(FOV*M_PI_2/180.0);
   
   dstep = distance*TRANSL_STEP;

@@ -1,4 +1,4 @@
-/* $Id: isoca.c,v 1.2 2001/09/27 12:53:41 aspert Exp $ */
+/* $Id: isoca.c,v 1.3 2001/09/27 13:38:14 aspert Exp $ */
 #include <3dutils.h>
 
 
@@ -37,9 +37,9 @@ struct model* subdiv(struct model *raw_model) {
     tmp1 = raw_model->vertices[raw_model->faces[i].f0];
     tmp2 = raw_model->vertices[raw_model->faces[i].f1];
 
-    tmp3.x = (tmp1.x + tmp2.x)*0.5;
-    tmp3.y = (tmp1.y + tmp2.y)*0.5;
-    tmp3.z = (tmp1.z + tmp2.z)*0.5;
+    add_v(&tmp1, &tmp2, &tmp3);
+    prod_v(0.5, &tmp3, &tmp3);
+
     
     new1 = test_vertex(subd, tmp3);
     if (new1 == -1) {/* New vertex in the model */
@@ -79,9 +79,8 @@ struct model* subdiv(struct model *raw_model) {
     tmp1 = raw_model->vertices[raw_model->faces[i].f2];
     tmp2 = raw_model->vertices[raw_model->faces[i].f0];
 
-    tmp3.x = (tmp1.x + tmp2.x)*0.5;
-    tmp3.y = (tmp1.y + tmp2.y)*0.5;
-    tmp3.z = (tmp1.z + tmp2.z)*0.5;
+    add_v(&tmp1, &tmp2, &tmp3);
+    prod_v(0.5, &tmp3, &tmp3);
 
     new3 = test_vertex(subd, tmp3);
     if (new3 == -1) {/* New vertex in the model */
