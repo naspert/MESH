@@ -1,85 +1,114 @@
-# $Id: Makefile,v 1.8 2001/07/02 09:14:41 jacquet Exp $
+# $Id: Makefile,v 1.9 2001/08/06 09:28:58 dsanta Exp $
 
+# Default compiler for C and C++ (CPP is normally the C preprocessor)
 CC = gcc
-CPP = g++
+CXX = g++
 
-
-
-BINDIR = ../bin
-LIBDIR = ../lib
-OBJDIR = ../obj
-LIB3DDIR = /home/sun1/jacquet/lib3d
-QTDIR = /usr/lib/qt-2.3.0
+BINDIR = ./bin
+LIBDIR = ./lib
+OBJDIR = ./obj
+LIB3DDIR = ./lib3d
+# QTDIR should come from the environment
+ifndef QTDIR
+$(error The QTDIR envirnoment variable is not defined. Define it as the path \
+	to the QT installation directory)
+endif
 MOC = $(QTDIR)/bin/moc
 
+# Extra compiler flags (optimization, profiling, debug, etc.)
+XTRA_CFLAGS = -g -O2 -ansi -march=i686
+XTRA_CXXFLAGS = -g -O2 -ansi
+XTRA_LDFLAGS = -g
+
+# Source files and executable name
+VIEWER_EXE := $(BINDIR)/viewer
+VIEWER_C_SRCS := $(wildcard *.c)
+VIEWER_CXX_SRCS := $(wildcard *.cpp)
+VIEWER_MOC_SRCS := RawWidget.h ScreenWidget.h init.h
+LIB3D_C_SRCS = 3dmodel_io.c normals.c geomutils.c
+
+# Compiler and linker flags
+INCFLAGS = -I$(LIB3DDIR)/include -I.
+QTINCFLAGS = -I$(QTDIR)/include
+GLINCFLAGS = -I/usr/X11R6/include
+
+# Libraries and search path for final linking
+LDLIBS = -lqt -lGL -lGLU -lXmu -lXext -lX11 -lm
+LOADLIBES = -L$(QTDIR)/lib -L/usr/X11R6/lib
+LDFLAGS =
+
+# C and C++ warning flags
+WARN_CFLAGS = -pedantic -Wall -W -Winline -Wmissing-prototypes -Wstrict-prototypes -Wnested-externs -Wshadow -Waggregate-return
+WARN_CXXFLAGS = -pedantic -Wall -W -Wmissing-prototypes
+
+# Preprocessor flags
+CPPFLAGS = $(INCFLAGS) -D_METRO
+
+# Construct basic compiler flags
+CFLAGS = $(WARN_CFLAGS) $(XTRA_CFLAGS)
+CXXFLAGS = $(WARN_CXXFLAGS) $(XTRA_CXXFLAGS)
+LDFLAGS = $(XTRA_LDFLAGS)
+
+# Automatically derived file names
+MOC_CXX_SRCS = $(addprefix moc_,$(VIEWER_MOC_SRCS:.h=.cpp))
+VIEWER_OBJS = $(addprefix $(OBJDIR)/, $(VIEWER_C_SRCS:.c=.o) \
+	$(VIEWER_CXX_SRCS:.cpp=.o) $(MOC_CXX_SRCS:.cpp=.o))
+LIB3D_OBJS = $(addprefix $(OBJDIR)/,$(LIB3D_C_SRCS:.c=.o))
+LIB3D_SLIB = $(addprefix $(LIBDIR)/,lib3d.a)
+
+#
+# Targets
+#
+
+# Main targets
+default: $(VIEWER_EXE)
+
+all: dirs $(VIEWER_EXE)
+
+clean: 
+	-rm -f deps $(OBJDIR)/*.o $(BINDIR)/* $(LIBDIR)/*
+
+# Executable
+$(VIEWER_EXE): $(VIEWER_OBJS) $(LIB3D_SLIB)
+	$(CXX) $(LDFLAGS) $^ $(LOADLIBES) $(LDLIBS) -o $@
+
+# LIB3D static library (only what we need of lib3d)
+# GNU make automatic rule for archives will be used here
+$(LIB3D_SLIB): $(LIB3D_SLIB)($(LIB3D_OBJS))
+
+# QT/OpenGL GUI (C++)
+$(OBJDIR)/%.o: %.cpp
+	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) $(QTINCFLAGS) $(GLINCFLAGS) $^ -o $@
+
+# Produce QT moc sources
+moc_%.cpp: %.h
+	$(MOC) $^ -o $@
+
+# Error computing functions
+$(OBJDIR)/%.o: %.c
+	$(CC) $(CFLAGS) $(CPPFLAGS) -c $^ -o $@
+
+# lib3d sources
+$(LIB3D_OBJS): $(OBJDIR)/%.o : $(LIB3DDIR)/src/%.c
+	$(CC) $(CFLAGS) $(CPPFLAGS) -c $^ -o $@
+
+#
+# Automatic dependency
+#
+
+ifneq ($(findstring clean,$(MAKECMDGOALS)),clean)
+include deps
+endif
+
+deps:: $(VIEWER_C_SRCS) $(addprefix $(LIB3DDIR)/src/,$(LIB3D_C_SRCS))
+	$(CC) -M $(CPPFLAGS) $^ >> deps
+deps:: $(VIEWER_CXX_SRCS)
+	$(CXX) -M $(CPPFLAGS) $(QTINCFLAGS) $(GLINCFLAGS) $^ >> deps
 
 
-INCLFLAGS = -I$(LIB3DDIR)/include -I. 
-QTINCFLAGS = $(INCLFLAGS) -I$(QTDIR)/include
-GLINCLFLAGS = $(INCLFLAGS) -I/usr/X11R6/include
-DEBUGINCFLAGS = -I/home/sun1/aspert/debug
-XTRA_CFLAGS = -g -O2 
-
-BASE_CFLAGS = $(INCLFLAGS) $(XTRA_CFLAGS)
-GL_CFLAGS = $(GLINCLFLAGS) $(XTRA_CFLAGS)
-
-LIB3D_FLAGS = -L$(LIB3DDIR)/lib -l3d #-limage
-BASE_LIBFLAGS = -L$(LIBDIR)  -lm
-GL_LIBFLAGS = -L$(LIBDIR) -L/usr/X11R6/lib  -lglut -lGL -lGLU -lXmu -lXext -lX11 $(LIB3D_FLAGS) -lm
-
-
-BASE_LDFLAGS = -g -O2  $(BASE_LIBFLAGS)
-GL_LDFLAGS = -g -O2 $(GL_LIBFLAGS)
-QT_LIBFLAGS = -L$(QTDIR)/lib -lqt
-QTGL_LIBFLAGS = $(QT_LIBFLAGS) -L/usr/X11R6/lib -lGLU -lGL $(LIB3D_FLAGS) -lm
-
-
-default : viewer
-
-all: dirs viewer 
-
-clean : 
-	rm $(OBJDIR)/*.o $(BINDIR)/* $(LIBDIR)/* $(LIB3DDIR)/obj/* $(LIB3DDIR)/lib/*
-
-viewer : $(OBJDIR)/viewer.o $(OBJDIR)/ScreenWidget.o $(OBJDIR)/compute_error.o $(OBJDIR)/RawWidget.o $(OBJDIR)/moc_RawWidget.o $(OBJDIR)/moc_ScreenWidget.o $(OBJDIR)/ColorMapWidget.o $(OBJDIR)/ColorMap.o $(OBJDIR)/init.o $(OBJDIR)/moc_init.o lib3d
-	$(CPP) -O2 $(OBJDIR)/viewer.o $(OBJDIR)/ScreenWidget.o $(OBJDIR)/compute_error.o $(OBJDIR)/RawWidget.o $(OBJDIR)/moc_RawWidget.o $(OBJDIR)/moc_ScreenWidget.o $(OBJDIR)/ColorMapWidget.o $(OBJDIR)/ColorMap.o $(OBJDIR)/init.o $(OBJDIR)/moc_init.o -o ../viewer $(QTGL_LIBFLAGS)
-
-lib3d :  $(LIB3DDIR)/obj/3dmodel_io.o $(LIB3DDIR)/obj/normals.o  $(LIB3DDIR)/obj/geomutils.o
-	$(CC) -g -shared -o $(LIB3DDIR)/lib/lib3d.so $^
-
-$(OBJDIR)/viewer.o : viewer.cpp
-	$(CPP) -D_METRO -O2 -ansi $(QTINCFLAGS) $(GL_CFLAGS) -c $< -o $@
-
-$(OBJDIR)/moc_RawWidget.o : moc_RawWidget.cpp
-	$(CPP) -D_METRO -O2 -ansi $(QTINCFLAGS) $(GL_CFLAGS) -c $< -o $@
-
-$(OBJDIR)/moc_ScreenWidget.o : moc_ScreenWidget.cpp
-	$(CPP) -D_METRO -O2 -ansi  $(QTINCFLAGS) $(GL_CFLAGS) -c $< -o $@
-
-$(OBJDIR)/moc_init.o : moc_init.cpp
-	$(CPP) -D_METRO -O2 -ansi $(QTINCFLAGS) $(GL_CFLAGS) -c $< -o $@
-
-moc_ScreenWidget.cpp : ScreenWidget.h
-	$(MOC) $< -o $@
-
-moc_RawWidget.cpp : RawWidget.h
-	$(MOC) $< -o $@
-
-moc_init.cpp : init.h
-	$(MOC) $< -o $@
-
-$(LIB3DDIR)/obj/%.o : $(LIB3DDIR)/src/%.c
-	$(CC) $(BASE_CFLAGS) -D_METRO -c $< -o $@
-
-$(OBJDIR)/%.o : %.c
-	$(CC)  $(BASE_CFLAGS) -D_METRO -c $< -o $@	
-
-$(OBJDIR)/%.o : %.cpp
-	$(CPP) $(BASE_CFLAGS) $(QTINCFLAGS) -D_METRO -c $< -o $@
-
-
-
-
+#
+# Directories
+#
 dirs : libdir bindir objdir
 
 libdir : 
@@ -90,3 +119,6 @@ bindir :
 
 objdir :
 	-[ -d $(OBJDIR) ] || mkdir $(OBJDIR)
+
+# Targets which are not real files
+.PHONY: default all dirs clean libdir bindir objdir
