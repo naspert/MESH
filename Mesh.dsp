@@ -94,6 +94,10 @@ LINK32=link.exe
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat;for;f90"
 # Begin Source File
 
+SOURCE=.\Basic3DViewerWidget.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\lib3d\src\block_list.c
 # End Source File
 # Begin Source File
@@ -110,11 +114,19 @@ SOURCE=.\compute_error.c
 # End Source File
 # Begin Source File
 
+SOURCE=.\Error3DViewerWidget.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\lib3d\src\geomutils.c
 # End Source File
 # Begin Source File
 
 SOURCE=.\InitWidget.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\Lighted3DViewerWidget.cpp
 # End Source File
 # Begin Source File
 
@@ -126,7 +138,15 @@ SOURCE=.\mesh_run.c
 # End Source File
 # Begin Source File
 
+SOURCE=.\moc_Basic3DViewerWidget.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\moc_ColorMapWidget.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\moc_Error3DViewerWidget.cpp
 # End Source File
 # Begin Source File
 
@@ -134,7 +154,7 @@ SOURCE=.\moc_InitWidget.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\moc_RawWidget.cpp
+SOURCE=.\moc_Lighted3DViewerWidget.cpp
 # End Source File
 # Begin Source File
 
@@ -166,10 +186,6 @@ SOURCE=.\lib3d\src\model_in_vrml_iv.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\RawWidget.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=.\reporting.c
 # End Source File
 # Begin Source File
@@ -191,6 +207,39 @@ SOURCE=.\xalloc.c
 # Begin Source File
 
 SOURCE=.\lib3d\include\3dmodel.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\Basic3DViewerWidget.h
+
+!IF  "$(CFG)" == "Mesh - Win32 Release"
+
+# PROP Ignore_Default_Tool 1
+# Begin Custom Build - Moc'ing $(InputName).h ...
+InputDir=.
+InputPath=.\Basic3DViewerWidget.h
+InputName=Basic3DViewerWidget
+
+"$(InputDir)\moc_$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	%qtdir%\bin\moc.exe $(InputDir)\$(InputName).h -o $(InputDir)\moc_$(InputName).cpp
+
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Mesh - Win32 Debug"
+
+# PROP Ignore_Default_Tool 1
+# Begin Custom Build - Moc'ing $(InputName).h ...
+InputDir=.
+InputPath=.\Basic3DViewerWidget.h
+InputName=Basic3DViewerWidget
+
+"$(InputDir)\moc_$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	%qtdir%\bin\moc.exe $(InputDir)\$(InputName).h -o $(InputDir)\moc_$(InputName).cpp
+
+# End Custom Build
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
@@ -239,6 +288,39 @@ SOURCE=.\compute_error.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\Error3DViewerWidget.h
+
+!IF  "$(CFG)" == "Mesh - Win32 Release"
+
+# PROP Ignore_Default_Tool 1
+# Begin Custom Build - Moc'ing $(InputName).h ...
+InputDir=.
+InputPath=.\Error3DViewerWidget.h
+InputName=Error3DViewerWidget
+
+"$(InputDir)\moc_$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	%qtdir%\bin\moc.exe $(InputDir)\$(InputName).h -o $(InputDir)\moc_$(InputName).cpp
+
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Mesh - Win32 Debug"
+
+# PROP Ignore_Default_Tool 1
+# Begin Custom Build - Moc'ing $(InputName).h ...
+InputDir=.
+InputPath=.\Error3DViewerWidget.h
+InputName=Error3DViewerWidget
+
+"$(InputDir)\moc_$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	%qtdir%\bin\moc.exe $(InputDir)\$(InputName).h -o $(InputDir)\moc_$(InputName).cpp
+
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
 SOURCE=.\lib3d\include\geomutils.h
 # End Source File
 # Begin Source File
@@ -276,6 +358,39 @@ InputName=InitWidget
 # End Source File
 # Begin Source File
 
+SOURCE=.\Lighted3DViewerWidget.h
+
+!IF  "$(CFG)" == "Mesh - Win32 Release"
+
+# PROP Ignore_Default_Tool 1
+# Begin Custom Build - Moc'ing $(InputName).h ...
+InputDir=.
+InputPath=.\Lighted3DViewerWidget.h
+InputName=Lighted3DViewerWidget
+
+"$(InputDir)\moc_$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	%qtdir%\bin\moc.exe $(InputDir)\$(InputName).h -o $(InputDir)\moc_$(InputName).cpp
+
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "Mesh - Win32 Debug"
+
+# PROP Ignore_Default_Tool 1
+# Begin Custom Build - Moc'ing $(InputName).h ...
+InputDir=.
+InputPath=.\Lighted3DViewerWidget.h
+InputName=Lighted3DViewerWidget
+
+"$(InputDir)\moc_$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	%qtdir%\bin\moc.exe $(InputDir)\$(InputName).h -o $(InputDir)\moc_$(InputName).cpp
+
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
 SOURCE=.\mesh.h
 # End Source File
 # Begin Source File
@@ -293,39 +408,6 @@ SOURCE=.\model_analysis.h
 # Begin Source File
 
 SOURCE=.\lib3d\include\model_in.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\RawWidget.h
-
-!IF  "$(CFG)" == "Mesh - Win32 Release"
-
-# PROP Ignore_Default_Tool 1
-# Begin Custom Build - Moc'ing $(InputName).h ...
-InputDir=.
-InputPath=.\RawWidget.h
-InputName=RawWidget
-
-"$(InputDir)\moc_$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	%qtdir%\bin\moc.exe $(InputDir)\$(InputName).h -o $(InputDir)\moc_$(InputName).cpp
-
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "Mesh - Win32 Debug"
-
-# PROP Ignore_Default_Tool 1
-# Begin Custom Build - Moc'ing $(InputName).h ...
-InputDir=.
-InputPath=.\RawWidget.h
-InputName=RawWidget
-
-"$(InputDir)\moc_$(InputName).cpp" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	%qtdir%\bin\moc.exe $(InputDir)\$(InputName).h -o $(InputDir)\moc_$(InputName).cpp
-
-# End Custom Build
-
-!ENDIF 
-
 # End Source File
 # Begin Source File
 

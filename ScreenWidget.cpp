@@ -1,4 +1,4 @@
-/* $Id: ScreenWidget.cpp,v 1.52 2003/04/08 09:08:03 dsanta Exp $ */
+/* $Id: ScreenWidget.cpp,v 1.53 2003/04/17 10:45:38 aspert Exp $ */
 
 
 /*
@@ -63,7 +63,8 @@
 #include <qcheckbox.h>
 #include <qstring.h>
 #include <qlabel.h>
-#include <RawWidget.h>
+#include <Lighted3DViewerWidget.h>
+#include <Error3DViewerWidget.h>
 #include <ColorMapWidget.h>
 #include <mesh.h>
 #include <mesh_run.h>
@@ -80,7 +81,8 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   QHBox *frameModel1, *frameModel2;
   QHBox *qhbTimer;
   QGridLayout *bigGrid, *smallGrid;
-  RawWidget *glModel1, *glModel2;
+  Lighted3DViewerWidget *glModel2; // Right GLWidget
+  Error3DViewerWidget *glModel1; // Left GLWidget
   ColorMapWidget *errorColorBar;
   QPushButton *quitBut;
   QRadioButton *verrBut, *fmerrBut, *serrBut;
@@ -152,21 +154,22 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   frameModel2->setFrameStyle(QFrame::Sunken | QFrame::Panel);
   frameModel2->setLineWidth(2);
 
-  glModel1 = new RawWidget(model1, RW_ERROR_ONLY, 
-                           frameModel1, "glModel1");
+  glModel1 = new Error3DViewerWidget(model1, (bool)do_texture, 
+				     frameModel1, "ErrorViewer");
 
   glModel1->setFocusPolicy(StrongFocus);
-  glModel2 = new RawWidget(model2, RW_LIGHT_TOGGLE, frameModel2, "glModel2");
+  glModel2 = new Lighted3DViewerWidget(model2,
+				       frameModel2, "LightedViewer");
   glModel2->setFocusPolicy(StrongFocus);
   errorColorBar = new ColorMapWidget(model1, this, "errorColorBar");
 
   // This is to synchronize the viewpoints of the two models
   // We need to pass the viewing matrix from one RawWidget
   // to another
-  connect(glModel1, SIGNAL(transferValue(double,double,double,double*)), 
-	  glModel2, SLOT(transfer(double,double,double,double*)));
-  connect(glModel2, SIGNAL(transferValue(double,double,double,double*)), 
-	  glModel1, SLOT(transfer(double,double,double,double*)));
+  connect(glModel1, SIGNAL(transferViewParams(double,double,double,double*)), 
+	  glModel2, SLOT(setViewParams(double,double,double,double*)));
+  connect(glModel2, SIGNAL(transferViewParams(double,double,double,double*)), 
+	  glModel1, SLOT(setViewParams(double,double,double,double*)));
 
 
   // Build synchro and quit buttons
@@ -242,9 +245,9 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   verrBut->setChecked(TRUE);
   fmerrBut = new QRadioButton("Face mean error", dispInfoGrp);
   serrBut = new QRadioButton("Sample error", dispInfoGrp);
-  dispInfoGrp->insert(verrBut, RawWidget::VERTEX_ERROR);
-  dispInfoGrp->insert(fmerrBut, RawWidget::MEAN_FACE_ERROR);
-  dispInfoGrp->insert(serrBut, RawWidget::SAMPLE_ERROR);
+  dispInfoGrp->insert(verrBut, Error3DViewerWidget::VERTEX_ERROR);
+  dispInfoGrp->insert(fmerrBut, Error3DViewerWidget::MEAN_FACE_ERROR);
+  dispInfoGrp->insert(serrBut, Error3DViewerWidget::SAMPLE_ERROR);
   if (!do_texture) 
     serrBut->setDisabled(TRUE);
   connect(dispInfoGrp, SIGNAL(clicked(int)), 
@@ -431,16 +434,17 @@ void ScreenWidget::changeGroupBoxTitle(int n)
 void ScreenWidget::disableSlider(int errMode) 
 {
   switch (errMode) {
-  case (RawWidget::VERTEX_ERROR):
+  case (Error3DViewerWidget::VERTEX_ERROR):
     qgbSlider->setDisabled(FALSE);
     break;
-  case (RawWidget::MEAN_FACE_ERROR): 
-  case (RawWidget::SAMPLE_ERROR):
+  case (Error3DViewerWidget::MEAN_FACE_ERROR): 
+  case (Error3DViewerWidget::SAMPLE_ERROR):
     qgbSlider->setDisabled(TRUE);
     break;
   default: /* should never get here */
-    return;
+    break;
   }
+  return;
 }
 
 void ScreenWidget::disableSync(bool state) {
@@ -503,6 +507,7 @@ void ScreenWidget::aboutMesh()
 void ScreenWidget::aboutKeys()
 {
     QMessageBox::about( this, "Key bindings",
+                        "T : Toggle demo mode\n"
 			"F1: Toggle Wireframe/Fill\n"
 			"F2: Toggle lighting (right model only)\n"
 			"F3: Toggle viewpoint synchronization\n"
@@ -514,7 +519,7 @@ void ScreenWidget::aboutBugs()
 {
     QMessageBox::about( this, "Bug",
 			"If you found a bug, please send an e-mail to :\n"
-			"Nicolas.Aspert@epfl.ch or\n"
+			"Nicolas.Aspert@epfl.ch and/or\n"
 			"Diego.SantaCruz@epfl.ch");
 }
 

@@ -1,5 +1,4 @@
-/* $Id: ScreenWidget.h,v 1.32 2003/04/17 10:45:38 aspert Exp $ */
-
+/* $Id: Lighted3DViewerWidget.h,v 1.1 2003/04/17 10:45:37 aspert Exp $ */
 
 /*
  *
@@ -42,63 +41,43 @@
  */
 
 
+#ifndef LIGHTED3DVIEWERWIDGET_H
+#define LIGHTED3DVIEWERWIDGET_H
 
-
-
-
-
-#ifndef SCREENWIDGET_H
-#define SCREENWIDGET_H
-
-/* QT includes */
-#include <qwidget.h>
-#include <qhgroupbox.h>
-#include <qvgroupbox.h>
-#include <qslider.h>
-#include <qspinbox.h>
-#include <qcheckbox.h>
-#include <qpushbutton.h>
+#include <Basic3DViewerWidget.h>
 #include <compute_error.h>
 
 
-class ScreenWidget : public QWidget {
+// This class adds lighting capabilities to Basic3DViewerWidget (and
+// is used for the right GL widget in ScreenWidget)
+class Lighted3DViewerWidget : public Basic3DViewerWidget
+{
   Q_OBJECT
+
 public:
-  ScreenWidget(struct model_error *model1, struct model_error *model2,
-               const struct args *pargs, QWidget *parent=0, 
-               const char *name=0);
+  Lighted3DViewerWidget(struct model_error *model, 
+			QWidget *parent=0, const char *name=0); // constructor
+  ~Lighted3DViewerWidget() { }; // Destructor
+  
+public slots:
+  void setTwoSidedMaterial(bool state);
+  void setLight(bool state);
+  void invertNormals(bool state);
 
 signals:
-  void dsValChange(int n); // wired to Error3DViewerWidget::setVEDownSampling
+  void toggleLight(); // wired to setLight
+  void toggleTwoSidedMaterial(); // wired to setTwoSidedMaterial
+  void toggleNormals(); // wired to invertNormals
 
-protected slots:
-  void quit();
-  void infoLeftModel();
-  void infoRightModel();
-  void disableSlider(int errMode);
-  void disableSync(bool state);
-  void trapChanges(int n);
-  void aboutKeys();
-  void aboutBugs();
-  void aboutMesh();
-  void updatecbStatus(bool state);
-  
+protected:
+  void initializeGL();
+  void keyPressEvent(QKeyEvent*);
+  void rebuildList();
 
-private:
-  QHGroupBox *qgbSlider;
-  QSlider *qslidDispSampDensity;
-  QSpinBox *qspSampDensity, *qspTimerSpeed;
-  QCheckBox *qcbInvNorm, *qcbTwoSide, *qcbTimer;
-  QPushButton *syncBut;
-
-  // local copies of the parameters passed to the constructor
-  struct model_error *locMod1, *locMod2; 
-
-  enum whichModel {LEFT_MODEL=0, RIGHT_MODEL=1}; // values of 'id'
-                                                 // parameter in 'infoModel'
-  void infoModel(struct model_error *model, int id);
-  void changeGroupBoxTitle(int n);
+private:  
+  struct model_error *model;
+  int not_orientable_warned;
+  int two_sided_material;
 };
-
 
 #endif

@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.58 2003/01/13 12:46:06 aspert Exp $
+# $Id: Makefile,v 1.59 2003/04/17 10:45:37 aspert Exp $
 
 
 
@@ -162,8 +162,8 @@ XTRA_CFLAGS = -xO2 # equivalent to '-O2'
 XTRA_CXXFLAGS = -xO2
 DEPFLAG = -xM 
 else
-XTRA_CFLAGS = -O2
-XTRA_CXXFLAGS = -O2
+XTRA_CFLAGS = #-O2
+XTRA_CXXFLAGS = #-O2
 DEPFLAG = -M
 endif
 XTRA_CPPFLAGS = -DNDEBUG
@@ -172,7 +172,7 @@ XTRA_LDFLAGS =
 
 # Derive compiler specific flags
 ifeq ($(CC_IS_GCC)-$(OS)-$(ARCH),gcc-Linux-i686)
-XTRA_CFLAGS += -march=i686 -malign-double 
+#XTRA_CFLAGS += -march=i686 -malign-double 
 endif
 ifeq ($(CC_IS_GCC),gcc)
 C_PROF_OPT = -pg
@@ -181,7 +181,7 @@ WARN_CFLAGS = -pedantic -Wall -W -Winline -Wmissing-prototypes \
         -Wstrict-prototypes -Wnested-externs -Wshadow -Waggregate-return
 # Following options might produce incorrect behaviour if code
 # is modified (only ANSI C aliasing allowed, and no math error checking)
-XTRA_CFLAGS += -fstrict-aliasing -fno-math-errno
+#XTRA_CFLAGS += -fstrict-aliasing -fno-math-errno
 endif
 
 ifeq ($(CC_IS_ICC),Intel)
@@ -326,14 +326,16 @@ endif
 MESH_EXE := $(BINDIR)/mesh
 MESH_C_SRCS := $(wildcard *.c)
 MESH_CXX_SRCS := $(filter-out moc_%.cpp,$(wildcard *.cpp))
-MESH_MOC_SRCS := RawWidget.h ScreenWidget.h InitWidget.h ColorMapWidget.h
+MESH_MOC_SRCS := Basic3DViewerWidget.h Lighted3DViewerWidget.h \
+	Error3DViewerWidget.h ScreenWidget.h InitWidget.h ColorMapWidget.h
 LIB3D_C_SRCS = geomutils.c model_in.c model_in_raw.c model_in_smf.c \
 	model_in_ply.c model_in_vrml_iv.c block_list.c
 
 # Files for distribution
 MISC_FILES = Makefile Mesh.dsp Mesh.dsw meshIcon.xpm README COPYING AUTHORS \
 	CHANGELOG
-LIB3D_INCLUDES = 3dmodel.h geomutils.h model_in.h model_in_ply.h types.h block_list.h debug_print.h
+LIB3D_INCLUDES = 3dmodel.h geomutils.h model_in.h model_in_ply.h types.h \
+	block_list.h debug_print.h
 MESH_INCLUDES := $(wildcard *.h)
 
 # Compiler and linker flags
@@ -347,7 +349,7 @@ LDLIBS = -lqt -lGL -lGLU -lXmu -lXext -lSM -lICE -lXft -lpng -ljpeg -lmng \
 	-lXi -ldl -lXt -lz -lfreetype -lXrender -lX11
 XTRA_LDLIBS += -lm_p -lc_p
 else
-LDLIBS = -lqt -lGL -lGLU -lXmu -lXext -lX11 -lm
+LDLIBS = -lqt -lGL -lGLU -lpthread -lXmu -lXext -lX11 -lm
 endif
 LOADLIBES = -L$(QTDIR)/lib -L/usr/X11R6/lib
 LDFLAGS =

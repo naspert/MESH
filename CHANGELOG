@@ -1,6 +1,13 @@
 * Changes from v1.9 to v1.10:
 	- Added support for panning the 3D views, activated with Ctrl key +
           left button mouse dragging.
+	- Split 'RawWidget' into more readable (and hopefully cleaner) classes
+		o Basic3DViewerWidget is the class that implements basic 
+	          functions (and inherits QGLWidget)
+		o The left GL windows derives from Basic3DViewerWidget and
+		  is implemented in the Error3DViewerWidget class
+		o The right GL windows also derives from Basic3DViewerWidget
+	          and is implemented in Lighted3DViewerWidget
 
 * Changes from v1.8 to v1.9:
 	- Added support for reading raw format with binary data: it provides
