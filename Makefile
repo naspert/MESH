@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.59 2003/04/17 10:45:37 aspert Exp $
+# $Id: Makefile,v 1.60 2003/05/21 15:21:04 aspert Exp $
 
 
 
@@ -162,8 +162,8 @@ XTRA_CFLAGS = -xO2 # equivalent to '-O2'
 XTRA_CXXFLAGS = -xO2
 DEPFLAG = -xM 
 else
-XTRA_CFLAGS = #-O2
-XTRA_CXXFLAGS = #-O2
+XTRA_CFLAGS = -O2
+XTRA_CXXFLAGS = -O2
 DEPFLAG = -M
 endif
 XTRA_CPPFLAGS = -DNDEBUG
