@@ -1,4 +1,4 @@
-/* $Id: xalloc.c,v 1.1 2001/08/17 08:58:52 dsanta Exp $ */
+/* $Id: xalloc.c,v 1.2 2001/08/18 15:56:25 dsanta Exp $ */
 
 #include <xalloc.h>
 #include <stdlib.h>
@@ -6,7 +6,7 @@
 
 static void _xa_outofmem(size_t size)
 {
-  fprintf(stderr,"Out of memory (requested %ud bytes). Exit\n",size);
+  fprintf(stderr,"Out of memory (requested %u bytes). Exit\n",size);
   fprintf(stderr,
           "To locate the offending function call, put a breakpoint\n"
           "with a debugger in the _xa_outofmem function.\n");
