@@ -1,4 +1,4 @@
-/* $Id: InitWidget.cpp,v 1.32 2002/04/09 10:49:52 aspert Exp $ */
+/* $Id: InitWidget.cpp,v 1.33 2002/04/11 08:59:40 aspert Exp $ */
 
 
 /*
@@ -185,9 +185,9 @@ InitWidget::~InitWidget() {
 
 void InitWidget::loadMesh1() {
   QStringList mfilters = QStringList() <<
-    "3D Models (*.raw; *.wrl; *.iv)" <<
+    "3D Models (*.raw; *.wrl; *.iv; *.smf)" <<
 #ifndef DONT_USE_ZLIB
-    "Compressed 3D models (*.raw.gz; *.wrl.gz; *.wrz; *.iv.gz)" <<
+    "Compressed 3D models (*.raw.gz; *.wrl.gz; *.wrz; *.iv.gz; *.smf.gz)" <<
 #endif
     "All files (*.*)";
   QFileDialog *fd=new QFileDialog (QString::null, QString::null, this, 
@@ -207,9 +207,9 @@ void InitWidget::loadMesh1() {
   
 void InitWidget::loadMesh2() {
   QStringList mfilters = QStringList() <<
-    "3D Models (*.raw; *.wrl; *.iv)" <<
+    "3D Models (*.raw; *.wrl; *.iv; *.smf)" <<
 #ifndef DONT_USE_ZLIB
-    "Compressed 3D models (*.raw.gz; *.wrl.gz; *.wrz; *.iv.gz)" <<
+    "Compressed 3D models (*.raw.gz; *.wrl.gz; *.wrz; *.iv.gz; *.smf.gz)" <<
 #endif
     "All files (*.*)";
   QFileDialog *fd=new QFileDialog(QString::null, QString::null, this,
