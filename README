@@ -37,15 +37,18 @@ in 'C:\Program Files\Qt', but for instance in 'C:\Qt'). We provide the
 Micro$oft Visual C++ 6 dsp and dsw files needed to build the program.
 
 * Input data format 
-The input file format for the triangular meshes is a raw ASCII format or
-VRML2. On systems having zlib (>= 1.1) installed, MESH offers the possiblity
-of directly reading gzipped files (since gzipped VRML is in the standard). 
+The input file format for the triangular meshes is a raw ASCII format,
+VRML2, Inventor 2.x and SMF format (used by M. Garland's 'QSlim'). 
+On systems having zlib (>= 1.1) installed, MESH offers the possiblity
+of directly reading gzipped files (gzipped VRML is in the standard). 
 Please note that most of Win32 systems do not have zlib installed. Therefore, 
 on such systems, the program is build without this support for gzipped files.
-However, it is possible to build zlib on Win32 systems. If you whish to do so,
-uncomment the relevant part in 'lib3d/include/model_in.h' (lines 83-85).
+However, it is possible to install zlib on Win32 systems. If you did so,
+and wish to build MESH with zlib on Win32 system, uncomment the relevant part 
+in 'lib3d/include/model_in.h' (lines 83-85), and please provide feedback to
+us about your successes/failures.
 
-The raw ASCII format describes the vertices, the vertex connectivity
+* The raw ASCII format describes the vertices, the vertex connectivity
 and optionally the vertex normals. The first line should contain two or three
 decimal numbers with the number of vertices, the number of triangles and the
 number of vertex normals (if they are present). If the vertex normals are
@@ -54,11 +57,18 @@ affine coordinates for each vertex and then the indices of the three vertices
 of each triangular face. The vertex indices are zero based. If the vertex
 normals are given follows the X, Y, Z affine coordinates of the vertex normal
 vectors, in the same order as the vertices. The normal vectors should all be
-normalized. The VRML2 parser reads IndexedFaceSet nodes, ignoring all
+normalized. 
+* The VRML2 parser reads IndexedFaceSet nodes, ignoring all
 transformations, and does not support USE tags (DEF tags are ignored). Only
 triangular meshes are accepted.
+* The Inventor parser only reads the Coordinate3-point and 
+IndexedFaceSet-coordIndex nodes. It will ignore all other fields, 
+icluding Normal vectors.
+* The SMF parser will *only* read vertices and faces. It will ignore 
+everything else in the SMF specification (bindings, colors, transforms, 
+begin/end ...).
 
-Please report any bugs to:
+Please report any bugs or comments to:
 
-	Nicolas.Aspert@epfl.ch
-	Diego.SantaCruz@epfl.ch
+	Nicolas Aspert <Nicolas.Aspert@epfl.ch>
+	Diego SantaCruz <Diego.SantaCruz@epfl.ch>
