@@ -1,4 +1,4 @@
-/* $Id: model_in.c,v 1.35 2002/10/16 13:02:47 aspert Exp $ */
+/* $Id: model_in.c,v 1.36 2002/11/04 15:40:29 aspert Exp $ */
 
 
 /*
@@ -221,10 +221,6 @@ int int_scanf(struct file_data *data, int *out)
 #endif
     refill_buffer(data);
   }
-
-#ifdef DEBUG
-  printf("[int_scanf] %d\n", tmp);
-#endif
 
   *out = tmp;
   return 1;
