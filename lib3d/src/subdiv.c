@@ -1,4 +1,4 @@
-/* $Id: subdiv.c,v 1.5 2001/10/12 13:42:14 aspert Exp $ */
+/* $Id: subdiv.c,v 1.6 2001/10/12 14:56:44 aspert Exp $ */
 #include <3dutils.h>
 #include <subdiv_methods.h>
 
@@ -282,12 +282,13 @@ int main(int argc, char **argv) {
   char *infile, *outfile;
   struct model *or_model, *sub_model;
   struct info_vertex* tmp_vert;
-  int i;
-  int sub_method = -1;
+  int i, lev, nlev=1;
+  int sub_method=-1;
 
 
-  if (argc != 4) {
-    fprintf(stderr, "Usage: subdiv_sph [-sph, -but, -loop] infile outfile\n");
+  if (argc != 4 && argc != 5) {
+    fprintf(stderr, 
+	    "Usage: subdiv_sph [-sph, -but, -loop] infile outfile n_lev\n");
     exit(1);
   }
   if (strcmp(argv[1], "-sph") == 0) 
@@ -305,35 +306,45 @@ int main(int argc, char **argv) {
   infile = argv[2];
   outfile = argv[3];
 
+  if (argc==5)
+    nlev = atoi(argv[4]);
+  
+  if (nlev < 1)
+    nlev = 1;
+
   or_model = read_raw_model(infile);
 
-  if (or_model->normals == NULL && sub_method == SUBDIV_SPH) {
-    tmp_vert = (struct info_vertex*)
-      malloc(or_model->num_vert*sizeof(struct info_vertex));
-    or_model->area = (double*)malloc(or_model->num_faces*sizeof(double));
-    or_model->face_normals = compute_face_normals(or_model, tmp_vert);
-    compute_vertex_normal(or_model, tmp_vert, or_model->face_normals);
-    for (i=0; i<or_model->num_vert; i++)
-      free(tmp_vert->list_face);
-    free(tmp_vert);
-  }
+  for (lev=0; lev<nlev; lev++) {
+    if (or_model->normals == NULL && sub_method == SUBDIV_SPH) {
+      tmp_vert = (struct info_vertex*)
+	malloc(or_model->num_vert*sizeof(struct info_vertex));
+      or_model->area = (double*)malloc(or_model->num_faces*sizeof(double));
+      or_model->face_normals = compute_face_normals(or_model, tmp_vert);
+      compute_vertex_normal(or_model, tmp_vert, or_model->face_normals);
+      for (i=0; i<or_model->num_vert; i++)
+	free(tmp_vert->list_face);
+      free(tmp_vert);
+    }
 
-  /* performs the subdivision */
-  if (sub_method == SUBDIV_SPH) 
-    sub_model = subdiv(or_model, compute_midpoint_sph, NULL);
-  else if (sub_method == SUBDIV_BUTTERFLY) 
-    sub_model = subdiv(or_model, compute_midpoint_butterfly, NULL);
-  else if (sub_method == SUBDIV_LOOP)
-    sub_model = subdiv(or_model, compute_midpoint_loop, update_vertices_loop);
-  else {
-    fprintf(stderr, "ERROR : Invalid subdivision method found = %d\n", 
-	    sub_method);
-    exit(1);
+    /* performs the subdivision */
+    if (sub_method == SUBDIV_SPH) 
+      sub_model = subdiv(or_model, compute_midpoint_sph, NULL);
+    else if (sub_method == SUBDIV_BUTTERFLY) 
+      sub_model = subdiv(or_model, compute_midpoint_butterfly, NULL);
+    else if (sub_method == SUBDIV_LOOP)
+      sub_model = subdiv(or_model, compute_midpoint_loop, update_vertices_loop);
+    else {
+      fprintf(stderr, "ERROR : Invalid subdivision method found = %d\n", 
+	      sub_method);
+      exit(1);
+    }
+    
+    free_raw_model(or_model);
+    
+    or_model = sub_model;
   }
-  
   write_raw_model(sub_model, outfile);
 
-  free_raw_model(or_model);
   free_raw_model(sub_model);
   return 0;
 }
