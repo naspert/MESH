@@ -1,4 +1,4 @@
-/* $Id: normals.h,v 1.16 2002/05/13 13:50:46 aspert Exp $ */
+/* $Id: normals.h,v 1.17 2002/06/04 08:47:30 aspert Exp $ */
 #include <3dmodel.h>
 
 #ifndef _NORMALS_PROTO
@@ -46,20 +46,8 @@ struct edge_list {
 #ifdef __cplusplus
 extern "C" {
 #endif
-  int compar(const void*, const void*);
-  void add_edge_dg(struct dual_graph_info*, const struct edge_sort*, 
-		   const struct edge_sort*);
-  int build_edge_list(const struct model*, struct dual_graph_info*, 
-		      struct info_vertex*, struct dual_graph_index **);
-  struct edge_list* find_dual_edges(const int, int*, struct dual_graph_info*, 
-                                    struct edge_list*, 
-                                    const struct dual_graph_index*);
   struct face_tree** bfs_build_spanning_tree(const struct model*, 
 					     struct info_vertex*);
-  int find_center(const face_t*, const int, const int);
-  void update_child_edges(struct face_tree*, const int, 
-                          const int, const int);
-  void build_normals(const struct model*, struct face_tree*, vertex_t*);
   vertex_t* compute_face_normals(const struct model*, struct info_vertex*);
   void compute_vertex_normal(struct model*, const struct info_vertex*, 
                              const vertex_t*);

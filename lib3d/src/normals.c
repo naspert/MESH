@@ -1,11 +1,11 @@
-/* $Id: normals.c,v 1.30 2002/05/13 13:50:47 aspert Exp $ */
+/* $Id: normals.c,v 1.31 2002/06/04 08:47:32 aspert Exp $ */
 #include <3dmodel.h>
 #include <geomutils.h>
 #include <normals.h>
 
 
 /* Compares two edges (s.t. they are in lexico. order after qsort) */
-int compar(const void* ed0, const void* ed1) {
+static int compar(const void* ed0, const void* ed1) {
   int tmp;
 
   if ((tmp=((struct edge_sort*)ed0)->prim.v0-
@@ -17,8 +17,9 @@ int compar(const void* ed0, const void* ed1) {
 }
 
 /* Adds an edge in the dual graph and returns the last elt. in the graph */
-void add_edge_dg(struct dual_graph_info *dual_graph, 
-		 const struct edge_sort* e0, const struct edge_sort* e1) {
+static void add_edge_dg(struct dual_graph_info *dual_graph, 
+                        const struct edge_sort* e0, 
+                        const struct edge_sort* e1) {
 
   int n = dual_graph->num_edges_dual;
 
@@ -34,10 +35,10 @@ void add_edge_dg(struct dual_graph_info *dual_graph,
 /* Returns the number of edges from the dual graph or -1 if a non-manifold */
 /* edge is encoutered. The list of faces surrounding each vertex is done */
 /* at the same time */
-int build_edge_list(const struct model *raw_model, 
-		    struct dual_graph_info *dual_graph, 
-		    struct info_vertex *curv, 
-		    struct dual_graph_index **dg_idx){
+static int build_edge_list(const struct model *raw_model, 
+                           struct dual_graph_info *dual_graph, 
+                           struct info_vertex *curv, 
+                           struct dual_graph_index **dg_idx){
   struct edge_sort *list;
   int i, f;
   int v0, v1, v2;
@@ -140,10 +141,11 @@ int build_edge_list(const struct model *raw_model,
 /* into 'bot' and update 'ne_dual'*/
 /* we assume that 'bot' points on the last non-NULL elt of the and we return */
 /* the last elt. of this list afterwards */
-struct edge_list* find_dual_edges(const int cur_face,  int *nfound, 
-				  struct dual_graph_info *dual_graph, 
-				  struct edge_list *bot, 
-				  const struct dual_graph_index *dg_index) {
+static struct edge_list* 
+find_dual_edges(const int cur_face,  int *nfound, 
+                struct dual_graph_info *dual_graph, 
+                struct edge_list *bot, 
+                const struct dual_graph_index *dg_index) {
 
 
   int i, id;
@@ -384,8 +386,8 @@ int find_center(const face_t *cur,const int v1, const int v2) {
 
 
 
-void update_child_edges(struct face_tree *tree, const int v0, 
-                        const int v1, const int v2) {
+static void update_child_edges(struct face_tree *tree, const int v0, 
+                               const int v1, const int v2) {
   int __tmp;
 
 #ifndef __swap_vert
@@ -426,8 +428,9 @@ void update_child_edges(struct face_tree *tree, const int v0,
 
 
 
-void build_normals(const struct model *raw_model, struct face_tree *tree, 
-		   vertex_t* normals) {
+static void build_normals(const struct model *raw_model, 
+                          struct face_tree *tree, 
+                          vertex_t* normals) {
 
   int v0=-1, v1=-1, v2=-1;
 
@@ -550,9 +553,9 @@ vertex_t* compute_face_normals(const struct model* raw_model,
   printf("Face normals done !\n");
   
   for (i=0; i<raw_model->num_faces; i++) {
-#ifdef NORM_DEBUG
-    printf("face_normals[%d] = %f %f %f\n", i, normals[i].x, normals[i].y,  
-	   normals[i].z); 
+#if 0
+    printf("face_normals[%d] = %f %f %f\n", i, -normals[i].x, -normals[i].y,  
+	   -normals[i].z); 
 #endif
     free(tree[i]);
   }
@@ -598,8 +601,8 @@ void compute_vertex_normal(struct model* raw_model,
 
     __normalize_v(tmp);
     raw_model->normals[i] = tmp;
-#ifdef NORM_DEBUG
-    printf("%d : %f %f %f\n",i, raw_model->normals[i].x, 
+#if 0
+    printf("vertex %d : %f %f %f\n",i, raw_model->normals[i].x, 
 	   raw_model->normals[i].y, raw_model->normals[i].z); 
 #endif
     
