@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.27 2002/02/06 15:31:23 dsanta Exp $
+# $Id: Makefile,v 1.28 2002/02/20 17:27:41 dsanta Exp $
 
 #
 # If the make variable PROFILE is defined to a non-empty value, profiling
@@ -78,8 +78,8 @@ XTRA_CFLAGS += -g -pipe
 WARN_CFLAGS = -pedantic -Wall -W -Winline -Wmissing-prototypes \
         -Wstrict-prototypes -Wnested-externs -Wshadow -Waggregate-return
 # Following options might produce incorrect behaviour if code
-# is modified (only ANSI C aliasing allowed, and no strict IEEE math)
-XTRA_CFLAGS += -fstrict-aliasing -ffast-math -fno-math-errno
+# is modified (only ANSI C aliasing allowed, and no math error checking)
+XTRA_CFLAGS += -fstrict-aliasing -fno-math-errno
 endif
 ifeq ($(CC_IS_ICC),Intel)
 C_PROF_OPT = -p
