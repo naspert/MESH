@@ -1,4 +1,4 @@
-/* $Id: model_in.c,v 1.10 2002/04/03 09:24:49 aspert Exp $ */
+/* $Id: model_in.c,v 1.11 2002/04/05 10:56:48 dsanta Exp $ */
 
 
 /*
@@ -298,7 +298,8 @@ static int string_scanf(struct file_data *data, char *out) {
     c = getc(data);
     stmp[nb_read++] = (char)c;
   } while (c != ' ' && c != '\t' && c != '\n' && c != '\r' && c != '#' &&
-           c != '\"' && c!=',' && c != EOF && nb_read < MAX_WORD_LEN+1);
+           c != '\"' && c!=',' && c != '[' && c != '{' &&
+           c != EOF && nb_read < MAX_WORD_LEN+1);
   
   if (nb_read > 1 && nb_read < MAX_WORD_LEN) {
     if (c != EOF)
