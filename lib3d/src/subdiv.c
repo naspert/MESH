@@ -1,4 +1,4 @@
-/* $Id: subdiv.c,v 1.32 2003/03/04 16:39:25 aspert Exp $ */
+/* $Id: subdiv.c,v 1.33 2003/03/12 14:54:23 aspert Exp $ */
 #include <3dutils.h>
 #include <subdiv_methods.h>
 #include <subdiv.h>
@@ -74,8 +74,7 @@ struct model* subdiv(struct model *raw_model, const int sub_method,
 
     if (rings[i].type != 0 && rings[i].type != 1)
       continue;
-    mp_info[i].edge_subdiv_done = (bitmap_t*)
-      calloc((rings[i].size + BITMAP_T_BITS - 1)/BITMAP_T_BITS, BITMAP_T_SZ);
+    mp_info[i].edge_subdiv_done = BITMAP_ALLOC(rings[i].size);
     mp_info[i].size = rings[i].size;
     mp_info[i].midpoint_idx = (int*)malloc(mp_info[i].size*sizeof(int));
    

@@ -1,4 +1,4 @@
-/* $Id: normals.c,v 1.38 2003/03/04 15:26:56 aspert Exp $ */
+/* $Id: normals.c,v 1.39 2003/03/12 14:54:22 aspert Exp $ */
 #include <3dmodel.h>
 #include <geomutils.h>
 #include <normals.h>
@@ -169,8 +169,7 @@ struct face_tree** bfs_build_spanning_tree(const struct model *raw_model,
 
 
   ne_dual = build_edge_list(raw_model, dual_graph, ring, dg_idx);
-  dual_graph->done = (bitmap_t*)calloc(
-    (dual_graph->num_edges_dual+BITMAP_T_BITS-1)/BITMAP_T_BITS, BITMAP_T_SZ);
+  dual_graph->done = BITMAP_ALLOC(dual_graph->num_edges_dual);
 #ifdef NORM_VERB
   printf("done\n");
 #endif

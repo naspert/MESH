@@ -1,4 +1,4 @@
-/* $Id: normals.h,v 1.20 2003/03/04 15:26:55 aspert Exp $ */
+/* $Id: normals.h,v 1.21 2003/03/12 14:54:22 aspert Exp $ */
 #include <3dmodel.h>
 #include <ring.h>
 
@@ -9,6 +9,8 @@ typedef int bitmap_t;
 #define BITMAP_T_SZ (sizeof(bitmap_t))
 #define BITMAP_T_BITS (8*BITMAP_T_SZ)
 #define BITMAP_T_MASK (BITMAP_T_BITS-1)
+#define BITMAP_ALLOC(nelem) \
+        (bitmap_t*)calloc(((nelem)+BITMAP_T_BITS-1)/BITMAP_T_BITS, BITMAP_T_SZ)
 #define BITMAP_TEST_BIT(bm, i) \
         ((bm)[(i)/BITMAP_T_BITS] & (1 << ((i) & BITMAP_T_MASK)))
 #define BITMAP_SET_BIT(bm, i) \
