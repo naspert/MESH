@@ -1,4 +1,4 @@
-/* $Id: 3dmodel_io.c,v 1.4 2001/03/14 10:25:43 aspert Exp $ */
+/* $Id: 3dmodel_io.c,v 1.5 2001/03/14 10:27:22 aspert Exp $ */
 #include <3dmodel.h>
 
 
@@ -27,13 +27,12 @@ int read_header(FILE *pf, int *nvert, int *nfaces, int *nnorms) {
     *nfaces = atoi(tok2);
     *nvert = atoi(tok1);
     if (*nvert != *nnorms) {
-      fprintf(stderr, "Incorrect number of normals %d\n", *nnorms);
+      fprintf(stderr, "Incorrect number of normals\n", *nnorms);
       return 0;
     }
   } else if (tok1 != NULL && tok2 != NULL) {
     *nfaces = atoi(tok2);
     *nvert = atoi(tok1);
-    printf("nfaces = %d nvert = %d\n", *nfaces, *nvert);
   } else {
     fprintf(stderr, "Invalid header\n");
     return 0;
