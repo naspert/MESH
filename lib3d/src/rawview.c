@@ -1,4 +1,4 @@
-/* $Id: rawview.c,v 1.19 2002/08/15 13:34:37 aspert Exp $ */
+/* $Id: rawview.c,v 1.20 2002/09/09 08:36:16 aspert Exp $ */
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -128,7 +128,7 @@ static void reshape(int width, int height) {
 /* ******************************************** */
 /* Initial settings of the rendering parameters */
 /* ******************************************** */
-static void gfx_init(struct model *raw_model) {
+static void gfx_init() {
   const char *glverstr;
 
   glverstr = (const char*)glGetString(GL_VERSION);
@@ -543,7 +543,7 @@ int main(int argc, char **argv) {
   glutMotionFunc(motion_mouse);
 
   /* 1st frame + build model */
-  gfx_init(raw_model);
+  gfx_init();
 
   /* Go for it */
   glutMainLoop();

@@ -1,10 +1,12 @@
-/* $Id: curvature.c,v 1.5 2002/06/11 15:41:35 aspert Exp $ */
+/* $Id: curvature.c,v 1.6 2002/09/09 08:36:15 aspert Exp $ */
 #include <3dutils.h>
 #include <ring.h>
+#include <curvature.h>
 
 /* Returns the angle lying at vertex v0 in the triangle v0v1v2 */
 static double get_top_angle(const vertex_t *v0, const vertex_t *v1, 
-                            const vertex_t *v2) {
+                            const vertex_t *v2) 
+{
   vertex_t u0, u1;
   double tmp;
 
@@ -42,7 +44,8 @@ static double get_top_angle(const vertex_t *v0, const vertex_t *v1,
 
 /* Test face f from raw_model to check if this is an obtuse triangle */
 static int obtuse_triangle(const vertex_t *v0, const vertex_t *v1, 
-                           const vertex_t *v2) {
+                           const vertex_t *v2) 
+{
   double th, sum=0.0;
 
   th = get_top_angle(v0, v1, v2);
@@ -60,11 +63,11 @@ static int obtuse_triangle(const vertex_t *v0, const vertex_t *v1,
 }
 
 static void
-compute_mean_curvature_normal(const struct model *raw_model, 
-                              struct info_vertex *info, 
+compute_mean_curvature_normal(const struct model *raw_model,
                               int v0, const struct ring_info *rings, 
                               vertex_t *sum_vert, double *mixed_area, 
-                              double *gauss_curv, double *mean_curv) {
+                              double *gauss_curv, double *mean_curv) 
+{
 
   int v1, v1_idx, v2f, v2b, v2b_idx, v2, i;
   int n=rings[v0].size;
@@ -157,8 +160,9 @@ compute_mean_curvature_normal(const struct model *raw_model,
 
 
 int compute_curvature_with_rings(const struct model *raw_model, 
-                                  struct info_vertex *info, 
-                                  const struct ring_info *rings) {
+                                 struct info_vertex *info, 
+                                 const struct ring_info *rings) 
+{
   int i;
   double k, k2, delta;
   
@@ -168,7 +172,7 @@ int compute_curvature_with_rings(const struct model *raw_model,
 	      rings[i].type, i);
       return 1;
     }
-    compute_mean_curvature_normal(raw_model, info, i, rings, 
+    compute_mean_curvature_normal(raw_model, i, rings, 
 				  &(info[i].mean_curv_normal), 
 				  &(info[i].mixed_area), 
 				  &(info[i].gauss_curv), 
@@ -202,7 +206,8 @@ int compute_curvature_with_rings(const struct model *raw_model,
 
 
 /* Calls the above function but do the rings computation before */
-int compute_curvature(struct model *raw_model, struct info_vertex *info) {
+int compute_curvature(const struct model *raw_model, struct info_vertex *info) 
+{
   struct ring_info* rings;
   int i, ret;
 

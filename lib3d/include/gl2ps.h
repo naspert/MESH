@@ -2,7 +2,7 @@
  * GL2PS, an OpenGL to PostScript Printing Library
  * Copyright (C) 1999-2002  Christophe Geuzaine
  *
- * $Id: gl2ps.h,v 1.7 2002/06/18 11:51:14 aspert Exp $
+ * $Id: gl2ps.h,v 1.8 2002/09/09 08:36:15 aspert Exp $
  *
  * E-mail: geuz@geuz.org
  * URL: http://www.geuz.org/gl2ps/
@@ -28,6 +28,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 /* To generate a Windows dll, you have to define GL2PSDLL at compile
    time */
@@ -54,7 +55,7 @@
 #endif /* __APPLE__ */
 
 
-#define GL2PS_VERSION                    0.6
+#define GL2PS_VERSION                    0.61
 #define GL2PS_NONE                       0
 
 /* Output file format */
@@ -77,6 +78,7 @@
 #define GL2PS_OCCLUSION_CULL             (1<<4)
 #define GL2PS_NO_TEXT                    (1<<5)
 #define GL2PS_LANDSCAPE                  (1<<6)
+#define GL2PS_NO_PS3_SHADING             (1<<7)
 
 /* Arguments for gl2psEnable/gl2psDisable */
 
@@ -90,6 +92,8 @@
 #define GL2PS_DEPTH_FACT                 1000.0
 #define GL2PS_SIMPLE_OFFSET              0.05
 #define GL2PS_SIMPLE_OFFSET_LARGE        1.0
+#define GL2PS_ZERO(arg)                  (fabs(arg)<1.e-20)
+/*#define GL2PS_ZERO(arg)                ((arg)==0.0)*/
 
 /* Message levels */
 
@@ -131,7 +135,6 @@
 
 typedef GLfloat GL2PSrgba[4];
 typedef GLfloat GL2PSxyz[3];
-typedef GLfloat GL2PSxy[2];
 typedef GLfloat GL2PSplane[4];
 
 typedef struct {
@@ -166,6 +169,7 @@ typedef struct {
 
 typedef struct {
   GLint format, sort, options, colorsize, colormode, buffersize;
+  GLfloat red_th,green_th,blue_th;
   char *title, *producer, *filename;
   GLboolean shade, boundary;
   GLfloat *feedback, offset[2];
@@ -193,6 +197,7 @@ GL2PSDLL_API GLvoid gl2psEnable(GLint mode);
 GL2PSDLL_API GLvoid gl2psDisable(GLint mode);
 GL2PSDLL_API GLvoid gl2psPointSize(GLfloat value);
 GL2PSDLL_API GLvoid gl2psLineWidth(GLfloat value);
+GL2PSDLL_API GLvoid gl2psSetNumShadeColors(GLint nr, GLint ng, GLint nb);
 
 #ifdef __cplusplus
 };

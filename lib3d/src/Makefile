@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.45 2002/08/26 12:22:16 aspert Exp $
+# $Id: Makefile,v 1.46 2002/09/09 08:36:15 aspert Exp $
 
 
 OS := $(shell uname -s)
@@ -12,7 +12,9 @@ TARGETS = torus cone dirac compare_curv
 GSL_TARGETS = maps_lsq
 ifeq ($(OS), Linux)
 CC = gcc
-XTRA_CFLAGS = -g  -pipe -ansi -pedantic -Wall -DREAD_TIME  # -DDEBUG \
+XTRA_CFLAGS = -g  -pipe -ansi -pedantic -Wall -DREAD_TIME  -W -Winline \
+	-Wmissing-prototypes -Wstrict-prototypes -Wnested-externs \
+	-Wshadow -Waggregate-return # -DDEBUG \
 	-D__BUTTERFLY_CREASE_DEBUG -DDONT_USE_ZLIB
 
 
