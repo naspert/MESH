@@ -1,3 +1,4 @@
+/* $Id: ScreenWidget.h,v 1.4 2001/06/12 08:53:17 aspert Exp $ */
 #ifndef SCREENWIDGET_H
 #define SCREENWIDGET_H
 
@@ -18,8 +19,6 @@
 #include <qfiledialog.h>
 #include <qmime.h>
 
-#include "fileprint.xpm"
-#include "fileopen.xpm"
 
 class ScreenWidget : public QWidget
 {
