@@ -1,4 +1,4 @@
-/* $Id: normals.c,v 1.27 2002/03/26 08:42:03 aspert Exp $ */
+/* $Id: normals.c,v 1.28 2002/04/16 06:42:23 aspert Exp $ */
 #include <3dmodel.h>
 #include <geomutils.h>
 #include <normals.h>
@@ -6,7 +6,7 @@
 
 
 void build_star_global(const struct model *raw_model, 
-                       struct ring_info **ring) {
+                       struct ring_info *ring) {
   int i, j, k, l;
   int *num_edges=NULL; /* number of edges in the 1-ring */
   struct edge_v **edge_list_primal=NULL;
@@ -18,10 +18,11 @@ void build_star_global(const struct model *raw_model,
   
   edge_list_primal = (struct edge_v**)
     calloc(raw_model->num_vert, sizeof(struct edge_v*));
-  
-  memset(*ring, 0, raw_model->num_vert*sizeof(struct ring_info));
+
+  memset(ring, 0, raw_model->num_vert*sizeof(struct ring_info));
 
   num_edges = (int*)calloc(raw_model->num_vert, sizeof(int));
+  
   
   /* List all the edges in the 1-rings */
   for (i=0; i<raw_model->num_faces; i++) {
@@ -140,15 +141,15 @@ void build_star_global(const struct model *raw_model,
         free(done);
         free(final_star);
         free(face_star);
-        (*ring)[i].type = 2;
+        ring[i].type = 2;
         /* 
          *  What follows is implicitely done by memset-ing the
          *  structure to 0 :
          *
-         *  (*ring)[i].size = 0;
-         *  (*ring)[i].n_faces = 0;
-         *  (*ring)[i].ord_face = NULL;
-         *  (*ring)[i].ord_vert = NULL;
+         *  ring[i].size = 0;
+         *  ring[i].n_faces = 0;
+         *  ring[i].ord_face = NULL;
+         *  ring[i].ord_vert = NULL;
          *
          */
         continue;
@@ -156,15 +157,18 @@ void build_star_global(const struct model *raw_model,
     }
     if (final_star[0] == final_star[star_size-1]) {    /* Regular vertex */
       star_size--;
-      (*ring)[i].type = 0;
+      ring[i].type = 0;
     } else     /* Boundary vertex */
-      (*ring)[i].type = 1;
-    (*ring)[i].size = star_size;
-    (*ring)[i].ord_vert = (int*)malloc(star_size*sizeof(int));
-    memcpy((*ring)[i].ord_vert, final_star, star_size*sizeof(int));
-    (*ring)[i].n_faces = n_faces;
-    (*ring)[i].ord_face = (int*)malloc(n_faces*sizeof(int));
-    memcpy((*ring)[i].ord_face, face_star, n_faces*sizeof(int));
+      ring[i].type = 1;
+    ring[i].size = star_size;
+    ring[i].ord_vert = (int*)malloc(star_size*sizeof(int));
+    memcpy(ring[i].ord_vert, final_star, star_size*sizeof(int));
+#if 1
+    printf("vertex %d: valence=%d\n", i, star_size);
+#endif
+    ring[i].n_faces = n_faces;
+    ring[i].ord_face = (int*)malloc(n_faces*sizeof(int));
+    memcpy(ring[i].ord_face, face_star, n_faces*sizeof(int));
 
     free(final_star);
     free(face_star);

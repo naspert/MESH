@@ -1,4 +1,4 @@
-/* $Id: normals.h,v 1.14 2002/03/26 08:42:03 aspert Exp $ */
+/* $Id: normals.h,v 1.15 2002/04/16 06:42:23 aspert Exp $ */
 #include <3dmodel.h>
 
 #ifndef _NORMALS_PROTO
@@ -53,7 +53,7 @@ struct edge_list {
 #ifdef __cplusplus
 extern "C" {
 #endif
-  void build_star_global(const struct model*, struct ring_info**);
+  void build_star_global(const struct model*, struct ring_info*);
   void build_star(const struct model*, int, struct ring_info*);
   int compar(const void*, const void*);
   void add_edge_dg(struct dual_graph_info*, const struct edge_sort*, 

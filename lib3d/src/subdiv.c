@@ -1,4 +1,4 @@
-/* $Id: subdiv.c,v 1.19 2002/03/22 16:11:34 aspert Exp $ */
+/* $Id: subdiv.c,v 1.20 2002/04/16 06:42:23 aspert Exp $ */
 #include <3dutils.h>
 #include <subdiv_methods.h>
 #include <assert.h>
@@ -39,7 +39,7 @@ struct model* subdiv(struct model *raw_model,
     malloc(raw_model->num_vert*sizeof(struct midpoint_info));
 
 
-  build_star_global(raw_model, &rings);
+  build_star_global(raw_model, rings);
 
   for (i=0; i<raw_model->num_vert; i++) {
 
