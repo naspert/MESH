@@ -1,4 +1,4 @@
-/* $Id: rawview3.c,v 1.17 2001/09/13 13:15:13 aspert Exp $ */
+/* $Id: rawview3.c,v 1.18 2001/09/14 12:51:09 aspert Exp $ */
 
 #include <GL/gl.h>
 #include <GL/glu.h>
@@ -12,7 +12,7 @@
 /* step for rotation motion */
 #define ANGLE_STEP 0.5
 /* step for forward/backward motion */
-#define TRANSL_STEP 0.1
+#define TRANSL_STEP 1e-2
 
 /* ****************** */
 /* Useful Global vars */
@@ -147,7 +147,7 @@ void motion_mouse(int x, int y) {
     glutPostRedisplay();
   }
   else if (middle_button_state == 1) {
-    distance += dy*TRANSL_STEP;
+    distance += dy*dstep;
     glutPostRedisplay();
   }
   else if (right_button_state == 1) { 
@@ -890,7 +890,7 @@ int main(int argc, char **argv) {
   distance = dist(raw_model->bBox[0], raw_model->bBox[1])/
     tan(FOV*M_PI_2/180.0);
   
-  dstep = distance*0.01;
+  dstep = distance*TRANSL_STEP;
 
 
   r_model = raw_model;
