@@ -1,15 +1,22 @@
-/* $Id: mesh.cpp,v 1.24 2002/02/26 07:29:09 aspert Exp $ */
+/* $Id: mesh.cpp,v 1.25 2002/02/26 10:33:17 dsanta Exp $ */
 
 #include <time.h>
 #include <string.h>
 #include <qapplication.h>
 #include <qprogressdialog.h>
 #include <qpixmap.h>
+#include <mesh.h>
 #include <meshIcon.xpm>
 #include <ScreenWidget.h>
 #include <InitWidget.h>
 #include <mesh_run.h>
 #include <3dmodel_io.h>
+
+/* The version string, also parsed by Makefile */
+const char *version = "0.9";
+
+/* The Copyright */
+const char *copyright = "2001-2002 EPFL";
 
 /* Prints usage information to the out stream */
 static void print_usage(FILE *out)
@@ -18,6 +25,10 @@ static void print_usage(FILE *out)
           "Hausdorff distance\n");
   fprintf(out,"\n");
   fprintf(out,"usage: mesh [[options] file1 file2]\n");
+  fprintf(out,"\n");
+  fprintf(out,"version: %s\n",version);
+  fprintf(out,"\n");
+  fprintf(out,"Copyright (C) %s\n",copyright);
   fprintf(out,"\n");
   fprintf(out,"The program measures the distance from the 3D model in\n");
   fprintf(out,"file1 to the one in file2. The models must be given as\n");
