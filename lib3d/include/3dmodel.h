@@ -1,4 +1,4 @@
-/* $Id: 3dmodel.h,v 1.7 2001/06/08 15:47:47 aspert Exp $ */
+/* $Id: 3dmodel.h,v 1.8 2001/06/12 08:33:44 aspert Exp $ */
 #ifdef MPATROL_TEST
 #include <mpatrol.h>
 #endif
@@ -36,24 +36,6 @@ typedef struct {
   int f2;
 }face;
 
-
-typedef struct {
-  int num_faces;
-  int num_vert;
-  int builtin_normals; /* 1 if normals are already in the file 0 otherwise */
-  vertex* vertices;
-  vertex* normals; /* Normals for each vertex of the model */
-  vertex *face_normals;
-  face* faces;
-  double* area; /* area of each face */
-  vertex bBox[2]; /* bBox[0] is the min  bBox[1] is the max */
-#ifdef EST_NORMALS
-  vertex *est_normals;
-#endif
-#ifdef _METRO
-  int *error; 
-#endif
-}model;
 
 
 
@@ -112,6 +94,31 @@ typedef struct fnode {
   face_tree_ptr parent;
   int v0,v1,v2;
 }face_tree;
+
+
+typedef struct {
+  int num_faces;
+  int num_vert;
+  int builtin_normals; /* 1 if normals are already in the file 0 otherwise */
+  vertex* vertices;
+  vertex* normals; /* Normals for each vertex of the model */
+  vertex *face_normals;
+  face* faces;
+  double* area; /* area of each face */
+  vertex bBox[2]; /* bBox[0] is the min  bBox[1] is the max */
+  face_tree_ptr *tree; /* spanning tree of the dual graph */
+#ifdef EST_NORMALS
+  vertex *est_normals;
+#endif
+
+
+
+#ifdef _METRO
+  int *error; 
+#endif
+}model;
+
+
 
 typedef struct dual_list *edge_list_ptr;
 

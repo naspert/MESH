@@ -1,4 +1,4 @@
-/* $Id: rawview3.c,v 1.11 2001/05/04 12:35:00 aspert Exp $ */
+/* $Id: rawview3.c,v 1.12 2001/06/12 08:33:45 aspert Exp $ */
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <GL/glut.h>
@@ -13,9 +13,10 @@ GLdouble distance, dstep; /* distance and incremental distance step */
 GLdouble mvmatrix[16]; /* Buffer for GL_MODELVIEW_MATRIX */
 GLuint model_list = 0; /* display lists idx storage */
 GLuint normal_list = 0;
-#ifdef DRAW_VTX_LABELS
 GLuint char_list = 0;
-#endif
+GLuint tree_list = 0;
+
+
 int oldx, oldy;
 int left_button_state;
 int middle_button_state;
@@ -23,9 +24,9 @@ int right_button_state;
 int tr_mode = 1; /* Default = draw triangles */
 int light_mode = 0;
 int draw_normals = 0;
-#ifdef DRAW_VTX_LABELS
 int draw_vtx_labels = 0;
-#endif
+int draw_spanning_tree = 0;
+
 vertex center;
 int normals_done = 0;
 model *raw_model;
@@ -33,9 +34,10 @@ char *in_filename;
 int grab_number = 0;
 int mesa_minor = -1; /* Used 'cause Mesa > 3.1 is not trusted when rendering */
 /* in the 'lighted' mode */
-#ifdef DRAW_VTX_LABELS
+
 model *r_model;
-#endif
+
+
 /* *********************************************************** */
 /* This is a _basic_ frame grabber -> copy all the RGB buffers */
 /* and put'em into grab$$$.ppm where $$$ is [000; 999]         */
@@ -180,6 +182,12 @@ void rebuild_list(model *raw_model) {
   vertex center; 
 #endif
 
+  vertex center1, center2;
+  face *cur_face2;
+  int j, face1=-1, face2=-1;
+
+
+
   if (glIsList(model_list) == GL_TRUE)
     glDeleteLists(model_list, 1);
 
@@ -187,15 +195,21 @@ void rebuild_list(model *raw_model) {
     glDeleteLists(normal_list, 1);
   model_list = glGenLists(1);
 
-#ifdef DRAW_VTX_LABELS
+
   if (glIsList(char_list) == GL_TRUE)
     glDeleteLists(char_list, 256);
-#endif
+
+
+
+  if (glIsList(tree_list) == GL_TRUE)
+    glDeleteLists(tree_list, 1);
+  tree_list = glGenLists(1);
+
 
   if (draw_normals)
     normal_list = glGenLists(1);
 
-#ifdef DRAW_VTX_LABELS
+
   if (draw_vtx_labels) {
     char_list = glGenLists(256);
     if (char_list == 0)
@@ -207,12 +221,70 @@ void rebuild_list(model *raw_model) {
       glEndList();
     }
   }
-#endif
 
+  
 #ifdef DEBUG
-   printf("dn = %d lm = %d nf = %d\n", draw_normals, light_mode, 
-	  raw_model->num_faces); 
+  printf("dn = %d lm = %d nf = %d\n", draw_normals, light_mode, 
+	 raw_model->num_faces); 
 #endif
+  
+
+/*   printf("[rebuild_list]: raw_model->tree = 0x%x\n",  */
+/* 	 (unsigned int)raw_model->tree); */
+  if (draw_spanning_tree == 1) {
+    glNewList(tree_list, GL_COMPILE);
+    glColor3f(1.0, 1.0, 0.0);
+    glBegin(GL_LINES);
+    for (j=0; j<raw_model->num_faces; j++) {
+      face1 = (raw_model->tree)[j]->face_idx;
+      cur_face = &(raw_model->faces[face1]);
+      center1.x = (raw_model->vertices[cur_face->f0].x +
+		   raw_model->vertices[cur_face->f1].x +
+		   raw_model->vertices[cur_face->f2].x)/3.0;
+      center1.y = (raw_model->vertices[cur_face->f0].y +
+		   raw_model->vertices[cur_face->f1].y +
+		   raw_model->vertices[cur_face->f2].y)/3.0;
+      center1.z = (raw_model->vertices[cur_face->f0].z +
+		   raw_model->vertices[cur_face->f1].z +
+		   raw_model->vertices[cur_face->f2].z)/3.0;
+      if ((raw_model->tree)[j]->left != NULL) {
+	face2 = ((raw_model->tree)[j]->left)->face_idx;
+	cur_face2 = &(raw_model->faces[face2]);
+	center2.x = (raw_model->vertices[cur_face2->f0].x +
+		     raw_model->vertices[cur_face2->f1].x +
+		     raw_model->vertices[cur_face2->f2].x)/3.0;
+	center2.y = (raw_model->vertices[cur_face2->f0].y +
+		     raw_model->vertices[cur_face2->f1].y +
+		     raw_model->vertices[cur_face2->f2].y)/3.0;
+	center2.z = (raw_model->vertices[cur_face2->f0].z +
+		     raw_model->vertices[cur_face2->f1].z +
+		     raw_model->vertices[cur_face2->f2].z)/3.0;
+	glVertex3d(center1.x, center1.y, center1.z);
+	glVertex3d(center2.x, center2.y, center2.z);
+
+      }
+      if ((raw_model->tree)[j]->right != NULL) {
+	face2 = ((raw_model->tree)[j]->right)->face_idx;
+	cur_face2 = &(raw_model->faces[face2]);
+	center2.x = (raw_model->vertices[cur_face2->f0].x +
+		     raw_model->vertices[cur_face2->f1].x +
+		     raw_model->vertices[cur_face2->f2].x)/3.0;
+	center2.y = (raw_model->vertices[cur_face2->f0].y +
+		     raw_model->vertices[cur_face2->f1].y +
+		     raw_model->vertices[cur_face2->f2].y)/3.0;
+	center2.z = (raw_model->vertices[cur_face2->f0].z +
+		     raw_model->vertices[cur_face2->f1].z +
+		     raw_model->vertices[cur_face2->f2].z)/3.0;
+	glVertex3d(center1.x, center1.y, center1.z);
+	glVertex3d(center2.x, center2.y, center2.z);
+
+      }
+    }
+    glEnd();
+    glColor3f(1.0, 1.0, 1.0);
+    glEndList();
+
+  }
 
   if (light_mode == 0) { /* Store a wireframe model */
     glNewList(model_list, GL_COMPILE);
@@ -266,9 +338,9 @@ void rebuild_list(model *raw_model) {
 		   raw_model->vertices[i].y,
 		   raw_model->vertices[i].z);
 
-	glVertex3d(raw_model->vertices[i].x + 0.3*raw_model->normals[i].x,
-		   raw_model->vertices[i].y + 0.3*raw_model->normals[i].y,
-		   raw_model->vertices[i].z + 0.3*raw_model->normals[i].z);
+	glVertex3d(raw_model->vertices[i].x + 0.1*raw_model->normals[i].x,
+		   raw_model->vertices[i].y + 0.1*raw_model->normals[i].y,
+		   raw_model->vertices[i].z + 0.1*raw_model->normals[i].z);
       }
 #endif
 
@@ -434,6 +506,7 @@ void sp_key_pressed(int key, int x, int y) {
   GLfloat shine[] = {0.6};
   GLfloat lpos[4];
   info_vertex *curv;
+  face_tree_ptr top;
   int i;
 
 
@@ -469,7 +542,7 @@ void sp_key_pressed(int key, int x, int y) {
 	curv = (info_vertex*)malloc(raw_model->num_vert*sizeof(info_vertex));
 
 	raw_model->face_normals = compute_face_normals(raw_model, curv);
-
+	printf("raw_model->tree = 0x%x\n", (unsigned int)raw_model->tree);
 #ifdef FACE_NORM_DRAW_DEBUG	
 	for (i=0; i<raw_model->num_faces; i++)
 	  printf("%d: %f %f %f\n",i, model_normals[i].x, model_normals[i].y, 
@@ -612,7 +685,6 @@ void sp_key_pressed(int key, int x, int y) {
     rebuild_list(raw_model);
     glutPostRedisplay();
     break;
-#ifdef DRAW_VTX_LABELS
   case GLUT_KEY_F8: /* draw labels for vertices */
     if (draw_vtx_labels == 1) {
       draw_vtx_labels = 0;
@@ -624,7 +696,38 @@ void sp_key_pressed(int key, int x, int y) {
     rebuild_list(raw_model);
     glutPostRedisplay();
     break;
-#endif
+
+  case GLUT_KEY_F9: /* Draw the spanning tree */
+    if(draw_spanning_tree == 1) {
+      draw_spanning_tree = 0;
+      printf("Stop drawing spanning tree\n");
+    } else if (draw_spanning_tree == 0) {
+      draw_spanning_tree = 1;
+      printf("Drawing spanning tree\n");
+      if (raw_model->tree == NULL) { /* We need to build this ...*/
+	curv = (info_vertex*)malloc(raw_model->num_vert*sizeof(info_vertex));
+	for(i=0; i<raw_model->num_vert; i++) {
+	  curv[i].list_face = (int*)malloc(sizeof(int));
+	  curv[i].num_faces = 0;
+	}
+	printf("Building spanning tree\n");
+	/* Compute spanning tree of the dual graph */
+	raw_model->tree = bfs_build_spanning_tree(raw_model, curv); 
+	if (raw_model->tree == NULL)
+	  printf("Uh oh... unable to build spanning tree\n");
+	top = raw_model->tree[0];
+	while (top->parent != NULL)
+	  top = top->parent;
+	printf("Spanning tree done\n");
+	for(i=0; i<raw_model->num_vert; i++) 
+	  free(curv[i].list_face);
+	free(curv);
+      }
+    }
+    rebuild_list(raw_model);
+    glutPostRedisplay();
+    break;
+
   case GLUT_KEY_UP:
     glPushMatrix(); /* Save transform context */
     glLoadIdentity();
@@ -682,7 +785,7 @@ void sp_key_pressed(int key, int x, int y) {
   }
 }
 
-#ifdef DRAW_VTX_LABELS
+
 void display_vtx_labels() {
   int i, len;
   char str[42],fmt[24];
@@ -704,7 +807,7 @@ void display_vtx_labels() {
   
   glPopAttrib();
 }
-#endif
+
 
 /* ***************************************************************** */
 /* Display function : clear buffers, build correct MODELVIEW matrix, */
@@ -720,10 +823,14 @@ void display() {
   glCallList(model_list);
   if (draw_normals)
     glCallList(normal_list);
-#ifdef DRAW_VTX_LABELS
+
   if (draw_vtx_labels)
     display_vtx_labels();
-#endif
+
+
+  if(draw_spanning_tree)
+    glCallList(tree_list);
+
  /* Check for errors (leave at the end) */
   while ((errorCode = glGetError()) != GL_NO_ERROR) {
     fprintf(stderr,"GL error: %s\n",(const char *)gluErrorString(errorCode));
@@ -782,9 +889,9 @@ int main(int argc, char **argv) {
   
   dstep = distance*0.01;
 
-#ifdef DRAW_VTX_LABELS
+
   r_model = raw_model;
-#endif
+
 
   /* Init the rendering window */
   glutInit(&argc, argv);
