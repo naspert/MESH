@@ -1,7 +1,9 @@
 #!/usr/bin/perl -w
-# $Id: raw2wrl.pl,v 1.4 2002/02/01 12:04:10 aspert Exp $
+# $Id: raw2wrl.pl,v 1.5 2002/02/01 12:06:57 aspert Exp $
 
 use VRML::VRML2::Standard;
+use strict;
+
 
 # --------------------------- #
 #       WRL file writer       #
@@ -11,6 +13,7 @@ sub write_wrl_frame {
     my @faceHolder  = @{ $_[1] };    # Array containing face list
     my @normHolder  = @{ $_[2] };
     my $fname       = $_[3];         # filename
+    my $vrml;
 
     $vrml = new VRML::VRML2::Standard;
 
@@ -48,7 +51,10 @@ sub read_raw_file {
     my $fname = $_[0];    #input file
     my $numvert;
     my $numface;
+    my $numnorm;
+    my $header;
     my $i         = 0;
+    my @tmp;
     my $vertArray = \@{ $_[1] };
     my $faceArray = \@{ $_[2] };
     my $normArray = \@{ $_[3] };
@@ -114,7 +120,8 @@ sub read_raw_file {
 my @facearr = ();
 my @vertarr = ();
 my @normarr = ();
-my $j       = 0;
+my $fname;
+my $outfile;
 
 if ( $#ARGV != 1 ) {
     die ("raw2wrl infile[.raw] outfile[.wrl]\n");
