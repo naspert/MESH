@@ -1,4 +1,4 @@
-/* $Id: model_in.c,v 1.28 2002/04/22 12:12:59 dsanta Exp $ */
+/* $Id: model_in.c,v 1.29 2002/06/11 15:41:36 aspert Exp $ */
 
 
 /*
@@ -1364,8 +1364,10 @@ static int read_vrml_ifs(struct model *tmesh, struct file_data *data)
     free(vtcs);
     free(faces);
   }
-  free(normals);
-  free(nrml_idcs);
+  if (normals != NULL)
+    free(normals);
+  if (nrml_idcs != NULL)
+    free(nrml_idcs);
   return rcode;
 }
 

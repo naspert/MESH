@@ -1,4 +1,4 @@
-/* $Id: rawview_utils.c,v 1.3 2002/06/05 14:04:41 aspert Exp $ */
+/* $Id: rawview_utils.c,v 1.4 2002/06/11 15:41:37 aspert Exp $ */
 #include <3dutils.h>
 #include <rawview.h>
 #include <rawview_misc.h>
@@ -202,7 +202,7 @@ int do_curvature(struct gl_render_context *gl_ctx) {
                                     &(raw_model->vertices[cur_face->f2]));
   }
   gl_ctx->info = (struct info_vertex*)
-    malloc(gl_ctx->raw_model->num_vert*sizeof(struct info_vertex));
+    calloc(gl_ctx->raw_model->num_vert, sizeof(struct info_vertex));
   if (compute_curvature(gl_ctx->raw_model, gl_ctx->info)) {
     gl_ctx->disp_curv = 0;
     free(gl_ctx->info);

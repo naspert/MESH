@@ -1,4 +1,4 @@
-/* $Id: rawview.c,v 1.16 2002/06/05 14:04:40 aspert Exp $ */
+/* $Id: rawview.c,v 1.17 2002/06/11 15:41:37 aspert Exp $ */
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -229,8 +229,13 @@ static void norm_key_pressed(unsigned char key, int x, int y) {
     break;
   case 'q':
   case 'Q':
-    if (gl_ctx.raw_model->tree != NULL)
+    if (gl_ctx.raw_model->tree != NULL) {
       destroy_tree(*(gl_ctx.raw_model->tree));
+      gl_ctx.raw_model->tree = NULL;
+    }
+    if (gl_ctx.info != NULL)
+      free(gl_ctx.info);
+
     __free_raw_model(gl_ctx.raw_model);
     exit(0);
     break;

@@ -1,4 +1,4 @@
-/* $Id: normals.c,v 1.31 2002/06/04 08:47:32 aspert Exp $ */
+/* $Id: normals.c,v 1.32 2002/06/11 15:41:36 aspert Exp $ */
 #include <3dmodel.h>
 #include <geomutils.h>
 #include <normals.h>
@@ -350,8 +350,8 @@ struct face_tree** bfs_build_spanning_tree(const struct model *raw_model,
   printf("[bfs_build_spanning_tree]:faces_traversed = %d num_faces = %d\n", 
 	 faces_traversed, raw_model->num_faces); 
 #endif
-
-  free(bot->next);  /* should be alloc'd but nothing inside */
+  if (bot->next != NULL)
+    free(bot->next);  /* should be alloc'd but nothing inside */
   free(bot);
   free(dual_graph->edges);
   free(dual_graph->done);

@@ -1,4 +1,4 @@
-/* $Id: curvature.c,v 1.4 2002/06/05 14:04:40 aspert Exp $ */
+/* $Id: curvature.c,v 1.5 2002/06/11 15:41:35 aspert Exp $ */
 #include <3dutils.h>
 #include <ring.h>
 
@@ -212,9 +212,10 @@ int compute_curvature(struct model *raw_model, struct info_vertex *info) {
   build_star_global(raw_model, rings);
   ret = compute_curvature_with_rings(raw_model, info, rings);
   for (i=0; i<raw_model->num_vert; i++) {
-    free(rings[i].ord_vert);
+    if (rings[i].ord_vert != NULL)
+      free(rings[i].ord_vert);
+    if (rings[i].ord_face != NULL)
     free(rings[i].ord_face);
-    
   }
   free(rings);
 
