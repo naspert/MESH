@@ -146,6 +146,22 @@ SOURCE=.\lib3d\src\model_in.c
 # End Source File
 # Begin Source File
 
+SOURCE=.\lib3d\src\model_in_ply.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\lib3d\src\model_in_raw.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\lib3d\src\model_in_smf.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\lib3d\src\model_in_vrml_iv.c
+# End Source File
+# Begin Source File
+
 SOURCE=.\RawWidget.cpp
 # End Source File
 # Begin Source File
