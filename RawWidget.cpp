@@ -1,4 +1,4 @@
-/* $Id: RawWidget.cpp,v 1.50 2002/03/11 18:15:41 dsanta Exp $ */
+/* $Id: RawWidget.cpp,v 1.51 2002/03/11 18:23:00 dsanta Exp $ */
 
 #include <RawWidget.h>
 #include <qmessagebox.h>
@@ -244,6 +244,7 @@ void RawWidget::genErrorTextures() {
 
   // Only in error mapping mode and if not disabled
   if ((renderFlag & RW_CAPA_MASK) != RW_ERROR_ONLY) return;
+  makeCurrent(); // make sure we use the correct GL context
   // Allocate texture names (IDs) if not present
   if (etex_id == NULL) {
     etex_id = (GLuint*) xa_malloc(sizeof(*etex_id)*model->mesh->num_faces);
@@ -267,6 +268,8 @@ void RawWidget::genErrorTextures() {
                  "the required texture size (%ix%i).\n"
                  "Using plain white color",max_n,max_n);
     QMessageBox::critical(this,"OpenGL texture size exceeded",tmps);
+    // Displaying another window can change the current GL context 
+    makeCurrent();
     for (i=0; i<model->mesh->num_faces; i++) {
       etex_sz[i] = 1; // avoid having divide by zero texture coords
     }
