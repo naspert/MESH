@@ -1,0 +1,12 @@
+* Changes from v1.1 to v1.2 :
+	- Fixed a bug in the reading low-level functions : 'buf_getc'
+	  did not read the last char of the data block
+	- Added possibility to read basic Inventor 2.x and SMF files
+
+* Changes from v1.0 to v1.1 :
+	- Added possibility to read gzipped VRML using zlib
+	- Fixed build under IRIX and Solaris
+	- Better output in the external window
+	- Fixed potential bug in VRML parsing : cases when there is no 
+	  space between a keyword and a '[' or a '{' were badly handled.
+
