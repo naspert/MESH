@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.20 2001/09/12 12:03:41 dsanta Exp $
+# $Id: Makefile,v 1.21 2001/09/25 13:29:32 dsanta Exp $
 
 #
 # If the make variable PROFILE is defined to a non-empty value, profiling
@@ -168,13 +168,20 @@ LIB3D_SLIB = $(addprefix $(LIBDIR)/,lib3d.a)
 # Targets
 #
 
+# NOTE: moc generated C++ files are temporary files and automatically removed
+# by GNU make after compile, so we make sure they are not present as byproduct
+# of another build on same directory (e.g., Visual C++)
+
 # Main targets
-default: $(MESH_EXE)
+default: clean_moc $(MESH_EXE)
 
-all: dirs $(MESH_EXE)
+all: dirs clean_moc $(MESH_EXE)
 
-clean: 
+clean: clean_moc
 	-rm -f *.d $(OBJDIR)/*.o $(BINDIR)/* $(LIBDIR)/*
+
+clean_moc:
+	-rm -f moc_*.cpp
 
 # Executable
 $(MESH_EXE): $(MESH_OBJS) $(LIB3D_SLIB)
