@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.32 2002/02/26 13:36:11 aspert Exp $
+# $Id: Makefile,v 1.33 2002/02/27 07:55:43 aspert Exp $
 
 #
 # If the make variable PROFILE is defined to a non-empty value, profiling
@@ -251,10 +251,11 @@ dist: distdir
 	cp $(addprefix $(LIB3DDIR)/src/,$(LIB3D_C_SRCS)) \
 		$(DISTDIR)/Mesh-$(MESHVER)/$(LIB3DDIR)/src
 	cd $(DISTDIR) && \
+	zip -9 -r Mesh-$(MESHVER).zip Mesh-$(MESHVER) && \
 	tar cvf Mesh-$(MESHVER).tar Mesh-$(MESHVER) && \
 	gzip -9 Mesh-$(MESHVER).tar && \
 	rm -rf Mesh-$(MESHVER) || \
-	rm -f Mesh-$(MESHVER).tar Mesh-$(MESHVER).tar.gz
+	rm -f Mesh-$(MESHVER).tar Mesh-$(MESHVER).tar.gz Mesh-$(MESHVER).zip
 
 #
 # Automatic dependency
