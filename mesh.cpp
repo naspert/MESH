@@ -1,4 +1,4 @@
-/* $Id: mesh.cpp,v 1.33 2002/03/15 16:46:32 aspert Exp $ */
+/* $Id: mesh.cpp,v 1.34 2002/03/18 14:04:22 aspert Exp $ */
 
 
 /*
@@ -62,10 +62,8 @@ const char *version = "1.0-rc3";
 /* The Copyright */
 const char *copyright = "2001-2002 EPFL";
 
-/* Prints usage information to the out stream */
-static void print_usage(FILE *out)
-{
-  fprintf(out,"MESH: Measuring Distance between Surfaces using the "
+static void print_version(FILE *out) {
+  fprintf(out,"MESH: Measuring Error between Surfaces using the "
           "Hausdorff distance\n");
   fprintf(out,"MESH version %s\n",version);
   fprintf(out,"\n");
@@ -78,6 +76,12 @@ static void print_usage(FILE *out)
   fprintf(out,"Report bugs to <Nicolas.Aspert@epfl.ch> and ");
   fprintf(out,"<Diego.SantaCruz@epfl.ch>\n");
   fprintf(out,"\n");
+}
+
+/* Prints usage information to the out stream */
+static void print_usage(FILE *out)
+{
+  print_version(out);
   fprintf(out,"Usage: mesh [[options] file1 file2]\n");
   fprintf(out,"\n");
   fprintf(out,"The program measures the distance from the 3D model in\n");
@@ -134,6 +138,8 @@ static void print_usage(FILE *out)
   fprintf(out,"options:");
   fprintf(out,"\n");
   fprintf(out,"  -h\tDisplays this help message and exits.\n");
+  fprintf(out,"\n");
+  fprintf(out,"  -v\tDisplays version number, legal info and exits.\n");
   fprintf(out,"\n");
   fprintf(out,"  -s\tCalculate a symmetric distance measure. It calculates\n");
   fprintf(out,"    \tthe distance in the two directions and uses the max\n");
@@ -195,6 +201,9 @@ static void parse_args(int argc, char **argv, struct args *pargs)
     if (argv[i][0] == '-') { /* Option */
       if (strcmp(argv[i],"-h") == 0) { /* help */
         print_usage(stdout);
+        exit(0);
+      } else if (strcmp(argv[i],"-v") == 0) { /* Version */
+        print_version(stdout);
         exit(0);
       } else if (strcmp(argv[i],"-t") == 0) { /* text only */
         pargs->no_gui = 1;
