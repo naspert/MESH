@@ -1,4 +1,4 @@
-/* $Id: subdiv.c,v 1.20 2002/04/16 06:42:23 aspert Exp $ */
+/* $Id: subdiv.c,v 1.21 2002/05/27 15:12:11 aspert Exp $ */
 #include <3dutils.h>
 #include <subdiv_methods.h>
 #include <assert.h>
@@ -66,7 +66,7 @@ struct model* subdiv(struct model *raw_model,
       if (rings[i].ord_vert[j] < i) 
 	continue; 
 
-      /* 2 boundary v. -> do nothing */
+      /* 2 boundary v. */
       if (rings[i].type==1 || rings[rings[i].ord_vert[j]].type==1) {
 	if (midpoint_func_bound == NULL)
 	  continue;
