@@ -1,4 +1,4 @@
-/* $Id: geomutils.h,v 1.21 2001/12/18 14:45:00 aspert Exp $ */
+/* $Id: geomutils.h,v 1.22 2002/02/19 09:09:31 aspert Exp $ */
 #include <3dmodel.h>
 
 #ifndef _GEOMUTILS_PROTO_
@@ -460,5 +460,101 @@ extern "C" {
 }
 #endif
 
- 
+/*
+ * Provide the equivalent of some functions by macros, since
+ * in some case, the compilers does *nasty* things with extern
+ * __inline__'d functions. Of course, only the functions returning no
+ * value are inlined, and they take the real vertex_t as argument (and
+ * not its adress)
+ */
+
+/*
+ * Linear combination of 'v1' and 'v2' :
+ * vout = m*v1 + v2
+ */
+#ifndef __add_prod_v
+#define __add_prod_v(m, v1, v2, vout)                   \
+        do {                                            \
+             (vout).x = ((float)m)*(v1).x + (v2).x;     \
+             (vout).y = ((float)m)*(v1).y + (v2).y;     \
+             (vout).z = ((float)m)*(v1).z + (v2).z;     \
+            } while(0)
+#endif
+
+/*
+ * Multplies vertex 'v' by a scalar 'm'
+ * vout = m*v
+ */
+#ifndef __prod_v
+#define __prod_v(m, v, vout)                    \
+        do {                                    \
+             (vout).x = ((float)m)*(v).x;       \
+             (vout).y = ((float)m)*(v).y;       \
+             (vout).z = ((float)m)*(v).z;       \
+           } while(0)
+#endif
+
+/* 
+ * Adds two vertices 
+ * vout = v1 + v2
+ */
+#ifndef __add_v
+#define __add_v(v1, v2, vout)                   \
+        do {                                    \
+             (vout).x = (v1).x + (v2).x;        \
+             (vout).y = (v1).y + (v2).y;        \
+             (vout).z = (v1).z + (v2).z;        \
+           } while(0)
+#endif
+
+/* 
+ * Substract two vertices 
+ * vout = v1 - v2
+ */
+#ifndef __substract_v
+#define __substract_v(v1, v2, vout)             \
+        do {                                    \
+             (vout).x = (v1).x - (v2).x;        \
+             (vout).y = (v1).y - (v2).y;        \
+             (vout).z = (v1).z - (v2).z;        \
+           } while(0)
+#endif
+
+/*
+ * Negates a vector 'v'
+ * vout = -v
+ */
+#ifndef __neg_v
+#define __neg_v(v, vout)                        \
+        do {                                    \
+             (vout).x = -(v).x;                 \
+             (vout).y = -(v).y;                 \
+             (vout).z = -(v).z;                 \
+           } while(0)
+#endif
+
+/* 
+ * Adds 3 vertices v1, v2, v3 and multiplies the result by scalar m
+ * vout = m*(v1 + v2 + v3)
+ */
+#ifndef __add3_sc_v
+#define __add3_sc_v(m, v1, v2, v3, vout)                        \
+        do {                                                    \
+             (vout).x = ((float)m)*((v1).x + (v2).x + (v3).x);  \
+             (vout).y = ((float)m)*((v1).y + (v2).y + (v3).y);  \
+             (vout).z = ((float)m)*((v1).z + (v2).z + (v3).z);  \
+           } while(0)                                           
+#endif
+
+#ifndef __scalprod_v
+#define __scalprod_v(v1, v2, vout)                              \
+        do {                                                    \
+             vertex_t res;                                      \
+             res.x = (v1).y*(v2).z - (v1).z*(v2).y;             \
+             res.y = (v1).z*(v2).x - (v1).x*(v2).z;             \
+             res.z = (v1).x*(v2).y - (v1).y*(v2).x;             \
+             vout = res;                                        \
+           } while(0)
+#endif
+
 #endif

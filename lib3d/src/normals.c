@@ -1,4 +1,4 @@
-/* $Id: normals.c,v 1.22 2002/02/15 09:42:27 aspert Exp $ */
+/* $Id: normals.c,v 1.23 2002/02/19 09:09:31 aspert Exp $ */
 #include <3dmodel.h>
 #include <geomutils.h>
 #include <normals.h>
@@ -1009,8 +1009,8 @@ void compute_vertex_normal(struct model* raw_model, struct info_vertex* curv,
     tmp.y = 0.0;
     tmp.z = 0.0;
     for (j=0; j<curv[i].num_faces; j++) 
-      add_prod_v(raw_model->area[curv[i].list_face[j]], 
-		 &(model_normals[curv[i].list_face[j]]), &tmp, &tmp);
+      __add_prod_v(raw_model->area[curv[i].list_face[j]], 
+                   model_normals[curv[i].list_face[j]], tmp, tmp);
     
     
 
