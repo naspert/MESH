@@ -1,10 +1,14 @@
-/* $Id: subdiv.c,v 1.28 2002/11/15 15:08:31 aspert Exp $ */
+/* $Id: subdiv.c,v 1.29 2002/11/26 13:25:10 aspert Exp $ */
 #include <3dutils.h>
 #include <subdiv_methods.h>
 #include <subdiv.h>
+#include <block_list.h>
 #include <assert.h>
 #if defined(SUBDIV_DEBUG) || defined(DEBUG)
 # include <debug_print.h>
+#endif
+#ifdef SUBDIV_TIME
+# include <time.h>
 #endif
 
 /* This is the function that performs the subdivision.
@@ -26,9 +30,9 @@ struct model* subdiv(struct model *raw_model,
 					 const struct ring_info*) ) {
   struct ring_info *rings;
   struct model *subdiv_model;
-  int i, j, i0, i1, i2;
+  int i, i0, i1, i2;
   int v0, v1, v2;
-  int u0=-1, u1=-1, u2=-1;
+  int u0, u1, u2;
 
   vertex_t p;
   int nedges = 0;
@@ -36,8 +40,12 @@ struct model* subdiv(struct model *raw_model,
   struct midpoint_info *mp_info;
   int v_idx=raw_model->num_vert;
   face_t *temp_face;
+  struct block_list *tmp_v=NULL, *cur;
 #ifdef SUBDIV_DEBUG
   int vert_idx = raw_model->num_vert;
+#endif
+#ifdef SUBDIV_TIME
+  clock_t start;
 #endif
 
   rings = (struct ring_info*)
@@ -48,60 +56,135 @@ struct model* subdiv(struct model *raw_model,
 
 
   build_star_global(raw_model, rings);
+  temp_face = (face_t*)malloc(4*raw_model->num_faces*sizeof(face_t));
 
-  for (i=0; i<raw_model->num_vert; i++) {
+  tmp_v = (struct block_list*)malloc(sizeof(struct block_list));
+  if (init_block_list(tmp_v, sizeof(vertex_t)) != 0)
+    abort();
+  cur = tmp_v;
 
+  for (i=0; i< raw_model->num_vert; i++) {
+    mp_info[i].edge_subdiv_done = (bitmap_t*)
+      calloc((rings[i].size + BITMAP_T_BITS - 1)/BITMAP_T_BITS, BITMAP_T_SZ);
     mp_info[i].size = rings[i].size;
     mp_info[i].midpoint_idx = (int*)malloc(mp_info[i].size*sizeof(int));
-    /* Initialize the values of this array to -1 */
-    memset(mp_info[i].midpoint_idx, 0xff, mp_info[i].size*sizeof(int));
-    mp_info[i].midpoint = (vertex_t*)malloc(mp_info[i].size*sizeof(vertex_t));
+   
       
 #ifdef SUBDIV_DEBUG
     DEBUG_PRINT("Vertex %d : star_size = %d\n", i, rings[i].size);
     for (j=0; j<rings[i].size; j++)
       printf("number %d : %d\n", j, rings[i].ord_vert[j]);
 #endif
-
   }
+
+#ifdef SUBDIV_TIME
+  start = clock();
+#endif
+  for (i=0; i<raw_model->num_faces; i++) {
+    v0 = raw_model->faces[i].f0;
+    v1 = raw_model->faces[i].f1;
+    v2 = raw_model->faces[i].f2;
+
+    i0 = 0;
+    while (rings[v0].ord_vert[i0] != v1)
+      i0++;
+    u0 = 0;
+    while (rings[v1].ord_vert[u0] != v0)
+      u0++;
+
+    i1 = 0;
+    while (rings[v1].ord_vert[i1] != v2)
+      i1++;
+    u1 = 0;
+    while (rings[v2].ord_vert[u1] != v1)
+      u1++;
+
+    i2 = 0;
+    while (rings[v2].ord_vert[i2] != v0)
+      i2++;
+    u2 = 0;
+    while (rings[v0].ord_vert[u2] != v2)
+      u2++;
+
+    /* edge v0v1 */
+    if (!BITMAP_TEST_BIT(mp_info[v0].edge_subdiv_done, i0)) {
+      if (rings[v0].type == 1 || rings[v1].type == 1)
+        midpoint_func_bound(rings, v0, i0, raw_model, &p);
+      else
+        midpoint_func(rings, v0, i0, raw_model, &p);
+      nedges++;
+      BITMAP_SET_BIT(mp_info[v0].edge_subdiv_done, i0);
+      BITMAP_SET_BIT(mp_info[v1].edge_subdiv_done, u0);
+      if (cur->elem_filled == cur->nelem)
+        cur = get_next_block(cur);
+      assert(cur != NULL);
+      ((vertex_t*)cur->data)[cur->elem_filled++] = p;
+
+      mp_info[v0].midpoint_idx[i0] = v_idx;
+      mp_info[v1].midpoint_idx[u0] = v_idx++;
+
+      
+    }
+
+    /* edge v1v2 */
+    if (!BITMAP_TEST_BIT(mp_info[v1].edge_subdiv_done, i1)) {
+      if (rings[v1].type == 1 || rings[v2].type == 1)
+        midpoint_func_bound(rings, v1, i1, raw_model, &p);
+      else
+        midpoint_func(rings, v1, i1, raw_model, &p);
+      nedges++;
+      BITMAP_SET_BIT(mp_info[v1].edge_subdiv_done, i1);
+      BITMAP_SET_BIT(mp_info[v2].edge_subdiv_done, u1);
+      if (cur->elem_filled == cur->nelem)
+        cur = get_next_block(cur);
+      assert(cur != NULL);
+      ((vertex_t*)cur->data)[cur->elem_filled++] = p;
+
+      mp_info[v1].midpoint_idx[i1] = v_idx;
+      mp_info[v2].midpoint_idx[u1] = v_idx++;
+    }
+
+    /* edge v2v0 */
+    if (!BITMAP_TEST_BIT(mp_info[v2].edge_subdiv_done, i2)) {
+      if (rings[v2].type == 1 || rings[v0].type == 1)
+        midpoint_func_bound(rings, v2, i2, raw_model, &p);
+      else
+        midpoint_func(rings, v2, i2, raw_model, &p);
+      nedges++;
+      BITMAP_SET_BIT(mp_info[v2].edge_subdiv_done, i2);
+      BITMAP_SET_BIT(mp_info[v0].edge_subdiv_done, u2);
+      if (cur->elem_filled == cur->nelem)
+        cur = get_next_block(cur);
+      assert(cur != NULL);
+      ((vertex_t*)cur->data)[cur->elem_filled++] = p;
+
+      mp_info[v2].midpoint_idx[i2] = v_idx;
+      mp_info[v0].midpoint_idx[u2] = v_idx++;
+
+    }
+
+    /* We have all the edges of the current tr. that are subdivided */
+    temp_face[face_idx].f0 = v0;
+    temp_face[face_idx].f1 = mp_info[v0].midpoint_idx[i0];
+    temp_face[face_idx++].f2 = mp_info[v2].midpoint_idx[i2];
+    
+    temp_face[face_idx].f0 = v1;
+    temp_face[face_idx].f1 = mp_info[v0].midpoint_idx[i0];
+    temp_face[face_idx++].f2 = mp_info[v1].midpoint_idx[i1];
+
+    temp_face[face_idx].f0 = v2;
+    temp_face[face_idx].f1 = mp_info[v1].midpoint_idx[i1];
+    temp_face[face_idx++].f2 = mp_info[v2].midpoint_idx[i2];
+
+    temp_face[face_idx].f0 = mp_info[v0].midpoint_idx[i0];
+    temp_face[face_idx].f1 = mp_info[v1].midpoint_idx[i1];
+    temp_face[face_idx++].f2 = mp_info[v2].midpoint_idx[i2];
+  }
+ 
   
 
 
-  for (i=0; i<raw_model->num_vert; i++) {
-    for (j=0; j<rings[i].size; j++) {
 
-      /* this edge is already subdivided */
-      if (rings[i].ord_vert[j] < i) 
-	continue; 
-
-      /* boundary vertices found */
-      if (rings[i].type==1 || rings[rings[i].ord_vert[j]].type==1) {
-	if (midpoint_func_bound == NULL)
-	  continue;
-	else 
-	  midpoint_func_bound(rings, i, j, raw_model, &p);
-	
-      } else /* true regular edge */
-        midpoint_func(rings, i, j, raw_model, &p);
-
-      nedges ++;
-      mp_info[i].midpoint_idx[j] = v_idx;
-      mp_info[i].midpoint[j] = p;
-      v2 = rings[i].ord_vert[j];
-      v0 = 0;
-      while (rings[v2].ord_vert[v0] != i)
-        v0++;
-      mp_info[v2].midpoint_idx[v0] = v_idx++;
-      mp_info[v2].midpoint[v0] = p;
-
-#ifdef SUBDIV_DEBUG
-        DEBUG_PRINT("i=%d j=%d  rings[%d].ord_vert[%d]=%d\n",i,j, 
-               i, j, rings[i].ord_vert[j]);
-        DEBUG_PRINT("nedges-1=%d\n",nedges-1);
-#endif
-    }
-
-  }
 
 
 #ifdef SUBDIV_DEBUG
@@ -112,8 +195,7 @@ struct model* subdiv(struct model *raw_model,
   memset(subdiv_model, 0, sizeof(struct model));
   subdiv_model->num_vert = raw_model->num_vert + nedges;
   subdiv_model->num_faces = 4*raw_model->num_faces;
-  subdiv_model->faces = (face_t*)
-    malloc(subdiv_model->num_faces*sizeof(face_t));
+  subdiv_model->faces = temp_face;
   subdiv_model->vertices = 
     (vertex_t*)malloc(subdiv_model->num_vert*sizeof(vertex_t));
 
@@ -122,75 +204,24 @@ struct model* subdiv(struct model *raw_model,
 	   raw_model->num_vert*sizeof(vertex_t));
   else /* Approx. subdivision */
     update_func(raw_model, subdiv_model, rings);
-
-
   
-  for (j=0; j<raw_model->num_faces; j++) {
-    v0 = raw_model->faces[j].f0;
-    v1 = raw_model->faces[j].f1;
-    v2 = raw_model->faces[j].f2;
-
-    i0 = 0;
-    while (rings[v0].ord_vert[i0] != v1)
-      i0++;
-    u0 = mp_info[v0].midpoint_idx[i0];
-
-
-    i1 = 0;
-    while (rings[v1].ord_vert[i1] != v2)
-      i1++;
-    u1 = mp_info[v1].midpoint_idx[i1];
-
-    i2 = 0;
-    while (rings[v2].ord_vert[i2] != v0)
-      i2++;
-    u2 = mp_info[v2].midpoint_idx[i2];
-
-    if (u0 == -1 || u1 == -1 || u2 == -1) {
-      fprintf(stderr, "Unsubdivided edge found !! Aborting...\n");
-      abort();
-    }
-
-    subdiv_model->vertices[u0] =  mp_info[v0].midpoint[i0];
-    subdiv_model->vertices[u1] =  mp_info[v1].midpoint[i1];
-    subdiv_model->vertices[u2] =  mp_info[v2].midpoint[i2];
-
-    subdiv_model->faces[face_idx].f0 = v0;
-    subdiv_model->faces[face_idx].f1 = u0;
-    subdiv_model->faces[face_idx].f2 = u2;    
-    face_idx++;
-    
-    subdiv_model->faces[face_idx].f0 = v1;
-    subdiv_model->faces[face_idx].f1 = u0;
-    subdiv_model->faces[face_idx].f2 = u1;
-    face_idx++;
-    
-    subdiv_model->faces[face_idx].f0 = v2;
-    subdiv_model->faces[face_idx].f1 = u1;
-    subdiv_model->faces[face_idx].f2 = u2;
-    face_idx++;
-    
-    subdiv_model->faces[face_idx].f0 = u2;
-    subdiv_model->faces[face_idx].f1 = u0;
-    subdiv_model->faces[face_idx].f2 = u1;
-    face_idx++;
-
-  }
-
+  if (gather_block_list(tmp_v, &(subdiv_model->vertices[raw_model->num_vert]), 
+                        nedges*sizeof(vertex_t)) !=0)
+    abort();
+  free_block_list(&tmp_v);
+  
+#ifdef SUBDIV_TIME
+  printf("time = %f sec.\n", (double)(clock()-start)/CLOCKS_PER_SEC);
+#endif
 #ifdef SUBDIV_DEBUG
   DEBUG_PRINT("face_idx = %d vert_idx = %d\n", face_idx, vert_idx);
 #endif
-  temp_face = (face_t*)malloc(face_idx*sizeof(face_t));
-  memcpy(temp_face, subdiv_model->faces, face_idx*sizeof(face_t));
-  free(subdiv_model->faces);
-  subdiv_model->faces = temp_face;
-  subdiv_model->num_faces = face_idx;
 
   for (i=0; i<raw_model->num_vert; i++) {
     free(rings[i].ord_vert);
     free(rings[i].ord_face);
     free(mp_info[i].midpoint_idx);
-    free(mp_info[i].midpoint);
+    free(mp_info[i].edge_subdiv_done);
   }
   free(rings);
   free(mp_info);
