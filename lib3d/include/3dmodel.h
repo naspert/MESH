@@ -1,9 +1,16 @@
-/* $Id: 3dmodel.h,v 1.5 2001/05/01 14:07:36 aspert Exp $ */
+/* $Id: 3dmodel.h,v 1.6 2001/06/01 08:18:45 aspert Exp $ */
 #ifdef MPATROL_TEST
 #include <mpatrol.h>
 #endif
 #ifdef MEM_DEBUG
 #include <purify.h>
+#endif
+
+/* What follows is to be able to compile */
+/* with '-ansi' flag and still use the */
+/* useful constants from 'math.h' */
+#ifndef __USE_BSD
+#define __USE_BSD
 #endif
 
 #include <stdio.h>

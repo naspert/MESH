@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.8 2001/05/01 14:07:37 aspert Exp $
+# $Id: Makefile,v 1.9 2001/06/01 08:18:45 aspert Exp $
 
 CC = gcc
 CPP = g++
@@ -15,7 +15,7 @@ QTINCL = -I/usr/lib/qt-2.3.0/include
 QTLIB = -L/usr/lib/qt-2.3.0/lib -lqt
 GLINCLFLAGS = -I$(HPGLDIR)/include -I$(GLDIR)/include
 DEBUGINCFLAGS = -I/home/sun1/aspert/debug
-XTRA_CFLAGS = -g  -Wall  -O3 
+XTRA_CFLAGS = -g  -Wall  -O3 -ansi 
 
 BASE_CFLAGS = $(INCLFLAGS) $(XTRA_CFLAGS) -DEST_NORMALS
 GL_CFLAGS = $(INCLFLAGS) $(GLINCLFLAGS) $(XTRA_CFLAGS)
