@@ -2,7 +2,7 @@
  * GL2PS, an OpenGL to PostScript Printing Library
  * Copyright (C) 1999-2002  Christophe Geuzaine 
  *
- * $Id: gl2ps.c,v 1.7 2002/04/16 06:51:09 aspert Exp $
+ * $Id: gl2ps.c,v 1.8 2002/06/18 11:51:13 aspert Exp $
  *
  * E-mail: geuz@geuz.org
  * URL: http://www.geuz.org/gl2ps/
@@ -31,10 +31,10 @@
 #include <time.h>
 #include "gl2ps.h"
 
-/* The static gl2ps context. gl2ps is not thread safe (we should
-   create a local GL2PScontext during gl2psBeginPage). */
+/* The gl2ps context. gl2ps is not thread safe (we should create a
+   local GL2PScontext during gl2psBeginPage). */
 
-static GL2PScontext *gl2ps=NULL;
+GL2PScontext *gl2ps=NULL;
 
 /* Some 'system' utility routines */
 
@@ -260,18 +260,6 @@ GLvoid gl2psCutEdge(GL2PSvertex a, GL2PSvertex b, GL2PSplane plane,
   c->rgba[3] = (1.-sect) * a.rgba[3] + sect * b.rgba[3];
 }
 
-GLvoid gl2psFreePrimitive(GLvoid *a, GLvoid *b){
-  GL2PSprimitive *q ;
-  
-  q = *(GL2PSprimitive**)a;
-  gl2psFree(q->verts);
-  if(q->type == GL2PS_TEXT){
-    if(q->text->str) gl2psFree(q->text->str);
-    gl2psFree(q->text);
-  }
-  gl2psFree(q);
-}
-
 GLvoid gl2psCreateSplittedPrimitive(GL2PSprimitive *parent, GL2PSplane plane,
 				    GL2PSprimitive **child, GLshort numverts,
 				    GLshort *index0, GLshort *index1){
@@ -486,6 +474,18 @@ GLint gl2psFindRoot(GL2PSlist *primitives, GL2PSprimitive **root){
   }
 }
 
+GLvoid gl2psFreePrimitive(GLvoid *a, GLvoid *b){
+  GL2PSprimitive *q ;
+  
+  q = *(GL2PSprimitive**)a;
+  gl2psFree(q->verts);
+  if(q->type == GL2PS_TEXT){
+    gl2psFree(q->text->str);
+    gl2psFree(q->text->fontname);
+    gl2psFree(q->text);
+  }
+  gl2psFree(q);
+}
 
 GLvoid gl2psAddPrimitiveInList(GL2PSprimitive *prim, GL2PSlist *list){
   GL2PSprimitive *t1, *t2;
@@ -611,141 +611,7 @@ GLvoid  gl2psTraverseBspTree(GL2PSbsptree *tree, GL2PSxyz eye, GLfloat epsilon,
   }
 }
 
-/* The 2D sorting routines (for occlusion culling). These routines do
-   _not_ work as expected at the moment... */
-
-GLint gl2psSplit2d(GL2PSxyz a, GL2PSxyz b, GL2PSxy tc, GL2PSxy td){
-  GLfloat  line[3], n, d[2]; 
-
-  /*
-    in back of == >0 == outside polygon
-   */
-
-  line[0] = td[1] - tc[1] ;
-  line[1] = tc[0] - td[0] ;
-  n = sqrt(line[0]*line[0]+line[1]*line[1]);
-  line[0] /= n ; 
-  line[1] /= n ;
-  line[2] = - line[0] * tc[0] - line[1] * tc[1] ;
-
-  d[0] = line[0]*a[0] + line[1]*a[1] + line[2] ;
-
-  if(b == NULL){
-    if(d[0] > GL2PS_EPSILON)       return GL2PS_IN_BACK_OF;
-    else if(d[0] < -GL2PS_EPSILON) return GL2PS_IN_FRONT_OF;
-    else                           return GL2PS_COINCIDENT;
-  }
-  else{
-    d[1] = line[0]*b[0] + line[1]*b[1] + line[2] ;
-    
-    if(d[0] > GL2PS_EPSILON){
-      if(d[1] < -GL2PS_EPSILON) return GL2PS_SPANNING;
-      else return GL2PS_IN_BACK_OF;
-    }
-    if(d[0] < -GL2PS_EPSILON){
-      if(d[1] > GL2PS_EPSILON) return GL2PS_SPANNING;
-      else return GL2PS_IN_FRONT_OF;
-    }
-    else{
-      if(d[1] > GL2PS_EPSILON) return GL2PS_IN_BACK_OF;
-      else if(d[1] < -GL2PS_EPSILON) return GL2PS_IN_FRONT_OF;
-      /* else return GL2PS_COINCIDENT; */
-      else return GL2PS_IN_FRONT_OF;
-    }
-  }
-}
-
-
-GLvoid  gl2psSimplify2d(GL2PSbsptree2d *tree){
-  if(!tree) return;
-  if(tree->back){
-    if(tree->flag==0)
-      gl2psSimplify2d(tree->back);
-  }
-  if(tree->front){
-    gl2psSimplify2d(tree->front);
-  }
-}
-
-GLvoid  gl2psReset(GL2PSbsptree2d *tree){
-  if(!tree) return;
-  tree->flag=0;
-  if(tree->back){
-    gl2psReset(tree->back);
-  }
-  if(tree->front){
-    gl2psReset(tree->front);
-  }
-}
-
-
-static GL2PSbsptree2d *image=NULL;
-
-GLvoid gl2psAddInImageTree(GL2PSprimitive *prim, 
-			   GL2PSxyz a, GL2PSxyz b, GL2PSbsptree2d **tree){
-  GLint res;
-
-  if(*tree == NULL){
-    /* insert the edge, except for lines & points */
-    if(prim->numverts > 2){ 
-      prim->depth = -1.; 
-      (*tree) = (GL2PSbsptree2d*)gl2psMalloc(sizeof(GL2PSbsptree2d));
-      (*tree)->a[0] = a[0];
-      (*tree)->a[1] = a[1];
-      (*tree)->b[0] = b[0];
-      (*tree)->b[1] = b[1];
-      (*tree)->front = NULL;
-      (*tree)->back = NULL;
-      (*tree)->flag = 1;
-    }
-  }
-  else{
-    res = gl2psSplit2d(a, b, (*tree)->a, (*tree)->b);
-
-    switch(res){
-    case GL2PS_IN_BACK_OF:
-       gl2psAddInImageTree(prim, a, b, &(*tree)->back);
-      break;
-    case GL2PS_IN_FRONT_OF:
-      if((*tree)->flag) gl2psAddInImageTree(prim, a, b, &(*tree)->front);
-      break;
-    case GL2PS_SPANNING:
-      gl2psAddInImageTree(prim, a, b, &(*tree)->back);
-      if((*tree)->flag) gl2psAddInImageTree(prim, a, b, &(*tree)->front);
-      break;
-    case GL2PS_COINCIDENT:
-      (*tree)->flag = 1;
-      break;
-    }
-  }
-}
-
-static int count=0;
-
-GLvoid gl2psAddInImage(void *a, void *b){
-  GL2PSprimitive *prim;
-  GLint          i;
-
-  prim = *(GL2PSprimitive **)a;
-
-  /*  if(prim->numverts == 1)
-      gl2psAddInImageTree(prim, prim->verts[i].xyz, NULL, &image); */
-  if(prim->numverts < 3)
-    return;
-  else{
-    for(i=0 ; i<prim->numverts ; i++){
-      count++;
-      gl2psAddInImageTree(prim, prim->verts[i].xyz, 
-			  prim->verts[gl2psGetIndex(i,prim->numverts)].xyz, &image);
-    }
-  }
-
-  /* simplify old/new */
-
-  gl2psReset(image);
-
-}
-
+/* Boundary contruction */
 
 #define GL2PS_BOUNDARY_OFFSET 0
 
@@ -845,19 +711,22 @@ GLvoid gl2psAddPolyPrimitive(GLshort type, GLshort numverts,
   prim->boundary = boundary;
 
   if(gl2ps->options & GL2PS_SIMPLE_LINE_OFFSET){
+
     if(type == GL2PS_LINE){
       if(gl2ps->sort == GL2PS_SIMPLE_SORT){
-	prim->verts[0].xyz[2] -= 1.;
-	prim->verts[1].xyz[2] -= 1.;
+	prim->verts[0].xyz[2] -= GL2PS_SIMPLE_OFFSET_LARGE;
+	prim->verts[1].xyz[2] -= GL2PS_SIMPLE_OFFSET_LARGE;
       }
       else{
-	prim->verts[0].xyz[2] -= 0.1;
-	prim->verts[1].xyz[2] -= 0.1;
+	prim->verts[0].xyz[2] -= GL2PS_SIMPLE_OFFSET;
+	prim->verts[1].xyz[2] -= GL2PS_SIMPLE_OFFSET;
       }
     }
+
   }
   else if(offset && type == GL2PS_TRIANGLE){
 
+    /* needs some more work... */
     if(gl2ps->sort == GL2PS_SIMPLE_SORT){    
       factor = gl2ps->offset[0];
       units = gl2ps->offset[1];
@@ -912,7 +781,7 @@ GLint gl2psGetVertex(GL2PSvertex *v, GLfloat *p){
 
   v->xyz[0] = p[0];
   v->xyz[1] = p[1];
-  v->xyz[2] = 1000. * p[2];
+  v->xyz[2] = GL2PS_DEPTH_FACT * p[2];
 
   if(gl2ps->colormode == GL_COLOR_INDEX && gl2ps->colorsize > 0){
     i = (GLint)(p[3] + 0.5);
@@ -1060,7 +929,7 @@ GLboolean gl2psVertsSameColor(const GL2PSprimitive *prim){
   return 1;
 }
 
-/* The postscript routines. Other (vector) image formats should be
+/* The PostScript routines. Other (vector) image formats should be
    easy to generate by creating the three corresponding routines for
    the new format. */
 
@@ -1156,10 +1025,12 @@ GLvoid gl2psPrintPostScriptHeader(GLvoid){
 	  (gl2ps->options & GL2PS_LANDSCAPE) ? viewport[0] : viewport[1],
 	  (gl2ps->options & GL2PS_LANDSCAPE) ? viewport[3] : viewport[2],
 	  (gl2ps->options & GL2PS_LANDSCAPE) ? viewport[2] : viewport[3]);
+
   if (gl2ps->options & GL2PS_LANDSCAPE)
     fprintf(gl2ps->stream,
 	    "%d 0 translate 90 rotate\n",
 	    viewport[3]);
+
   fprintf(gl2ps->stream, 
 	  "%%%%EndPageSetup\n"
 	  "mark\n"
@@ -1186,23 +1057,20 @@ GLvoid gl2psPrintPostScriptHeader(GLvoid){
   }
 }
 
-#define PRINTCOLOR	 					        \
-  if(rgba[0] != prim->verts[0].rgba[0] ||				\
-     rgba[1] != prim->verts[0].rgba[1] ||				\
-     rgba[2] != prim->verts[0].rgba[2]){				\
-    rgba[0] = prim->verts[0].rgba[0];					\
-    rgba[1] = prim->verts[0].rgba[1];					\
-    rgba[2] = prim->verts[0].rgba[2];      				\
-    fprintf(gl2ps->stream, "%g %g %g C\n", rgba[0], rgba[1], rgba[2]);	\
+#define PRINTCOLOR						\
+  if(gl2ps->lastrgba[0] != prim->verts[0].rgba[0] ||		\
+     gl2ps->lastrgba[1] != prim->verts[0].rgba[1] ||		\
+     gl2ps->lastrgba[2] != prim->verts[0].rgba[2]){		\
+    gl2ps->lastrgba[0] = prim->verts[0].rgba[0];		\
+    gl2ps->lastrgba[1] = prim->verts[0].rgba[1];		\
+    gl2ps->lastrgba[2] = prim->verts[0].rgba[2];		\
+    fprintf(gl2ps->stream, "%g %g %g C\n", gl2ps->lastrgba[0], 	\
+	    gl2ps->lastrgba[1], gl2ps->lastrgba[2]);            \
   }
 
-#define CLEARCOLOR rgba[0] = rgba[1] = rgba[2] = -1.
-
+#define CLEARCOLOR gl2ps->lastrgba[0] = gl2ps->lastrgba[1] = gl2ps->lastrgba[2] = -1.
 
 GLvoid gl2psPrintPostScriptPrimitive(GLvoid *a, GLvoid *b){
-  static GL2PSrgba rgba={-1.,-1.,-1.,-1.};
-  static float linewidth=-1.;
-
   GL2PSprimitive *prim;
 
   prim = *(GL2PSprimitive**) a;
@@ -1222,9 +1090,9 @@ GLvoid gl2psPrintPostScriptPrimitive(GLvoid *a, GLvoid *b){
 	    prim->verts[0].xyz[0], prim->verts[0].xyz[1], 0.5*prim->width);
     break;
   case GL2PS_LINE :
-    if(linewidth != prim->width){
-      linewidth = prim->width;
-      fprintf(gl2ps->stream, "%g W\n", linewidth);
+    if(gl2ps->lastlinewidth != prim->width){
+      gl2ps->lastlinewidth = prim->width;
+      fprintf(gl2ps->stream, "%g W\n", gl2ps->lastlinewidth);
     }
     if(prim->dash)
       fprintf(gl2ps->stream, "[%d] 0 setdash\n", prim->dash);
@@ -1357,6 +1225,11 @@ GL2PSDLL_API GLvoid gl2psBeginPage(char *title, char *producer,
   gl2ps->colormode = colormode;
   gl2ps->buffersize = buffersize > 0 ? buffersize : 2048 * 2048;
   gl2ps->feedback = (GLfloat*)gl2psMalloc(gl2ps->buffersize * sizeof(GLfloat));
+  gl2ps->lastrgba[0] = -1.;
+  gl2ps->lastrgba[1] = -1.;
+  gl2ps->lastrgba[2] = -1.;
+  gl2ps->lastrgba[3] = -1.;
+  gl2ps->lastlinewidth = -1.;
   gl2ps->primitives = gl2psListCreate(500, 500, sizeof(GL2PSprimitive*));
 
   if(gl2ps->colormode == GL_RGBA){
@@ -1440,10 +1313,12 @@ GL2PSDLL_API GLint gl2psEndPage(GLvoid){
       root = (GL2PSbsptree*)gl2psMalloc(sizeof(GL2PSbsptree));
       gl2psBuildBspTree(root, gl2ps->primitives);
       if(gl2ps->boundary) gl2psBuildPolygonBoundary(root);
+      /* Occlusion culling is not implemented yet...
       if(gl2ps->options & GL2PS_OCCLUSION_CULL){
 	gl2psTraverseBspTree(root, eye, -(float)GL2PS_EPSILON, gl2psLess,
 			     gl2psAddInImage);
       }
+      */
       gl2psTraverseBspTree(root, eye, (float)GL2PS_EPSILON, gl2psGreater, 
 			   pprim);
       gl2psFreeBspTree(root);
@@ -1470,7 +1345,7 @@ GL2PSDLL_API GLvoid gl2psText(char *str, char *fontname, GLint fontsize){
   GL2PSprimitive  *prim;
   GLboolean       valid;
 
-  if(!gl2ps) return;
+  if(!gl2ps || !str) return;
 
   if(gl2ps->options & GL2PS_NO_TEXT) return;
 
@@ -1486,7 +1361,7 @@ GL2PSDLL_API GLvoid gl2psText(char *str, char *fontname, GLint fontsize){
   prim->verts = (GL2PSvertex *)gl2psMalloc(sizeof(GL2PSvertex));
   prim->verts[0].xyz[0] = pos[0];
   prim->verts[0].xyz[1] = pos[1];
-  prim->verts[0].xyz[2] = pos[2];
+  prim->verts[0].xyz[2] = GL2PS_DEPTH_FACT * pos[2];
   prim->depth = pos[2];
   prim->dash = 0;
   prim->width = 1;
@@ -1494,7 +1369,8 @@ GL2PSDLL_API GLvoid gl2psText(char *str, char *fontname, GLint fontsize){
   prim->text = (GL2PSstring*)gl2psMalloc(sizeof(GL2PSstring));
   prim->text->str = (char*)gl2psMalloc((strlen(str)+1)*sizeof(char));
   strcpy(prim->text->str, str);
-  prim->text->fontname = fontname;
+  prim->text->fontname = (char*)gl2psMalloc((strlen(fontname)+1)*sizeof(char));
+  strcpy(prim->text->fontname, fontname);
   prim->text->fontsize = fontsize;
 
   gl2psListAdd(gl2ps->primitives, &prim);

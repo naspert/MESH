@@ -2,7 +2,7 @@
  * GL2PS, an OpenGL to PostScript Printing Library
  * Copyright (C) 1999-2002  Christophe Geuzaine
  *
- * $Id: gl2ps.h,v 1.6 2002/04/16 06:51:09 aspert Exp $
+ * $Id: gl2ps.h,v 1.7 2002/06/18 11:51:14 aspert Exp $
  *
  * E-mail: geuz@geuz.org
  * URL: http://www.geuz.org/gl2ps/
@@ -54,7 +54,7 @@
 #endif /* __APPLE__ */
 
 
-#define GL2PS_VERSION                    0.53
+#define GL2PS_VERSION                    0.6
 #define GL2PS_NONE                       0
 
 /* Output file format */
@@ -87,6 +87,9 @@
 /* Magic numbers */
 
 #define GL2PS_EPSILON                    5.e-3
+#define GL2PS_DEPTH_FACT                 1000.0
+#define GL2PS_SIMPLE_OFFSET              0.05
+#define GL2PS_SIMPLE_OFFSET_LARGE        1.0
 
 /* Message levels */
 
@@ -144,14 +147,6 @@ struct _GL2PSbsptree {
   GL2PSbsptree *front, *back;
 };
 
-typedef struct _GL2PSbsptree2d GL2PSbsptree2d;
-
-struct _GL2PSbsptree2d {
-  GLshort flag;
-  GL2PSxy a, b;
-  GL2PSbsptree2d *front, *back;
-};
-
 typedef struct {
   GL2PSxyz xyz;
   GL2PSrgba rgba;
@@ -174,7 +169,8 @@ typedef struct {
   char *title, *producer, *filename;
   GLboolean shade, boundary;
   GLfloat *feedback, offset[2];
-  GL2PSrgba *colormap;
+  GL2PSrgba *colormap, lastrgba;
+  float lastlinewidth;
   GL2PSlist *primitives;
   FILE *stream;
 } GL2PScontext;
