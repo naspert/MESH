@@ -1,4 +1,4 @@
-/* $Id: geomutils.h,v 1.30 2002/03/15 16:32:20 aspert Exp $ */
+/* $Id: geomutils.h,v 1.31 2002/04/18 17:25:26 dsanta Exp $ */
 
 
 /*
@@ -136,6 +136,8 @@ extern "C" {
 #  define INLINE __inline
 # elif defined (__INTEL_COMPILER) && (__INTEL_COMPILER >= 500)
 #  define INLINE __inline
+# elif defined (__PGI)
+#  define INLINE static __inline
 # elif defined (__GNUC__)
 #  define INLINE extern __inline__
 # elif defined (__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)
