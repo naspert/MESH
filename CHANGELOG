@@ -1,3 +1,7 @@
+* Changes from v1.4 to v1.5 :
+	- Added the possibility to display the error in grayscale (useful
+	  for making screenshots that *have* to be in grayscale...)
+
 * Changes from v1.3 to v1.4 :
 	- '-malign-double' causes troubles when compiling C++ files with 
 	  Qt 3.x. We now only use it when compiling C files.
