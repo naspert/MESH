@@ -1,11 +1,8 @@
-/* $Id: ColorMapWidget.h,v 1.4 2001/08/07 09:01:10 aspert Exp $ */
+/* $Id: ColorMapWidget.h,v 1.5 2001/09/25 13:20:06 dsanta Exp $ */
 #ifndef COLORMAPWIDGET_H
 #define COLORMAPWIDGET_H
 
-#include <qpainter.h>
-#include <ColorMap.h>
-#include <qgl.h>
-#include <qfont.h>
+#include <qwidget.h>
 
 class ColorMapWidget : public QWidget
 {

@@ -1,6 +1,9 @@
-/* $Id: ColorMapWidget.cpp,v 1.7 2001/08/10 08:24:13 aspert Exp $ */
+/* $Id: ColorMapWidget.cpp,v 1.8 2001/09/25 13:20:06 dsanta Exp $ */
 #include <ColorMapWidget.h>
 
+#include <qpainter.h>
+#include <ColorMap.h>
+#include <qfont.h>
 
 /* Constructor of the ColorMapWidget class */
 /* Only initializes a few values and build a HSV colormap */
