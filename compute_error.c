@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.11 2001/07/10 13:45:01 jacquet Exp $ */
+/* $Id: compute_error.c,v 1.12 2001/07/11 08:06:08 jacquet Exp $ */
 
 #include <compute_error.h>
 
@@ -463,7 +463,7 @@ cell=(cellules *)malloc((raw_model->num_faces)*sizeof(cellules));
      if(o==-1)
        o=0;
 
-     cellule=m+n*grille.x+o*grille.y*grille.x;
+     cellule=m+n*grille.x+o*grille.y*grille.x;    
 
      for(k=0; k<h; k++){
        if(cellule==cell[i].cube[k]){
@@ -489,6 +489,13 @@ cell=(cellules *)malloc((raw_model->num_faces)*sizeof(cellules));
    cell[i].nbcube=h;
 
  }
+/*  for(i=0;i<raw_model->num_faces;i++){ */
+/*    printf("face %d",i); */
+/*    for(j=0;j<cell[i].nbcube;j++){ */
+/*      printf(" %d",cell[i].cube[j]); */
+/*    } */
+/*    printf("\n"); */
+/*    } */
  
 return cell;
 }
@@ -544,6 +551,11 @@ int *memoire,*memoire2;
 int rang=0,rang2=0;
 int state=0,state2=0;
 
+
+/* int x,y,z; */
+/* double dtest=0; */
+/* vertex X,Y,Z; */
+
 memoire=NULL;
 memoire2=NULL;
 
@@ -577,7 +589,8 @@ test.z=point.z-bbox0.z;
      for(b=n-k;b<=n+k;b++){
        for(a=m-k;a<=m+k;a++){
 	 cellule=a+b*grille.x+c*grille.y*grille.x;
-	 if(cellule>=0 && cellule<grille.x*grille.y*grille.z){
+	 if(a<grille.x && b<grille.y && c<grille.z && a>0 && b>0 && c>0){
+/* 	 if(cellule>=0 && cellule<grille.x*grille.y*grille.z){ */
 	   if(repface[cellule][0]!=-1){
 	     state=1;
 	   }
@@ -599,7 +612,8 @@ test.z=point.z-bbox0.z;
      for(a=m-k;a<=m+k;a++){
        j=0;
        cellule=a+b*grille.x+c*grille.y*grille.x;
-       if(cellule>=0 && cellule<grille.x*grille.y*grille.z){
+       if(a<grille.x && b<grille.y && c<grille.z && a>0 && b>0 && c>0){
+/*        if(cellule>=0 && cellule<grille.x*grille.y*grille.z){ */
 
 	 /* on garde en memoire les cellules deja traitees */
 	 memoire=(int*)realloc(memoire,(rang+1)*sizeof(int));
@@ -631,6 +645,14 @@ test.z=point.z-bbox0.z;
 	     
 	     if(dist<dmin){
 	       dmin=dist;
+/* 	       cell=cellule; */
+/* 	       face=repface[cellule][j]; */
+/* 	       x=a; */
+/* 	       y=b; */
+/* 	       z=c; */
+/* 	       X=A; */
+/* 	       Y=B; */
+/* 	       Z=C; */
 	     }
 	   }
 	   j++;
@@ -648,6 +670,7 @@ test.z=point.z-bbox0.z;
        state=0;
        j=0;
        cellule=a+b*grille.x+c*grille.y*grille.x;
+/*        if(cellule>=0 && cellule<grille.x*grille.y*grille.z){ */
        if(cellule>=0 && cellule<grille.x*grille.y*grille.z){
 	 /* on regarde si on a pas deja traite cette cellule */
 	 for(i=0;i<rang;i++){
@@ -682,6 +705,15 @@ test.z=point.z-bbox0.z;
 	       
 	       if(dist<dmin){
 		 dmin=dist;
+/* 		 cell=cellule; */
+/* 		 face=repface[cellule][j]; */
+/* 		 x=a; */
+/* 		 y=b; */
+/* 		 z=c; */
+/* 		 dtest=dist_pt_cellule(test,m,n,o,a,b,c,ccube); */
+/* 		 X=A; */
+/* 		 Y=B; */
+/* 		 Z=C; */
 	       }
 	     }
 	     j++;
@@ -696,7 +728,11 @@ free(memoire);
 free(memoire2);
 /* free(memoire2); */
 /* fprintf(f,"%lf ",dmin);  */
-/* printf("k= %d dmin=%lf face: %d cellule: %d\n",k,dmin,face,cell); */
+/* printf("face %f %f %f\n",X.x,X.y,X.z); */
+/* printf("face %f %f %f\n",Y.x,Y.y,Y.z); */
+/* printf("face %f %f %f\n",Z.x,Z.y,Z.z); */
+
+/* printf("k= %d dmin=%lf face: %d cellule: %d %d %d %d dtest= %f\n",k,dmin,face,cell,x,y,z,dtest); */
 /* printf("dmin= %lf ",dmin); */
 /* printf("face= %d\n",face);  */
 return dmin;

@@ -1,4 +1,4 @@
-/* $Id: viewer.cpp,v 1.21 2001/07/10 13:45:01 jacquet Exp $ */
+/* $Id: viewer.cpp,v 1.22 2001/07/11 08:06:09 jacquet Exp $ */
 
 #include <qapplication.h>
 #include <ScreenWidget.h>
@@ -142,6 +142,7 @@ int main( int argc, char **argv )
   grille.y=floor((bbox1.y-bbox0.y)/ccube)+1;
   grille.z=floor((bbox1.z-bbox0.z)/ccube)+1;
 
+//   printf("bbox0 %f %f %f\n",bbox0.x,bbox0.y,bbox0.z);
   printf("ccube: %lf grille: %lf %lf %lf\n",ccube,grille.x,grille.y,grille.z);
 
   /* on repertorie pour chaque cellule la liste des faces qu'elle contient */
