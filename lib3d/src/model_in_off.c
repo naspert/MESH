@@ -1,4 +1,4 @@
-/* $Id: model_in_off.c,v 1.5 2004/10/19 14:31:55 aspert Exp $ */
+/* $Id: model_in_off.c,v 1.6 2004/10/21 16:24:40 aspert Exp $ */
 /*
  *
  *  Copyright (C) 2004 EPFL (Swiss Federal Institute of Technology,
@@ -115,9 +115,11 @@ static int read_off_faces(face_t *faces, struct file_data *data, int n_faces,
 	  do {
 		tmp = getc(data);
 		line_buf[k++] = tmp;
-	  } while (tmp != '\n' && tmp != '\r' && tmp != EOF && k < LINE_BUF_SIZE);
+	  } while (tmp != '\n' && tmp != '\r' && 
+		   tmp != EOF && k < LINE_BUF_SIZE);
 
-	  if (tmp == EOF || (k == LINE_BUF_SIZE && tmp != '\n' && tmp != '\r')) 
+	  if ((tmp == EOF && i < n_faces - 1) || 
+	      (k == LINE_BUF_SIZE && tmp != '\n' && tmp != '\r')) 
 		  return MESH_CORRUPTED;
 	  line_buf[--k] = '\0';
 	  if (sscanf(line_buf, "%d %d %d %d", &order, &(faces[i].f0), &(faces[i].f1), &(faces[i].f2)) != 4)
