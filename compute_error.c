@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.60 2001/09/11 16:30:03 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.61 2001/09/20 15:21:00 dsanta Exp $ */
 
 #include <compute_error.h>
 
@@ -31,7 +31,9 @@
 #define SQRT_1_3 0.5773502691896258
 
 /* Define inlining directive for C99 or as compiler specific C89 extension */
-#if defined(__GNUC__) /* GCC's interpretation is inverse of C99 */
+#if defined(_MSC_VER) /* Visual C++ */
+# define INLINE __inline
+#elif defined(__GNUC__) /* GCC's interpretation is inverse of C99 */
 # define INLINE __inline__
 #elif defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)
 # define INLINE inline
