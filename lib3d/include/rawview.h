@@ -1,4 +1,4 @@
-/* $Id: rawview.h,v 1.8 2003/04/08 13:52:39 aspert Exp $ */
+/* $Id: rawview.h,v 1.9 2003/06/25 14:40:44 aspert Exp $ */
 
 
 #ifdef _WIN32
@@ -80,7 +80,7 @@ struct gl_render_context {
   double max_km;
   double min_km;
   struct model *raw_model;
-  struct info_vertex *info;
+  struct vertex_curvature *curv;
   char *in_filename;
   int grab_number, ps_number, dump_number;
   int load_coord;

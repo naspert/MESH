@@ -1,4 +1,4 @@
-/* $Id: rawview.c,v 1.42 2003/06/12 16:20:36 aspert Exp $ */
+/* $Id: rawview.c,v 1.43 2003/06/25 14:40:45 aspert Exp $ */
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -8,6 +8,7 @@
 
 
 #include <3dutils.h>
+#include <curvature.h>
 #include <rawview.h>
 #include <rawview_misc.h>
 #include <subdiv.h>
@@ -366,8 +367,8 @@ static void norm_key_pressed(unsigned char key, int x, int y)
       destroy_tree(gl_ctx.raw_model->tree, gl_ctx.raw_model->num_faces);
       gl_ctx.raw_model->tree = NULL;
     }
-    if (gl_ctx.info != NULL)
-      free(gl_ctx.info);
+    if (gl_ctx.curv != NULL)
+      free(gl_ctx.curv);
 
     free(gl_ctx.in_filename);
     __free_raw_model(gl_ctx.raw_model);
@@ -632,7 +633,7 @@ int main(int argc, char **argv)
 
   int i, rcode=0;
   char *title=NULL;
-  const char s_title[]="Raw Mesh Viewer $Revision: 1.42 $ - ";
+  const char s_title[]="Raw Mesh Viewer $Revision: 1.43 $ - ";
   vertex_t center;
   struct model* raw_model;
 

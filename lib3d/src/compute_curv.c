@@ -1,4 +1,4 @@
-/* $Id: compute_curv.c,v 1.2 2003/06/12 16:20:36 aspert Exp $ */
+/* $Id: compute_curv.c,v 1.3 2003/06/25 14:40:44 aspert Exp $ */
 #include <3dutils.h>
 #include <model_in.h>
 #include <ring.h>
@@ -7,7 +7,7 @@
 
 int main(int argc, char **argv) {
   struct model *raw_model=NULL;
-  struct info_vertex *info;
+  struct vertex_curvature *curv;
   struct ring_info *ring;
   int i;
   char *filename;
@@ -32,8 +32,8 @@ int main(int argc, char **argv) {
 
 
   printf("Computing face normals...\n");
-  info = (struct info_vertex*)
-    malloc(raw_model->num_vert*sizeof(struct info_vertex));
+  curv = (struct vertex_curvature*)
+    malloc(raw_model->num_vert*sizeof(struct vertex_curvature));
   ring = (struct ring_info*)
     malloc(raw_model->num_vert*sizeof(struct ring_info));
   build_star_global(raw_model, ring);
@@ -47,20 +47,20 @@ int main(int argc, char **argv) {
 
   
   printf("Computing curvature of model.... ");fflush(stdout);
-  compute_curvature_with_rings(raw_model, info, ring);
+  compute_curvature_with_rings(raw_model, curv, ring);
   printf("done\n");
 
   for (i=0; i<raw_model->num_vert; i++) {
 
-    if (info[i].gauss_curv > maxkg)
-      maxkg = info[i].gauss_curv;
-    if (info[i].gauss_curv < minkg)
-      minkg = info[i].gauss_curv;
+    if (curv[i].gauss_curv > maxkg)
+      maxkg = curv[i].gauss_curv;
+    if (curv[i].gauss_curv < minkg)
+      minkg = curv[i].gauss_curv;
 
-    if (info[i].mean_curv > maxkm)
-      maxkm = info[i].mean_curv;
-    if (info[i].mean_curv < minkm)
-      minkm = info[i].mean_curv;
+    if (curv[i].mean_curv > maxkm)
+      maxkm = curv[i].mean_curv;
+    if (curv[i].mean_curv < minkm)
+      minkm = curv[i].mean_curv;
   }
 
   printf("minkm = %f\tmaxkm = %f\n", minkm, maxkm);
@@ -70,7 +70,7 @@ int main(int argc, char **argv) {
     free(ring[i].ord_vert);
   }
 
-  free(info);
+  free(curv);
 
   free(ring);
 

@@ -1,4 +1,4 @@
-/* $Id: curvature.c,v 1.7 2002/11/14 16:43:50 aspert Exp $ */
+/* $Id: curvature.c,v 1.8 2003/06/25 14:40:44 aspert Exp $ */
 #include <3dutils.h>
 #include <ring.h>
 #include <curvature.h>
@@ -163,7 +163,7 @@ compute_mean_curvature_normal(const struct model *raw_model,
 
 
 int compute_curvature_with_rings(const struct model *raw_model, 
-                                 struct info_vertex *info, 
+                                 struct vertex_curvature *curv, 
                                  const struct ring_info *rings) 
 {
   int i;
@@ -171,38 +171,38 @@ int compute_curvature_with_rings(const struct model *raw_model,
   
   for (i=0; i<raw_model->num_vert; i++) {
     if (rings[i].type != 0) {
-      info[i].gauss_curv = 0.0;
-      info[i].mean_curv = 0.0;
+      curv[i].gauss_curv = 0.0;
+      curv[i].mean_curv = 0.0;
       continue;
     }
     compute_mean_curvature_normal(raw_model, i, rings, 
-				  &(info[i].mean_curv_normal), 
-				  &(info[i].mixed_area), 
-				  &(info[i].gauss_curv), 
-				  &(info[i].mean_curv));
+				  &(curv[i].mean_curv_normal), 
+				  &(curv[i].mixed_area), 
+				  &(curv[i].gauss_curv), 
+				  &(curv[i].mean_curv));
 
-    k = info[i].mean_curv;
+    k = curv[i].mean_curv;
     k2 = k*k;
-    delta = k2 - info[i].gauss_curv;
+    delta = k2 - curv[i].gauss_curv;
     if (delta <= 0.0) {
 #ifdef CURV_DEBUG
       DEBUG_PRINT("Strange delta=%f at vertex %d\n", delta, i);
 #endif
       delta = 0.0;
     }
-    info[i].k1 = k + sqrt(delta);
-    info[i].k2 = k - sqrt(delta);
+    curv[i].k1 = k + sqrt(delta);
+    curv[i].k2 = k - sqrt(delta);
 
 #ifdef CURV_DEBUG
     DEBUG_PRINT("Vertex %d\n", i);
-    DEBUG_PRINT("Mean curv. normal = %f %f %f\n", info[i].mean_curv_normal.x,
-                info[i].mean_curv_normal.y, info[i].mean_curv_normal.z);
-    DEBUG_PRINT("Mixed area = %f\n", info[i].mixed_area);
+    DEBUG_PRINT("Mean curv. normal = %f %f %f\n", curv[i].mean_curv_normal.x,
+                curv[i].mean_curv_normal.y, curv[i].mean_curv_normal.z);
+    DEBUG_PRINT("Mixed area = %f\n", curv[i].mixed_area);
     DEBUG_PRINT("Vertex normal = %f %f %f\n", raw_model->normals[i].x, 
                 raw_model->normals[i].y, raw_model->normals[i].z);
     DEBUG_PRINT("Gauss_k=%f k1=%f k2=%f\n\n", 
-                info[i].gauss_curv,  
-                info[i].k1, info[i].k2); 
+                curv[i].gauss_curv,  
+                curv[i].k1, curv[i].k2); 
 #endif
   }
   return 0;
@@ -210,7 +210,8 @@ int compute_curvature_with_rings(const struct model *raw_model,
 
 
 /* Calls the above function but do the rings computation before */
-int compute_curvature(const struct model *raw_model, struct info_vertex *info) 
+int compute_curvature(const struct model *raw_model, 
+                      struct vertex_curvature *curv) 
 {
   struct ring_info* rings;
   int i, ret;
@@ -219,7 +220,7 @@ int compute_curvature(const struct model *raw_model, struct info_vertex *info)
     (struct ring_info*)malloc(raw_model->num_vert*sizeof(struct ring_info));
 
   build_star_global(raw_model, rings);
-  ret = compute_curvature_with_rings(raw_model, info, rings);
+  ret = compute_curvature_with_rings(raw_model, curv, rings);
   for (i=0; i<raw_model->num_vert; i++) {
     if (rings[i].ord_vert != NULL)
       free(rings[i].ord_vert);

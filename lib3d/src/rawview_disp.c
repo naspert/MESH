@@ -1,4 +1,4 @@
-/* $Id: rawview_disp.c,v 1.10 2003/04/08 13:52:39 aspert Exp $ */
+/* $Id: rawview_disp.c,v 1.11 2003/06/25 14:40:45 aspert Exp $ */
 
 #include <rawview_misc.h>
 #ifdef DEBUG
@@ -17,11 +17,11 @@ void setGlColor(int vidx, float **cmap,
   switch (gl_ctx->disp_curv) {
   case 1: /* Gauss curv */
     range = gl_ctx->max_kg - gl_ctx->min_kg;
-    cidx = (int)(CMAP_LENGTH*(gl_ctx->info[vidx].gauss_curv - gl_ctx->min_kg)/
+    cidx = (int)(CMAP_LENGTH*(gl_ctx->curv[vidx].gauss_curv - gl_ctx->min_kg)/
                range);
   case 2: /* Mean curv */
     range = gl_ctx->max_km - gl_ctx->min_km;
-    cidx = (int)(CMAP_LENGTH*(gl_ctx->info[vidx].mean_curv - gl_ctx->min_km)/
+    cidx = (int)(CMAP_LENGTH*(gl_ctx->curv[vidx].mean_curv - gl_ctx->min_km)/
                range);
     break;
   default: /* should never get here */

@@ -1,4 +1,4 @@
-/* $Id: 3dmodel.h,v 1.37 2003/03/04 16:29:05 aspert Exp $ */
+/* $Id: 3dmodel.h,v 1.38 2003/06/25 14:40:43 aspert Exp $ */
 
 
 /*
@@ -121,17 +121,6 @@ typedef struct {
   int f1;
   int f2;
 }face_t;
-
-
-
-struct info_vertex{
-  double mixed_area;
-  double gauss_curv, mean_curv;
-  vertex_t mean_curv_normal;
-  double c[3];
-  double k1, k2; /* principal curvature */
-  vertex_t t1,t2; /* principal directions (if any) */
-};
 
 
 struct edge_prim {

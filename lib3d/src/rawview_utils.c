@@ -1,4 +1,4 @@
-/* $Id: rawview_utils.c,v 1.9 2003/06/12 16:20:36 aspert Exp $ */
+/* $Id: rawview_utils.c,v 1.10 2003/06/25 14:40:45 aspert Exp $ */
 #include <3dutils.h>
 #include <rawview.h>
 #include <rawview_misc.h>
@@ -216,12 +216,12 @@ int do_curvature(struct gl_render_context *gl_ctx)
                                     &(raw_model->vertices[cur_face->f1]), 
                                     &(raw_model->vertices[cur_face->f2]));
   }
-  gl_ctx->info = (struct info_vertex*)
-    calloc(gl_ctx->raw_model->num_vert, sizeof(struct info_vertex));
-  if (compute_curvature(gl_ctx->raw_model, gl_ctx->info)) {
+  gl_ctx->curv = (struct vertex_curvature*)
+    calloc(gl_ctx->raw_model->num_vert, sizeof(struct vertex_curvature));
+  if (compute_curvature(gl_ctx->raw_model, gl_ctx->curv)) {
     gl_ctx->disp_curv = 0;
-    free(gl_ctx->info);
-    gl_ctx->info = NULL;
+    free(gl_ctx->curv);
+    gl_ctx->curv = NULL;
     return 1;
   }
   
@@ -235,18 +235,18 @@ int do_curvature(struct gl_render_context *gl_ctx)
 
   for (i=0; i<gl_ctx->raw_model->num_vert; i++) {
     /* Gauss curv. */
-    if (gl_ctx->info[i].gauss_curv > gl_ctx->max_kg)
-      gl_ctx->max_kg = gl_ctx->info[i].gauss_curv;
+    if (gl_ctx->curv[i].gauss_curv > gl_ctx->max_kg)
+      gl_ctx->max_kg = gl_ctx->curv[i].gauss_curv;
 
-    if (gl_ctx->info[i].gauss_curv < gl_ctx->min_kg)
-      gl_ctx->min_kg = gl_ctx->info[i].gauss_curv;
+    if (gl_ctx->curv[i].gauss_curv < gl_ctx->min_kg)
+      gl_ctx->min_kg = gl_ctx->curv[i].gauss_curv;
 
     /* Mean curv. */
-    if (gl_ctx->info[i].mean_curv > gl_ctx->max_km)
-      gl_ctx->max_km = gl_ctx->info[i].mean_curv;
+    if (gl_ctx->curv[i].mean_curv > gl_ctx->max_km)
+      gl_ctx->max_km = gl_ctx->curv[i].mean_curv;
 
-    if (gl_ctx->info[i].mean_curv < gl_ctx->min_km)
-      gl_ctx->min_km = gl_ctx->info[i].mean_curv;
+    if (gl_ctx->curv[i].mean_curv < gl_ctx->min_km)
+      gl_ctx->min_km = gl_ctx->curv[i].mean_curv;
   }
 
   return 0;
