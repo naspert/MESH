@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.6 2001/06/13 09:53:11 jacquet Exp $
+# $Id: Makefile,v 1.7 2001/06/28 13:46:48 aspert Exp $
 
 CC = gcc
 CPP = g++
@@ -48,16 +48,16 @@ lib3d :  $(LIB3DDIR)/obj/3dmodel_io.o $(LIB3DDIR)/obj/normals.o  $(LIB3DDIR)/obj
 	$(CC) -g -shared -o $(LIB3DDIR)/lib/lib3d.so $^
 
 $(OBJDIR)/viewer.o : viewer.cpp
-	$(CPP) -D_METRO -O2 -ansi -lm $(QTINCFLAGS) $(GL_CFLAGS) -c $< -o $@
+	$(CPP) -D_METRO -O2 -ansi $(QTINCFLAGS) $(GL_CFLAGS) -c $< -o $@
 
 $(OBJDIR)/moc_RawWidget.o : moc_RawWidget.cpp
-	$(CPP) -D_METRO -O2 -ansi -lm $(QTINCFLAGS) $(GL_CFLAGS) -c $< -o $@
+	$(CPP) -D_METRO -O2 -ansi $(QTINCFLAGS) $(GL_CFLAGS) -c $< -o $@
 
 $(OBJDIR)/moc_ScreenWidget.o : moc_ScreenWidget.cpp
-	$(CPP) -D_METRO -O2 -ansi -lm $(QTINCFLAGS) $(GL_CFLAGS) -c $< -o $@
+	$(CPP) -D_METRO -O2 -ansi  $(QTINCFLAGS) $(GL_CFLAGS) -c $< -o $@
 
 $(OBJDIR)/moc_init.o : moc_init.cpp
-	$(CPP) -D_METRO -O2 -ansi -lm $(QTINCFLAGS) $(GL_CFLAGS) -c $< -o $@
+	$(CPP) -D_METRO -O2 -ansi $(QTINCFLAGS) $(GL_CFLAGS) -c $< -o $@
 
 moc_ScreenWidget.cpp : ScreenWidget.h
 	$(MOC) $< -o $@
