@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.39 2001/08/20 15:54:40 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.40 2001/08/20 16:34:09 dsanta Exp $ */
 
 #include <compute_error.h>
 
@@ -11,7 +11,7 @@
  * type. Using a bitmap uses less memory and can be faster than a simple type
  * depending on the cache system and number of cells in the grid (number of
  * cache misses). */
-/* #define USE_EC_BITMAP */
+#define USE_EC_BITMAP
 
 /* Ratio used to derive the cell size. It is the ratio between the cubic cell
  * side length and the side length of an average equilateral triangle. */
