@@ -1,4 +1,4 @@
-/* $Id: rawview.c,v 1.2 2002/01/10 16:34:00 aspert Exp $ */
+/* $Id: rawview.c,v 1.3 2002/01/31 16:02:38 aspert Exp $ */
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -606,16 +606,18 @@ void sp_key_pressed(int key, int x, int y) {
   light_mode = glIsEnabled(GL_LIGHTING);
   switch(key) {
   case GLUT_KEY_F1:/* Print Help */
-    fprintf(stderr, "Rawview 3.0 Help\n\n");
-    fprintf(stderr, "F1:\tDisplays this help\n");
-    fprintf(stderr, "F2:\tToggles lighted/wireframe mode\n");
-    fprintf(stderr, "F3:\tInvert normals (if any)\n");
-    fprintf(stderr, "F4:\tDraw vertex normals (if any)\n");
-    fprintf(stderr, "F5:\tSave model (incl. normals)\n");
-    fprintf(stderr, "F6:\tGrab the frame to a PPM file (grabxxx.ppm)\n");
-    fprintf(stderr, "F7:\tToggle triangle/point mode\n");
-    fprintf(stderr, "F8:\tDraw vertices' labels (be careful !)\n");
-    fprintf(stderr, "F9:\tDraw spanning tree (if any)\n");
+    fprintf(stderr, "\n***********************\n");
+    fprintf(stderr, "* Rawview v3.0 - Help *\n");
+    fprintf(stderr, "***********************\n\n");
+    fprintf(stderr, "F1 :\tDisplays this help\n");
+    fprintf(stderr, "F2 :\tToggles lighted/wireframe mode\n");
+    fprintf(stderr, "F3 :\tInvert normals (if any)\n");
+    fprintf(stderr, "F4 :\tDraw vertex normals (if any)\n");
+    fprintf(stderr, "F5 :\tSave model (incl. normals)\n");
+    fprintf(stderr, "F6 :\tGrab the frame to a PPM file (grabxxx.ppm)\n");
+    fprintf(stderr, "F7 :\tToggle triangle/point mode\n");
+    fprintf(stderr, "F8 :\tDraw vertices' labels (be careful !)\n");
+    fprintf(stderr, "F9 :\tDraw spanning tree (if any)\n");
     fprintf(stderr, "F10:\tRender in a PostScript file (uses 'gl2ps')\n");
     fprintf(stderr, "F11:\tToggle backface culling\n\n\n");
     fprintf(stderr, "Send bugs to Nicolas.Aspert@epfl.ch\n\t\t\tHave fun.\n");
@@ -897,6 +899,8 @@ void sp_key_pressed(int key, int x, int y) {
 int main(int argc, char **argv) {
 
   int i;
+  char *title;
+  const char s_title[]="Raw Mesh Viewer v3.0 - ";
 
   assert(sizeof(vertex_t) == 3*sizeof(float));
   if (argc != 2) {
@@ -924,7 +928,7 @@ int main(int argc, char **argv) {
   prod_v(0.5, &center, &center);
 
 
-
+  /* Center the model around (0, 0, 0) */
   for (i=0; i<raw_model->num_vert; i++) 
     substract_v(&(raw_model->vertices[i]), &center, &(raw_model->vertices[i]));
   
@@ -940,12 +944,15 @@ int main(int argc, char **argv) {
 
   r_model = raw_model;
 
+  title = (char*)malloc((strlen(argv[1])+strlen(s_title)+1)*sizeof(char));
+  strcpy(title, s_title);
+  strcat(title, argv[1]);
 
   /* Init the rendering window */
   glutInit(&argc, argv);
   glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
   glutInitWindowSize(500, 500);
-  glutCreateWindow("Raw Mesh Viewer v3.0");
+  glutCreateWindow(title);
 
   /* Callback registration */
   glutDisplayFunc(display);
