@@ -1,4 +1,4 @@
-/* $Id: model_in.c,v 1.11 2002/04/05 10:56:48 dsanta Exp $ */
+/* $Id: model_in.c,v 1.12 2002/04/08 14:55:31 aspert Exp $ */
 
 
 /*
@@ -1711,7 +1711,7 @@ int read_fmodel(struct model **models_ref, const char *fname,
   /* initialize file_data structure */
   data->eof_reached = 0;
   data->nbytes = 0;
-  data->pos = 0;
+  data->pos = 1;
 
 #ifdef READ_TIME
   stime = clock();
