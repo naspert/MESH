@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.85 2002/03/15 16:32:10 aspert Exp $ */
+/* $Id: compute_error.c,v 1.86 2002/04/08 15:34:34 dsanta Exp $ */
 
 
 /*
@@ -1461,7 +1461,7 @@ void dist_surf_surf(struct model_error *me1, struct model *m2,
   me1->n_samples = stats->m1_samples;
 
   /* Do normals for model 2 if requested and not yet present */
-  if (calc_normals && m2->normals == NULL && m2->face_normals == NULL) {
+  if (calc_normals && m2->normals == NULL) {
     calc_normals_as_oriented_model(m2,tl2);
   }
 
