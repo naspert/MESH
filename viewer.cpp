@@ -1,4 +1,4 @@
-/* $Id: viewer.cpp,v 1.43 2001/09/05 08:02:57 dsanta Exp $ */
+/* $Id: viewer.cpp,v 1.44 2001/09/05 11:45:36 dsanta Exp $ */
 
 #include <time.h>
 #include <string.h>
@@ -121,6 +121,7 @@ int main( int argc, char **argv )
   clock_t start_time;
   model *raw_model1, *raw_model2;
   double dmoy,dmoymax=0,dmoymin=DBL_MAX;
+  double dmoyrange;
   struct face_list *vfl;
   int i,j;
   double surfacemoy=0;
@@ -294,35 +295,40 @@ int main( int argc, char **argv )
    tmp_error = (double*)malloc(raw_model1->num_vert*sizeof(double));
 
    for(i=0; i<raw_model1->num_vert; i++){
-     dmoy = 0;
-     surfacemoy = 0;
-     for(j=0; j<vfl[i].n_faces; j++) {
-       dmoy += fe[vfl[i].face[j]].mean_error*fe[vfl[i].face[j]].face_area;
-       surfacemoy += fe[vfl[i].face[j]].face_area;
+     if (vfl[i].n_faces > 0) { /* skip degenerate cases */
+       dmoy = 0;
+       surfacemoy = 0;
+       for(j=0; j<vfl[i].n_faces; j++) {
+         dmoy += fe[vfl[i].face[j]].mean_error*fe[vfl[i].face[j]].face_area;
+         surfacemoy += fe[vfl[i].face[j]].face_area;
+       }
+       dmoy /= surfacemoy;
+       tmp_error[i] = dmoy;
+       if(dmoy>dmoymax) dmoymax = dmoy;
+       if(dmoy<dmoymin) dmoymin = dmoy;
      }
-     dmoy /= surfacemoy;
-     tmp_error[i] = dmoy;
-
-     if(dmoy>dmoymax)
-       dmoymax = dmoy;
-
-     if(dmoy<dmoymin)
-       dmoymin = dmoy;
    }
 
    /* Free now useless data */
-   free_face_lists(vfl,raw_model1->num_vert);
-   vfl = NULL;
    free_face_error(fe);
    fe = NULL;
 
+   dmoyrange = dmoymax-dmoymin;
+   if (dmoyrange < DBL_MIN*1e100) dmoyrange = 1;
    for(i=0;i<raw_model1->num_vert;i++){
-     raw_model1->error[i] = 
-       (int)floor(7*(tmp_error[i] - dmoymin)/(dmoymax - dmoymin));
-     if(raw_model1->error[i]<0)
-       raw_model1->error[i]=0;
+     if (vfl[i].n_faces > 0) {
+       raw_model1->error[i] = (int)floor(7*(tmp_error[i] - dmoymin)/dmoyrange);
+       if(raw_model1->error[i]<0) raw_model1->error[i]=0;
+       if(raw_model1->error[i]>7) raw_model1->error[i]=7;
+     } else {
+        /* error value should never be read => set an invalid value */
+       raw_model1->error[i] = -1;
+     }
    }
    
+   /* Free now useless data */
+   free_face_lists(vfl,raw_model1->num_vert);
+   vfl = NULL;
    free(tmp_error);
 
    
