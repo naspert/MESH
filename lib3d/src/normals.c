@@ -1,4 +1,4 @@
-/* $Id: normals.c,v 1.1 2001/03/12 14:50:32 aspert Exp $ */
+/* $Id: normals.c,v 1.2 2001/03/12 16:47:13 aspert Exp $ */
 #include <3dmodel.h>
 #include <geomutils.h>
 
@@ -494,7 +494,7 @@ face_tree_ptr* bfs_build_spanning_tree(model *raw_model) {
 #ifdef NORM_DEBUG
    printf("faces_traversed = %d num_faces = %d\n", faces_traversed,  
  	 raw_model->num_faces); 
-#endif NORM_DEBUG
+#endif
   
   return tree;
 }
