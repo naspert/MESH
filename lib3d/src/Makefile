@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.42 2002/06/05 14:01:24 aspert Exp $
+# $Id: Makefile,v 1.43 2002/08/13 08:51:46 aspert Exp $
 
 
 OS := $(shell uname -s)
@@ -62,7 +62,7 @@ GL_CFLAGS = $(INCLFLAGS) $(GLINCLFLAGS) $(XTRA_CFLAGS)
 #
 BASE_OBJECTS = $(OBJDIR)/geomutils.o $(OBJDIR)/normals.o \
 	$(OBJDIR)/3dmodel_io.o $(OBJDIR)/model_in.o $(OBJDIR)/ring.o \
-	$(OBJDIR)/curvature.o
+	$(OBJDIR)/curvature.o  # $(OBJDIR)/purify.o
 GL_OBJECTS = $(OBJDIR)/rawview.o $(OBJDIR)/gl2ps.o $(OBJDIR)/rawview_disp.o \
 	$(OBJDIR)/rawview_utils.o $(OBJDIR)/rawview_grab.o
 GSL_OBJECTS = $(OBJDIR)/maps_lsq.o
@@ -87,7 +87,7 @@ default : rawview
 all: dirs $(ALL_TARGETS)
 
 rawview : $(GL_OBJECTS) $(BASE_OBJECTS) $(OBJDIR)/image.o
-	$(CC) $^ -o $(BINDIR)/$@ $(STATIC_GLFLAGS)
+	$(CC) -g $^ -o $(BINDIR)/$@ $(STATIC_GLFLAGS)
 
 $(TARGETS): % : $(OBJDIR)/%.o $(BASE_OBJECTS)
 	$(CC) -o $(BINDIR)/$@ $^ $(BASE_LDFLAGS)
@@ -135,3 +135,7 @@ bindir :
 
 objdir :
 	-[ -d $(OBJDIR) ] || mkdir $(OBJDIR)
+
+# Targets not being real files
+.PHONY: default all dirs libdir bindir objdir
+
