@@ -1,4 +1,4 @@
-/* $Id: RawWidget.h,v 1.30 2002/03/01 09:57:52 aspert Exp $ */
+/* $Id: RawWidget.h,v 1.31 2002/03/11 18:15:41 dsanta Exp $ */
 #ifndef RAWWIDGET_H
 #define RAWWIDGET_H
 
@@ -99,7 +99,7 @@ private:
   int not_orientable_warned;
   int two_sided_material;
   int error_mode;
-
+  bool gl_initialized; // true once the GL state has been set up
 
 };
 

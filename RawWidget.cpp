@@ -1,4 +1,4 @@
-/* $Id: RawWidget.cpp,v 1.49 2002/03/07 15:04:05 aspert Exp $ */
+/* $Id: RawWidget.cpp,v 1.50 2002/03/11 18:15:41 dsanta Exp $ */
 
 #include <RawWidget.h>
 #include <qmessagebox.h>
@@ -43,6 +43,7 @@ RawWidget::RawWidget(struct model_error *model_err, int renderType,
   etex_id = NULL;
   etex_sz = NULL;
   downsampling = 1;
+  gl_initialized = false;
 
   // Compute the center of the bounding box of the model
   add_v(&(model_err->mesh->bBox[0]), &(model_err->mesh->bBox[1]), &center);
@@ -111,6 +112,12 @@ void RawWidget::setLine(bool state) {
   // state=FALSE -> switch to fill
   GLint line_state[2]; // front and back values
 
+  if (!gl_initialized) {
+    fprintf(stderr,
+            "RawWidget::setLine() called before GL context is initialized!\n");
+    return;
+  }
+
   // Forces the widget to be the current context. Undefined otherwise
   // and this causes a _silly_ behaviour !
   makeCurrent();
@@ -132,6 +139,12 @@ void RawWidget::setLine(bool state) {
 
 void RawWidget::setLight(bool state) {
   GLboolean light_state;
+
+  if (!gl_initialized) {
+    fprintf(stderr,
+            "RawWidget::setLight() called before GL context is initialized!\n");
+    return;
+  }
 
   // Get state from renderer
   if ((renderFlag & RW_CAPA_MASK) ==  RW_LIGHT_TOGGLE) {
@@ -502,11 +515,13 @@ void RawWidget::setErrorMode(int emode) {
     if (emode == VERTEX_ERROR || emode == MEAN_FACE_ERROR ||
         emode == SAMPLE_ERROR) {
       error_mode = emode;
-      makeCurrent();
-      QApplication::setOverrideCursor(Qt::waitCursor);
-      rebuildList();
-      QApplication::restoreOverrideCursor();
-      updateGL();
+      if (gl_initialized) { // only update GL if already initialized
+        makeCurrent();
+        QApplication::setOverrideCursor(Qt::waitCursor);
+        rebuildList();
+        QApplication::restoreOverrideCursor();
+        updateGL();
+      }
     } else {
       fprintf(stderr,"invalid mode in setErrorMode()\n");
     }
@@ -521,7 +536,7 @@ void RawWidget::setVEDownSampling(int n) {
       return;
     }
     downsampling = n;
-    if (error_mode == VERTEX_ERROR) {
+    if (error_mode == VERTEX_ERROR && gl_initialized) {
       makeCurrent();
       // display wait cursor while rebuilding list (useful for n=1 only)
       QApplication::setOverrideCursor(Qt::waitCursor);
@@ -594,6 +609,7 @@ void RawWidget::initializeGL() {
     }
   }
   checkGlErrors("initializeGL()");
+  gl_initialized = true;
 }
 
 
@@ -806,6 +822,12 @@ void RawWidget::mouseMoveEvent(QMouseEvent *event) {
   dx= event->x() - oldx;
   dy= event->y() - oldy;
 
+  if (!gl_initialized) {
+    fprintf(stderr,"received RawWidget::mouseMoveEvent() before GL context "
+            "is initialized!\n");
+    return;
+  }
+
   makeCurrent();
   if(left_button_state==1){  
     dth = dx*0.5; 
@@ -847,6 +869,12 @@ void RawWidget::invertNormals(bool state) {
   GLboolean lightState=state;
   int i;
 
+  if (!gl_initialized) {
+    fprintf(stderr,"RawWidget::invertNormals() called before GL context is "
+            "initialized!\n");
+    return;
+  }
+
   if ((renderFlag & RW_CAPA_MASK) == RW_LIGHT_TOGGLE) {
     makeCurrent();
     QApplication::setOverrideCursor(Qt::waitCursor);
@@ -867,12 +895,14 @@ void RawWidget::setTwoSidedMaterial(bool state) {
   if ((renderFlag & RW_CAPA_MASK) == RW_LIGHT_TOGGLE) {
     if (state != (bool)two_sided_material) // harmless ...
       printf("Mismatched state qcbTwoSide/two_sided_material\n");
-    makeCurrent();
-    QApplication::setOverrideCursor(Qt::waitCursor);
     two_sided_material = !two_sided_material;
-    rebuildList();
-    updateGL();
-    QApplication::restoreOverrideCursor();
+    if (gl_initialized) { // only update GL if already initialized
+      makeCurrent();
+      QApplication::setOverrideCursor(Qt::waitCursor);
+      rebuildList();
+      updateGL();
+      QApplication::restoreOverrideCursor();
+    }
   }
 }
 
