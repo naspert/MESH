@@ -1,4 +1,4 @@
-/* $Id: subdiv_loop.c,v 1.3 2002/11/01 10:06:14 aspert Exp $ */
+/* $Id: subdiv_loop.c,v 1.4 2002/11/05 13:35:20 aspert Exp $ */
 #include <3dmodel.h>
 #include <normals.h>
 #include <geomutils.h>
@@ -38,7 +38,7 @@ void compute_midpoint_loop_crease(const struct ring_info *rings,
                                   const int center,  
 				  const int v1, const struct model *raw_model, 
 				  vertex_t *vout) {
-  int n = rings[center].size;
+  int n = rings[center].size, m;
   struct ring_info ring = rings[center];
   int center2 = ring.ord_vert[v1];
   struct ring_info ring_op = rings[center2]; /* center of opp ring */
@@ -47,10 +47,10 @@ void compute_midpoint_loop_crease(const struct ring_info *rings,
 
   while (ring_op.ord_vert[v2] != center)
     v2++;
+  m = ring_op.size;
 
   if (ring.type == 1 && ring_op.type == 1) { /* we have an boundary here */
-    add_v(&(raw_model->vertices[center]), 
-	  &(raw_model->vertices[center2]), &p);
+    __add_v(raw_model->vertices[center], raw_model->vertices[center2], p);
     prod_v(0.5, &p, vout);
     return;
   } else if (ring.type == 1) { /* only one-half-boundary vertex */
@@ -59,10 +59,10 @@ void compute_midpoint_loop_crease(const struct ring_info *rings,
       *vout = p;
       return;
     } else {
-      prod_v(0.5, &(raw_model->vertices[center]), &p);
-      add_prod_v(0.25, &(raw_model->vertices[center2]), &p, &p);
-      add_prod_v(0.125, &(raw_model->vertices[ring.ord_vert[0]]), &p, &p);
-      add_prod_v(0.125, &(raw_model->vertices[ring.ord_vert[n-1]]), &p, &p);
+      __prod_v(0.5, raw_model->vertices[center], p);
+      __add_prod_v(0.25, raw_model->vertices[center2], p, p);
+      __add_prod_v(0.125, raw_model->vertices[ring.ord_vert[0]], p, p);
+      __add_prod_v(0.125, raw_model->vertices[ring.ord_vert[n-1]], p, p);
       *vout = p;
       return;
     }
@@ -72,10 +72,10 @@ void compute_midpoint_loop_crease(const struct ring_info *rings,
       *vout = p;
       return;
     } else {
-      prod_v(0.5, &(raw_model->vertices[center2]), &p);
-      add_prod_v(0.25, &(raw_model->vertices[center]), &p, &p);
-      add_prod_v(0.125, &(raw_model->vertices[ring_op.ord_vert[0]]), &p, &p);
-      add_prod_v(0.125, &(raw_model->vertices[ring_op.ord_vert[n-1]]), &p, &p);
+      __prod_v(0.5, raw_model->vertices[center2], p);
+      __add_prod_v(0.25, raw_model->vertices[center], p, p);
+      __add_prod_v(0.125, raw_model->vertices[ring_op.ord_vert[0]], p, p);
+      __add_prod_v(0.125, raw_model->vertices[ring_op.ord_vert[m-1]], p, p);
       *vout = p;
       return;
     }
@@ -96,18 +96,18 @@ void update_vertices_loop(const struct model *or_model,
       else
 	beta = 3.0/(8.0*n);
       
-      prod_v(1.0-n*beta, &(or_model->vertices[i]), &tmp);
+      __prod_v(1.0-n*beta, or_model->vertices[i], tmp);
       
       for (j=0; j<n; j++) {
 	v = rings[i].ord_vert[j];
-	add_prod_v(beta, &(or_model->vertices[v]), &tmp, &tmp);
+	__add_prod_v(beta, or_model->vertices[v], tmp, tmp);
       }
 
     } else {
-      add_v(&(or_model->vertices[rings[i].ord_vert[0]]), 
-	    &(or_model->vertices[rings[i].ord_vert[n-1]]), &tmp);
-      prod_v(0.125, &tmp, &tmp);
-      add_prod_v(0.75, &(or_model->vertices[i]), &tmp, &tmp);
+      __add_v(or_model->vertices[rings[i].ord_vert[0]], 
+              or_model->vertices[rings[i].ord_vert[n-1]], tmp);
+      __prod_v(0.125, tmp, tmp);
+      __add_prod_v(0.75, or_model->vertices[i], tmp, tmp);
       
     }
     subdiv_model->vertices[i] = tmp;
