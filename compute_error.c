@@ -1,7 +1,8 @@
-/* $Id: compute_error.c,v 1.15 2001/08/08 13:22:56 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.16 2001/08/08 14:33:14 dsanta Exp $ */
 
 #include <compute_error.h>
 
+#include <geomutils.h>
 #include <mutils.h>
 #include <math.h>
 #include <assert.h>
@@ -18,6 +19,80 @@
 #else
 # define INLINE /* no inline */
 #endif
+
+/* --------------------------------------------------------------------------*
+ *                       Local data types                                    *
+ * --------------------------------------------------------------------------*/
+
+/* A list of samples of a surface in 3D space. */
+struct sample_list {
+  vertex* sample; /* Array of sample 3D coordinates */
+  int n_samples;  /* The number of samples in the array */
+};
+
+/* A list of cells */
+struct cell_list {
+  int *cell;   /* The array of the linear indices of the cells in the list */
+  int n_cells; /* The number of elemnts in the array */
+};
+
+/* Storage for triangle sample errors. */
+struct triag_sample_error {
+  double **err;      /* Error array with 2D addressing. Sample (i,j) has the
+                      * error stored at err[i][j], where i varies betwen 0 and
+                      * n_samples-1 inclusive and j varies between 0 and
+                      * n_samples-i-1 inclusive. */
+  int n_samples;     /* The number of samples in each triangle direction */
+  double *err_lin;   /* Error array with 1D adressing, which varies from 0 to
+                      * n_samples_tot-1 inclusive. It refers to the same
+                      * location as err, thus any change to err is reflected
+                      * in err_lin and vice-versa. The order in the 1D array
+                      * is all errors for i equal 0 and j from 0 to
+                      * n_samples-1, followed by errors for i equal 1 and j
+                      * from 1 to n_samples-2, and so on. */
+  int n_samples_tot; /* The total number of samples in the triangle */
+};
+
+/* A list of triangles with their associated information */
+struct triangle_list {
+  struct triangle_info *triangles; /* The triangles */
+  int n_triangles;                 /* The number of triangles */
+  double area;                     /* The total triangle area */
+};
+
+/* A triangle and useful associated information. If a vertex of the triangle
+ * has an angle of 90 degrees or more, that vertex is C. That way the
+ * projection of C on AB is always inside AB. */
+struct triangle_info {
+  vertex a;            /* The A vertex of the triangle */
+  vertex b;            /* The B vertex of the triangle */
+  vertex c;            /* The C vertex of the triangle. The projection of C
+                        * on AB is always inside the AB segment. */
+  vertex ab;           /* The AB vector */
+  vertex ac;           /* The AC vector */
+  vertex bc;           /* The BC vector */
+  double ab_len_sqr;   /* The square of the length of AB */
+  double ac_len_sqr;   /* The square of the length of AC */
+  double bc_len_sqr;   /* The square of the length of BC */
+  double ab_1_len_sqr; /* One over the square of the length of AB */
+  double ac_1_len_sqr; /* One over the square of the length of AC */
+  double bc_1_len_sqr; /* One over the square of the length of BC */
+  vertex d;            /* The perpendicular projection of C on AB. Always in
+                        * the AB segment. */
+  vertex dc;           /* The DC vector */
+  double dc_1_len_sqr; /* One over the square of the length of DC */
+  double da_1_max_coord; /* One over the max (in absolute value) coordinate of
+                          * DA.  */
+  double db_1_max_coord; /* One over the max (in absolute value) coordinate of
+                          * DB */
+  int da_max_c_idx;    /* The index of the coordinate corresponding to
+                        * da_max_coord: 0 for X, 1 for Y, 2 for Z*/
+  int db_max_c_idx;    /* The index of the coordinate corresponding to
+                        * db_max_coord: 0 for X, 1 for Y, 2 for Z*/
+  vertex normal;       /* The (unit length) normal of the ABC triangle
+                        * (orinted with the right hand rule turning from AB to
+                        * AC). */
+};
 
 /* --------------------------------------------------------------------------*
  *                    Local utility functions                                *
@@ -60,6 +135,8 @@ static void realloc_triag_sample_error(struct triag_sample_error *tse, int n)
   if (tse->n_samples == n) return;
   tse->n_samples = n;
   tse->n_samples_tot = n*(n+1)/2;
+  /* Allocate everything in one chunk (faster and allows for 1D and 2D
+   * addressing). */
   tse->err = xrealloc(tse->err,tse->n_samples_tot*sizeof(**(tse->err))+
                       n*sizeof(*(tse->err)));
   if (n != 0) {
@@ -174,13 +251,13 @@ static void init_triangle(const vertex *a, const vertex *b, const vertex *c,
  * Euclidean distance from p to the closest point in the triangle. */
 static double dist_sqr_pt_triag(const struct triangle_info *t, const vertex *p)
 {
-  double dpp;
-  double l,m_adc,m_bdc;
-  double dq_dc,ap_ab,ap_ac,bp_bc;
-  vertex q;
-  double res[3];
-  vertex dq,ap,bp,cp;
-  double dmin_sqr;
+  double dpp;             /* (signed) distance point to ABC plane */
+  double l,m_adc,m_bdc;   /* l amd m triangle parametrization veraibles */
+  double dq_dc,ap_ab,ap_ac,bp_bc; /* scalra products */
+  vertex q;               /* projection of p on ABC plane */
+  double res[3];          /* residue of AQ, parallel to AB */
+  vertex dq,ap,bp,cp;     /* Point to point vectors */
+  double dmin_sqr;        /* minimum distance squared */
   
   /* Get Q: projection of point on ABC plane */
   substract_v(p,&(t->a),&ap);
@@ -281,35 +358,32 @@ static double dist_sqr_pt_cell(const vertex *p, int gr_x, int gr_y, int gr_z,
   double d2,tmp;
 
   d2 = 0;
-  if (gr_x != m) {
+  if (gr_x != m) { /* if not on same cell x wise */
     tmp = (m > gr_x) ? m*cell_sz-p->x : p->x-(m+1)*cell_sz;
     d2 += tmp*tmp;
   }
-  if (gr_y != n) {
+  if (gr_y != n) { /* if not on same cell y wise */
     tmp = (n > gr_y) ? n*cell_sz-p->y : p->y-(n+1)*cell_sz;
     d2 += tmp*tmp;
   }
-  if (gr_z != o) {
+  if (gr_z != o) { /* if not on same cell z wise */
     tmp = (o > gr_z) ? o*cell_sz-p->z : p->z-(o+1)*cell_sz;
     d2 += tmp*tmp;
   }
   return d2;
 }
 
-/* --------------------------------------------------------------------------*
- *                          External functions                               *
- * --------------------------------------------------------------------------*/
-
 /* Convert the triangular model m to a triangle list (without connectivity
  * information) with the associated information. All the information about the
  * triangles (i.e. fields of struct triangle_info) is computed. */
-struct triangle_list* model_to_triangle_list(const model *m)
+static struct triangle_list* model_to_triangle_list(const model *m)
 {
   int i,n;
   struct triangle_list *tl;
   struct triangle_info *triags;
   face *face_i;
 
+  /* Initialize and allocate storage */
   n = m->num_faces;
   tl = xmalloc(sizeof(*tl));
   tl->n_triangles = n;
@@ -317,6 +391,7 @@ struct triangle_list* model_to_triangle_list(const model *m)
   tl->triangles = triags;
   tl->area = 0;
 
+  /* Convert triangles and update global data */
   for (i=0; i<n; i++) {
     face_i = &(m->faces[i]);
     init_triangle(&(m->vertices[face_i->f0]),&(m->vertices[face_i->f1]),
@@ -333,8 +408,8 @@ struct triangle_list* model_to_triangle_list(const model *m)
  * other statistics are obtained analogously. Note that all sample triangles
  * have exactly the same area, and thus the calculation is independent of the
  * triangle shape. */
-void error_stat_triag(const struct triag_sample_error *tse,
-                      struct face_error *fe)
+static void error_stat_triag(const struct triag_sample_error *tse,
+                             struct face_error *fe)
 {
   int n,i,j,imax,jmax;
   double err_local;
@@ -385,20 +460,23 @@ void error_stat_triag(const struct triag_sample_error *tse,
  * samples (i,j) in s->sample is all samples for i equal 0 and j from 0 to n-1,
  * followed by all samples for i equal 1 and j from 0 to n-2, and so on, where
  * i and j are the sampling indices along the ab and ac sides, respectively. */
-void sample_triangle(const vertex *a, const vertex *b, const vertex *c,
-                     int n, struct sample_list* s)
+static void sample_triangle(const vertex *a, const vertex *b, const vertex *c,
+                            int n, struct sample_list* s)
 {
-  vertex u,v;
-  vertex a_cache;
-  int i,j,maxj,k;
+  vertex u,v;     /* basis parametrization vectors */
+  vertex a_cache; /* local (on stack) copy of a for faster access */
+  int i,j,maxj,k; /* counters and limits */
 
+  /* initialize */
+  a_cache = *a;
   s->n_samples = n*(n+1)/2;
   s->sample = xrealloc(s->sample,sizeof(vertex)*s->n_samples);
+  /* get basis vectors */
   substract_v(b,a,&u);
   substract_v(c,a,&v);
   prod_v(1/(double)(n-1),&u,&u);
   prod_v(1/(double)(n-1),&v,&v);
-  a_cache = *a;
+  /* Sample triangle */
   for (k = 0, i = 0; i < n; i++) {
     for (j = 0, maxj = n-i; j < maxj; j++) {
       s->sample[k].x = a_cache.x+i*u.x+j*v.x;
@@ -412,27 +490,30 @@ void sample_triangle(const vertex *a, const vertex *b, const vertex *c,
  * is an array of length tl->n_triangles, where each element i contains the list
  * of cells intersecting triangle i. The returned array is malloc'ed, as well
  * as the array of each cell list. */
-struct cell_list *cells_in_triangles(struct triangle_list *tl,
-                                     struct size3d grid_sz, double cell_sz,
-                                     vertex bbox_min)
+static struct cell_list *cells_in_triangles(struct triangle_list *tl,
+                                            struct size3d grid_sz,
+                                            double cell_sz, vertex bbox_min)
 {
-  struct cell_list *cl;
-  int h,i,j,m,n,o;
-  int cell_idx,cell_idx_prev;
-  int n_cells;
-  struct sample_list sl;
-  int *tmp;
-  int cell_stride_z;
-  int m_a,n_a,o_a,m_b,n_b,o_b,m_c,n_c,o_c;
-  int tmpi,max_cell_dist;
-  int n_samples;
+  struct cell_list *cl;       /* the cell list to return */
+  int h,i,j;                  /* counters */
+  int m,n,o;                  /* 3D cell indices for samples */
+  int cell_idx,cell_idx_prev; /* linear (1D) cell indices */
+  int n_cells;                /* number of cells */
+  struct sample_list sl;      /* samples from a triangle */
+  int *tmp;                   /* temp storage for cell list */
+  int cell_stride_z;          /* spacement for Z index in 3D addressing of
+                               * cell list */
+  int m_a,n_a,o_a,m_b,n_b,o_b,m_c,n_c,o_c; /* 3D cell indices for vertices */
+  int tmpi,max_cell_dist;     /* maximum cell distance along any axis */
+  int n_samples;              /* number of samples to use for triangles */
 
+  /* Initialize */
   cell_stride_z = grid_sz.x*grid_sz.y;
-
   cl= xmalloc((tl->n_triangles)*sizeof(*cl));
-  
   tmp = NULL;
   sl.sample = NULL;
+
+  /* Get intersecting cells for each triangle */
   for(i=0;i<tl->n_triangles;i++){
     h = 0;
     cl[i].cell = NULL;
@@ -450,14 +531,15 @@ struct cell_list *cells_in_triangles(struct triangle_list *tl,
 
     if (m_a == m_b && m_a == m_c && n_a == n_b && n_a == n_c &&
         o_a == o_b && o_a == o_c) {
-      /* The ABC triangle fits entirely into one cell */
+      /* The ABC triangle fits entirely into one cell => fast case */
       cl[i].cell = xmalloc(sizeof(*(cl->cell))*1);
       cl[i].cell[0] = m_a+n_a*grid_sz.x+o_a*cell_stride_z;
       cl[i].n_cells = 1;
       continue;
     }
 
-    /* How many cells does the triangle span ? */
+    /* Triangle does not fit in one cell, how many cells does the triangle
+     * span ? */
     max_cell_dist = abs(m_a-m_b);
     if ((tmpi = abs(m_a-m_c)) > max_cell_dist) max_cell_dist = tmpi;
     if ((tmpi = abs(m_b-m_c)) > max_cell_dist) max_cell_dist = tmpi;
@@ -532,12 +614,12 @@ struct cell_list *cells_in_triangles(struct triangle_list *tl,
  * of triangle indices that intersect the cell with linear index i. Each list
  * is terminated -1. The returned array and subarrays are malloc'ed
  * independently. */
-int** triangles_in_cells(const struct cell_list *cl,
-                         const struct triangle_list *tl,
-                         const struct size3d grid_sz)
+static int** triangles_in_cells(const struct cell_list *cl,
+                                const struct triangle_list *tl,
+                                const struct size3d grid_sz)
 {
 
-  int i,j,k,maxi,maxj,maxk;
+  int i,j,k,maxi,maxj,maxk; /* counters and limits */
   int **tab; /* Table containing the indices of intersecting triangles for
               * each cell. */
   int *nt;   /* Array with the number of intersecting triangles found so far
@@ -574,27 +656,30 @@ int** triangles_in_cells(const struct cell_list *cl,
  * starts at bbox_min, which is the minimum coordinates of the (axis aligned)
  * bounding box. Static storage is used by this function, so it is not
  * reentrant (i.e. thread safe). */
-double dist_pt_surf(vertex p, const struct triangle_list *tl,
-                    int **faces_in_cell, struct size3d grid_sz,
-                    double cell_sz, vertex bbox_min)
+static double dist_pt_surf(vertex p, const struct triangle_list *tl,
+                           int **faces_in_cell, struct size3d grid_sz,
+                           double cell_sz, vertex bbox_min)
 {
   vertex p_rel;         /* coordinates of p relative to bbox_min */
-  struct size3d grid_coord;
-  int k;
-  int m,n,o;
-  double dmin_sqr;
-  double dist_sqr;
+  struct size3d grid_coord; /* coordinates of cell in which p is */
+  int k;                /* cell index distance of current scan */
+  int m,n,o;            /* 3D cell indices */
+  double dmin_sqr;      /* minimum distance squared */
+  double dist_sqr;      /* current distance squared */
   int tfcl_idx;         /* triangle index in faces in cell list */
   int t_idx;            /* triangle index in triangle list */
-  int dmin_update;
-  int min_m,max_m,min_n,max_n,min_o,max_o;
-  int cell_stride_z;
-  int *cell_tl;
-  struct triangle_info *triags;
-  static int *cell_list_m,*cell_list_n,*cell_list_o;
-  static int cell_list_sz;
-  int cll;
-  int j;
+  int dmin_update;      /* flag to signal update of dmin_sqr */
+  int min_m,max_m,min_n,max_n,min_o,max_o; /* cell indices loop limits */
+  int cell_stride_z;    /* spacement for Z index in 3D addressing of cell
+                         * list */
+  int *cell_tl;         /* list of triangles intersecting the current cell */
+  struct triangle_info *triags; /* local pointer to triangle array */
+  static int *cell_list_m; /* list of cells to scan for the current k */
+  static int *cell_list_n;
+  static int *cell_list_o;
+  static int cell_list_sz; /* size of cell_list_{m,n,o} */
+  int cll;              /* length of cell list */
+  int j;                /* counter */
 
   /* Reusing the buffers from call to call gives significant speedup. */
   if (cell_list_m == NULL) {
@@ -625,7 +710,7 @@ double dist_pt_surf(vertex p, const struct triangle_list *tl,
   grid_coord.z = floor(p_rel.z/cell_sz);
   if (grid_coord.z == grid_sz.z) grid_coord.z = grid_sz.z-1;
 
-  /* Scan cells, at sequentially increasing distance k */
+  /* Scan cells, at sequentially increasing index distance k */
   k = 0;
   dmin_sqr = DBL_MAX;
   do {
@@ -735,12 +820,15 @@ double dist_pt_surf(vertex p, const struct triangle_list *tl,
   return sqrt(dmin_sqr);
 }
 
-/* Returns an array of length m->num_vert with the list of faces incident on
- * each vertex. */
+/* --------------------------------------------------------------------------*
+ *                          External functions                               *
+ * --------------------------------------------------------------------------*/
+
+/* See compute_error.h */
 struct face_list *faces_of_vertex(model *m)
 {
-  int i,j,imax,jmax;
-  struct face_list *fl;
+  int i,j,imax,jmax;    /* indices and loop limits */
+  struct face_list *fl; /* the face list to return */
 
   fl = xcalloc(m->num_vert,sizeof(*fl));
   for (i=0, imax=m->num_vert; i<imax; i++) {
@@ -754,33 +842,27 @@ struct face_list *faces_of_vertex(model *m)
   return fl;
 }
 
-/* Calculates the distance from model m1 to model m2. The triangles of m1 are
- * sampled using n_spt samples in each direction. The per face (of m1) error
- * metrics are returned in a new array (of length m1->num_faces) allocated at
- * *fe_ptr. The overall distance metrics and other statistics are returned in
- * stats. If quiet is zero a progress meter is displayed in stdout. */
+/* See compute_error.h */
 void dist_surf_surf(const model *m1, const model *m2, int n_spt,
                     struct face_error *fe_ptr[],
                     struct dist_surf_surf_stats *stats, int quiet)
 {
-  vertex bbox2_min,bbox2_max;
-  struct triangle_list *tl2;
-  int **faces_in_cell_lst;
-  struct cell_list *cl;
-  struct sample_list ts;
-  struct triag_sample_error tse;
-  int i,k,kmax;
-  double cell_sz;
-  struct size3d grid_sz;
-  struct face_error *fe;
-  int report_step;
+  vertex bbox2_min,bbox2_max; /* min and max coords of bounding box of m2 */
+  struct triangle_list *tl2;  /* triangle list for m2 */
+  int **faces_in_cell_lst;    /* list of faces intersecting each cell */
+  struct cell_list *cl;       /* list of cells intersecting each triangle */
+  struct sample_list ts;      /* list of sample from a triangle */
+  struct triag_sample_error tse; /* the errors at the triangle samples */
+  int i,k,kmax;               /* counters and loop limits */
+  double cell_sz;             /* side length of the cubic cells */
+  struct size3d grid_sz;      /* number of cells in the X, Y and Z directions */
+  struct face_error *fe;      /* The error metrics for each face of m1 */
+  int report_step;            /* The step to update the progress report */
 
   /* Initialize */
   memset(&ts,0,sizeof(ts));
   memset(&tse,0,sizeof(tse));
   report_step = m1->num_faces/(100/2); /* report every 2 % */
-
-  /* Davy uses overall bounding box, instead of m2's */
   bbox2_min = m2->bBox[0];
   bbox2_max = m2->bBox[1];
   
@@ -792,7 +874,6 @@ void dist_surf_surf(const model *m1, const model *m2, int n_spt,
    * triangle surface of m2. The cubic cell side is then CELL_TRIAG_RATIO
    * times that. */
   cell_sz = CELL_TRIAG_RATIO*sqrt(tl2->area/tl2->n_triangles*2/sqrt(3));
-  /* Davy uses floor+1 instead of ceil */
   grid_sz.x = (int) ceil((bbox2_max.x-bbox2_min.x)/cell_sz);
   grid_sz.y = (int) ceil((bbox2_max.y-bbox2_min.y)/cell_sz);
   grid_sz.z = (int) ceil((bbox2_max.z-bbox2_min.z)/cell_sz);
@@ -820,6 +901,7 @@ void dist_surf_surf(const model *m1, const model *m2, int n_spt,
   stats->rms_dist = 0;
   stats->cell_sz = cell_sz;
   stats->grid_sz = grid_sz;
+
   /* For each triangle in model 1, sample and calculate the error */
   if (!quiet) printf("Progress %2d %%",0);
   for (k=0, kmax=m1->num_faces; k<kmax; k++) {
