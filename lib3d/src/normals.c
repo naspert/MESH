@@ -1,4 +1,4 @@
-/* $Id: normals.c,v 1.23 2002/02/19 09:09:31 aspert Exp $ */
+/* $Id: normals.c,v 1.24 2002/02/19 12:58:55 aspert Exp $ */
 #include <3dmodel.h>
 #include <geomutils.h>
 #include <normals.h>
@@ -1014,7 +1014,7 @@ void compute_vertex_normal(struct model* raw_model, struct info_vertex* curv,
     
     
 
-    normalize_v(&tmp);
+    __normalize_v(tmp);
     raw_model->normals[i] = tmp;
 #ifdef NORM_DEBUG
     printf("%d : %f %f %f\n",i, raw_model->normals[i].x, 

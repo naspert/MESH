@@ -1,4 +1,4 @@
-/* $Id: subdiv_methods.c,v 1.12 2002/02/19 12:42:13 aspert Exp $ */
+/* $Id: subdiv_methods.c,v 1.13 2002/02/19 12:58:55 aspert Exp $ */
 #include <3dmodel.h>
 #include <geomutils.h>
 #include <subdiv_methods.h>
@@ -70,7 +70,7 @@ void compute_midpoint_sph(struct ring_info *rings, int center, int v1,
   dz = nr*sin(nph);
   rp = nr*cos(nph);
 
-  normalize_v(&v);
+  __normalize_v(v);
   
   __prod_v(rp, v, np1);
 
@@ -127,7 +127,7 @@ void compute_midpoint_sph(struct ring_info *rings, int center, int v1,
   dz = nr*sin(nph);
   rp = nr*cos(nph);
 
-  normalize_v(&v);
+  __normalize_v(v);
   __prod_v(rp, v, np2);
 
   /* np2 += dz*n + p */

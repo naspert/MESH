@@ -1,4 +1,4 @@
-/* $Id: geomutils.h,v 1.24 2002/02/19 12:42:13 aspert Exp $ */
+/* $Id: geomutils.h,v 1.25 2002/02/19 12:58:55 aspert Exp $ */
 #include <3dmodel.h>
 
 #ifndef _GEOMUTILS_PROTO_
@@ -549,11 +549,11 @@ extern "C" {
 #ifndef __crossprod_v
 #define __crossprod_v(v1, v2, vout)                             \
         do {                                                    \
-             vertex_t res;                                      \
-             res.x = (v1).y*(v2).z - (v1).z*(v2).y;             \
-             res.y = (v1).z*(v2).x - (v1).x*(v2).z;             \
-             res.z = (v1).x*(v2).y - (v1).y*(v2).x;             \
-             vout = res;                                        \
+             vertex_t __res__;                                  \
+             __res__.x = (v1).y*(v2).z - (v1).z*(v2).y;         \
+             __res__.y = (v1).z*(v2).x - (v1).x*(v2).z;         \
+             __res__.z = (v1).x*(v2).y - (v1).y*(v2).x;         \
+             vout = __res__;                                    \
            } while(0)
 #endif
 
@@ -580,5 +580,18 @@ extern "C" {
 #define __norm2_v(v)                             \
         ((v).x*(v).x + (v).y*(v).y + (v).z*(v).z)
 #endif
+
+/* 
+ * Normalize vector 'v'
+ */
+#ifndef __normalize_v
+#define __normalize_v(v)                        \
+        do {                                    \
+             float __n__ = __norm_v(v);         \
+             (v).x /= __n__;                    \
+             (v).y /= __n__;                    \
+             (v).z /= __n__;                    \
+        } while (0)
+#endif 
 
 #endif
