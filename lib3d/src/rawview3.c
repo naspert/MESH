@@ -1,4 +1,4 @@
-/* $Id: rawview3.c,v 1.8 2001/04/18 13:37:26 aspert Exp $ */
+/* $Id: rawview3.c,v 1.9 2001/04/19 07:59:13 aspert Exp $ */
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <GL/glut.h>
@@ -304,16 +304,22 @@ void rebuild_list(model *raw_model) {
 /* ******************************************** */
 void gfx_init(model *raw_model) {
   const char *glverstr;
-  char *needle;
+  char *mesa, *irix, *hp;
   int mesa_major;
   
   glverstr = (const char*)glGetString(GL_VERSION);
-
-  needle = strstr(glverstr, "Mesa");
   printf("GL_VERSION = %s\n", glverstr);
-  if (needle != NULL) {
-    needle += 5;
-    if (sscanf(needle, "%i.%i", &mesa_major, &mesa_minor) != 2) {
+  /* Now we try to identify what kind of OpenGL implementation we have */
+  
+
+  mesa = strstr(glverstr, "Mesa");
+  irix = strstr(glverstr, "Irix");
+  hp = strstr(glverstr, "Revision");
+
+  
+  if (mesa != NULL) {
+    mesa += 5;
+    if (sscanf(mesa, "%i.%i", &mesa_major, &mesa_minor) != 2) {
       printf("Error checking Mesa version\n");
       free(raw_model->vertices);
       free(raw_model->faces);
@@ -327,11 +333,26 @@ void gfx_init(model *raw_model) {
       exit(1);
     }
     if (mesa_major != 3) {
-      printf("Incorrect Mesa version found ?\n");
+      printf("Incorrect (too old ?) Mesa version found ?\n");
     }
-  } else { /* Non-Mesa OpenGL -> probably SGI */
+  } else if (irix != NULL) /* SGI OpenGL found */
     mesa_minor = 0; /* should be OK with this */
+  else if (hp != NULL) /* HP (Vis') OpenGL */
+    mesa_minor = 4; /* same behaviour as recent Mesa version */
+  else { /* Unknown OpenGL */
+    printf("Error checking OpenGL version\n");
+    free(raw_model->vertices);
+    free(raw_model->faces);
+    if (raw_model->normals != NULL)
+      free(raw_model->normals);
+    if (raw_model->face_normals != NULL)
+      free(raw_model->face_normals);
+    if (raw_model->area != NULL)
+      free(raw_model->area);
+    free(raw_model);
+    exit(1);
   }
+
 
   glEnable(GL_DEPTH_TEST);
   glShadeModel(GL_SMOOTH); 
