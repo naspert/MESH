@@ -1,4 +1,4 @@
-/* $Id: model_in.h,v 1.6 2002/04/11 08:51:04 aspert Exp $ */
+/* $Id: model_in.h,v 1.7 2002/04/11 15:33:52 aspert Exp $ */
 
 
 /*
@@ -44,6 +44,8 @@
  * Functions to read 3D model data from files
  *
  * Author: Diego Santa Cruz
+ * The guilty for all the cruft to read gzipped files + Inventor & 
+ * SMF parsers is N. Aspert
  *
  * Currently supported file formats:
  *
@@ -60,7 +62,15 @@
  *      considered). Likewise for indexed face normals.
  *
  * - Inventor 2:
- *      Not yet implemented but detected
+ *     Only the Coordinate3-point and IndexedFaceSet-coordIndex fields
+ *     are read. Normals and everything else is (hopefully) silently
+ *     ignored. 
+ *
+ * - SMF : 
+ *     Only the vertices and faces are read (which should be
+ *     sufficient to read the output of QSlim for instance). Every
+ *     other field (normals, transforms, colors, begin/end, etc.) is
+ *     ignored. 
  *
  * - Ply ascii:
  *      Not yet implemented but detected
@@ -109,7 +119,7 @@ BEGIN_DECL
 #define MESH_FF_VRML      2 /* VRML 2 utf8 (a.k.a. VRML97) */
 #define MESH_FF_IV        3 /* Inventor 2 ascii */
 #define MESH_FF_PLY       4 /* Ply ascii */
-#define MESH_FF_SMF       5 /* SMF format from QSlim */
+#define MESH_FF_SMF       5 /* SMF format (from QSlim) */
 
 /* --------------------------------------------------------------------------
    ERROR CODES (always negative)

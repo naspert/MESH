@@ -1,4 +1,4 @@
-/* $Id: model_in.c,v 1.17 2002/04/11 14:52:03 aspert Exp $ */
+/* $Id: model_in.c,v 1.18 2002/04/11 15:33:52 aspert Exp $ */
 
 
 /*
@@ -44,6 +44,8 @@
  * Functions to read 3D model data from files
  *
  * Author: Diego Santa Cruz
+ * N. Aspert is guilty for all the stuff that is zlib/block-read
+ * related + Inventor & SMF parsers.
  */
 
 #include <assert.h>
