@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.52 2002/11/13 12:18:22 aspert Exp $
+# $Id: Makefile,v 1.53 2002/11/13 13:44:26 aspert Exp $
 
 #Set PROFILE to something to enable profiling
 #PROFILE=1
@@ -40,9 +40,8 @@ endif #Linux
 ifeq ($(OS), IRIX64)
 CC = cc
 PROF_FLAGS = -fbgen
-XTRA_CFLAGS = -g3 -o32 
-STATIC_GLFLAGS =  -o32 -lglut -lGLU -lGL -lX11 -lXmu \
-	-L/usr/freeware/bin $(BASE_LIBFLAGS)
+XTRA_CFLAGS = -g3 -DDONT_USE_ZLIB -xansi
+STATIC_GLFLAGS =  -lglut -lGLU -lGL -lX11 -lXmu -lm
 ALL_TARGETS = $(TARGETS) rawview subdiv
 endif
 
@@ -70,7 +69,7 @@ BASE_LIBFLAGS += $(PROF_FLAGS)
 endif
 
 ifdef DEBUG
-XTRA_CFLAGS += -DDEBUG -DSUBDIV_DEBUG -DSUBDIV_SPH_DEBUG -DNORM_DEBUG -DNORM_DEBUG_BFS
+XTRA_CFLAGS += -DDEBUG #-DSUBDIV_DEBUG -DSUBDIV_SPH_DEBUG -DNORM_DEBUG -DNORM_DEBUG_BFS
 else
 XTRA_CFLAGS += -pedantic
 endif
