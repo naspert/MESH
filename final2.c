@@ -1,4 +1,4 @@
-/* $Id: final2.c,v 1.10 2001/04/10 13:16:03 jacquet Exp $ */
+/* $Id: final2.c,v 1.11 2001/04/12 13:33:57 jacquet Exp $ */
 
 #include <stdio.h>
 #include <math.h>
@@ -23,6 +23,7 @@ typedef struct {
   vertex* vertices;
   vertex BBOX[2];
   face* faces;
+  vertex *face_normals;
 } model;
 
 typedef struct {
@@ -50,6 +51,49 @@ double norm(vertex v) {
 
   return norm(tmp);
   
+}
+
+/* Computes the normalized cross product between vectors p2p1 and p3p1 */
+vertex ncrossp(vertex p1, vertex p2, vertex p3) {
+  vertex v1, v2, tmp;
+  double norm;
+
+  v1.x = p2.x - p1.x;
+  v1.y = p2.y - p1.y;
+  v1.z = p2.z - p1.z;
+
+  v2.x = p3.x - p1.x;
+  v2.y = p3.y - p1.y;
+  v2.z = p3.z - p1.z;
+
+  tmp.x = v1.y*v2.z - v1.z*v2.y;
+  tmp.y = v1.z*v2.x - v1.x*v2.z;
+  tmp.z = v1.x*v2.y - v1.y*v2.x;
+  
+  norm = sqrt(tmp.x*tmp.x + tmp.y*tmp.y + tmp.z*tmp.z);
+  if (fabs(norm) < 1e-10) {
+    printf("ncrossp: Trouble\n");
+  }
+
+  tmp.x /= norm;
+  tmp.y /= norm;
+  tmp.z /= norm;
+  
+  return tmp;
+}
+
+/* computes the distance between a point and a plan defined by 3 points */
+double distance(vertex point,vertex A,vertex normal)
+{
+double k;
+double dist;
+
+k=-(normal.x*A.x+normal.y*A.y+normal.z*A.z);
+
+dist=fabs(-normal.x*point.x-normal.y*point.y-normal.z*point.z-k);
+
+return dist;
+
 }
 
 /****************************************************************************/
@@ -210,129 +254,189 @@ sample* echantillon(vertex a, vertex b, vertex c,double k)
 /* fonction qui repertorie pour chaque face les cellules avec lesquelles    */
 /*     elle a une intersection                                              */
 /****************************************************************************/
-vertex** liste(model *raw_model,double samplethin)
+cellules* liste(int grid,model *raw_model)
 {
-vertex **groupts;
-int i,j,k,m,n,o,cellule;
+cellules *cell;
+int h,i,j,k,m,n,o,cellule,state=0;
 sample *sample1;
-vertex A,B,C,bbox0,bbox1,test;
-int mem[1000][1]={0};
-
-groupts=(vertex**)malloc(1000*sizeof(vertex*));
+vertex A,B,C,bbox0,bbox1;
 
 bbox0=raw_model->BBOX[0];
 bbox1=raw_model->BBOX[1];
 
-test.x=bbox0.x-1;
-test.y=0;
-test.z=0; 
 
+raw_model->face_normals=(vertex*)malloc(raw_model->nbfaces*sizeof(vertex));
+cell=(cellules *)malloc((raw_model->nbfaces)*sizeof(cellules));
 
  for(i=0;i<raw_model->nbfaces;i++){
+   h=0;
+   cell[i].cube=(int *)malloc(sizeof(int));   
 
    A=raw_model->vertices[raw_model->faces[i].f0];
    B=raw_model->vertices[raw_model->faces[i].f1];
    C=raw_model->vertices[raw_model->faces[i].f2];
 
-   sample1=echantillon(A,B,C,samplethin);
+   raw_model->face_normals[i]=ncrossp(A,B,C);
+   sample1=echantillon(A,B,C,0.05);
 
    for(j=0;j<sample1->nbsamples;j++){
-
-     m=(sample1->sample[j].x-bbox0.x)*10/(bbox1.x-bbox0.x);
-     n=(sample1->sample[j].y-bbox0.y)*10/(bbox1.y-bbox0.y);
-     o=(sample1->sample[j].z-bbox0.z)*10/(bbox1.z-bbox0.z);
+     state=0;
+     m=(sample1->sample[j].x-bbox0.x)*grid/(bbox1.x-bbox0.x);
+     n=(sample1->sample[j].y-bbox0.y)*grid/(bbox1.y-bbox0.y);
+     o=(sample1->sample[j].z-bbox0.z)*grid/(bbox1.z-bbox0.z);
      
-     if(m==10)
-       m=9;
-     if(n==10)
-       n=9;
-     if(o==10)
-       o=9;
+     if(m==grid)
+       m=grid-1;
+     if(n==grid)
+       n=grid-1;
+     if(o==grid)
+       o=grid-1;
 
-     cellule=m+n*10+o*100;
-     
-     if(mem[cellule][0]==0)
-       groupts[cellule]=NULL;
-     groupts[cellule]=(vertex*)realloc(groupts[cellule],
-				       (mem[cellule][0]+1)*sizeof(vertex));
-     groupts[cellule][mem[cellule][0]]=sample1->sample[j];
-     mem[cellule][0]++;
+     cellule=m+n*grid+o*grid*grid;
 
+     for(k=0;k<=h;k++){
+       if(cellule==cell[i].cube[k]){
+         state=1;
+         break;
+       }
+     }
+     if(state==0){
+       if(h>0){
+         if((cell[i].cube=(int *)realloc(cell[i].cube,(h+1)*sizeof(int)))==NULL){
+           printf("erreur d'allocation memoire");
+           exit(-1);
+         }
+       }
+       cell[i].cube[h]=cellule;
+       h++;
+     } 
    }
+   if(sample1->sample != NULL)
+     free(sample1->sample);
+   if(sample1 != NULL)
+     free(sample1);
+   cell[i].nbcube=h;
 
-   free(sample1->sample);
-   free(sample1);   
  }
-
- for(i=0;i<1000;i++){
-   if(mem[i][0]==0)
-     groupts[i]=NULL;
-   groupts[i]=(vertex*)realloc(groupts[i],(mem[i][0]+1)*sizeof(vertex));
-   groupts[i][mem[i][0]]=test;
- }
-return groupts;
+ /* for(i=0;i<raw_model->nbfaces;i++){
+   printf("face %d",i);
+   for(j=0;j<cell[i].nbcube;j++){
+     printf(" %d",cell[i].cube[j]);
+   }
+   printf("\n");
+   }*/
+ 
+return cell;
 }
 
 
-
-
 /*****************************************************************************/
-/*                fonction qui calcule la plus courte distance d'un          */
-/*                       point a une surface                                 */
+/* fonction qui repertorie pour chaque cellule la liste des faces avec       */
+/*      lesquelles elle a une intersection                                   */
 /*****************************************************************************/
 
-double pcd(vertex point,model *raw_model2, double k,vertex **groupts)
+int** cublist(cellules *cell,int grid,model *raw_model)
 {
-double d,dmin;
-int m,n,o,i=0,j,cellule,mem;
-sample *sample1;
-vertex bbox0,bbox1;
+
+int **tab,i,j,k;
+int *mem;
+
+mem=(int*)calloc(grid*grid*grid,sizeof(int));
+tab=(int **)malloc(grid*grid*grid*sizeof(int*));
+
+ for(j=0;j<raw_model->nbfaces;j++){
+   for(k=0;k<cell[j].nbcube;k++){
+     i=cell[j].cube[k];
+     if(mem[i]==0)
+       tab[i]=NULL;
+     tab[i]=(int *)realloc(tab[i],(mem[i]+1)*sizeof(int));
+     tab[i][mem[i]]=j;
+     mem[i]++;
+   }
+ }
+
+ for(i=0;i<grid*grid*grid;i++){
+   if(mem[i]==0)
+     tab[i]=NULL;
+   tab[i]=(int *)realloc(tab[i],(mem[i]+1)*sizeof(int));
+   tab[i][mem[i]]=-1;
+ }
+
+ /* for(i=0;i<grid*grid*grid;i++){
+   j=0;
+   printf("cell %d ",i);
+   while(tab[i][j]!=-1){
+     printf("%d ",tab[i][j]);
+     j++;
+   }
+   printf("\n");
+   }*/
+
+return(tab);
+}
+
+/****************************************************************************/
+/*     fonction qui calcule la distance d'un point a une surface            */
+/****************************************************************************/
+double pcd(vertex point,model *raw_model,int **repface,int grid)
+{
+int m,n,o;
 int a,b,c;
+vertex bbox0,bbox1,A,normal;
+int cellule;
+int j=0;
+double dist,dmin=200;
 
-bbox0=raw_model2->BBOX[0];
-bbox1=raw_model2->BBOX[1];
+bbox0=raw_model->BBOX[0];
+bbox1=raw_model->BBOX[1];
 
-m=(point.x-bbox0.x)*10/(bbox1.x-bbox0.x);
-n=(point.y-bbox0.y)*10/(bbox1.y-bbox0.y);
-o=(point.z-bbox0.z)*10/(bbox1.z-bbox0.z);
-
-if(m==10)
-  m=9;
-if(n==10)
-  n=9;
-if(o==10)
-  o=9; 
-cellule=m+n*10+o*100;
-
-d=dist(point,groupts[cellule][0]);
-dmin=d;
+ m=(point.x-bbox0.x)*grid/(bbox1.x-bbox0.x);
+ n=(point.y-bbox0.y)*grid/(bbox1.y-bbox0.y);
+ o=(point.z-bbox0.z)*grid/(bbox1.z-bbox0.z);
+ 
+ if(m==grid)
+   m=grid-1;
+ if(n==grid)
+   n=grid-1;
+ if(o==grid)
+   o=grid-1;
+ 
+ cellule=m+n*grid+o*grid*grid;
+ /*printf("cellule: %d\n",cellule);*/
 
  for(c=o-1;c<=o+1;c++){ 
    for(b=n-1;b<=n+1;b++){
      for(a=m-1;a<=m+1;a++){
-       
-       cellule=a+b*10+c*100;
+       /*printf("mermer");*/
+       cellule=a+b*grid+c*grid*grid;
        j=0;
-       if(cellule>=0 && cellule<1000){
-	 while(groupts[cellule][j].x>bbox0.x-1){
+       if(cellule>=0 && cellule<grid*grid*grid){ 
+	 while(repface[cellule][j]!=-1){
+	   A=raw_model->vertices[raw_model->faces[repface[cellule][j]].f0];
+	   normal=raw_model->face_normals[repface[cellule][j]];
 	   
-	   d=dist(point,groupts[cellule][j]);
 	   
-	   if(d<dmin)
-	     dmin=d;
+	   dist=distance(point,A,normal);
+	   /*printf("cellule: %d\n",cellule);
+	   printf("%lf %lf %lf\n",A.x,A.y,A.z);
+	   printf("%lf %lf %lf\n",B.x,B.y,B.z);
+	   printf("%lf %lf %lf\n",C.x,C.y,C.z);
+	   
+	   printf("face: %d dist: %lf\n",repface[cellule][j],dist);*/
+	   if(dist<dmin)
+	     dmin=dist;
+	   
 	   j++;
-	 }       
-       } 
+	 }
+       }
      }
    }
  }
- 
 
-/*printf("nb face test: %d;dmin: %lf\n",h,dmin);*/    
-/*printf("%lf\n ",dmin);*/
-return(dmin);  
+ /*printf("dmin: %lf\n",dmin);*/
+return dmin;
+
 }
-
 /****************************************************************************/
 int main(int argc,char **argv)
 {
@@ -340,14 +444,19 @@ FILE *f1,*f2;
 sample *sample2;
 model* raw_model1;
 model* raw_model2;
-cellules *cell;
 double samplethin,diag,diag2,dcourant,dmax=0,superdmax=0;
-int i,j;
+int i,j,h=0;
 vertex bbox0,bbox1;
-vertex **groupts;
+cellules *cell;
+int **repface;
+int grid;
+
 
  if (argc!=4) {
    printf("nbre d'arg incorrect\n");
+   printf("le 1er argument correspond a l'objet de plus basse resolution\n");
+   printf("le 2nd argument correspond a l'objet de plus haute resolution\n");
+   printf("le 3eme argument correspond au pas d'echantillonnage\n");
    exit(-1);
  }
 
@@ -360,12 +469,15 @@ vertex **groupts;
    exit(-1);
  }
 
-samplethin=atof(argv[3]);
-
 raw_model1=readfile(f1);
 fclose(f1);
 raw_model2=readfile(f2);
 fclose(f2);
+
+ if(raw_model1->nbfaces>raw_model2->nbfaces){
+   printf("\nle nbre de faces du 1er objet doit etre superieur a celui du 2nd objet\n\n");
+   exit(-1);
+ }
 
 bbox0=raw_model1->BBOX[0];
 bbox1=raw_model1->BBOX[1];
@@ -379,14 +491,26 @@ bbox1=raw_model2->BBOX[1];
 printf("%lf %lf %lf\n",bbox0.x,bbox0.y,bbox0.z);
 printf("%lf %lf %lf\n",bbox1.x,bbox1.y,bbox1.z);
 
-
-groupts=liste(raw_model2,samplethin);
-
 diag=dist(raw_model1->BBOX[0],raw_model1->BBOX[1]);
 diag2=dist(raw_model2->BBOX[0],raw_model2->BBOX[1]);
 
 printf("diagBBOX: %lf\n",diag);
 printf("diagBBOX2: %lf\n",diag2);
+
+
+samplethin=atof(argv[3]);
+/*samplethin*=diag2/100;*/
+
+if(raw_model2->nbfaces<1000)
+  grid=10;
+else if(raw_model2->nbfaces<10000)
+  grid=20;
+else if(raw_model2->nbfaces<100000)
+  grid=30;
+
+cell=liste(grid,raw_model2);
+repface=cublist(cell,grid,raw_model2);
+
 
  for(i=0;i<raw_model1->nbfaces;i++) {
    sample2=echantillon(raw_model1->vertices[raw_model1->faces[i].f0],
@@ -394,9 +518,10 @@ printf("diagBBOX2: %lf\n",diag2);
 		       raw_model1->vertices[raw_model1->faces[i].f2],
 		       samplethin); 
    for(j=0;j<sample2->nbsamples;j++){
-     dcourant=pcd(sample2->sample[j],raw_model2,samplethin,groupts);
+     dcourant=pcd(sample2->sample[j],raw_model2,repface,grid);
      if(dcourant>dmax)
        dmax=dcourant;
+     h++;
    }
    printf("face numero %d: dmax= %lf\n",i+1,dmax);
    if(dmax>superdmax)
@@ -407,8 +532,10 @@ printf("diagBBOX2: %lf\n",diag2);
 
    free(sample2);
     
- }
+   }
 printf("distance maximale: %lf\n",superdmax);
+printf("nbsampleteste: %d\n",h);
+
 return 0;
 }
 
