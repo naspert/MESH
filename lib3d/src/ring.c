@@ -1,4 +1,4 @@
-/* $Id: ring.c,v 1.6 2002/11/13 12:18:25 aspert Exp $ */
+/* $Id: ring.c,v 1.7 2003/01/08 18:34:21 aspert Exp $ */
 
 
 /*
@@ -32,7 +32,7 @@
 
 void build_star_global(const struct model *raw_model, 
                        struct ring_info *ring) {
-  int i, j, k, l;
+  int i, j, l;
   int *num_edges=NULL; /* number of edges in the 1-ring */
   struct edge_v **edge_list_primal=NULL;
   int *final_star;
@@ -108,11 +108,8 @@ void build_star_global(const struct model *raw_model,
           continue;
         if (edge_list_primal[i][j].v0 == final_star[0]) {
           /* add v1 on top */
-          for (k=star_size-1; k>=0; k--) 
-            final_star[k+1] = final_star[k];
-          for (k=n_faces-1; k>=0; k--)
-            face_star[k+1] = face_star[k];
-          
+          memmove(&(final_star[1]), final_star, star_size*sizeof(int));
+          memmove(&(face_star[1]), face_star, n_faces*sizeof(int));
           
           final_star[0] = edge_list_primal[i][j].v1;
           face_star[0] = edge_list_primal[i][j].face;
@@ -126,10 +123,8 @@ void build_star_global(const struct model *raw_model,
         }
         else if (edge_list_primal[i][j].v1 == final_star[0]) {
           /* add v0 on top */
-          for (k=star_size-1; k>=0; k--) 
-            final_star[k+1] = final_star[k];
-          for (k=n_faces-1; k>=0; k--)
-            face_star[k+1] = face_star[k];
+          memmove(&(final_star[1]), final_star, star_size*sizeof(int));
+          memmove(&(face_star[1]), face_star, n_faces*sizeof(int));
        
           final_star[0] = edge_list_primal[i][j].v0;
           face_star[0] = edge_list_primal[i][j].face;
@@ -217,7 +212,7 @@ void build_star_global(const struct model *raw_model,
 /* find the 1-ring of vertex v */
 void build_star(const struct model *raw_model, int v, struct ring_info *ring) {
 
-  int i, j, k;
+  int i, j;
   int num_edges=0; /* number of edges in the 1-ring */
   struct edge_v *edge_list_primal=NULL;
   int *final_star;
@@ -308,11 +303,8 @@ void build_star(const struct model *raw_model, int v, struct ring_info *ring) {
 	continue;
       if (edge_list_primal[j].v0 == final_star[0]) {
 	/* add v1 on top */
-	for (k=star_size-1; k>=0; k--) 
-	  final_star[k+1] = final_star[k];
-	for (k=n_faces-1; k>=0; k--)
-	  face_star[k+1] = face_star[k];
-       
+        memmove(&(final_star[1]), final_star, star_size*sizeof(int));
+        memmove(&(face_star[1]), face_star, n_faces*sizeof(int));
 	
 	final_star[0] = edge_list_primal[j].v1;
 	face_star[0] = edge_list_primal[j].face;
@@ -326,10 +318,8 @@ void build_star(const struct model *raw_model, int v, struct ring_info *ring) {
       }
       else if (edge_list_primal[j].v1 == final_star[0]) {
 	/* add v0 on top */
-	for (k=star_size-1; k>=0; k--) 
-	  final_star[k+1] = final_star[k];
-	for (k=n_faces-1; k>=0; k--)
-	  face_star[k+1] = face_star[k];
+        memmove(&(final_star[1]), final_star, star_size*sizeof(int));
+        memmove(&(face_star[1]), face_star, n_faces*sizeof(int));
        
 	final_star[0] = edge_list_primal[j].v0;
 	face_star[0] = edge_list_primal[j].face;
