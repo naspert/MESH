@@ -11,8 +11,8 @@ RawWidget::RawWidget(model *raw_model, QWidget *parent, const char *name)
 { 
   
   
-  setMinimumSize( 500, 500 );
-  setMaximumSize( 500, 500 );
+  setMinimumSize( 512, 512 );
+  setMaximumSize( 512, 512 );
   FOV = 40;
   model_list=0;
   colormap=HSVtoRGB();
@@ -200,10 +200,8 @@ void RawWidget::rebuild_list(double **colormap,model *raw_model) {
   if(raw_model2->face_normals!=NULL){
     for (i=0; i<raw_model->num_faces; i++) {
       cur_face = &(raw_model->faces[i]);
+      glColor3f(1.0,1.0,1.0);
 
-      glColor3f(colormap[raw_model->error[cur_face->f0]][0],
-		colormap[raw_model->error[cur_face->f0]][1],
-		colormap[raw_model->error[cur_face->f0]][2]);        
       glNormal3d(raw_model->normals[cur_face->f0].x,
 		 raw_model->normals[cur_face->f0].y,
 		 raw_model->normals[cur_face->f0].z);
@@ -211,9 +209,6 @@ void RawWidget::rebuild_list(double **colormap,model *raw_model) {
 		 raw_model->vertices[cur_face->f0].y,
 		 raw_model->vertices[cur_face->f0].z); 
       
-      glColor3f(colormap[raw_model->error[cur_face->f1]][0],
-		colormap[raw_model->error[cur_face->f1]][1],
-		colormap[raw_model->error[cur_face->f1]][2]);
       glNormal3d(raw_model->normals[cur_face->f1].x,
 	       raw_model->normals[cur_face->f1].y,
 		 raw_model->normals[cur_face->f1].z);  
@@ -221,9 +216,6 @@ void RawWidget::rebuild_list(double **colormap,model *raw_model) {
 		 raw_model->vertices[cur_face->f1].y,
 		 raw_model->vertices[cur_face->f1].z); 
       
-      glColor3f(colormap[raw_model->error[cur_face->f2]][0],
-		colormap[raw_model->error[cur_face->f2]][1],
-		colormap[raw_model->error[cur_face->f2]][2]);
       glNormal3d(raw_model->normals[cur_face->f2].x,
 		 raw_model->normals[cur_face->f2].y,
 		 raw_model->normals[cur_face->f2].z); 

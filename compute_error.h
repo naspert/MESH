@@ -1,9 +1,11 @@
-/* $Id: compute_error.h,v 1.4 2001/06/11 07:25:03 jacquet Exp $ */
+/* $Id: compute_error.h,v 1.5 2001/06/13 09:46:56 jacquet Exp $ */
 #include <3dmodel.h>
 #include <geomutils.h>
+#include <structure.h>
 
 #ifndef _COMPUTE_ERROR_PROTO
 #define _COMPUTE_ERROR_PROTO
+
 
 
 #ifdef __cplusplus

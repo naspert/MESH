@@ -1,6 +1,6 @@
-/* $Id: compute_error.c,v 1.4 2001/06/11 07:25:02 jacquet Exp $ */
-#include <3dmodel.h>
-#include <geomutils.h>
+/* $Id: compute_error.c,v 1.5 2001/06/13 09:46:56 jacquet Exp $ */
+
+#include <compute_error.h>
 
 #define E 0.0000001
 
@@ -73,7 +73,7 @@ return(erreur);
 /*****************************************************************************/
 double dist_pt_surf(vertex A,vertex B,vertex C,vertex point,vertex normal)
 {
-double k;
+double k,tmp;
 int i=0;
 double d,dmin=200;
 vertex M,AM,AB,AC,BC,AP,BP,PM,CP;
@@ -94,11 +94,12 @@ double alpha,beta,Xp,Yp;
    BC.z=C.z-B.z;
 
 
-
-k=-(normal.x*A.x+normal.y*A.y+normal.z*A.z);
-M.x=point.x-normal.x*(+normal.x*point.x+normal.y*point.y+normal.z*point.z+k);
-M.y=point.y-normal.y*(+normal.x*point.x+normal.y*point.y+normal.z*point.z+k);
-M.z=point.z-normal.z*(+normal.x*point.x+normal.y*point.y+normal.z*point.z+k);
+k=-scalprod(normal,A);
+/* k=-(normal.x*A.x+normal.y*A.y+normal.z*A.z); */
+tmp=scalprod(normal,point)+k;
+M.x=point.x-normal.x*tmp;
+M.y=point.y-normal.y*tmp;
+M.z=point.z-normal.z*tmp;
 
 /* printf("%lf %lf %lf\n",M.x,M.y,M.z); */
 

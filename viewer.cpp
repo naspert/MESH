@@ -1,10 +1,13 @@
-/* $Id: viewer.cpp,v 1.8 2001/06/11 07:25:02 jacquet Exp $ */
+/* $Id: viewer.cpp,v 1.9 2001/06/13 09:46:56 jacquet Exp $ */
 
 #include <qapplication.h>
 #include <ScreenWidget.h>
 #include <qevent.h>
 #include <qkeycode.h>
 #include <compute_error.h>
+#include <init.h>
+
+
 #define min3(x,y,z) (((x)<(y))?(((x)<(z))?(x):(z)):(((y)<(z))?(y):(z)))
 #ifndef min
 #define min(x,y) (((x)>(y))?(y):(x))
@@ -12,6 +15,8 @@
 #ifndef max
 #define max(x,y) (((x)>(y))?(x):(y))
 #endif
+
+
 /*****************************************************************************/
 /*             fonction principale                                           */
 /*****************************************************************************/
@@ -19,7 +24,7 @@
 
 int main( int argc, char **argv )
 {
-  char *in_filename1, *in_filename2;
+  char *in_filename1, *in_filename2,*thin;
   model *raw_model1, *raw_model2;
   int samples;
   cellules *cell;
@@ -38,21 +43,41 @@ int main( int argc, char **argv )
   vertex grille;
   int facteur;
   info_vertex *curv;
+  QString m1,n1,o1;
 
-  if (argc!=4) {
-    printf("nbre d'arg incorrect\n");
-    printf("le 1er argument correspond a l'objet de plus basse resolution\n");
-    printf("le 2nd argument correspond a l'objet de plus haute resolution\n");
-    printf("le 3eme argument correspond au pas d'echantillonnage\n");
-    exit(-1);
-  }
+ /* affichage de la fenetre graphique */
+ QApplication::setColorSpec( QApplication::CustomColor );
+ QApplication a( argc, argv ); 
 
-
+ if(argc!=4){
+   InitWidget b;
+   a.setMainWidget( &b );
+   b.show(); 
+   a.exec();
+   m1=b.m; 
+   n1=b.n;
+   o1=b.o;
+   in_filename1=(char *)m1.latin1();
+   in_filename2=(char *)n1.latin1();
+   thin=(char *)o1.latin1();
+   samplethin=atof(thin);
+ }
+ else {
   in_filename1 = argv[1];
   in_filename2 = argv[2];
   samplethin=atof(argv[3]);
+ } 
+
   k=(int)floor(1.0/samplethin);
   printf("k= %d\n",k);
+
+//   if (argc!=4) {
+//     printf("nbre d'arg incorrect\n");
+//     printf("le 1er argument correspond a l'objet de plus basse resolution\n");
+//     printf("le 2nd argument correspond a l'objet de plus haute resolution\n");
+//     printf("le 3eme argument correspond au pas d'echantillonnage\n");
+//     exit(-1);
+//   }
   
   /* mise en memoire de chaque point des deux objets */
   raw_model1=read_raw_model(in_filename1);
@@ -69,19 +94,6 @@ int main( int argc, char **argv )
   
   printf("%lf %lf %lf\n",bbox0.x,bbox0.y,bbox0.z);
   printf("%lf %lf %lf\n",bbox1.x,bbox1.y,bbox1.z);
-
-  
-//   raw_model1->area = (double*)malloc(raw_model1->num_faces*sizeof(double));
-//   curv = (info_vertex*)malloc(raw_model1->num_vert*sizeof(info_vertex));
-  
-//   raw_model1->face_normals = compute_face_normals(raw_model1,curv);
-  
-//   if (raw_model1->face_normals != NULL){
-//     compute_vertex_normal(raw_model1, curv, raw_model1->face_normals);
-//     for (i=0; i<raw_model1->num_vert; i++) 
-//       free(curv[i].list_face);
-//     free(curv);
-//   }
 
   raw_model2->area = (double*)malloc(raw_model2->num_faces*sizeof(double));
   curv = (info_vertex*)malloc(raw_model2->num_vert*sizeof(info_vertex));
@@ -231,13 +243,10 @@ int main( int argc, char **argv )
      raw_model1->error[i]=0;
  }
 
- /* affichage de la fenetre graphique */
- QApplication::setColorSpec( QApplication::CustomColor );
- QApplication a( argc, argv ); 
- 
- 
- ScreenWidget b(raw_model1,raw_model2);
- a.setMainWidget( &b );
- b.show();
- return a.exec();
+ ScreenWidget c(raw_model1,raw_model2,superdmin,superdmax);
+ a.setMainWidget( &c );
+ c.show(); 
+ a.exec();
+
+
 }

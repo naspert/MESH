@@ -19,7 +19,7 @@ public:
   void rebuild_list(double **colormap,model *raw_model);
   
 public slots: 
-    void aslot();
+  void aslot();
   void setLine();
   void setLight();
   void transfer(double dist,double *mvmat);
