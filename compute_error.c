@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.59 2001/09/11 09:49:25 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.60 2001/09/11 16:30:03 dsanta Exp $ */
 
 #include <compute_error.h>
 
@@ -1369,4 +1369,47 @@ void dist_surf_surf(const model *m1, model *m2, double sampling_step,
 void free_face_error(struct face_error *fe)
 {
   free(fe);
+}
+
+/* See compute_error.h */
+void calc_vertex_error(struct model_error *me, const struct face_error *fe,
+                       const struct face_list *vfl)
+{
+  struct face_list *vfl_local;
+  int i,j;
+  double mean_error;
+  double tot_area;
+
+  /* Initialize */
+  if (vfl == NULL) {
+    vfl_local = faces_of_vertex(me->mesh);
+    vfl = vfl_local;
+  } else {
+    vfl_local = NULL;
+  }
+  me->verror = xa_realloc(me->verror,me->mesh->num_vert*sizeof(*(me->verror)));
+  me->min_verror = DBL_MAX;
+  me->max_verror = 0;
+
+  /* Calculate vertex error and look for minimum and maximum */
+  for (i=0; i<me->mesh->num_vert; i++) {
+    if (vfl[i].n_faces > 0) { /* skip degenerate cases */
+      mean_error = 0;
+      tot_area = 0;
+      for (j=0; j<vfl[i].n_faces; j++) {
+        mean_error += fe[vfl[i].face[j]].mean_error*
+          fe[vfl[i].face[j]].face_area;
+        tot_area += fe[vfl[i].face[j]].face_area;
+      }
+      mean_error /= tot_area;
+      me->verror[i] = mean_error;
+      if (mean_error < me->min_verror) me->min_verror = mean_error;
+      if (mean_error > me->max_verror) me->max_verror = mean_error;
+    } else { /* vertex error should never be consulted */
+      me->verror[i] = -1; /* invalid value */
+    }
+  }
+
+  /* Free temporary storage */
+  if (vfl_local != NULL) free_face_lists(vfl_local,me->mesh->num_vert);
 }
