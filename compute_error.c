@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.41 2001/08/21 16:12:46 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.42 2001/08/21 16:21:55 dsanta Exp $ */
 
 #include <compute_error.h>
 
@@ -1018,9 +1018,9 @@ static double dist_pt_surf(vertex p, const struct triangle_list *tl,
   int cell_idx;         /* linear cell index */
   double dmin_sqr;      /* minimum distance squared */
   double dist_sqr;      /* current distance squared */
+  double cell_sz_sqr;   /* cubic cell side length squared */
   int tfcl_idx;         /* triangle index in faces in cell list */
   int t_idx;            /* triangle index in triangle list */
-  int dmin_update;      /* flag to signal update of dmin_sqr */
   int cell_stride_z;    /* spacement for Z index in 3D addressing of cell
                          * list */
   int *cell_tl;         /* list of triangles intersecting the current cell */
@@ -1070,9 +1070,8 @@ static double dist_pt_surf(vertex p, const struct triangle_list *tl,
   k = 0;
   kmax = max3(grid_sz.x,grid_sz.y,grid_sz.z);
   dmin_sqr = DBL_MAX;
+  cell_sz_sqr = cell_sz*cell_sz;
   do {
-    dmin_update = 0;
-
     /* Get the list of cells at distance k in X Y or Z direction, which has
      * not been previously tested. Only non-empty cells are included in the
      * list. */
@@ -1113,16 +1112,14 @@ static double dist_pt_surf(vertex p, const struct triangle_list *tl,
         dist_sqr = dist_sqr_pt_triag(&triags[t_idx],&p);
         if (dist_sqr < dmin_sqr) {
           dmin_sqr = dist_sqr;
-          dmin_update = 1; /* signal update of dmin */
         }
       } while ((t_idx = cell_tl[++tfcl_idx]) != -1);
     }
-    /* While no triangles have been scanned we have to continue testing in
-     * farther cells. In addition, if a triangle was found with a smaller
-     * distance, we need to scan all triangles in cells at distance k+1, to
-     * see if there is a smaller distance. */
+    /* We loop until the minimum distance to any of the cells to come is
+     * larger than the minimum distance to a face found so far; or until all
+     * cells have been tested. */
     k++;
-  } while ((dmin_sqr == DBL_MAX || dmin_update == 1) && (k < kmax));
+  } while (k < kmax && (k == 0 || dmin_sqr >= (k-1)*(k-1)*cell_sz_sqr));
   if (dmin_sqr >= DBL_MAX || dmin_sqr != dmin_sqr || dmin_sqr < 0) {
     /* Something is going wrong (probably NaNs, etc.). The x != x test is for
      * NaNs (if supported, otherwise always true) */
