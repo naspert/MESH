@@ -1,4 +1,4 @@
-/* $Id: 3dmodel.h,v 1.4 2001/05/01 12:34:39 aspert Exp $ */
+/* $Id: 3dmodel.h,v 1.5 2001/05/01 14:07:36 aspert Exp $ */
 #ifdef MPATROL_TEST
 #include <mpatrol.h>
 #endif
@@ -39,6 +39,9 @@ typedef struct {
   face* faces;
   double* area; /* area of each face */
   vertex bBox[2]; /* bBox[0] is the min  bBox[1] is the max */
+#ifdef EST_NORMALS
+  vertex *est_normals;
+#endif
 #ifdef _METRO
   int *error; 
 #endif
@@ -120,6 +123,9 @@ typedef struct {
 typedef struct {
   edge_v edge;
   vertex p;
+#ifdef EST_NORMALS
+  vertex n;
+#endif
 }edge_sub;
 
 #ifdef _METRO

@@ -1,4 +1,4 @@
-# $Id: Makefile.sgi,v 1.8 2001/05/01 07:58:28 aspert Exp $
+# $Id: Makefile.sgi,v 1.9 2001/05/01 14:07:37 aspert Exp $
 
 CC = cc
 #CC = /usr/freeware/bin/gcc
@@ -26,7 +26,7 @@ GL_LDFLAGS = -g -O2 $(GL_LIBFLAGS)
 
 default : rawview3
 
-all: dirs rawview3
+all: dirs rawview3 subdiv subdiv_sph torus
 
 clean : 
 	rm $(OBJDIR)/*.o $(BINDIR)/* $(LIBDIR)/*

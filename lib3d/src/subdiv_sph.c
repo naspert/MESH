@@ -1,9 +1,10 @@
-/* $Id: subdiv_sph.c,v 1.1 2001/04/27 14:02:02 aspert Exp $ */
+/* $Id: subdiv_sph.c,v 1.2 2001/05/01 14:07:37 aspert Exp $ */
 #include <3dutils.h>
 
 #ifdef EST_NORMALS
 vertex *est_normals;
 int n_idx = 0;
+int use_est_normals = -1;
 #endif
 
 vertex compute_midpoint(ring_info *rings, int center, int v1, 
@@ -16,9 +17,10 @@ vertex compute_midpoint(ring_info *rings, int center, int v1,
   double r, ph, lambda, pl_off, nr, nph, dz, rp;
 
 #ifdef EST_NORMALS
-  double th0, th1, thn;
-  vertex n0, n1, nm0, nm1;
-  vertex p0p1, est_p_norm, est_p_offset;
+  double th0, th1, tmp, est_p_offset;
+  vertex n0, n1, nm0, nm1, tmp_norm_mp, p0, p1;
+  vertex p0p1, est_p_norm;
+  vertex b1;
 #endif
 
   n = raw_model->normals[center];
@@ -51,9 +53,11 @@ vertex compute_midpoint(ring_info *rings, int center, int v1,
     ph = -atan(norm(m)/norm(v));
   else
     ph = atan(norm(m)/norm(v));
+
 #ifdef EST_NORMALS
   th0 = ph; /* should be useful */
   n0 = n;
+  p0 = p;
 #endif
 
 #ifdef _DEBUG
@@ -119,6 +123,7 @@ vertex compute_midpoint(ring_info *rings, int center, int v1,
 #ifdef EST_NORMALS
   th1 = ph;
   n1 = n;
+  p1 = p;
 #endif
 
 #ifdef _DEBUG
@@ -153,17 +158,71 @@ vertex compute_midpoint(ring_info *rings, int center, int v1,
   np.z = 0.5*(np1.z + np2.z);
 
 #ifdef EST_NORMALS
-/* compute the equation of the plane containing p0, p1 and n0 */
   p0p1.x = p1.x - p0.x;
   p0p1.y = p1.y - p0.y;
   p0p1.z = p1.z - p0.z;
-  
+
+  /* compute the equation of the plane containing p0, p1 and n0 */  
   est_p_norm = crossprod(p0p1, n0);
   normalize(&est_p_norm);
   est_p_offset = -scalprod(p0, est_p_norm);
-/* compute the equation of the plane containing p0, p1 and n1 */
+  /* the other basis vector of the plane is obtained through 
+     Gram-Schmidt orthogonalization */
+  tmp = scalprod(n0, p0p1);
+  b1.x = p0p1.x - tmp*n0.x;
+  b1.y = p0p1.y - tmp*n0.y;
+  b1.z = p0p1.z - tmp*n0.z;
+  normalize(&b1);
+  /* make sure the basis is direct */
+  tmp = scalprod(est_p_norm, crossprod(b1, n0));
+  if (tmp < -0.5) {
+    b1.x = -b1.x;
+    b1.y = -b1.y;
+    b1.z = -b1.z;
+  }
+  /* Now the basis (b1, n0, est_p_norm) should be an orthn. direct basis */
+  /* The expression of the estimated normal at the midpoint is *easy* */
+  tmp_norm_mp.x = (sin(th0/2.0) + th0/2.0*cos(th0/2.0))/sqrt(1+th0*th0/4.0);
+  tmp_norm_mp.y = (cos(th0/2.0) - th0/2.0*sin(th0/2.0))/sqrt(1+th0*th0/4.0);
+  tmp_norm_mp.z = 0.0;
 
+  nm0.x = b1.x*tmp_norm_mp.x + n0.x*tmp_norm_mp.y;
+  nm0.y = b1.y*tmp_norm_mp.x + n0.y*tmp_norm_mp.y;
+  nm0.z = b1.z*tmp_norm_mp.x + n0.z*tmp_norm_mp.y;
 
+  /* compute the equation of the plane containing p0, p1 and n1 */
+  est_p_norm = crossprod(p0p1, n1);
+  normalize(&est_p_norm);
+  est_p_offset = -scalprod(p0, est_p_norm);
+  /* the other basis vector of the plane is obtained through 
+     Gram-Schmidt orthogonalization */
+  tmp = scalprod(n1, p0p1);
+  b1.x = p0p1.x - tmp*n1.x;
+  b1.y = p0p1.y - tmp*n1.y;
+  b1.z = p0p1.z - tmp*n1.z;
+  normalize(&b1);
+  /* make sure the basis is direct */
+  tmp = scalprod(est_p_norm, crossprod(b1, n1));
+  if (tmp < -0.5) {
+    b1.x = -b1.x;
+    b1.y = -b1.y;
+    b1.z = -b1.z;
+  }
+  /* Now the basis (b1, n0, est_p_norm) should be an orthn. direct basis */
+  /* The expression of the estimated normal at the midpoint is *easy* */
+  tmp_norm_mp.x = (sin(th1/2.0) + th1/2.0*cos(th1/2.0))/sqrt(1+th1*th1/4.0);
+  tmp_norm_mp.y = (cos(th1/2.0) - th1/2.0*sin(th1/2.0))/sqrt(1+th1*th1/4.0);
+  tmp_norm_mp.z = 0.0;
+
+  nm1.x = b1.x*tmp_norm_mp.x + n1.x*tmp_norm_mp.y;
+  nm1.y = b1.y*tmp_norm_mp.x + n1.y*tmp_norm_mp.y;
+  nm1.z = b1.z*tmp_norm_mp.x + n1.z*tmp_norm_mp.y;
+
+  est_normals[n_idx].x = 0.5*(nm0.x + nm1.x);
+  est_normals[n_idx].y = 0.5*(nm0.y + nm1.y);
+  est_normals[n_idx].z = 0.5*(nm0.z + nm1.z);
+  
+  normalize(&(est_normals[n_idx]));
 #endif
 
   return np;
@@ -189,14 +248,16 @@ model* subdiv(model *raw_model, edge_sub **edge_list_ptr,
   
   for (i=0; i<raw_model->num_vert; i++) {
     rings[i] = build_star2(raw_model, i);
-/*     printf("Vertex %d : star_size = %d\n", i, rings[i].size); */
-/*     for (j=0; j<rings[i].size; j++) */
-/*       printf("number %d : %d\n", j, rings[i].ord_vert[j]); */
-/*     if (rings[i].type == 1) { */
-/*       free(rings); */
-/*       printf("Boundary vertex unsupported\n"); */
-/*       return NULL; */
-/*     } */
+#ifdef _DEBUG
+    printf("Vertex %d : star_size = %d\n", i, rings[i].size);
+    for (j=0; j<rings[i].size; j++)
+      printf("number %d : %d\n", j, rings[i].ord_vert[j]);
+#endif
+    if (rings[i].type == 1) {
+      free(rings);
+      printf("Boundary vertex unsupported\n");
+      return NULL;
+    }
   }
   
   
@@ -207,15 +268,25 @@ model* subdiv(model *raw_model, edge_sub **edge_list_ptr,
       p = compute_midpoint(rings, i, j, raw_model);
       nedges ++;
       edge_list = (edge_sub*)realloc(edge_list, nedges*sizeof(edge_sub));
+#ifdef _DEBUG
+      printf("i=%d j=%d  rings[%d].ord_vert[%d]=%d\n",i,j, 
+	      i, j, rings[i].ord_vert[j]);
+      printf("nedges-1=%d n_idx=%d\n",nedges-1, n_idx);
+#endif
       edge_list[nedges-1].edge.v0 = i;
+#ifdef _DEBUG
+      printf("edge.v0=%d\n", edge_list[nedges-1].edge.v0);
+#endif
       edge_list[nedges-1].edge.v1 = rings[i].ord_vert[j];
+#ifdef _DEBUG
+      printf("edge.v1=%d\n", edge_list[nedges-1].edge.v1);
+#endif
       edge_list[nedges-1].p = p;
 #ifdef EST_NORMALS
       edge_list[nedges-1].n = est_normals[n_idx];
       n_idx++;
 #endif
       
-/*       printf("final :%f %f %f\n", p.x, p.y, p.z); */
     }
 
   }
@@ -352,7 +423,7 @@ model* subdiv(model *raw_model, edge_sub **edge_list_ptr,
     face_idx++;
 
   }
-#ifdef COMP_SUB_NORMALS
+#ifdef COMP_SUB_NORMALS_DEBUG
   for (i=0; i<nedges; i++) {
     printf("edge: %d %d midpoint: %d\n",edge_list[i].edge.v0, 
 	   edge_list[i].edge.v1, midpoint_idx[i]);
@@ -375,29 +446,47 @@ int main(int argc, char **argv) {
   info_vertex* tmp_vert;
   int *midpoint_idx,  num_edges;
   edge_sub *edge_list;
-#ifdef COMP_SUB_NORMALS
+#ifdef COMP_SUB_NORMALS_DEBUG
   int i;
 #endif
 
+#ifdef EST_NORMALS
+  if (argc == 4) {
+    infile = argv[2];
+    outfile = argv[3];
+    if (strcmp(argv[1], "--estimate-normals") == 0) {
+      use_est_normals = 1;
+    } else if (strcmp(argv[1], "--compute-normals") == 0) {
+      use_est_normals = 0;
+    } else {
+      fprintf(stderr, "Usage: subdiv_sph [--estimate-normals, --compute-normals] infile outfile\n");
+      exit(0);
+    }
+  } else {
+    fprintf(stderr, "Usage: subdiv_sph [--estimate-normals, --compute-normals] infile outfile\n");
+    exit(0);
+  }
+#else
   if (argc != 3) {
     fprintf(stderr, "Usage: subdiv_sph infile outfile\n");
     exit(0);
   }
   infile = argv[1];
   outfile = argv[2];
-  
+#endif
+
   or_model = read_raw_model(infile);
   if (or_model->normals == NULL) {
     tmp_vert = (info_vertex*)malloc(or_model->num_vert*sizeof(info_vertex));
     or_model->area = (double*)malloc(or_model->num_faces*sizeof(double));
-    or_model->face_normals = compute_face_normals(or_model);
+    or_model->face_normals = compute_face_normals(or_model, tmp_vert);
     compute_vertex_normal(or_model, tmp_vert, or_model->face_normals);
     free(tmp_vert);
     free(or_model->area);
   }
 
 #ifdef EST_NORMALS
-  est_normals = (vertex*)malloc(raw_model->num_faces*sizeof(vertex));
+  est_normals = (vertex*)malloc(3*or_model->num_faces*sizeof(vertex));
   /* this should large enough ! */
 #endif
 
@@ -411,14 +500,14 @@ int main(int argc, char **argv) {
 #ifdef COMP_SUB_NORMALS
   tmp_vert = (info_vertex*)malloc(sub_model->num_vert*sizeof(info_vertex));
   sub_model->area = (double*)malloc(sub_model->num_faces*sizeof(double));
-  sub_model->face_normals = compute_face_normals(sub_model);
+  sub_model->face_normals = compute_face_normals(sub_model, tmp_vert);
   compute_vertex_normal(sub_model, tmp_vert, sub_model->face_normals);
   free(tmp_vert);
   free(sub_model->area);
 #endif
 
 
-#ifdef COMP_SUB_NORMALS
+#ifdef COMP_SUB_NORMALS_DEBUG
   printf("[main]: %d edges\n", num_edges);
   for (i=0; i<num_edges; i++) {
     printf("edge %d %d mpoint %d\n", edge_list[i].edge.v0, 
@@ -433,23 +522,43 @@ int main(int argc, char **argv) {
 	   sub_model->normals[midpoint_idx[i]].y, 
 	   sub_model->normals[midpoint_idx[i]].z); 
 #ifdef EST_NORMALS
-    printf("est_n = %f\t%f\t%f\n", sub_model->est_n[midpoint_idx[i]].x,
-	   sub_model->est_n[midpoint_idx[i]].y,
-	   sub_model->est_n[midpoint_idx[i]].z);
+    printf("est_n = %f\t%f\t%f\n", sub_model->est_normals[midpoint_idx[i]].x,
+	   sub_model->est_normals[midpoint_idx[i]].y,
+	   sub_model->est_normals[midpoint_idx[i]].z);
+    printf("n(ne) = %f\n", norm(sub_model->est_normals[midpoint_idx[i]]));
 #endif
   }
   free(midpoint_idx);
   free(edge_list);
 #endif
+
+#ifdef EST_NORMALS
+  if (use_est_normals == 1) {
+    if (sub_model->normals != NULL) {
+      free(sub_model->normals);
+      free(sub_model->face_normals);
+    }
+    sub_model->normals = sub_model->est_normals;
+  } else {
+    if (sub_model->normals == NULL) {
+      tmp_vert = (info_vertex*)malloc(sub_model->num_vert*sizeof(info_vertex));
+      sub_model->area = (double*)malloc(sub_model->num_faces*sizeof(double));
+      sub_model->face_normals = compute_face_normals(sub_model, tmp_vert);
+      compute_vertex_normal(sub_model, tmp_vert, sub_model->face_normals);
+      free(tmp_vert);
+      free(sub_model->area);
+    }
+  }
+#endif
   write_raw_model(sub_model, outfile);
   free(sub_model->faces);
   free(sub_model->vertices);
 
-#ifdef COMP_SUB_NORMALS
-  free(sub_model->normals);
-#endif
+
 #ifdef EST_NORMALS
   free(sub_model->est_normals);
+  free(sub_model->face_normals);
+  free(sub_model->normals);
 #endif
 
   free(sub_model);  

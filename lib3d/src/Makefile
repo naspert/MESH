@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.7 2001/04/27 14:02:20 aspert Exp $
+# $Id: Makefile,v 1.8 2001/05/01 14:07:37 aspert Exp $
 
 CC = gcc
 CPP = g++
@@ -17,7 +17,7 @@ GLINCLFLAGS = -I$(HPGLDIR)/include -I$(GLDIR)/include
 DEBUGINCFLAGS = -I/home/sun1/aspert/debug
 XTRA_CFLAGS = -g  -Wall  -O3 
 
-BASE_CFLAGS = $(INCLFLAGS) $(XTRA_CFLAGS)
+BASE_CFLAGS = $(INCLFLAGS) $(XTRA_CFLAGS) -DEST_NORMALS
 GL_CFLAGS = $(INCLFLAGS) $(GLINCLFLAGS) $(XTRA_CFLAGS)
 
 BASE_LIBFLAGS = -L$(LIBDIR) -lm
@@ -32,7 +32,7 @@ GL_LDFLAGS = -g -O3 $(GL_LIBFLAGS)
 
 default : rawview3
 
-all: dirs rawview3 torus subdiv 
+all: dirs rawview3 torus subdiv subdiv_sph
 
 clean : 
 	rm $(OBJDIR)/*.o $(BINDIR)/* $(LIBDIR)/*
