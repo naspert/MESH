@@ -1,10 +1,11 @@
-/* $Id: ColorMapWidget.h,v 1.11 2002/02/21 12:45:00 aspert Exp $ */
+/* $Id: ColorMapWidget.h,v 1.12 2002/02/21 14:47:59 aspert Exp $ */
 #ifndef COLORMAPWIDGET_H
 #define COLORMAPWIDGET_H
 
 #include <qwidget.h>
 #include <compute_error.h>
 
+/* Colorbar constants */
 #ifndef CBAR_WIDTH
 # define CBAR_WIDTH 25
 #endif
@@ -25,7 +26,7 @@ public:
  ~ColorMapWidget();
  QSize sizeHint() const;
  QSize minimumSizeHint() const;
- enum {LIN_SCALE=0, LOG_SCALE=1};
+ enum scaleMode {LIN_SCALE=0, LOG_SCALE=1};
 
 public slots:
   void doHistogram(int scaleType);
