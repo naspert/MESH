@@ -1,8 +1,15 @@
-/* $Id: final2.c,v 1.11 2001/04/12 13:33:57 jacquet Exp $ */
+/* $Id: final2.c,v 1.12 2001/05/08 12:48:46 jacquet Exp $ */
 
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
+
+#ifndef min
+#define min(x,y) (((x)>(y))?(y):(x))
+#endif
+
+#define max3(x,y,z) (((x)>(y))?(((x)>(z))?(x):(z)):(((y)>(z))?(y):(z)))
+#define min3(x,y,z) (((x)<(y))?(((x)<(z))?(x):(z)):(((y)<(z))?(y):(z)))
 
 typedef struct {
   double x;
@@ -35,6 +42,12 @@ typedef struct {
   int *cube;
   int nbcube;
 }cellules;
+
+/* Computes the scalar product between 2 vectors */
+double scalprod(vertex v1, vertex v2) {
+  return (v1.x*v2.x + v1.y*v2.y + v1.z*v2.z);
+}
+
 
 /* Computes the norm of vector v */
 double norm(vertex v) {
@@ -96,6 +109,96 @@ return dist;
 
 }
 
+/*compute the distance between a point and a surface */
+double dist_pt_surf(vertex A,vertex B,vertex C,vertex point,vertex normal)
+{
+double k;
+double d,dmin=200;
+vertex M,AM,AB,AC,BC,AP,BP;
+double ab,ac,bc,ap,bp,cp,ap_ac,ap_ab,bp_bc;
+double u,v;
+
+   AB.x=B.x-A.x;
+   AB.y=B.y-A.y;
+   AB.z=B.z-A.z;
+   
+   AP.x=point.x-A.x;
+   AP.y=point.y-A.y;
+   AP.z=point.z-A.z;
+   
+   AC.x=C.x-A.x;
+   AC.y=C.y-A.y;
+   AC.z=C.z-A.z;
+   
+   BC.x=C.x-B.x;
+   BC.y=C.y-B.y;
+   BC.z=C.z-B.z;
+   
+   BP.x=point.x-B.x;
+   BP.y=point.y-B.y;
+   BP.z=point.z-B.z;
+
+   ab=norm(AB);
+   ac=norm(AC);
+   bc=norm(BC);
+   ap=norm(AP);
+   bp=norm(BP);
+   cp=dist(point,C);
+
+   ap_ab=scalprod(AP,AB);
+   ap_ac=scalprod(AP,AC);
+   bp_bc=scalprod(BP,BC);
+
+
+k=-(normal.x*A.x+normal.y*A.y+normal.z*A.z);
+M.x=point.x-normal.x*(+normal.x*point.x+normal.y*point.y+normal.z*point.z+k);
+M.y=point.y-normal.y*(+normal.x*point.x+normal.y*point.y+normal.z*point.z+k);
+M.z=point.z-normal.z*(+normal.x*point.x+normal.y*point.y+normal.z*point.z+k);
+
+AM.x=M.x-A.x;
+AM.y=M.y-A.y;
+AM.z=M.z-A.z;
+
+u=scalprod(AM,AB);
+v=scalprod(AM,AC);
+
+
+/* si le projete n'appartient pas a la boundingbox du triangle */
+  if(u+v<1.00001 && u>=0 && v>=0) 
+    dmin=dist(point,M);
+  else{
+    /*distance de P a (AB)*/
+    if(ap_ab>0 && ap_ab<ab*ab)
+      dmin=sqrt(ap*ap-ap_ab/ab);
+    else
+      dmin=min(ap,bp);
+    
+    if(ap_ac>0 && ap_ac<ac*ac){
+      d=sqrt(ap*ap-ap_ac/ac);
+      dmin=min(d,dmin);
+    }
+    else
+      dmin=min(dmin,cp);
+    
+    if(bp_bc>0 && bp_bc<bc*bc){
+      d=sqrt(bp*bp-bp_bc/bc);
+      dmin=min(d,dmin);
+   }
+  }
+ 
+ /* dmin=dist(point,projete); */
+
+/* dmin=dist(point,projete); */
+/* printf("%lf ",dmin); */
+
+
+/* printf("%lf\n\n\n",dmin);   */
+
+
+return dmin;
+}
+
+
 /****************************************************************************/
 /*         fonctions qui retournent le max ou le min entre 3 points         */
 /****************************************************************************/
@@ -113,17 +216,26 @@ return(max);
 }
 
 
-int min(int a,int b,int c)
-{
-int min =a;
+/* int min(int a,int b,int c) */
+/* { */
+/* int min =a; */
 
-if(b<a && b<c)
-  min=b;
-else if (c<a && c<b)
-  min=c;
+/* if(b<a && b<c) */
+/*   min=b; */
+/* else if (c<a && c<b) */
+/*   min=c; */
 
-return(min);
-}
+/* return(min); */
+/* } */
+
+/* double min(double a,double b) */
+/* { */
+/* if(a<b) */
+/*   return(a); */
+/* else */
+/*   return(b); */
+
+/* } */
 
 
 /****************************************************************************/
@@ -175,27 +287,27 @@ model* readfile(FILE *f)
     raw_model->faces[i].f1 = v1;
     raw_model->faces[i].f2 = v2;
 
-    raw_model->faces[i].min.x=min(raw_model->vertices[raw_model->faces[i].f0].x,
-				  raw_model->vertices[raw_model->faces[i].f1].x,
-				  raw_model->vertices[raw_model->faces[i].f2].x);
+/*     raw_model->faces[i].min.x=min(raw_model->vertices[raw_model->faces[i].f0].x, */
+/* 				  raw_model->vertices[raw_model->faces[i].f1].x, */
+/* 				  raw_model->vertices[raw_model->faces[i].f2].x); */
     
-    raw_model->faces[i].min.y=min(raw_model->vertices[raw_model->faces[i].f0].y,
-				  raw_model->vertices[raw_model->faces[i].f1].y,
-				  raw_model->vertices[raw_model->faces[i].f2].y);
+/*     raw_model->faces[i].min.y=min(raw_model->vertices[raw_model->faces[i].f0].y, */
+/* 				  raw_model->vertices[raw_model->faces[i].f1].y, */
+/* 				  raw_model->vertices[raw_model->faces[i].f2].y); */
     
-    raw_model->faces[i].min.z=min(raw_model->vertices[raw_model->faces[i].f0].z,
-				  raw_model->vertices[raw_model->faces[i].f1].z,
-				  raw_model->vertices[raw_model->faces[i].f2].z);
+/*     raw_model->faces[i].min.z=min(raw_model->vertices[raw_model->faces[i].f0].z, */
+/* 				  raw_model->vertices[raw_model->faces[i].f1].z, */
+/* 				  raw_model->vertices[raw_model->faces[i].f2].z); */
 
-    raw_model->faces[i].max.x=max(raw_model->vertices[raw_model->faces[i].f0].x,
-				  raw_model->vertices[raw_model->faces[i].f1].x,
-				  raw_model->vertices[raw_model->faces[i].f2].x);
-    raw_model->faces[i].max.y=max(raw_model->vertices[raw_model->faces[i].f0].y,
-				  raw_model->vertices[raw_model->faces[i].f1].y,
-				  raw_model->vertices[raw_model->faces[i].f2].y);
-    raw_model->faces[i].max.z=max(raw_model->vertices[raw_model->faces[i].f0].z,
-				  raw_model->vertices[raw_model->faces[i].f1].z,
-				  raw_model->vertices[raw_model->faces[i].f2].z);
+/*     raw_model->faces[i].max.x=max(raw_model->vertices[raw_model->faces[i].f0].x, */
+/* 				  raw_model->vertices[raw_model->faces[i].f1].x, */
+/* 				  raw_model->vertices[raw_model->faces[i].f2].x); */
+/*     raw_model->faces[i].max.y=max(raw_model->vertices[raw_model->faces[i].f0].y, */
+/* 				  raw_model->vertices[raw_model->faces[i].f1].y, */
+/* 				  raw_model->vertices[raw_model->faces[i].f2].y); */
+/*     raw_model->faces[i].max.z=max(raw_model->vertices[raw_model->faces[i].f0].z, */
+/* 				  raw_model->vertices[raw_model->faces[i].f1].z, */
+/* 				  raw_model->vertices[raw_model->faces[i].f2].z); */
 
   }
 return(raw_model);
@@ -232,8 +344,8 @@ sample* echantillon(vertex a, vertex b, vertex c,double k)
     printf("impossible d'allouer de la memoire");
     exit(-1);
   }
-  for (i=0;i<=1;i+=k) {
-    for (j=0;j<=1;j+=k) {
+  for (i=0;i<1.00001;i+=k) {
+    for (j=0;j<1.00001;j+=k) {
       if (i+j<1.000001) {
 	if(h>0)
 	  sample1->sample=(vertex*)realloc(sample1->sample,(h+1)*sizeof(vertex));
@@ -382,9 +494,9 @@ double pcd(vertex point,model *raw_model,int **repface,int grid)
 {
 int m,n,o;
 int a,b,c;
-vertex bbox0,bbox1,A,normal;
+vertex bbox0,bbox1,A,B,C,normal;
 int cellule;
-int j=0;
+int j=0,k=1;
 double dist,dmin=200;
 
 bbox0=raw_model->BBOX[0];
@@ -403,36 +515,47 @@ bbox1=raw_model->BBOX[1];
  
  cellule=m+n*grid+o*grid*grid;
  /*printf("cellule: %d\n",cellule);*/
+ while(dmin==200){
 
- for(c=o-1;c<=o+1;c++){ 
-   for(b=n-1;b<=n+1;b++){
-     for(a=m-1;a<=m+1;a++){
-       /*printf("mermer");*/
-       cellule=a+b*grid+c*grid*grid;
-       j=0;
-       if(cellule>=0 && cellule<grid*grid*grid){ 
-	 while(repface[cellule][j]!=-1){
-	   A=raw_model->vertices[raw_model->faces[repface[cellule][j]].f0];
-	   normal=raw_model->face_normals[repface[cellule][j]];
-	   
-	   
-	   dist=distance(point,A,normal);
-	   /*printf("cellule: %d\n",cellule);
-	   printf("%lf %lf %lf\n",A.x,A.y,A.z);
-	   printf("%lf %lf %lf\n",B.x,B.y,B.z);
-	   printf("%lf %lf %lf\n",C.x,C.y,C.z);
-	   
-	   printf("face: %d dist: %lf\n",repface[cellule][j],dist);*/
-	   if(dist<dmin)
-	     dmin=dist;
-	   
-	   j++;
+   for(c=o-k;c<=o+k;c++){ 
+     for(b=n-k;b<=n+k;b++){
+       for(a=m-k;a<=m+k;a++){
+	 /*printf("mermer");*/
+	 cellule=a+b*grid+c*grid*grid;
+	 j=0;
+	 if(cellule>=0 && cellule<grid*grid*grid){ 
+	   while(repface[cellule][j]!=-1){
+	     A=raw_model->vertices[raw_model->faces[repface[cellule][j]].f0];
+	     B=raw_model->vertices[raw_model->faces[repface[cellule][j]].f1];
+	     C=raw_model->vertices[raw_model->faces[repface[cellule][j]].f2];
+	     normal=raw_model->face_normals[repface[cellule][j]];
+	     
+/* 	      	   printf("%lf %lf %lf \n",A.x,A.y,A.z); */
+/* 	      	   printf("%lf %lf %lf \n",B.x,B.y,B.z); */
+/* 	      	   printf("%lf %lf %lf \n",C.x,C.y,C.z); */
+/* 	      	   printf("%lf %lf %lf \n",point.x,point.y,point.z); */
+	     
+	     
+	     
+	     dist=dist_pt_surf(A,B,C,point,normal);
+/* 	     dist=distance(point,A,normal); */
+	     /*printf("cellule: %d\n",cellule);
+	       printf("%lf %lf %lf\n",A.x,A.y,A.z);
+	       printf("%lf %lf %lf\n",B.x,B.y,B.z);
+	       printf("%lf %lf %lf\n",C.x,C.y,C.z);
+	       
+	       printf("face: %d dist: %lf\n",repface[cellule][j],dist);*/
+	     if(dist<dmin)
+	       dmin=dist;
+	     
+	     j++;
+	   }
 	 }
        }
      }
    }
+   k++;
  }
-
  /*printf("dmin: %lf\n",dmin);*/
 return dmin;
 
@@ -504,9 +627,9 @@ samplethin=atof(argv[3]);
 if(raw_model2->nbfaces<1000)
   grid=10;
 else if(raw_model2->nbfaces<10000)
-  grid=20;
-else if(raw_model2->nbfaces<100000)
   grid=30;
+else if(raw_model2->nbfaces<100000)
+  grid=50;
 
 cell=liste(grid,raw_model2);
 repface=cublist(cell,grid,raw_model2);
@@ -519,6 +642,7 @@ repface=cublist(cell,grid,raw_model2);
 		       samplethin); 
    for(j=0;j<sample2->nbsamples;j++){
      dcourant=pcd(sample2->sample[j],raw_model2,repface,grid);
+/*      printf("dcourant: %lf\n",dcourant); */
      if(dcourant>dmax)
        dmax=dcourant;
      h++;
