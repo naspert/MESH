@@ -1,4 +1,4 @@
-/* $Id: reporting.c,v 1.1 2001/11/06 10:36:10 dsanta Exp $ */
+/* $Id: reporting.c,v 1.2 2002/02/06 15:21:23 dsanta Exp $ */
 
 #include <reporting.h>
 
@@ -95,6 +95,7 @@ void prog_report(struct prog_reporter *pr, int p)
 void stdio_puts(void *out, const char *str)
 {
   fputs(str,(FILE*)out);
+  fflush((FILE*)out);
 }
 
 /* see reporting.h */
