@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.30 2002/02/15 09:42:27 aspert Exp $
+# $Id: Makefile,v 1.31 2002/02/26 13:27:28 aspert Exp $
 
 
 OS := $(shell uname -s)
@@ -12,8 +12,8 @@ TARGETS = torus cone isoca dirac compare_curv
 GSL_TARGETS = maps_lsq
 ifeq ($(OS), Linux)
 CC = gcc
-XTRA_CFLAGS =  -g  -pipe -ansi -pedantic -Wall -D__USE_DISPLAY_LISTS_ \
-	-D_GNU_SOURCE
+XTRA_CFLAGS =  -g  -pipe -ansi -pedantic -Wall -D_GNU_SOURCE #-D__DONT_USE_DISPLAY_LISTS_
+
 
 GL_VENDOR := $(shell $(GLXINFO)|grep "OpenGL vendor"|cut -d\: -f2|cut -d\  -f2)
 ALL_TARGETS = $(TARGETS) rawview subdiv $(GSL_TARGETS)
@@ -31,7 +31,7 @@ endif #Linux
 
 ifeq ($(OS), IRIX64)
 CC = cc
-XTRA_CFLAGS = -g  -D__USE_DISPLAY_LISTS_
+XTRA_CFLAGS = -g  #-D__DONT_USE_DISPLAY_LISTS_
 STATIC_GLFLAGS =  -lglut -lGLU -lGL -lX11 -lXmu $(BASE_LIBFLAGS)
 ALL_TARGETS = $(TARGETS) rawview subdiv
 endif

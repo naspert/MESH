@@ -1,4 +1,4 @@
-/* $Id: rawview.c,v 1.6 2002/02/26 13:18:19 aspert Exp $ */
+/* $Id: rawview.c,v 1.7 2002/02/26 13:27:29 aspert Exp $ */
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -27,7 +27,7 @@
 GLfloat distance, dstep; /* distance and incremental distance step */
 GLdouble mvmatrix[16]; /* Buffer for GL_MODELVIEW_MATRIX */
 
-#ifdef __USE_DISPLAY_LISTS_
+#ifndef __DONT_USE_DISPLAY_LISTS_
 GLuint model_list = 0; /* display lists idx storage */
 GLuint normal_list = 0;
 GLuint tree_list = 0;
@@ -206,7 +206,7 @@ void rebuild_list(struct model *raw_model) {
   face_t *cur_face2;
   int j, face1=-1, face2=-1;
   
-#ifdef __USE_DISPLAY_LISTS_
+#ifndef __DONT_USE_DISPLAY_LISTS_
   /* delete all lists */
   if (glIsList(model_list) == GL_TRUE)
     glDeleteLists(model_list, 1);
@@ -261,7 +261,7 @@ void rebuild_list(struct model *raw_model) {
   
 
   if (draw_spanning_tree == 1) {
-#ifdef __USE_DISPLAY_LISTS_
+#ifndef __DONT_USE_DISPLAY_LISTS_
     glNewList(tree_list, GL_COMPILE);
 #endif
     glColor3f(1.0, 1.0, 0.0);
@@ -295,7 +295,7 @@ void rebuild_list(struct model *raw_model) {
     }
     glEnd();
     glColor3f(1.0, 1.0, 1.0);
-#ifdef __USE_DISPLAY_LISTS_
+#ifndef __DONT_USE_DISPLAY_LISTS_
     glEndList();
 #endif
 
@@ -304,7 +304,7 @@ void rebuild_list(struct model *raw_model) {
 
 
 /* Model drawing (w. or wo. lighting) */ 
-#ifdef __USE_DISPLAY_LISTS_
+#ifndef __DONT_USE_DISPLAY_LISTS_
   glNewList(model_list, GL_COMPILE);
 #endif
   if (tr_mode == 1)
@@ -318,7 +318,7 @@ void rebuild_list(struct model *raw_model) {
     glArrayElement(cur_face->f2);
   }
   glEnd();
-#ifdef __USE_DISPLAY_LISTS_
+#ifndef __DONT_USE_DISPLAY_LISTS_
   glEndList();
 #endif
 
@@ -326,7 +326,7 @@ void rebuild_list(struct model *raw_model) {
   if (draw_normals) {
     scale_fact = NORMALS_DISPLAY_FACTOR*dist_v(&(raw_model->bBox[0]), 
 					       &(raw_model->bBox[1]));
-#ifdef __USE_DISPLAY_LISTS_
+#ifndef __DONT_USE_DISPLAY_LISTS_
     glNewList(normal_list, GL_COMPILE);
 #endif
     glColor3f(1.0, 0.0, 0.0);
@@ -342,7 +342,7 @@ void rebuild_list(struct model *raw_model) {
     }
     glEnd();
     glColor3f(1.0, 1.0, 1.0);
-#ifdef __USE_DISPLAY_LISTS_
+#ifndef __DONT_USE_DISPLAY_LISTS_
     glEndList();
 #endif
   }
@@ -409,7 +409,7 @@ void display_vtx_labels() {
 /* Display function : clear buffers, build correct MODELVIEW matrix, */
 /* call display list and swap the buffers                            */
 /* ***************************************************************** */
-#ifdef __USE_DISPLAY_LISTS_
+#ifndef __DONT_USE_DISPLAY_LISTS_
 void display() {
   GLenum errorCode;
   GLboolean light_mode;
