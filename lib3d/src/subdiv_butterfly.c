@@ -1,4 +1,4 @@
-/* $Id: subdiv_butterfly.c,v 1.6 2002/10/31 13:03:20 aspert Exp $ */
+/* $Id: subdiv_butterfly.c,v 1.7 2002/11/06 09:33:55 aspert Exp $ */
 
 #include <3dmodel.h>
 #include <normals.h>
@@ -7,7 +7,6 @@
 #include <assert.h>
 
 /* These are parameters for Butterfly subdivision */
-# define _Q_     0.75
 # define _2W_    0.0           /* w = 0.0 gives better results
                                 * ... 1.0/16.0 could be another
                                 * possible choice for w */
@@ -110,7 +109,7 @@ void compute_midpoint_butterfly(const struct ring_info *rings,
 
 
 
-    __add_prod_v(_Q_, (raw_model->vertices[center]), p, p);
+    __add_prod_v(0.75, (raw_model->vertices[center]), p, p);
 
 
     
@@ -121,7 +120,7 @@ void compute_midpoint_butterfly(const struct ring_info *rings,
     }
 
 
-    __add_prod_v(_Q_, raw_model->vertices[center2], r, r);
+    __add_prod_v(0.75, raw_model->vertices[center2], r, r);
 
     __add_v(p, r, p);
     __prod_v(0.5, p, p);
@@ -142,7 +141,7 @@ void compute_midpoint_butterfly(const struct ring_info *rings,
                    raw_model->vertices[ring.ord_vert[(v1+j)%6]], p, p);
     }
 
-    __add_prod_v(_Q_, raw_model->vertices[center], p, p);
+    __add_prod_v(0.75, raw_model->vertices[center], p, p);
 
 
     /* Apply stencil to end vertex_t */
@@ -151,7 +150,7 @@ void compute_midpoint_butterfly(const struct ring_info *rings,
                    raw_model->vertices[ring_op.ord_vert[(v2+j)%6]], p, p);
     }
 
-    __add_prod_v(_Q_, raw_model->vertices[center2], p, p);
+    __add_prod_v(0.75, raw_model->vertices[center2], p, p);
 
 
     __prod_v(0.5, p, p);
@@ -166,7 +165,7 @@ void compute_midpoint_butterfly(const struct ring_info *rings,
                    p);
     }
 
-    __add_prod_v(_Q_, raw_model->vertices[center], p, p);
+    __add_prod_v(0.75, raw_model->vertices[center], p, p);
 
     free(s);
   } else if (n==6 && m!=6) {
@@ -181,7 +180,7 @@ void compute_midpoint_butterfly(const struct ring_info *rings,
                    p);
     }
 
-    __add_prod_v(_Q_, raw_model->vertices[center2], p, p);
+    __add_prod_v(0.75, raw_model->vertices[center2], p, p);
 
     free(t);
   } 
@@ -213,10 +212,9 @@ void compute_midpoint_butterfly_crease(const struct ring_info *rings,
 
 
   if (ring.type == 1 && ring_op.type == 1) {
-
-    add_v(&p, &q, &np);
-
-    add_v(&raw_model->vertices[center], &raw_model->vertices[center2], &p);
+    
+    __add_v(p, q, np);
+    
     if (ring.ord_vert[0] == center2)
       v3 = ring.ord_vert[n - 1];
     else if (ring.ord_vert[n - 1] == center2)
@@ -236,9 +234,9 @@ void compute_midpoint_butterfly_crease(const struct ring_info *rings,
     }
 
     /* If we are here, we found a true boundary */
-    prod_v(0.5625, &np, &np);
-    add_v(&(raw_model->vertices[v3]), &(raw_model->vertices[v4]), &r);
-    prod_v(-0.0625, &r, &r);
+    __prod_v(0.5625, np, np);
+    __add_v(raw_model->vertices[v3], raw_model->vertices[v4], r);
+    __prod_v(-0.0625, r, r);
     add_v(&np, &r, vout);
   } else if (ring.type == 1) 
     compute_midpoint_butterfly(rings, center2, v2, raw_model, vout);
