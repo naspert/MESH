@@ -1,4 +1,4 @@
-/* $Id: model_analysis.c,v 1.27 2002/03/29 17:36:09 dsanta Exp $ */
+/* $Id: model_analysis.c,v 1.28 2002/03/29 19:01:00 dsanta Exp $ */
 
 
 /*
@@ -476,7 +476,7 @@ static struct adj_faces * find_adjacent_faces(const face_t *mfaces, int n_faces,
                                               const bmap_t *manifold_vtcs)
 {
   struct adj_faces *aflist;
-  int k,i;
+  int k,i,imax;
   int f0,f1,f2;
   int adj_fidx;
   const struct face_list *faces_at_vtx;
@@ -487,40 +487,109 @@ static struct adj_faces * find_adjacent_faces(const face_t *mfaces, int n_faces,
     aflist[k].face_on_edge[1] = -1;
     aflist[k].face_on_edge[2] = -1;
     aflist[k].extra = NULL;
+
     f0 = mfaces[k].f0;
     f1 = mfaces[k].f1;
     f2 = mfaces[k].f2;
+
+    if (f0 == f1 || f1 == f2 || f2 == f0) continue; /* ignore degenerates */
+
     /* Find faces adjacent on the f0-f1 edge */
     faces_at_vtx = &flist[f0];
-    for (i=0; i<faces_at_vtx->n_faces; i++) {
-      adj_fidx = faces_at_vtx->face[i];
-      if (adj_fidx == k) continue; /* don't include ourselves */
+    if (BMAP_ISSET(manifold_vtcs,f0)) {
+      /* manifold => faces_at_vtx is ordered (i.e. adjacent faces are either
+       * just before or just after in faces_at_vtx) and there is at most one
+       * adjacent face on the edge f0-f1. */
+      i = imax = faces_at_vtx->n_faces-1;
+      while (faces_at_vtx->face[i] != k) {
+        i--;
+        assert(i>=0); /* there is always a match */
+      }
+      adj_fidx = faces_at_vtx->face[(i > 0) ? i-1 : imax];
       if (mfaces[adj_fidx].f0 == f1 || mfaces[adj_fidx].f1 == f1 ||
           mfaces[adj_fidx].f2 == f1) { /* adjacent on f0-f1 */
         add_adj_face(&aflist[k],0,adj_fidx);
-        if (BMAP_ISSET(manifold_vtcs,f0)) break; /* only one adjacent face */
+      } else { /* there can only be one adjacent */
+        adj_fidx = faces_at_vtx->face[(i < imax) ? i+1 : 0];
+        if (mfaces[adj_fidx].f0 == f1 || mfaces[adj_fidx].f1 == f1 ||
+            mfaces[adj_fidx].f2 == f1) { /* adjacent on f0-f1 */
+          add_adj_face(&aflist[k],0,adj_fidx);
+        }
+      }
+    } else { /* unordered faces_at_vtx => full scan */
+      for (i=faces_at_vtx->n_faces-1; i>=0; i--) {
+        adj_fidx = faces_at_vtx->face[i];
+        if (adj_fidx == k) continue; /* don't include ourselves */
+        if (mfaces[adj_fidx].f0 == f1 || mfaces[adj_fidx].f1 == f1 ||
+            mfaces[adj_fidx].f2 == f1) { /* adjacent on f0-f1 */
+          add_adj_face(&aflist[k],0,adj_fidx);
+        }
       }
     }
+
     /* Find faces adjacent on the f1-f2 edge */
     faces_at_vtx = &flist[f1];
-    for (i=0; i<faces_at_vtx->n_faces; i++) {
-      adj_fidx = faces_at_vtx->face[i];
-      if (adj_fidx == k) continue; /* don't include ourselves */
+    if (BMAP_ISSET(manifold_vtcs,f1)) {
+      /* manifold => faces_at_vtx is ordered (i.e. adjacent faces are either
+       * just before or just after in faces_at_vtx) and there is at most one
+       * adjacent face on the edge f1-f2. */
+      i = imax = faces_at_vtx->n_faces-1;
+      while (faces_at_vtx->face[i] != k) {
+        i--;
+        assert(i>=0); /* there is always a match */
+      }
+      adj_fidx = faces_at_vtx->face[(i > 0) ? i-1 : imax];
       if (mfaces[adj_fidx].f0 == f2 || mfaces[adj_fidx].f1 == f2 ||
           mfaces[adj_fidx].f2 == f2) { /* adjacent on f1-f2 */
         add_adj_face(&aflist[k],1,adj_fidx);
-        if (BMAP_ISSET(manifold_vtcs,f1)) break; /* only one adjacent face */
+      } else { /* there can only be one adjacent */
+        adj_fidx = faces_at_vtx->face[(i < imax) ? i+1 : 0];
+        if (mfaces[adj_fidx].f0 == f2 || mfaces[adj_fidx].f1 == f2 ||
+            mfaces[adj_fidx].f2 == f2) { /* adjacent on f1-f2 */
+          add_adj_face(&aflist[k],1,adj_fidx);
+        }
+      }
+    } else { /* unordered faces_at_vtx => full scan */
+      for (i=faces_at_vtx->n_faces-1; i>=0; i--) {
+        adj_fidx = faces_at_vtx->face[i];
+        if (adj_fidx == k) continue; /* don't include ourselves */
+        if (mfaces[adj_fidx].f0 == f2 || mfaces[adj_fidx].f1 == f2 ||
+            mfaces[adj_fidx].f2 == f2) { /* adjacent on f1-f2 */
+          add_adj_face(&aflist[k],1,adj_fidx);
+        }
       }
     }
+
     /* Find faces adjacent on the f2-f0 edge */
     faces_at_vtx = &flist[f2];
-    for (i=0; i<faces_at_vtx->n_faces; i++) {
-      adj_fidx = faces_at_vtx->face[i];
-      if (adj_fidx == k) continue; /* don't include ourselves */
+    if (BMAP_ISSET(manifold_vtcs,f2)) {
+      /* manifold => faces_at_vtx is ordered (i.e. adjacent faces are either
+       * just before or just after in faces_at_vtx) and there is at most one
+       * adjacent face on the edge f2-f0. */
+      i = imax = faces_at_vtx->n_faces-1;
+      while (faces_at_vtx->face[i] != k) {
+        i--;
+        assert(i>=0); /* there is always a match */
+      }
+      adj_fidx = faces_at_vtx->face[(i > 0) ? i-1 : imax];
       if (mfaces[adj_fidx].f0 == f0 || mfaces[adj_fidx].f1 == f0 ||
           mfaces[adj_fidx].f2 == f0) { /* adjacent on f2-f0 */
         add_adj_face(&aflist[k],2,adj_fidx);
-        if (BMAP_ISSET(manifold_vtcs,f2)) break; /* only one adjacent face */
+      } else { /* there can only be one adjacent */
+        adj_fidx = faces_at_vtx->face[(i < imax) ? i+1 : 0];
+        if (mfaces[adj_fidx].f0 == f0 || mfaces[adj_fidx].f1 == f0 ||
+            mfaces[adj_fidx].f2 == f0) { /* adjacent on f2-f0 */
+          add_adj_face(&aflist[k],2,adj_fidx);
+        }
+      }
+    } else { /* unordered faces_at_vtx => full scan */
+      for (i=faces_at_vtx->n_faces-1; i>=0; i--) {
+        adj_fidx = faces_at_vtx->face[i];
+        if (adj_fidx == k) continue; /* don't include ourselves */
+        if (mfaces[adj_fidx].f0 == f0 || mfaces[adj_fidx].f1 == f0 ||
+            mfaces[adj_fidx].f2 == f0) { /* adjacent on f2-f0 */
+          add_adj_face(&aflist[k],2,adj_fidx);
+        }
       }
     }
   }
