@@ -1,3 +1,5 @@
+/* $Id: TextWidget.cpp,v 1.5 2002/02/26 16:34:51 dsanta Exp $ */
+
 #include <TextWidget.h>
 #include <qapplication.h>
 
