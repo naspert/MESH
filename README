@@ -1,0 +1,31 @@
+		Metro
+
+The Metro tool measures the distance between two discrete surfaces described as
+triangular meshes. The topology of the meshes needs not be the same, arbitrary
+topologies can be compared.
+
+To compile the program the QT libraries, version 2.3.0 or later with the
+support OpenGL compiled in, are required. The QTDIR environment variable
+should point to the QT installation directory.
+
+Type 'make all' at the command prompt and the executable, viewer, will be
+installed in the ./bin directory. To get a command line syntax, type
+'./bin/viewer -h' at the command line prompt. The current Makefile requires
+GNU make and supports Linux (with GCC) and IRIX (with the MIPSPro
+compilers). Other systems might require some modifications.
+
+The input file format for the triangular meshes is a raw ASCII format, which
+describes the vertices, the vertex connectivity and optionally the vertex
+normals. The first line should contain two or three decimal numbers with the
+number of vertices, the number of triangles and the number of vertex normals
+(if they are present). If the vertex normals are present, their number must
+equal the number of vertices. Follow the X, Y, Z affine coordinates for each
+vertex and then the indices of the three vertices of each triangular face. The
+vertex indices are zero based. If the vertex normals are given follows the X,
+Y, Z affine coordinates of the vertex normal vectorss, in the same order as
+the vertices. The normal vectors should all be normalized.
+
+Please report any bugs to:
+
+	Nicolas.Aspert@epfl.ch
+	Diego.SantaCruz@epfl.ch
