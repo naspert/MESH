@@ -1,4 +1,4 @@
-/* $Id: subdiv.c,v 1.9 2001/10/16 14:37:59 aspert Exp $ */
+/* $Id: subdiv.c,v 1.10 2001/10/16 15:31:05 aspert Exp $ */
 #include <3dutils.h>
 #include <subdiv_methods.h>
 #include <assert.h>
@@ -13,6 +13,8 @@
 struct model* subdiv(struct model *raw_model, 
 		     void (*midpoint_func)(struct ring_info*, int, int, 
 					   struct model*, vertex_t*), 
+		     void (*midpoint_func_bound)(struct ring_info*, int, int, 
+						 struct model*, vertex_t*), 
 		     void (*update_func)(struct model*, struct model*, 
 					 struct ring_info*) ) {
   struct ring_info *rings;
@@ -55,8 +57,21 @@ struct model* subdiv(struct model *raw_model,
 	continue; 
 
       /* 2 boundary v. -> do nothing */
-      if (rings[i].type==1 || rings[rings[i].ord_vert[j]].type==1) 
+      if (rings[i].type==1 || rings[rings[i].ord_vert[j]].type==1) {
+	if (midpoint_func_bound == NULL)
 	  continue;
+	else {
+	  midpoint_func_bound(rings, i, j, raw_model, &p);
+	  nedges ++;
+	  edge_list = (struct edge_sub*)
+	    realloc(edge_list, nedges*sizeof(struct edge_sub));
+	  edge_list[nedges-1].edge.v0 = i;
+	  edge_list[nedges-1].edge.v1 = rings[i].ord_vert[j];
+	  edge_list[nedges-1].p = p;
+	  continue;
+	}
+      }
+	  
       
       midpoint_func(rings, i, j, raw_model, &p);
       nedges ++;
@@ -324,7 +339,7 @@ int main(int argc, char **argv) {
 
   if (argc != 4 && argc != 5) {
     fprintf(stderr, 
-	    "Usage: subdiv_sph [-sph, -but, -loop] infile outfile n_lev\n");
+	    "Usage: subdiv_sph [-sph, -but, -loop, -loopb] infile outfile n_lev\n");
     exit(1);
   }
   if (strcmp(argv[1], "-sph") == 0) 
@@ -333,10 +348,12 @@ int main(int argc, char **argv) {
     sub_method = SUBDIV_BUTTERFLY;
   else if (strcmp(argv[1], "-loop") == 0)
     sub_method = SUBDIV_LOOP;
+  else if (strcmp(argv[1], "-loopb") == 0)
+    sub_method = SUBDIV_LOOP_BOUNDARY;
   else {
     fprintf(stderr, "Invalid subdivision method %s\n", argv[1]);
     fprintf(stderr, 
-	    "Usage: subdiv_sph [-sph, -but, loop] infile outfile n_lev\n");
+	    "Usage: subdiv_sph [-sph, -but, -loop, -loopb] infile outfile n_lev\n");
     exit(1);
   }
 
@@ -366,14 +383,19 @@ int main(int argc, char **argv) {
     /* performs the subdivision */
     switch (sub_method) {
     case SUBDIV_SPH:
-      sub_model = subdiv(or_model, compute_midpoint_sph, NULL);
+      sub_model = subdiv(or_model, compute_midpoint_sph, NULL, NULL);
       break;
     case SUBDIV_LOOP:
-      sub_model = subdiv(or_model, compute_midpoint_loop, 
+      sub_model = subdiv(or_model, compute_midpoint_loop, NULL, 
 			 update_vertices_loop);
       break;
+    case SUBDIV_LOOP_BOUNDARY:
+      sub_model = subdiv(or_model, compute_midpoint_loop, 
+			 compute_midpoint_loop_crease,
+			 update_vertices_loop_crease);
+      break;
     case SUBDIV_BUTTERFLY:
-      sub_model = subdiv(or_model, compute_midpoint_butterfly, NULL);
+      sub_model = subdiv(or_model, compute_midpoint_butterfly, NULL, NULL);
       break;
     default:
       fprintf(stderr, "ERROR : Invalid subdivision method found = %d\n", 

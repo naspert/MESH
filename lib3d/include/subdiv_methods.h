@@ -1,4 +1,4 @@
-/* $Id: subdiv_methods.h,v 1.1 2001/10/12 13:42:15 aspert Exp $ */
+/* $Id: subdiv_methods.h,v 1.2 2001/10/16 15:31:05 aspert Exp $ */
 
 
 #ifndef __SUBDIV_METHODS_PROTO
@@ -13,6 +13,7 @@
 # define SUBDIV_BUTTERFLY 0x01
 # define SUBDIV_SPH       0x02
 # define SUBDIV_LOOP      0x03
+# define SUBDIV_LOOP_BOUNDARY 0x04
 
 # ifdef __cplusplus
 extern "C" {
@@ -25,6 +26,10 @@ extern "C" {
   void compute_midpoint_loop(struct ring_info*, int, int, struct model*,
 			     vertex_t*);
   void update_vertices_loop(struct model*, struct model*, struct ring_info*);
+  void compute_midpoint_loop_crease(struct ring_info*, int, int, struct model*,
+				    vertex_t*);
+  void update_vertices_loop_crease(struct model*, struct model*, 
+				   struct ring_info*);
 
 # ifdef __cplusplus
 }
