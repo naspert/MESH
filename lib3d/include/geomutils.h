@@ -1,4 +1,4 @@
-/* $Id: geomutils.h,v 1.10 2001/08/23 09:04:25 dsanta Exp $ */
+/* $Id: geomutils.h,v 1.11 2001/09/03 15:38:31 aspert Exp $ */
 #include <3dmodel.h>
 
 #ifndef _GEOMUTILS_PROTO_
@@ -46,6 +46,7 @@ extern "C" {
   void substract_v(const vertex*, const vertex*, vertex*);
   void add_v(const vertex*, const vertex*, vertex*);
   void prod_v(double, const vertex*, vertex*);
+  void add_prod_v(double, const vertex*, const vertex*, vertex*);
   void crossprod_v(const vertex*, const vertex*, vertex*);
   void ncrossp_v(const vertex*, const vertex*, const vertex*, vertex*);
   double tri_area_v(const vertex*, const vertex*, const vertex*);
@@ -144,7 +145,16 @@ extern "C" {
     vout->z = m*v->z;
   }
   
-  /* Calculates the corss product of vectors v1 and v2 and places the result in
+
+  /* Multiplies v1 by scalar m, adds v2 to it and puts the result in vout */
+  INLINE void add_prod_v(double m, const vertex *v1, const vertex *v2, 
+			 vertex *vout) {
+    vout->x = m*v1->x + v2->x;
+    vout->y = m*v1->y + v2->y;
+    vout->z = m*v1->z + v2->z;
+  }
+
+  /* Calculates the cross product of vectors v1 and v2 and places the result in
    * vout. It is OK for vout to alias v1 and/or v2. */
   INLINE void crossprod_v(const vertex *v1, const vertex *v2, vertex *vout) {
     vertex res; /* Use temporary to be safe if vout alias v1 and/or v2 */

@@ -1,4 +1,4 @@
-/* $Id: butterfly.c,v 1.1 2001/09/03 12:54:15 aspert Exp $ */
+/* $Id: butterfly.c,v 1.2 2001/09/03 15:38:31 aspert Exp $ */
 #include <3dutils.h>
 
 /* v0 & v1 are the indices in rings[center].ord_vert */
@@ -6,7 +6,7 @@ vertex compute_midpoint(ring_info *rings, int center,  int v1,
 			model *raw_model) {
   double *s, *t;
   double qt=0.0, qs=0.0;
-  double w=0.0; /* This is a parameter for Butterfly subdivision */
+  double w=1.0/16.0; /* This is a parameter for Butterfly subdivision */
   int j;
   vertex p, r;
   int n = rings[center].size;
@@ -92,9 +92,9 @@ vertex compute_midpoint(ring_info *rings, int center,  int v1,
 
     /* Apply stencil to 1st vertex */
     for (j=0; j<n; j++) {
-      p.x += s[j]*raw_model->vertices[ring.ord_vert[(v1+j)%n]].x;
-      p.y += s[j]*raw_model->vertices[ring.ord_vert[(v1+j)%n]].y;
-      p.z += s[j]*raw_model->vertices[ring.ord_vert[(v1+j)%n]].z;
+      add_prod_v(s[j], &(raw_model->vertices[ring.ord_vert[(v1+j)%n]]), &p, 
+		 &p);
+
 #ifdef SUBDIV_DEBUG
       printf("s[%d]=%f\n",j, s[j]);
       printf("v = %f %f %f\n", raw_model->vertices[ring.ord_vert[(v1+j)%n]].x,
@@ -104,34 +104,23 @@ vertex compute_midpoint(ring_info *rings, int center,  int v1,
       printf("%d: p = %f %f %f\n", j,p.x, p.y, p.z);
 #endif
     }
-    p.x += qs*raw_model->vertices[center].x;
-    p.y += qs*raw_model->vertices[center].y;
-    p.z += qs*raw_model->vertices[center].z;
+
+    add_prod_v(qs, &(raw_model->vertices[center]), &p, &p);
+
 
     
     /* Apply stencil to end vertex */
-    for (j=0; j<m; j++) {
-      r.x += t[j]*raw_model->vertices[ring_op.ord_vert[(v2+j)%m]].x;
-      r.y += t[j]*raw_model->vertices[ring_op.ord_vert[(v2+j)%m]].y;
-      r.z += t[j]*raw_model->vertices[ring_op.ord_vert[(v2+j)%m]].z;
+    for (j=0; j<m; j++) 
+      add_prod_v(t[j], &(raw_model->vertices[ring_op.ord_vert[(v2+j)%m]]), 
+		 &r, &r);
 
-    }
-    r.x += qt*raw_model->vertices[center2].x;
-    r.y += qt*raw_model->vertices[center2].y;
-    r.z += qt*raw_model->vertices[center2].z;
+    add_prod_v(qt, &(raw_model->vertices[center2]), &r, &r); 
 
 
-    r.x *= 0.5;
-    r.y *= 0.5;
-    r.z *= 0.5;
-    p.x *= 0.5;
-    p.y *= 0.5;
-    p.z *= 0.5;
-    
-    /* take the average */
-    p.x += r.x;
-    p.y += r.y;
-    p.z += r.z;
+    prod_v(0.5, &r, &r);
+    prod_v(0.5, &p, &p);
+    add_v(&p, &r, &p);
+
     
     free(s);
     free(t);
@@ -159,30 +148,23 @@ vertex compute_midpoint(ring_info *rings, int center,  int v1,
     r.z = 0.0;
 
     /* Apply stencil to 1st vertex */
-    for (j=0; j<6; j++) {
-      p.x += s[j]*raw_model->vertices[ring.ord_vert[(v1+j)%6]].x;
-      p.y += s[j]*raw_model->vertices[ring.ord_vert[(v1+j)%6]].y;
-      p.z += s[j]*raw_model->vertices[ring.ord_vert[(v1+j)%6]].z;
+    for (j=0; j<6; j++) 
+      add_prod_v(s[j], &(raw_model->vertices[ring.ord_vert[(v1+j)%6]]), &p, 
+		 &p);
 
-    }
-    p.x += qs*raw_model->vertices[center].x;
-    p.y += qs*raw_model->vertices[center].y;
-    p.z += qs*raw_model->vertices[center].z;
+    add_prod_v(qs, &(raw_model->vertices[center]), &p, &p);
+
 
     /* Apply stencil to end vertex */
-    for (j=0; j<6; j++) {
-      p.x += s[j]*raw_model->vertices[ring_op.ord_vert[(v2+j)%6]].x;
-      p.y += s[j]*raw_model->vertices[ring_op.ord_vert[(v2+j)%6]].y;
-      p.z += s[j]*raw_model->vertices[ring_op.ord_vert[(v2+j)%6]].z;
+    for (j=0; j<6; j++) 
+      add_prod_v(s[j], &(raw_model->vertices[ring_op.ord_vert[(v2+j)%6]]), &p, 
+		 &p);
 
-    }
-    p.x += qs*raw_model->vertices[center2].x;
-    p.y += qs*raw_model->vertices[center2].y;
-    p.z += qs*raw_model->vertices[center2].z;
-    
-    p.x *= 0.5;
-    p.y *= 0.5;
-    p.z *= 0.5;
+    add_prod_v(qs, &(raw_model->vertices[center2]), &p, &p);
+
+
+    prod_v(0.5, &p, &p);
+
 
     free(s);
   }
@@ -212,15 +194,11 @@ vertex compute_midpoint(ring_info *rings, int center,  int v1,
     p.y = 0.0;
     p.z = 0.0;
 
-    for (j=0; j<n; j++) {
-      p.x += s[j]*raw_model->vertices[ring.ord_vert[(v1+j)%n]].x;
-      p.y += s[j]*raw_model->vertices[ring.ord_vert[(v1+j)%n]].y;
-      p.z += s[j]*raw_model->vertices[ring.ord_vert[(v1+j)%n]].z;
+    for (j=0; j<n; j++) 
+      add_prod_v(s[j], &(raw_model->vertices[ring.ord_vert[(v1+j)%n]]), &p, 
+		 &p);
 
-    }
-    p.x += qs*raw_model->vertices[center].x;
-    p.y += qs*raw_model->vertices[center].y;
-    p.z += qs*raw_model->vertices[center].z;
+    add_prod_v(qs, &(raw_model->vertices[center]), &p, &p);
 
     free(s);
   } else if (n==6 && m!=6) {
@@ -253,15 +231,13 @@ vertex compute_midpoint(ring_info *rings, int center,  int v1,
     p.y = 0.0;
     p.z = 0.0;
 
-    for (j=0; j<m; j++) {
-      p.x += t[j]*raw_model->vertices[ring_op.ord_vert[(v2+j)%m]].x;
-      p.y += t[j]*raw_model->vertices[ring_op.ord_vert[(v2+j)%m]].y;
-      p.z += t[j]*raw_model->vertices[ring_op.ord_vert[(v2+j)%m]].z;
+    for (j=0; j<m; j++) 
+      add_prod_v(t[j], &(raw_model->vertices[ring_op.ord_vert[(v2+j)%m]]), &p,
+		 &p);
 
-    }
-    p.x += qt*raw_model->vertices[center2].x;
-    p.y += qt*raw_model->vertices[center2].y;
-    p.z += qt*raw_model->vertices[center2].z;
+
+    add_prod_v(qt, &(raw_model->vertices[center2]), &p, &p);
+
     free(t);
   } 
   
@@ -276,13 +252,12 @@ vertex reg_interior_crease_sub(ring_info *rings, int center, int v1,
   ring_info ring=rings[center], ring_op=rings[center2];
   int i;
 
-  p.x = 3.0*raw_model->vertices[center2].x/8.0;
-  p.y = 3.0*raw_model->vertices[center2].y/8.0;
-  p.z = 3.0*raw_model->vertices[center2].z/8.0;
+
+  prod_v(0.375, &(raw_model->vertices[center2]), &p);
   
-  p.x += 5.0*raw_model->vertices[center].x/8.0;
-  p.y += 5.0*raw_model->vertices[center].y/8.0;
-  p.z += 5.0*raw_model->vertices[center].z/8.0;
+  p.x += 0.625*raw_model->vertices[center].x;
+  p.y += 0.625*raw_model->vertices[center].y;
+  p.z += 0.625*raw_model->vertices[center].z;
   
   if (ring.ord_vert[(v1+1)%6] == ring_op.ord_vert[0]) {    
     p.x += (raw_model->vertices[ring_op.ord_vert[0]].x - 
