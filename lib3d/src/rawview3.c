@@ -1,4 +1,4 @@
-/* $Id: rawview3.c,v 1.5 2001/03/20 11:38:15 aspert Exp $ */
+/* $Id: rawview3.c,v 1.6 2001/03/27 08:14:18 aspert Exp $ */
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <GL/glut.h>
@@ -600,7 +600,7 @@ void display() {
 int main(int argc, char **argv) {
 
   int i;
-  vertex diag_bbox; /* bounding box diagonal */
+
 
   if (argc != 2) {
     printf("rawview file.raw\n");
@@ -638,11 +638,9 @@ int main(int argc, char **argv) {
   }
   
 
-  diag_bbox.x = raw_model->bBox[1].x - raw_model->bBox[0].x;
-  diag_bbox.y = raw_model->bBox[1].y - raw_model->bBox[0].y;
-  diag_bbox.z = raw_model->bBox[1].z - raw_model->bBox[0].z;
 
-  distance = norm(diag_bbox)/tan(FOV*M_PI_2/180.0);
+  distance = dist(raw_model->bBox[0], raw_model->bBox[1])/
+    tan(FOV*M_PI_2/180.0);
   
   dstep = distance*0.01;
 
