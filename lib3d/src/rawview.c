@@ -1,4 +1,4 @@
-/* $Id: rawview.c,v 1.38 2003/03/26 09:01:17 aspert Exp $ */
+/* $Id: rawview.c,v 1.39 2003/03/27 09:42:28 aspert Exp $ */
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -26,7 +26,10 @@
 static struct gl_render_context gl_ctx;
 
 /* Subdiv functions structure */
-static struct subdiv_methods sm;
+static struct subdiv_methods sm = { BUTTERFLY_SUBDIV_FUNCTIONS,
+                                    LOOP_SUBDIV_FUNCTIONS,
+                                    SPHERICAL_SUBDIV_FUNCTIONS,
+                                    KOBBELTSQRT3_SUBDIV_FUNCTIONS };
 
 /* storage for mouse stuff */
 static struct mouse_state mouse;
@@ -570,7 +573,7 @@ int main(int argc, char **argv) {
 
   int i, rcode=0;
   char *title=NULL;
-  const char s_title[]="Raw Mesh Viewer $Revision: 1.38 $ - ";
+  const char s_title[]="Raw Mesh Viewer $Revision: 1.39 $ - ";
   vertex_t center;
   struct model* raw_model;
 
@@ -656,7 +659,6 @@ int main(int argc, char **argv) {
   memset(&dl_idx, 0, sizeof(struct display_lists_indices));
 
   /* Init subdiv function structure */
-  INIT_SUBDIV_METHODS(sm);
 
   /* Init the rendering window */
   glutInit(&argc, argv);

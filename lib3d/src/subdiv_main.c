@@ -1,4 +1,4 @@
-/* $Id: subdiv_main.c,v 1.9 2003/03/26 09:01:17 aspert Exp $ */
+/* $Id: subdiv_main.c,v 1.10 2003/03/27 09:42:29 aspert Exp $ */
 #include <3dutils.h>
 #include <subdiv.h>
 #include <subdiv_methods.h>
@@ -9,10 +9,10 @@ int main(int argc, char **argv) {
   struct model *or_model, *sub_model=NULL;
   int lev, nlev=1, rcode, nonopt_argc=1;
   int sub_method=-1, use_binary=0;
-  struct subdiv_methods sm;
+  struct subdiv_methods sm={BUTTERFLY_SUBDIV_FUNCTIONS, LOOP_SUBDIV_FUNCTIONS,
+                            SPHERICAL_SUBDIV_FUNCTIONS, 
+                            KOBBELTSQRT3_SUBDIV_FUNCTIONS};
   
-  /* Initialize the subdivision structures */
-  INIT_SUBDIV_METHODS(sm);
 
   
   if (argc < 4 || argc > 6) {
