@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.90 2002/08/30 09:18:41 aspert Exp $ */
+/* $Id: compute_error.c,v 1.91 2002/09/23 16:35:22 dsanta Exp $ */
 
 
 /*
@@ -602,6 +602,40 @@ static void get_cells_at_distance(struct dist_cell_lists *dlists,
     dlists->list[k].cell = NULL;
     dlists->list[k].n_cells = 0;
   }
+}
+
+/* Computes the area of the triangle (v1,v2,v3) and returns it. It detects if
+ * the triangle is degenerate and returns zero area in that case. */
+static double triangle_area(const dvertex_t *v1, const dvertex_t *v2, 
+                            const dvertex_t*v3) {
+  dvertex_t u,v,h;
+  double nu2,uv,nh;
+  double tmp;
+    
+  u.x = v1->x - v3->x;
+  u.y = v1->y - v3->y;
+  u.z = v1->z - v3->z;
+    
+  v.x = v2->x - v3->x;
+  v.y = v2->y - v3->y;
+  v.z = v2->z - v3->z;
+    
+  /* <u,v> */
+  uv = u.x*v.x + u.y*v.y +u.z*v.z;
+
+  /* ||u||^2 */
+  nu2 = u.x*u.x + u.y*u.y + u.z*u.z;
+
+  if (nu2 < DBL_MIN*DMARGIN) return 0; /* degenerate triangle */
+
+  tmp = uv/nu2;
+  h.x = v.x - u.x*tmp;
+  h.y = v.y - u.y*tmp;
+  h.z = v.z - u.z*tmp;
+
+  nh = norm_dv(&h);
+  if (nh < DBL_MIN*DMARGIN) return 0; /* degenerate triangle */
+  return (nh*sqrt(nu2)*0.5);
 }
 
 /* --------------------------------------------------------------------------*
@@ -1431,7 +1465,8 @@ void dist_surf_surf(struct model_error *me1, struct model *m2,
     vertex_f2d_dv(&(m1->vertices[m1->faces[k].f0]),&v1);
     vertex_f2d_dv(&(m1->vertices[m1->faces[k].f1]),&v2);
     vertex_f2d_dv(&(m1->vertices[m1->faces[k].f2]),&v3);
-    me1->fe[k].face_area = tri_area_dv(&v1,&v2,&v3);
+    me1->fe[k].face_area = triangle_area(&v1,&v2,&v3);
+    if (me1->fe[k].face_area == 0) continue; /* degenerate */
     n = get_sampling_freq(me1->fe[k].face_area,sampling_density);
     if (n < min_sample_freq) n = min_sample_freq;
     realloc_triag_sample_error(&tse,n);
