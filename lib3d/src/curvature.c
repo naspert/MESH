@@ -1,7 +1,10 @@
-/* $Id: curvature.c,v 1.6 2002/09/09 08:36:15 aspert Exp $ */
+/* $Id: curvature.c,v 1.7 2002/11/14 16:43:50 aspert Exp $ */
 #include <3dutils.h>
 #include <ring.h>
 #include <curvature.h>
+#ifdef CURV_DEBUG
+# include <debug_print.h>
+#endif
 
 /* Returns the angle lying at vertex v0 in the triangle v0v1v2 */
 static double get_top_angle(const vertex_t *v0, const vertex_t *v1, 
@@ -168,9 +171,9 @@ int compute_curvature_with_rings(const struct model *raw_model,
   
   for (i=0; i<raw_model->num_vert; i++) {
     if (rings[i].type != 0) {
-      fprintf(stderr, "Unsupported vertex type %d found at %d\n", 
-	      rings[i].type, i);
-      return 1;
+      info[i].gauss_curv = 0.0;
+      info[i].mean_curv = 0.0;
+      continue;
     }
     compute_mean_curvature_normal(raw_model, i, rings, 
 				  &(info[i].mean_curv_normal), 
@@ -182,23 +185,24 @@ int compute_curvature_with_rings(const struct model *raw_model,
     k2 = k*k;
     delta = k2 - info[i].gauss_curv;
     if (delta <= 0.0) {
-#ifdef __CURV_DEBUG
-      printf("Strange delta=%f at vertex %d\n", delta, i);
+#ifdef CURV_DEBUG
+      DEBUG_PRINT("Strange delta=%f at vertex %d\n", delta, i);
 #endif
       delta = 0.0;
     }
     info[i].k1 = k + sqrt(delta);
     info[i].k2 = k - sqrt(delta);
 
-#ifdef __CURV_DEBUG
-    printf("Vertex %d\n", i);
-    printf("Mean curv. normal = %f %f %f\n", info[i].mean_curv_normal.x,
-	   info[i].mean_curv_normal.y, info[i].mean_curv_normal.z);
-    printf("Mixed area = %f\n", info[i].mixed_area);
-    printf("Vertex normal = %f %f %f\n", raw_model->normals[i].x, 
-	   raw_model->normals[i].y, raw_model->normals[i].z);
-    printf("Vertex %d :Gauss_k=%f k1=%f k2=%f\n\n", i, info[i].gauss_curv,  
- 	   info[i].k1, info[i].k2); 
+#ifdef CURV_DEBUG
+    DEBUG_PRINT("Vertex %d\n", i);
+    DEBUG_PRINT("Mean curv. normal = %f %f %f\n", info[i].mean_curv_normal.x,
+                info[i].mean_curv_normal.y, info[i].mean_curv_normal.z);
+    DEBUG_PRINT("Mixed area = %f\n", info[i].mixed_area);
+    DEBUG_PRINT("Vertex normal = %f %f %f\n", raw_model->normals[i].x, 
+                raw_model->normals[i].y, raw_model->normals[i].z);
+    DEBUG_PRINT("Gauss_k=%f k1=%f k2=%f\n\n", 
+                info[i].gauss_curv,  
+                info[i].k1, info[i].k2); 
 #endif
   }
   return 0;
