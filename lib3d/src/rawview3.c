@@ -1,4 +1,4 @@
-/* $Id: rawview3.c,v 1.26 2001/11/23 13:49:03 aspert Exp $ */
+/* $Id: rawview3.c,v 1.27 2001/11/26 07:52:51 aspert Exp $ */
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -549,9 +549,10 @@ void ps_grab() {
     glClearColor(1.0, 1.0, 1.0, 0.0);
     while (state == GL2PS_OVERFLOW) {
       bufsize += 1024*1024;
-      gl2psBeginPage("PS Grab", "LaTeX", GL2PS_SIMPLE_SORT, 
+      gl2psBeginPage("PS Grab", "LaTeX", GL2PS_PS, GL2PS_SIMPLE_SORT, 
 		     GL2PS_SIMPLE_LINE_OFFSET, 
-		     GL_RGBA, 0, NULL, bufsize, ps_file);
+		     GL_RGBA, 0, NULL, bufsize, ps_file, 
+		     filename);
     
       display();
       state = gl2psEndPage();
