@@ -1,4 +1,4 @@
-/* $Id: geomutils.h,v 1.34 2002/08/30 09:18:45 aspert Exp $ */
+/* $Id: geomutils.h,v 1.35 2002/09/26 12:23:56 aspert Exp $ */
 
 
 /*
@@ -288,8 +288,6 @@ extern "C" {
   INLINE float tri_area_v(const vertex_t *v1, const vertex_t *v2, 
                           const vertex_t*v3) {
     vertex_t u,v,h;
-    float nu2,uv;
-    float tmp;
     
     u.x = v1->x - v3->x;
     u.y = v1->y - v3->y;
@@ -299,22 +297,10 @@ extern "C" {
     v.y = v2->y - v3->y;
     v.z = v2->z - v3->z;
     
-    /* <u,v> */
-    uv = u.x*v.x + u.y*v.y +u.z*v.z;
+    /* u x v */
+    crossprod_v(&u, &v, &h);
 
-    /* ||u||^2 */
-    nu2 = u.x*u.x + u.y*u.y + u.z*u.z;
-
-    tmp = uv/nu2;
-    h.x = v.x - u.x*tmp;
-    h.y = v.y - u.y*tmp;
-    h.z = v.z - u.z*tmp;
-
-#if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)  /* C99 */
-    return (norm_v(&h)*sqrtf(nu2)*0.5f);
-#else /* pre-C99 */
-    return (norm_v(&h)*(float)sqrt(nu2)*0.5f);
-#endif
+    return (norm_v(&h)*0.5f);
   }
 
   INLINE void neg_v(const vertex_t *v, vertex_t *vout) {
@@ -469,32 +455,19 @@ extern "C" {
 
   INLINE double tri_area_dv(const dvertex_t *v1, const dvertex_t *v2, 
                             const dvertex_t*v3) {
-    dvertex_t u,v,h;
-    double nu2,uv;
-    double tmp;
-    
-    u.x = v1->x - v3->x;
-    u.y = v1->y - v3->y;
-    u.z = v1->z - v3->z;
-    
-    v.x = v2->x - v3->x;
-    v.y = v2->y - v3->y;
-    v.z = v2->z - v3->z;
-    
-    /* <u,v> */
-    uv = u.x*v.x + u.y*v.y +u.z*v.z;
+    dvertex_t u, v, tmp;
 
-    /* ||u||^2 */
-    nu2 = u.x*u.x + u.y*u.y + u.z*u.z;
+     u.x = v2->x - v1->x;
+     u.y = v2->y - v1->y;
+     u.z = v2->z - v1->z;
 
-    tmp = uv/nu2;
-    h.x = v.x - u.x*tmp;
-    h.y = v.y - u.y*tmp;
-    h.z = v.z - u.z*tmp;
+     v.x = v3->x - v1->x;
+     v.y = v3->y - v1->y;
+     v.z = v3->z - v1->z;
 
-
-
-    return (norm_dv(&h)*sqrt(nu2)*0.5);
+     crossprod_dv(&u, &v, &tmp);
+     return (0.5*norm_dv(&tmp));
+			 
   }
 
   INLINE void neg_dv(const dvertex_t *v, dvertex_t *vout) {
