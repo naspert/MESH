@@ -1,4 +1,4 @@
-/* $Id: compute_error.h,v 1.1 2001/04/30 07:50:47 jacquet Exp $ */
+/* $Id: compute_error.h,v 1.2 2001/05/03 08:01:24 jacquet Exp $ */
 #include <3dmodel.h>
 #include <geomutils.h>
 
@@ -13,6 +13,7 @@ extern "C" {
   cellules* liste(int, model*);
   int** cublist(cellules*,int,model*);
   double pcd(vertex,model*,int**,int,FILE*);
+  void listoffaces(model *,int*,int**);
 
 #ifdef __cplusplus
 }

@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.1 2001/04/30 07:50:47 jacquet Exp $ */
+/* $Id: compute_error.c,v 1.2 2001/05/03 08:01:24 jacquet Exp $ */
 #include <3dmodel.h>
 #include <geomutils.h>
 
@@ -253,9 +253,32 @@ bbox1=raw_model->bBox[1];
    }
    k++;
  }
-fprintf(f,"%lf ",dmin);
+/* fprintf(f,"%lf ",dmin); */
 return dmin;
 
 }
 
 
+/****************************************************************************/
+/*     fonction qui retourne la liste des faces pour chaque vertex          */
+/****************************************************************************/
+
+void listoffaces(model *raw_model,int *nbfaces,int **list_face)
+{
+int i,j;
+
+/*  For each vertex, build list of faces */
+ for (i=0; i<raw_model->num_vert; i++) {
+   list_face[i]=NULL;
+   for(j=0; j<raw_model->num_faces; j++){
+     if(raw_model->faces[j].f0 == i ||
+	raw_model->faces[j].f1 == i ||
+	raw_model->faces[j].f2 == i) {
+	 list_face[i] = (int*)realloc(list_face[i], 
+				      (nbfaces[i] + 1)*sizeof(int));	 
+	 list_face[i][nbfaces[i]] = j;
+	 nbfaces[i]++;
+     }
+   }
+ }  
+}
