@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.38 2002/03/05 08:50:25 aspert Exp $
+# $Id: Makefile,v 1.39 2002/03/05 09:43:27 aspert Exp $
 
 #
 # If the make variable PROFILE is defined to a non-empty value, profiling
@@ -34,22 +34,20 @@ ifeq ($(OS),IRIX64)
 OS := IRIX
 endif
 
-# Default compiler for C and C++ (CPP is normally the C preprocessor)
+# Default compiler for C and C++ 
 ifeq ($(OS),Linux)
 CC = gcc
 CXX = g++
-DEPFLAG = -M
 endif
 ifeq ($(OS),IRIX)
 CC = cc
 CXX = CC
-DEPFLAG = -M
 endif
 ifeq ($(OS),SunOS)
 CC = cc
 CXX = CC
-DEPFLAG = -xM
 endif
+
 # Default directories
 BINDIR = ./bin
 LIBDIR = ./lib
@@ -70,18 +68,28 @@ CC_IS_GCC := $(findstring gcc,$(shell $(CC) -v 2>&1))
 CXX_IS_GCC := $(findstring gcc,$(shell $(CXX) -v 2>&1))
 CC_IS_ICC := $(findstring Intel,$(shell $(CC) -V 2>&1))
 
+# Autodetect MipsPro compilers
+CC_IS_MP := $(findstring MIPSpro,$(shell $(CC) -version 2>&1))
+CXX_IS_MP := $(findstring MIPSpro,$(shell $(CXX) -version 2>&1))
+
+# Autodetect Solaris WorkShop compilers
+CC_IS_WS := $(findstring WorkShop,$(shell $(CC) -V 2>&1))
+CXX_IS_WS := $(findstring WorkShop,$(shell $(CXX) -V 2>&1))
+
+
 # Extra compiler flags (optimization, profiling, debug, etc.)
-ifneq ($(OS),SunOS)
+ifeq ($(CC_IS_WS)-$(OS),WorkShop-SunOS)
+XTRA_CFLAGS = -xO2 -Xc # equivalent to '-O2 -ansi' with gcc
+XTRA_CXXFLAGS = -xO2
+DEPFLAG = -xM 
+else
 XTRA_CFLAGS = -O2 -ansi
 XTRA_CXXFLAGS = -O2 -ansi
-XTRA_CPPFLAGS = -DNDEBUG
-XTRA_LDFLAGS =
-else
-XTRA_CFLAGS = -xO2
-XTRA_CXXFLAGS = -xO2
-XTRA_CPPFLAGS = -DNDEBUG
-XTRA_LDFLAGS =
+DEPFLAG = -M
 endif
+XTRA_CPPFLAGS = -DNDEBUG
+XTRA_LDFLAGS =
+
 ifeq ($(OS),Linux)
 # Need -D_GNU_SOURCE for getting non-standard unlocked stdio functions
 XTRA_CPPFLAGS +=  -D_GNU_SOURCE
@@ -89,7 +97,7 @@ endif
 
 # Derive compiler specific flags
 ifeq ($(CC_IS_GCC)-$(OS)-$(ARCH),gcc-Linux-i686)
-XTRA_CFLAGS += -march=i686
+XTRA_CFLAGS += -march=i686 -fno-math-errno
 endif
 ifeq ($(CC_IS_GCC),gcc)
 C_PROF_OPT = -pg
@@ -98,7 +106,7 @@ WARN_CFLAGS = -pedantic -Wall -W -Winline -Wmissing-prototypes \
         -Wstrict-prototypes -Wnested-externs -Wshadow -Waggregate-return
 # Following options might produce incorrect behaviour if code
 # is modified (only ANSI C aliasing allowed, and no math error checking)
-XTRA_CFLAGS += -fstrict-aliasing -fno-math-errno
+XTRA_CFLAGS += -fstrict-aliasing 
 endif
 ifeq ($(CC_IS_ICC),Intel)
 C_PROF_OPT = -p
@@ -107,24 +115,29 @@ endif
 ifeq ($(CC_IS_ICC)-$(OS)-$(ARCH),Intel-Linux-i686)
 XTRA_CFLAGS += -xiM
 endif
-ifeq ($(CC_IS_GCC)$(OS),IRIX)
+ifeq ($(CC_IS_MP)-$(OS),MIPSpro-IRIX)
 C_PROF_OPT = -fbgen
 XTRA_CFLAGS += -IPA -g3
 XTRA_LDFLAGS += -IPA
 endif
+ifeq ($(CC_IS_WS)-$(OS),WorkShop-SunOS)
+C_PROF_OPT = -xpg 
+XTRA_CFLAGS = -g -xlibmil -xCC
+endif
+
+# C++ compiler options
 ifeq ($(CXX_IS_GCC),gcc)
 CXX_PROF_OPT = -pg
 XTRA_CXXFLAGS += -g -pipe
 WARN_CXXFLAGS = -pedantic -Wall -W -Wmissing-prototypes
 endif
-ifeq ($(CXX_IS_GCC)$(OS),IRIX)
+ifeq ($(CXX_IS_MP)-$(OS),MIPSpro-IRIX)
 CXX_PROF_OPT = -fbgen
 XTRA_CXXFLAGS += -g3
 endif
-ifeq ($(OS),SunOS)
-C_PROF_OPT = -xpg
+ifeq ($(CXX_IS_WS)-$(OS),WorkShop-SunOS)
 CXX_PROF_OPT = -xpg
-XTRA_CFLAGS = -g -xCC
+XTRA_CXXFLAGS = -g -xlibmil
 endif 
 
 # Add profiling flags if requested
@@ -144,6 +157,9 @@ XTRA_LDLIBS += -lmpatrol -lbfd -liberty
 endif
 ifeq ($(OS),IRIX)
 $(error Need to add list of mpatrol libraries for IRIX)
+endif
+ifeq ($(OS),SunOS)
+$(error Need to add list of mpatrol libraries for Solaris)
 endif
 ifeq ($(findstring c-mem-check,$(MPATROL)),c-mem-check)
 ifeq ($(CC_IS_GCC),gcc)
