@@ -1,4 +1,4 @@
-/* $Id: subdiv_methods.c,v 1.14 2002/02/21 13:35:24 aspert Exp $ */
+/* $Id: subdiv_methods.c,v 1.15 2002/03/14 13:47:39 aspert Exp $ */
 #include <3dmodel.h>
 #include <normals.h>
 #include <geomutils.h>
@@ -6,16 +6,36 @@
 
 
 /* ph -> h(ph) */
-float h(float ph) {
-  if (ph <= -M_PI_2 || ph >= M_PI_2)
-    return ph;
-  else if (ph < -M_PI_4) 
-    return 0.5*ph*(1.0 + (ph/M_PI_4 + 1.0)*(ph/M_PI_4 + 1.0));
-  else if (ph > M_PI_4) 
-    return 0.5*ph*(1.0 + (ph/M_PI_4 - 1.0)*(ph/M_PI_4 - 1.0));
-  else 
-    return 0.5*ph;  
+float h(float x) {
+  float tmp;
+  if (x <= -M_PI_2 || x >= M_PI_2)
+    return x;
+  else if (x < -M_PI_4) {
+    tmp = x + M_PI_4;
+    return -M_1_PI*tmp*tmp*(24.0*M_1_PI*tmp + 10) + 0.5*x;
+  }
+  else if (x <= M_PI_4)
+    return 0.5*x;
+  else {
+    tmp = x - M_PI_4;
+    return M_1_PI*tmp*tmp*(-24.0*M_1_PI*tmp + 10) + 0.5*x;
+  }
 }
+
+
+/* This is the old 'h'. It is deprecated since its derivative was not
+ * continuous at pi/4 and -pi/4. It is kept in this file as a vestige.
+ */
+/* float h(float ph) { */
+/*   if (ph <= -M_PI_2 || ph >= M_PI_2) */
+/*     return ph; */
+/*   else if (ph < -M_PI_4)  */
+/*     return 0.5*ph*(1.0 + (ph/M_PI_4 + 1.0)*(ph/M_PI_4 + 1.0)); */
+/*   else if (ph > M_PI_4)  */
+/*     return 0.5*ph*(1.0 + (ph/M_PI_4 - 1.0)*(ph/M_PI_4 - 1.0)); */
+/*   else  */
+/*     return 0.5*ph;   */
+/* } */
 
 void compute_midpoint_sph(struct ring_info *rings, int center, int v1, 
 			  struct model *raw_model, vertex_t *vout) {
