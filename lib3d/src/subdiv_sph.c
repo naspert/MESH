@@ -1,4 +1,4 @@
-/* $Id: subdiv_sph.c,v 1.15 2003/04/28 06:20:09 aspert Exp $ */
+/* $Id: subdiv_sph.c,v 1.16 2003/06/20 08:31:22 aspert Exp $ */
 #include <3dutils.h>
 #include <3dmodel.h>
 #include <normals.h>
@@ -19,7 +19,7 @@
 #define M_PI_8   0.39269908169872415481
 
 /* ph -> h(ph) */
-float h_orig(const float x) 
+float sph_h_orig(const float x) 
 {
   float tmp, res;
   if (x <= -M_PI_2 || x >= M_PI_2)
@@ -38,7 +38,7 @@ float h_orig(const float x)
 }
 
 
-float h_alt(const float x)
+float sph_h_alt(const float x)
 {
   float res;
   if (x <= -M_5_PI_8 || x>= M_5_PI_8)
@@ -60,7 +60,7 @@ float h_alt(const float x)
 static void half_sph(const vertex_t *p, 
                      const vertex_t *n, 
                      const vertex_t *q, 
-		     float (*h_func)(const float),
+		     float (*sph_h_func)(const float),
 		     vertex_t *vout)
 {
   float r, dz, th, nth, rp, lambda, pl_off, nr;
@@ -97,7 +97,7 @@ static void half_sph(const vertex_t *p,
     th = atan(__norm_v(m)/__norm_v(v));
 
   nr = 0.5*r;
-  nth = h_func(th);
+  nth = sph_h_func(th);
 
   dz = nr*sin(nth);
   rp = nr*cos(nth);
@@ -125,7 +125,7 @@ static void half_sph(const vertex_t *p,
 void compute_midpoint_sph(const struct ring_info *rings, const int center, 
                           const int v1, 
 			  const struct model *raw_model, 
-			  float (*h_func)(const float),
+			  float (*sph_h_func)(const float),
 			  vertex_t *vout) 
 {
 
@@ -142,7 +142,7 @@ void compute_midpoint_sph(const struct ring_info *rings, const int center,
 #ifdef SUBDIV_SPH_DEBUG
   DEBUG_PRINT("Edge %d %d\n", center, center2);
 #endif
-  half_sph(&p, &n, &vj, h_func, &np1);
+  half_sph(&p, &n, &vj, sph_h_func, &np1);
 
 
   while (ring_op.ord_vert[v2] != center)
@@ -155,7 +155,7 @@ void compute_midpoint_sph(const struct ring_info *rings, const int center,
 #ifdef SUBDIV_SPH_DEBUG
   DEBUG_PRINT("Edge %d %d\n", center2, center);
 #endif
-  half_sph(&p, &n, &vj, h_func, &np2);
+  half_sph(&p, &n, &vj, sph_h_func, &np2);
 
   __add_v(np1, np2, np);
   prod_v(0.5, &np, vout);
@@ -168,7 +168,7 @@ void compute_midpoint_sph(const struct ring_info *rings, const int center,
 void compute_midpoint_sph_crease(const struct ring_info *rings, 
                                  const int center, const int v1, 
                                  const struct model *raw_model, 
-				 float (*h_func)(const float),
+				 float (*sph_h_func)(const float),
                                  vertex_t *vout)
 {
   int n_r = rings[center].size;
@@ -243,7 +243,7 @@ void compute_midpoint_sph_crease(const struct ring_info *rings,
   DEBUG_PRINT("Edge %d %d\n", center, center2);
 #endif
     /* Now proceed through a usual spherical subdivision */
-    half_sph(&p, &n, &q, h_func, &np1);
+    half_sph(&p, &n, &q, sph_h_func, &np1);
 
     /* go forward */
     if (ring_op.ord_vert[0] == center) {
@@ -302,16 +302,16 @@ void compute_midpoint_sph_crease(const struct ring_info *rings,
   DEBUG_PRINT("Edge %d %d\n", center2, center);
 #endif
     /* Perform sph. subdivision */
-    half_sph(&q, &n, &p, h_func, &np2);
+    half_sph(&q, &n, &p, sph_h_func, &np2);
 
     /* gather those new points */
     __add_v(np1, np2, np);
     prod_v(0.5f, &np, vout);
 
   } else if (ring.type == 1)  /* && ring_op.type == 0 */
-    compute_midpoint_sph(rings, center2, v2, raw_model, h_func, vout);
+    compute_midpoint_sph(rings, center2, v2, raw_model, sph_h_func, vout);
   else  /* ring_op.type == 1 && ring.type == 0 */
-    compute_midpoint_sph(rings, center, v1, raw_model, h_func, vout);
+    compute_midpoint_sph(rings, center, v1, raw_model, sph_h_func, vout);
 
 
 }

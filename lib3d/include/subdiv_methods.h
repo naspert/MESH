@@ -1,4 +1,4 @@
-/* $Id: subdiv_methods.h,v 1.19 2003/04/28 06:20:08 aspert Exp $ */
+/* $Id: subdiv_methods.h,v 1.20 2003/06/20 08:31:21 aspert Exp $ */
 #include <3dmodel.h>
 #include <ring.h>
 
@@ -18,37 +18,37 @@ extern "C" {
 # endif
 
   /* spherical subdivision */
-  float h_orig(const float);
-  float h_alt(const float);
+  float sph_h_orig(const float);
+  float sph_h_alt(const float);
   void compute_midpoint_sph(const struct ring_info*, const int, const int, 
                             const struct model*, 
-			    float (*h_func)(const float),
+			    float (*sph_h_func)(const float),
 			    vertex_t*);
   void compute_midpoint_sph_crease(const struct ring_info*, const int, 
                                    const int, const struct model*,
-				   float (*h_func)(const float),
+				   float (*sph_h_func)(const float),
                                    vertex_t*);
 
   /* Butterfly subdivision */
   void compute_midpoint_butterfly(const struct ring_info*, const int, 
                                   const int, const struct model*, 
-				  float (*h_func)(const float),
+				  float (*sph_h_func)(const float),
 				  vertex_t*);
   void compute_midpoint_butterfly_crease(const struct ring_info*, const int, 
                                          const int, const struct model*,
-					 float (*h_func)(const float),
+					 float (*sph_h_func)(const float),
                                          vertex_t*);
 
 
   /* Loop subdivision */
   void compute_midpoint_loop(const struct ring_info*, const int, const int, 
                              const struct model*, 
-			     float (*h_func)(const float), vertex_t*);
+			     float (*sph_h_func)(const float), vertex_t*);
   void update_vertices_loop(const struct model*, struct model*, 
                             const struct ring_info*);
   void compute_midpoint_loop_crease(const struct ring_info*, const int, 
                                     const int, const struct model*,
-				    float (*h_func)(const float),
+				    float (*sph_h_func)(const float),
 				    vertex_t*);
 
   /* kobbelt-sqrt3 subdivision */

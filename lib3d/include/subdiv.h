@@ -1,4 +1,4 @@
-/* $Id: subdiv.h,v 1.11 2003/04/28 06:20:08 aspert Exp $ */
+/* $Id: subdiv.h,v 1.12 2003/06/20 08:31:21 aspert Exp $ */
 
 #include <3dmodel.h>
 #include <ring.h>
@@ -21,16 +21,16 @@ struct subdiv_functions {
   void (*midpoint_func)(const struct ring_info*, 
                         const int, const int, 
                         const struct model*, 
-			float (*h_func)(const float),
+			float (*sph_h_func)(const float),
 			vertex_t*);
   void (*midpoint_func_bound)(const struct ring_info*, 
                               const int, const int, 
                               const struct model*, 
-			      float (*h_func)(const float),
+			      float (*sph_h_func)(const float),
                               vertex_t*);
   void (*update_func)(const struct model*, struct model*, 
                       const struct ring_info*);
-  float (*h_func)(const float);
+  float (*sph_h_func)(const float);
 };
 
 
@@ -67,11 +67,11 @@ struct subdiv_methods {
 
 #define SPHERICAL_OR_SUBDIV_FUNCTIONS		\
 { SUBDIV_SPH_OR, compute_midpoint_sph, 		\
-  compute_midpoint_sph_crease, NULL, h_orig}
+  compute_midpoint_sph_crease, NULL, sph_h_orig}
 
 #define SPHERICAL_ALT_SUBDIV_FUNCTIONS		\
 { SUBDIV_SPH_ALT, compute_midpoint_sph, 	\
-  compute_midpoint_sph_crease, NULL, h_alt}
+  compute_midpoint_sph_crease, NULL, sph_h_alt}
 
 #define KOBBELTSQRT3_SUBDIV_FUNCTIONS                   \
 { SUBDIV_KOB_SQRT3, compute_face_midpoint_kobsqrt3,     \

@@ -1,4 +1,4 @@
-/* $Id: subdiv_butterfly.c,v 1.9 2003/04/28 06:20:08 aspert Exp $ */
+/* $Id: subdiv_butterfly.c,v 1.10 2003/06/20 08:31:22 aspert Exp $ */
 
 #include <3dmodel.h>
 #include <normals.h>
@@ -49,7 +49,7 @@ static void make_sub_mask(float *mask, int n) {
 void compute_midpoint_butterfly(const struct ring_info *rings, 
                                 const int center, const int v1, 
 				const struct model *raw_model, 
-				float (*h_func)(const float),
+				float (*sph_h_func)(const float),
                                 vertex_t *vout) 
 {
   float *s=NULL, *t=NULL;
@@ -199,7 +199,7 @@ void compute_midpoint_butterfly_crease(const struct ring_info *rings,
                                        const int center,  
 				       const int v1, 
                                        const struct model *raw_model, 
-				       float (*h_func)(const float),
+				       float (*sph_h_func)(const float),
 				       vertex_t *vout) 
 {
   int n = rings[center].size;
@@ -246,7 +246,9 @@ void compute_midpoint_butterfly_crease(const struct ring_info *rings,
     __prod_v(-0.0625, r, r);
     add_v(&np, &r, vout);
   } else if (ring.type == 1) 
-    compute_midpoint_butterfly(rings, center2, v2, raw_model, h_func, vout);
+    compute_midpoint_butterfly(rings, center2, v2, 
+                               raw_model, sph_h_func, vout);
   else
-    compute_midpoint_butterfly(rings, center, v1, raw_model, h_func, vout);
+    compute_midpoint_butterfly(rings, center, v1, 
+                               raw_model, sph_h_func, vout);
 }
