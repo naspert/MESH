@@ -1,4 +1,4 @@
-/* $Id: rawview.c,v 1.25 2002/11/07 09:51:43 aspert Exp $ */
+/* $Id: rawview.c,v 1.26 2002/11/12 12:26:28 aspert Exp $ */
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -185,6 +185,8 @@ static void norm_key_pressed(unsigned char key, int x, int y) {
     sub_model = subdiv(gl_ctx.raw_model, compute_midpoint_butterfly, 
                        compute_midpoint_butterfly_crease, NULL);
     if (sub_model != NULL) {
+      sub_model->bBox[0] = gl_ctx.raw_model->bBox[0];
+      sub_model->bBox[1] = gl_ctx.raw_model->bBox[1];
       __free_raw_model(gl_ctx.raw_model);
       gl_ctx.normals_done = 0;
       gl_ctx.curv_done = 0;
@@ -233,6 +235,8 @@ static void norm_key_pressed(unsigned char key, int x, int y) {
     sub_model = subdiv(gl_ctx.raw_model, compute_midpoint_loop, 
                        compute_midpoint_loop_crease, update_vertices_loop);
     if (sub_model != NULL) {
+      sub_model->bBox[0] = gl_ctx.raw_model->bBox[0];
+      sub_model->bBox[1] = gl_ctx.raw_model->bBox[1];
       __free_raw_model(gl_ctx.raw_model);
       gl_ctx.normals_done = 0;
       gl_ctx.curv_done = 0;
@@ -295,6 +299,8 @@ static void norm_key_pressed(unsigned char key, int x, int y) {
     sub_model = subdiv(gl_ctx.raw_model, compute_midpoint_sph, 
                        compute_midpoint_sph_crease, NULL);
     if (sub_model != NULL) {
+      sub_model->bBox[0] = gl_ctx.raw_model->bBox[0];
+      sub_model->bBox[1] = gl_ctx.raw_model->bBox[1];
       __free_raw_model(gl_ctx.raw_model);
       gl_ctx.normals_done = 0;
       gl_ctx.curv_done = 0;
@@ -538,7 +544,7 @@ int main(int argc, char **argv) {
 
   int i, rcode=0;
   char *title;
-  const char s_title[]="Raw Mesh Viewer $Revision: 1.25 $ - ";
+  const char s_title[]="Raw Mesh Viewer $Revision: 1.26 $ - ";
   vertex_t center;
   struct model* raw_model;
 
