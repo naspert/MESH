@@ -1,4 +1,4 @@
-/* $Id: viewer.cpp,v 1.38 2001/08/18 15:48:22 dsanta Exp $ */
+/* $Id: viewer.cpp,v 1.39 2001/08/18 16:02:14 dsanta Exp $ */
 
 #include <time.h>
 #include <string.h>
@@ -127,6 +127,7 @@ int main( int argc, char **argv )
   i = 0;
   while (i<argc) {
     if (strcmp(argv[i],"-t") == 0) break; /* text version requested */
+    if (strcmp(argv[i],"-h") == 0) break; /* just asked for command line help */
     i++;
   }
   if (i == argc) { /* no text version requested, initialize QT */
@@ -159,12 +160,13 @@ int main( int argc, char **argv )
   raw_model1 = read_raw_model(pargs.m1_fname);
   raw_model2 = read_raw_model(pargs.m2_fname);
 
-  /* Analyze models */
+  /* Analyze models (we don't need normals for model 1, so we don't request
+   * for it to be oriented). */
   bbox1_diag = dist(raw_model1->bBox[0], raw_model1->bBox[1]);
   bbox2_diag = dist(raw_model2->bBox[0], raw_model2->bBox[1]);
   vfl = faces_of_vertex(raw_model1);
-  analyze_model(raw_model1,vfl,&m1info);
-  analyze_model(raw_model2,NULL,&m2info);
+  analyze_model(raw_model1,vfl,&m1info,0);
+  analyze_model(raw_model2,NULL,&m2info,1);
   if(pargs.no_gui){
     free_face_lists(vfl,raw_model1->num_vert);
     vfl = NULL;
@@ -182,8 +184,12 @@ int main( int argc, char **argv )
          m1info.n_disjoint_parts,m2info.n_disjoint_parts);
   printf("Manifold:               \t%11s\t%11s\n",
          (m1info.manifold ? "yes" : "no"), (m2info.manifold ? "yes" : "no"));
-  printf("Oriented:               \t%11s\t%11s\n",
-         (m1info.oriented ? "yes" : "no"), (m2info.oriented ? "yes" : "no"));
+  printf("Originally oriented:    \t%11s\t%11s\n",
+         (m1info.orig_oriented ? "yes" : "no"),
+         (m2info.orig_oriented ? "yes" : "no"));
+  printf("Orientable:             \t%11s\t%11s\n",
+         (m1info.orientable ? "yes" : "no"),
+         (m2info.orientable ? "yes" : "no"));
   fflush(stdout);
 
   /* Compute the distance from one model to the other */
