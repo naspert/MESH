@@ -1,7 +1,27 @@
-/* $Id: ScreenWidget.cpp,v 1.18 2001/09/13 08:18:53 dsanta Exp $ */
+/* $Id: ScreenWidget.cpp,v 1.19 2001/09/25 13:19:34 dsanta Exp $ */
 #include <ScreenWidget.h>
+#include <qmessagebox.h>
+#include <qmenubar.h>
+#include <qpopupmenu.h>
+#include <RawWidget.h>
+#include <ColorMapWidget.h>
+#include <qpushbutton.h>
+#include <qcheckbox.h>
+#include <qfont.h>
+#include <qlayout.h>
+#include <qhbox.h>
+#include <qapplication.h>
+#include <qaction.h>
+#include <qmenubar.h>
+#include <qpixmap.h>
+#include <qtoolbar.h>
+#include <qfiledialog.h>
+#include <qmime.h>
 
-ScreenWidget::ScreenWidget(model_error *model1, model_error *model2, 
+
+
+ScreenWidget::ScreenWidget(struct model_error *model1,
+                           struct model_error *model2, 
 			   QWidget *parent, 
 			   const char *name ):QWidget(parent,name) {
   QAction *fileQuitAction;
@@ -13,6 +33,7 @@ ScreenWidget::ScreenWidget(model_error *model1, model_error *model2,
   QGridLayout *bigGrid;
   RawWidget *glModel1, *glModel2;
   ColorMapWidget *colorBar;
+  QPushButton *quitBut;
 
   setMinimumSize( 1070, 540 );
   setMaximumSize( 1070, 540 );
@@ -89,7 +110,8 @@ ScreenWidget::ScreenWidget(model_error *model1, model_error *model2,
 
   quitBut = new QPushButton("Quit", this);
   quitBut->setMinimumSize(20, 30);
-  
+  QObject::connect(quitBut, SIGNAL(clicked()), this, SLOT(close()));
+
 
   // Build the two line/fill toggle buttons
   lineSwitch1 = new QPushButton("Line/Fill", this);
@@ -136,4 +158,9 @@ void ScreenWidget::aboutBugs()
 			"If you found a bug, please send an e-mail to :\n"
 			"Nicolas.Aspert@epfl.ch or\n"
 			"Diego.SantaCruz@epfl.ch");
+}
+
+void ScreenWidget::quit()
+{
+  QApplication::exit(0);
 }
