@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.42 2001/08/21 16:21:55 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.43 2001/08/21 16:28:28 dsanta Exp $ */
 
 #include <compute_error.h>
 
@@ -247,9 +247,10 @@ static void calc_normals_as_oriented_model(model *m,
 }
 
 /* Given a the triangle list tl of a model, and the minimum and maximum
- * coordinates of its bounding box, bbox_min and bbox_max, calculates the grid
- * cell size as well as the grid size. The cubic cell side length is returned
- * and the grid size is stored in *grid_sz. */
+ * coordinates of the bounding box on which the cell grid is to be made,
+ * bbox_min and bbox_max, calculates the grid cell size as well as the grid
+ * size. The cubic cell side length is returned and the grid size is stored in
+ * *grid_sz. */
 static double get_cell_size(const struct triangle_list *tl,
                             const vertex *bbox_min, const vertex *bbox_max,
                             struct size3d *grid_sz)
@@ -842,8 +843,8 @@ static void sample_triangle(const vertex *a, const vertex *b, const vertex *c,
 /* Given a triangle list tl, returns the list of triangle indices that
  * intersect a cell, for each cell in the grid. The size of the grid is given
  * by grid_sz, the side length of the cubic cells by cell_sz and the minimum
- * coordinates of the bounding box of tl2 by bbox_min. The returned struct, its
- * arrays and subarrays are malloc'ed independently. */
+ * coordinates of the bounding box (i.e. origin) of the grid by bbox_min. The
+ * returned struct, its arrays and subarrays are malloc'ed independently. */
 static struct t_in_cell_list *triangles_in_cells(const struct triangle_list *tl,
                                                  struct size3d grid_sz,
                                                  double cell_sz,
@@ -996,12 +997,12 @@ static struct t_in_cell_list *triangles_in_cells(const struct triangle_list *tl,
  * of the cubic cells is of length cell_sz, and there are
  * (grid_sz.x,grid_sz.y,grid_sz.z) cells in teh X,Y,Z directions. Cell (0,0,0)
  * starts at bbox_min, which is the minimum coordinates of the (axis aligned)
- * bounding box. If DO_DIST_PT_SURF_STATS is defined at compile time, the
- * statistics stats are updated (no reset to zero occurs, the counters are
- * increased). The list of cells distant of k cells in the X, Y or Z
- * direction, for each cell, is cached in dcl, which must be an array of
- * length grid_sz.x*grid_sz.y*grid_sz.z and must be initialized to all zero on
- * the first call to this function. */
+ * bounding box on which the grid is placed. If DO_DIST_PT_SURF_STATS is
+ * defined at compile time, the statistics stats are updated (no reset to zero
+ * occurs, the counters are increased). The list of cells distant of k cells
+ * in the X, Y or Z direction, for each cell, is cached in dcl, which must be
+ * an array of length grid_sz.x*grid_sz.y*grid_sz.z and must be initialized to
+ * all zero on the first call to this function. */
 static double dist_pt_surf(vertex p, const struct triangle_list *tl,
                            const struct t_in_cell_list *fic,
 #ifdef DO_DIST_PT_SURF_STATS
@@ -1142,7 +1143,7 @@ void dist_surf_surf(const model *m1, model *m2, int n_spt,
                     struct dist_surf_surf_stats *stats, int calc_normals,
                     int quiet)
 {
-  vertex bbox2_min,bbox2_max; /* min and max coords of bounding box of m2 */
+  vertex bbox_min,bbox_max;   /* min and max of bounding box of m1 and m2 */
   struct triangle_list *tl2;  /* triangle list for m2 */
   struct t_in_cell_list *fic; /* list of faces intersecting each cell */
   struct sample_list ts;      /* list of sample from a triangle */
@@ -1163,16 +1164,20 @@ void dist_surf_surf(const model *m1, model *m2, int n_spt,
   memset(&tse,0,sizeof(tse));
   report_step = m1->num_faces/(100/2); /* report every 2 % */
   if (report_step <= 0) report_step = 1;
-  bbox2_min = m2->bBox[0];
-  bbox2_max = m2->bBox[1];
+  bbox_min.x = min(m1->bBox[0].x,m2->bBox[0].x);
+  bbox_min.y = min(m1->bBox[0].y,m2->bBox[0].y);
+  bbox_min.z = min(m1->bBox[0].z,m2->bBox[0].z);
+  bbox_max.x = max(m1->bBox[1].x,m2->bBox[1].x);
+  bbox_max.y = max(m1->bBox[1].y,m2->bBox[1].y);
+  bbox_max.z = max(m1->bBox[1].z,m2->bBox[1].z);
   
   /* Get the triangle list from model 2 and determine the grid and cell size */
   tl2 = model_to_triangle_list(m2);
-  cell_sz = get_cell_size(tl2,&bbox2_min,&bbox2_max,&grid_sz);
+  cell_sz = get_cell_size(tl2,&bbox_min,&bbox_max,&grid_sz);
   dcl = xa_calloc(grid_sz.x*grid_sz.y*grid_sz.z,sizeof(*dcl));
 
   /* Get the list of triangles in each cell */
-  fic = triangles_in_cells(tl2,grid_sz,cell_sz,bbox2_min);
+  fic = triangles_in_cells(tl2,grid_sz,cell_sz,bbox_min);
 
   /* Allocate storage for errors */
   *fe_ptr = xa_realloc(*fe_ptr,m1->num_faces*sizeof(**fe_ptr));
@@ -1210,7 +1215,7 @@ void dist_surf_surf(const model *m1, model *m2, int n_spt,
 #ifdef DO_DIST_PT_SURF_STATS
                                     &dps_stats,
 #endif
-                                    grid_sz,cell_sz,bbox2_min,dcl);
+                                    grid_sz,cell_sz,bbox_min,dcl);
     }
     error_stat_triag(&tse,&fe[k]);
     /* Update overall statistics */
