@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.82 2002/02/24 19:48:31 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.83 2002/02/26 12:17:03 aspert Exp $ */
 
 #include <compute_error.h>
 
@@ -59,10 +59,10 @@
 # define EC_BITMAP_T_MASK (EC_BITMAP_T_BITS-1)
   /* Macro to test the bit corresponding to element i in the bitmap bm. */
 # define EC_BITMAP_TEST_BIT(bm,i) \
-   (bm[i/EC_BITMAP_T_BITS]&(0x01<<(i&EC_BITMAP_T_MASK)))
+   ((bm)[(i)/EC_BITMAP_T_BITS]&(1 << ((i)&EC_BITMAP_T_MASK)))
   /* Macro to set the bit corresponding to element i in the bitmap bm. */
 # define EC_BITMAP_SET_BIT(bm,i) \
-   (bm[i/EC_BITMAP_T_BITS] |= 0x01<<(i&EC_BITMAP_T_MASK))
+   ((bm)[(i)/EC_BITMAP_T_BITS] |= 1 << ((i)&EC_BITMAP_T_MASK))
 #else /* Fake bitmap macros to access simple type */
   /* Type for marking empty cells. Small type uses less memory, but access to
    * aligned type can be faster (but more memory can cause more cache misses) */
@@ -75,9 +75,9 @@
   /* Bitmask to obtain the bitmap bit index from the cell index. */
 # define EC_BITMAP_T_MASK (EC_BITMAP_T_BITS-1)
   /* Macro to test the element i in the map bm. */
-# define EC_BITMAP_TEST_BIT(bm,i) bm[i]
+# define EC_BITMAP_TEST_BIT(bm,i) (bm)[i]
   /* Macro to set the element i in the map bm. */
-# define EC_BITMAP_SET_BIT(bm,i) (bm[i] = 1)
+# define EC_BITMAP_SET_BIT(bm,i) ((bm)[i] = 1)
 #endif
 
 /* Temporary struct to hold extra statistics */
