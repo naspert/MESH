@@ -1,4 +1,4 @@
-/* $Id: InitWidget.cpp,v 1.40 2003/03/26 13:00:58 aspert Exp $ */
+/* $Id: InitWidget.cpp,v 1.41 2003/04/17 09:16:03 aspert Exp $ */
 
 
 /*
@@ -215,9 +215,9 @@ void InitWidget::loadMesh1() {
   
 void InitWidget::loadMesh2() {
   QStringList mfilters = QStringList() <<
-    "3D Models (*.raw; *.wrl; *.iv; *.smf; *.ply)" <<
+    "3D Models (*.raw; *.rawb; *.wrl; *.iv; *.smf; *.ply)" <<
 #ifndef DONT_USE_ZLIB
-    "Compressed 3D models (*.raw.gz; *.wrl.gz; *.wrz; *.iv.gz;"
+    "Compressed 3D models (*.raw.gz; *.rawb.gz; *.wrl.gz; *.wrz; *.iv.gz;"
     " *.smf.gz; *.ply.gz)" <<
 #endif
     "All files (*.*)";
