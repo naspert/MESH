@@ -1,4 +1,4 @@
-/* $Id: model_in.h,v 1.24 2004/04/30 07:50:21 aspert Exp $ */
+/* $Id: model_in.h,v 1.25 2004/08/17 14:49:40 aspert Exp $ */
 
 
 /*
@@ -146,12 +146,11 @@ struct file_data {
    -------------------------------------------------------------------------- */
 
 #define MESH_FF_AUTO      0 /* Autodetect file format */
-#define MESH_FF_RAW       1 /* Raw ascii */
-#define MESH_FF_RAWBIN    2 /* Raw binary */
-#define MESH_FF_VRML      3 /* VRML 2 utf8 (a.k.a. VRML97) */
-#define MESH_FF_IV        4 /* Inventor 2 ascii */
-#define MESH_FF_PLY       5 /* Ply ascii */
-#define MESH_FF_SMF       6 /* SMF format (from QSlim) */
+#define MESH_FF_RAW       1 /* Raw (ascii and binary) */
+#define MESH_FF_VRML      2 /* VRML 2 utf8 (a.k.a. VRML97) */
+#define MESH_FF_IV        3 /* Inventor 2 ascii */
+#define MESH_FF_PLY       4 /* Ply ascii */
+#define MESH_FF_SMF       5 /* SMF format (from QSlim) */
 
 /* --------------------------------------------------------------------------
    ERROR CODES (always negative)
@@ -233,6 +232,8 @@ struct file_data {
 # define loc_feof feof
 # undef loc_getc
 # define loc_getc fgetc
+# undef loc_ferror
+# define loc_ferror ferror 
 #else
 # undef loc_fopen
 # define loc_fopen gzopen
@@ -244,6 +245,8 @@ struct file_data {
 # define loc_feof gzeof
 # undef loc_getc
 # define loc_getc gzgetc
+# undef loc_ferror
+#define loc_ferror gz_ferror
 #endif
 
 

@@ -1,4 +1,4 @@
-/* $Id: model_in_raw.c,v 1.8 2004/04/30 07:50:22 aspert Exp $ */
+/* $Id: model_in_raw.c,v 1.9 2004/08/17 14:49:41 aspert Exp $ */
 
 
 /*
@@ -200,15 +200,15 @@ int read_raw_tmesh(struct model **tmesh_ref, struct file_data *data)
   n = sscanf(line_buf,"%i %i %i %i %15s",
              &n_vtcs,&n_faces,&n_vnorms,&n_fnorms,str_buf);
 
-  if (n < 2 || n > 5) {
-    return MESH_CORRUPTED;
-  }
-
+  if (n < 2 || n > 5) return MESH_CORRUPTED;/* bad header */
+  
   if (n_vtcs < 3 || n_faces <= 0) return MESH_CORRUPTED;
   if (n > 2 && n_vnorms != 0 && n_vnorms != n_vtcs) return MESH_CORRUPTED;
   if (n > 3 && n_fnorms != 0 && n_fnorms != n_faces) return MESH_CORRUPTED;
-  if (n <= 3) n_fnorms = 0;
+
+  if (n <= 3) n_fnorms = 0; /* check for face/vertex normals */
   if (n <= 2) n_vnorms = 0;
+
   use_bin = (n >= 5 && strcmp(str_buf,"bin") == 0);
   if (use_bin) { /* check endianness and float format detector */
     data->is_binary = 1;
@@ -217,6 +217,7 @@ int read_raw_tmesh(struct model **tmesh_ref, struct file_data *data)
     if (bin_read(&f,sizeof(f),1,data) != 1) return MESH_CORRUPTED;
     if (f != FLT_MIN) return MESH_CORRUPTED;
   }
+
   /* Allocate space and initialize mesh */
   tmesh = calloc(1,sizeof(*tmesh));
   if (tmesh == NULL) return MESH_NO_MEM;
@@ -224,40 +225,47 @@ int read_raw_tmesh(struct model **tmesh_ref, struct file_data *data)
   tmesh->num_vert = n_vtcs;
   tmesh->vertices = malloc(sizeof(*(tmesh->vertices))*n_vtcs);
   tmesh->faces = malloc(sizeof(*(tmesh->faces))*n_faces);
-  if (n_vnorms > 0) {
+  if (n_vnorms > 0) 
     tmesh->normals = malloc(sizeof(*(tmesh->normals))*n_vnorms);
-  }
-  if (n_fnorms > 0) {
+  
+  if (n_fnorms > 0) 
     tmesh->face_normals = malloc(sizeof(*(tmesh->face_normals))*n_fnorms);
-  }
+  
   if (tmesh->vertices == NULL || tmesh->faces == NULL ||
       (n_vnorms > 0 && tmesh->normals == NULL) ||
       (n_fnorms > 0 && tmesh->face_normals == NULL)) {
     rcode = MESH_NO_MEM;
+    goto err_read_raw_tmesh;
   }
-  if (rcode == 0) {
-    rcode = read_raw_vertices(tmesh->vertices,data,use_bin,n_vtcs,
-                              &(tmesh->bBox[0]),&(tmesh->bBox[1]));
-  }
-  if (rcode == 0) {
-    rcode = read_raw_faces(tmesh->faces,data,use_bin,n_faces,n_vtcs);
-  }
-  if (rcode == 0 && n_vnorms > 0) {
+ 
+  rcode = read_raw_vertices(tmesh->vertices,data,use_bin,n_vtcs,
+			    &(tmesh->bBox[0]),&(tmesh->bBox[1]));
+  if (rcode != 0) goto err_read_raw_tmesh;
+  
+
+  rcode = read_raw_faces(tmesh->faces,data,use_bin,n_faces,n_vtcs);
+  if (rcode != 0) goto err_read_raw_tmesh;
+
+
+  if (n_vnorms > 0) {
     rcode = read_raw_normals(tmesh->normals,data,use_bin,n_vnorms);
     tmesh->builtin_normals = 1;
+    if (rcode != 0) goto err_read_raw_tmesh;
   }
-  if (rcode == 0 && n_fnorms > 0) {
+
+  if (n_fnorms > 0) {
     rcode = read_raw_normals(tmesh->face_normals,data,use_bin,n_fnorms);
+    if (rcode != 0) goto err_read_raw_tmesh;
   }
-  if (rcode < 0) {
-    free(tmesh->vertices);
-    free(tmesh->faces);
-    free(tmesh->normals);
-    free(tmesh->face_normals);
-    free(tmesh);
-  } else {
-    *tmesh_ref = tmesh;
-    rcode = 1;
-  }
+
+  *tmesh_ref = tmesh;
+  return 1;
+ 
+err_read_raw_tmesh:
+  free(tmesh->vertices);
+  free(tmesh->faces);
+  free(tmesh->normals);
+  free(tmesh->face_normals);
+  free(tmesh);
   return rcode;
 }

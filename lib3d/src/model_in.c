@@ -1,4 +1,4 @@
-/* $Id: model_in.c,v 1.43 2004/04/30 07:50:22 aspert Exp $ */
+/* $Id: model_in.c,v 1.44 2004/08/17 14:49:40 aspert Exp $ */
 
 
 /*
@@ -88,10 +88,23 @@
 #define STRING(N) STRING_Q(N)
 
 
-
 /* --------------------------------------------------------------------------
    LOCAL FUNCTIONS
    -------------------------------------------------------------------------- */
+
+#ifndef DONT_USE_ZLIB
+/* Wrapper around gzerror to emulate a call to ferror when using zlib.
+ * Returns a zlib error code. We only test if it is 0 (== Z_OK) or not
+ * afterwards.
+ */
+static int gz_ferror(gzFile f)
+{
+  int err;
+  gzerror(f, &err);
+  return err;
+}
+#endif
+
 static int refill_buffer(struct file_data*);
 /* 
    In order to be able to use zlib to read gzipped files directly, we
@@ -556,7 +569,49 @@ int find_string(struct file_data *data, const char *string)
 
 
 
+/* Checks if the file is a VRML or Inventor file format. Returns MESH_FF_VRML
+ * or MESH_FF_IV if so, and MESH_BAD_FF or MESH_CORRUPTED if an error occurs */
+static int detect_vrml_inventor(struct file_data *data)
+{
+  char stmp[MAX_WORD_LEN+1];
+  const char swfmt[] = "%" STRING(MAX_WORD_LEN) "s";
+  const char svfmt[] = "%" STRING(MAX_WORD_LEN) "[0-9V.]";
+  char c;
+  char *eptr;
+  double ver;
+  int rcode = MESH_BAD_FF;
 
+  if (buf_fscanf_1arg(data,swfmt,stmp) == 1) {
+    if (strcmp(stmp,"VRML") == 0) {
+      if (getc(data) == ' ' && buf_fscanf_1arg(data,swfmt,stmp) == 1 &&
+	  strcmp(stmp,"V2.0") == 0 && getc(data) == ' ' &&
+	  buf_fscanf_1arg(data,swfmt,stmp) == 1 && strcmp(stmp,"utf8") == 0 &&
+	  ((c = getc(data)) == '\n' || c == '\r' || c == ' ' || 
+	   c == '\t')) {
+	while (c != EOF && c != '\n' && c != '\r') { /* skip rest of header */
+	  c = getc(data);
+	}
+	rcode = (c != EOF) ? MESH_FF_VRML : MESH_CORRUPTED;
+      } else {
+	rcode = loc_ferror(data->f) ? MESH_CORRUPTED : MESH_BAD_FF;
+      }
+    } else if (strcmp(stmp,"Inventor") == 0) {
+      if (getc(data) == ' ' && buf_fscanf_1arg(data,svfmt,stmp) == 1 &&
+	  stmp[0] == 'V' && (ver = strtod(stmp+1,&eptr)) >= 2 &&
+	  ver < 3 && *eptr == '\0' && getc(data) == ' ' &&
+	  buf_fscanf_1arg(data,swfmt,stmp) == 1 && strcmp(stmp,"ascii") == 0 &&
+	  ((c = getc(data)) == '\n' || c == '\r' || c == ' ' || c == '\t')) {
+	while (c != EOF && c != '\n' && c != '\r') { /* skip rest of header */
+	  c = getc(data);
+	}
+	rcode = (c != EOF) ? MESH_FF_IV : MESH_CORRUPTED;
+      } else {
+	rcode = loc_ferror(data->f) ? MESH_CORRUPTED : MESH_BAD_FF;
+      }
+    }
+  }
+  return rcode;
+}
 
 /* Detect the file format of the '*data' stream, returning the detected
  * type. The header identifying the file format, if any, is stripped out and
@@ -567,89 +622,85 @@ int find_string(struct file_data *data, const char *string)
 static int detect_file_format(struct file_data *data)
 {
   char stmp[MAX_WORD_LEN+1];
-  const char swfmt[] = "%" STRING(MAX_WORD_LEN) "s";
-  const char svfmt[] = "%" STRING(MAX_WORD_LEN) "[0-9V.]";
-  int c;
-  int rcode;
-  char *eptr;
-  double ver;
+  int c=0;
+  int rcode=0;
+  
 
   c = getc(data);
-  if (c == '#') { /* Probably VRML or Inventor but can also be a SMF comment */
-    if (buf_fscanf_1arg(data,swfmt,stmp) == 1) {
-      if (strcmp(stmp,"VRML") == 0) {
-        if (getc(data) == ' ' && buf_fscanf_1arg(data,swfmt,stmp) == 1 &&
-            strcmp(stmp,"V2.0") == 0 && getc(data) == ' ' &&
-            buf_fscanf_1arg(data,swfmt,stmp) == 1 && strcmp(stmp,"utf8") == 0 &&
-            ((c = getc(data)) == '\n' || c == '\r' || c == ' ' || 
-             c == '\t')) {
-          while (c != EOF && c != '\n' && c != '\r') { /* skip rest of header */
-            c = getc(data);
-          }
-          rcode = (c != EOF) ? MESH_FF_VRML : MESH_CORRUPTED;
-        } else {
-          rcode = ferror((FILE*)data->f) ? MESH_CORRUPTED : MESH_BAD_FF;
-        }
-      } else if (strcmp(stmp,"Inventor") == 0) {
-        if (getc(data) == ' ' && buf_fscanf_1arg(data,svfmt,stmp) == 1 &&
-            stmp[0] == 'V' && (ver = strtod(stmp+1,&eptr)) >= 2 &&
-            ver < 3 && *eptr == '\0' && getc(data) == ' ' &&
-            buf_fscanf_1arg(data,swfmt,stmp) == 1 && strcmp(stmp,"ascii") == 0 &&
-            ((c = getc(data)) == '\n' || c == '\r' || c == ' ' || c == '\t')) {
-          while (c != EOF && c != '\n' && c != '\r') { /* skip rest of header */
-            c = getc(data);
-          }
-          rcode = (c != EOF) ? MESH_FF_IV : MESH_CORRUPTED;
-        } else {
-          rcode = ferror((FILE*)data->f) ? MESH_CORRUPTED : MESH_BAD_FF;
-        }
-      } else {
-        /* Is is a comment line of a SMF file ? */
-        data->pos = 1; /* rewind file */
-        if ((c = skip_ws_comm(data)) == EOF) rcode = MESH_BAD_FF;
-        if (c == 'v' || c == 'b' || c == 'f' || c == 'c')
-          rcode = MESH_FF_SMF;
-        else 
-          rcode = ferror((FILE*)data->f) ? MESH_CORRUPTED : MESH_BAD_FF;
-      }
-    } else {
-      /* We need to test for SMF files here also, maybe a comment line
-       * */
-      data->pos = 1; /* rewind file */
-      if((c = skip_ws_comm(data)) == EOF) rcode = MESH_BAD_FF;
-      if (c == 'v' || c == 'b' || c == 'f' || c == 'c')
-        rcode = MESH_FF_SMF;
-      else 
-        rcode = ferror((FILE*)data->f) ? MESH_CORRUPTED : MESH_BAD_FF;
+  if (c == ' ' || c == '\t' || c == '\n' || c == '\r') {
+    /* skip all leading whitespaces */
+    do {
+      c = getc(data);
+    } while ((c == ' ' || c == '\t' || c == '\n' || c == '\r') && c != EOF);
+    if (c == EOF) {
+      rcode = loc_ferror(data->f) ? MESH_CORRUPTED : MESH_BAD_FF;
+      return rcode;
     }
-  } else {
-	 c = skip_ws_comm(data);/* In case the header does not start at 1st column */
-	 if (c == EOF) rcode = MESH_BAD_FF;
-	 if (c == 'p') { /* Probably ply */
-		 c = ungetc(c,data);
-		 if (c != EOF) {
-			if (string_scanf(data, stmp) == 1 && strcmp(stmp, "ply") == 0) {
-				rcode = MESH_FF_PLY;
-			} else {
-				rcode = ferror((FILE*)data->f) ? MESH_CORRUPTED : MESH_BAD_FF;
-			}
-		} else {
-			rcode = MESH_CORRUPTED;
-		}
-	  } else if (c >= '0' && c <= '9') { /* probably raw */
-		c = ungetc(c,data);
-		rcode = (c != EOF) ? MESH_FF_RAW : MESH_CORRUPTED;
-	  } else { 
-		/* test for SMF also here before returning */
-		data->pos=1; /* rewind file */
-		if ((c = skip_ws_comm(data)) == EOF) rcode = MESH_BAD_FF;
-		if (c == 'v' || c == 'b' || c == 'f' || c == 'c')
-			rcode = MESH_FF_SMF;
-		else 
-			rcode = ferror((FILE*)data->f) ? MESH_CORRUPTED : MESH_BAD_FF;
-	}
+    /* else this is a meaningful char (at last), 
+     * try to re-detect file format*/
+    c = ungetc(c, data);
   }
-  return rcode;
+
+    switch (c){
+    case '#':
+      /* test for VRML or Inventor */
+      rcode = detect_vrml_inventor(data);
+    
+      if (rcode != MESH_FF_VRML && rcode != MESH_FF_IV) {
+	/* possible SMF leading comment -> check SMF */
+	data->pos = 1; /* rewind file */
+	if ((c = skip_ws_comm(data)) == EOF) rcode = MESH_BAD_FF;
+	if (c == 'v' || c == 'b' || c == 'f' || c == 'c')
+	  rcode = MESH_FF_SMF;
+	else 
+	  rcode = loc_ferror(data->f) ? MESH_CORRUPTED : MESH_BAD_FF;
+      }
+      break;
+      
+    case 'p':
+      /* test for PLY */
+      c = ungetc(c,data);
+      if (c != EOF) {
+	if (string_scanf(data, stmp) == 1 && strcmp(stmp, "ply") == 0) {
+	  rcode = MESH_FF_PLY;
+	} else {
+	  rcode = loc_ferror(data->f) ? MESH_CORRUPTED : MESH_BAD_FF;
+	}
+      } else {
+	rcode = MESH_CORRUPTED;
+      }
+      break;
+      
+    case '0': /* test for RAW */
+    case '1':
+    case '2':
+    case '3':
+    case '4':
+    case '5':
+    case '6':
+    case '7':
+    case '8':
+    case '9':
+      c = ungetc(c, data);
+      rcode = (c != EOF) ? MESH_FF_RAW : MESH_CORRUPTED;
+      break;
+      
+    case 'b':
+    case 'c':
+    case 'f':
+    case 'v':
+      rcode = MESH_FF_SMF;
+      break;
+      
+      
+      
+    default:
+      rcode = loc_ferror(data->f) ? MESH_CORRUPTED : MESH_BAD_FF;
+      break;
+    }
+    
+    return rcode;
+    
 }
 
 /* see model_in.h */
@@ -668,7 +719,6 @@ int read_model(struct model **models_ref, struct file_data *data,
 
   switch (fformat) {
   case MESH_FF_RAW:
-  case MESH_FF_RAWBIN:
     rcode = read_raw_tmesh(&models, data);
     break;
   case MESH_FF_VRML:
