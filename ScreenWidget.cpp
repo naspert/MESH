@@ -1,4 +1,4 @@
-/* $Id: ScreenWidget.cpp,v 1.17 2001/09/12 16:16:30 dsanta Exp $ */
+/* $Id: ScreenWidget.cpp,v 1.18 2001/09/13 08:18:53 dsanta Exp $ */
 #include <ScreenWidget.h>
 
 ScreenWidget::ScreenWidget(model_error *model1, model_error *model2, 
@@ -124,9 +124,10 @@ void ScreenWidget::aboutKeys()
 {
     QMessageBox::about( this, "Key bindings",
 			"F1: Toggle Wireframe/Fill\n"
-			"F2: Toggle Light/No light (right model only)\n"
+			"F2: Toggle lighting (right model only)\n"
 			"F3: Toggle viewpoint synchronization\n"
-			"F4: Invert normals (if applicable)");
+			"F4: Invert normals (right model only)\n"
+                        "F5: Toggle two sided material (right model only)");
 }
 
 void ScreenWidget::aboutBugs()

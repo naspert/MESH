@@ -1,4 +1,4 @@
-/* $Id: RawWidget.h,v 1.15 2001/09/12 16:16:30 dsanta Exp $ */
+/* $Id: RawWidget.h,v 1.16 2001/09/13 08:18:53 dsanta Exp $ */
 #ifndef RAWWIDGET_H
 #define RAWWIDGET_H
 
@@ -75,6 +75,7 @@ private:
   int move_state;
   int computed_normals; // flag if normals have been computed or loaded
   int not_orientable_warned;
+  int two_sided_material;
 };
 
 #endif

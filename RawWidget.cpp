@@ -1,4 +1,4 @@
-/* $Id: RawWidget.cpp,v 1.21 2001/09/12 16:30:32 dsanta Exp $ */
+/* $Id: RawWidget.cpp,v 1.22 2001/09/13 08:18:52 dsanta Exp $ */
 #include <RawWidget.h>
 #include <qmessagebox.h>
 
@@ -33,6 +33,7 @@ RawWidget::RawWidget(model_error *model, int renderType,
   // Initialize the state
   move_state=0;
   not_orientable_warned = 0;
+  two_sided_material = 1;
 
   // Compute the center of the bounding box of the model
   center.x = 0.5*(model->mesh->bBox[1].x + model->mesh->bBox[0].x);
@@ -145,10 +146,10 @@ void RawWidget::resizeGL(int width ,int height) {
 
 // Initializations for the renderer
 void RawWidget::initializeGL() { 
-  static const GLfloat amb[] = {0.5, 0.5, 0.5, 1.0};
-  static const GLfloat dif[] = {0.5, 0.5, 0.5, 1.0};
-  static const GLfloat spec[] = {0.5, 0.5, 0.5, 0.5};
-  static const GLfloat amb_light[] = {0.6, 0.6, 0.6, 1.0};
+  static const GLfloat amb[] = {0.1, 0.1, 0.1, 1.0};
+  static const GLfloat dif[] = {0.3, 0.3, 0.3, 1.0};
+  static const GLfloat spec[] = {0.3, 0.3, 0.3, 0.3};
+  static const GLfloat amb_light[] = {0.8, 0.8, 0.8, 1.0};
 
   glDepthFunc(GL_LESS);
   glEnable(GL_DEPTH_TEST);
@@ -209,6 +210,18 @@ void RawWidget::display(double distance) {
 // This function generates the model's display list, depending on the
 // viewing parameters (light...)
 void RawWidget::rebuild_list() {
+  // Surface material characteristics for lighted mode
+  static const float front_amb_mat[4] = {0.5, 0.5, 0.5, 1.0};
+  static const float front_diff_mat[4] = {0.7, 0.7, 0.7, 1.0};
+  static const float front_spec_mat[4] = {0.3, 0.3, 0.3, 1.0};
+  static const float front_mat_shin = 30.0;
+  static const float back_amb_mat[4] = {0.3, 0.3, 0.3, 1.0};
+  static const float back_diff_mat[4] = {0.5, 0.5, 0.5, 1.0};
+  static const float back_spec_mat[4] = {0.2, 0.2, 0.2, 1.0};
+  static const float back_mat_shin = 10.0;
+  // Color for non-lighted mode
+  static const float lighted_color[3] = {1.0, 1.0, 1.0};
+  // Local vars
   int i,cidx;
   float drange;
   face *cur_face;
@@ -250,9 +263,24 @@ void RawWidget::rebuild_list() {
     glEndList();
   }   
   else if (renderFlag == RW_LIGHT_TOGGLE) {
+    glNewList(model_list, GL_COMPILE);
+    glColor3fv(lighted_color);
+    if (two_sided_material) {
+      glMaterialfv(GL_FRONT,GL_AMBIENT,front_amb_mat);
+      glMaterialfv(GL_FRONT,GL_DIFFUSE,front_diff_mat);
+      glMaterialfv(GL_FRONT,GL_SPECULAR,front_spec_mat);
+      glMaterialf(GL_FRONT,GL_SHININESS,front_mat_shin);
+      glMaterialfv(GL_BACK,GL_AMBIENT,back_amb_mat);
+      glMaterialfv(GL_BACK,GL_DIFFUSE,back_diff_mat);
+      glMaterialfv(GL_BACK,GL_SPECULAR,back_spec_mat);
+      glMaterialf(GL_BACK,GL_SHININESS,back_mat_shin);
+    } else {
+      glMaterialfv(GL_FRONT_AND_BACK,GL_AMBIENT,front_amb_mat);
+      glMaterialfv(GL_FRONT_AND_BACK,GL_DIFFUSE,front_diff_mat);
+      glMaterialfv(GL_FRONT_AND_BACK,GL_SPECULAR,front_spec_mat);
+      glMaterialf(GL_FRONT_AND_BACK,GL_SHININESS,front_mat_shin);
+    }
     if (model->mesh->normals != NULL) {
-      glNewList(model_list, GL_COMPILE);
-      glColor3f(1.0,1.0,1.0);
       glBegin(GL_TRIANGLES);  
       for (i=0; i<model->mesh->num_faces; i++) {
 	cur_face = &(model->mesh->faces[i]);
@@ -280,10 +308,7 @@ void RawWidget::rebuild_list() {
 		   model->mesh->vertices[cur_face->f2].z);       
       }
       glEnd();
-      glEndList();
     } else {
-      glNewList(model_list, GL_COMPILE);
-      glColor3f(1.0,1.0,1.0);
       glBegin(GL_TRIANGLES);  
       for (i=0; i<model->mesh->num_faces; i++) {
 	cur_face = &(model->mesh->faces[i]);
@@ -301,8 +326,8 @@ void RawWidget::rebuild_list() {
 		   model->mesh->vertices[cur_face->f2].z);       
       }
       glEnd();
-      glEndList();
     }
+    glEndList();
   }
 
 }
@@ -412,6 +437,13 @@ void RawWidget::keyPressEvent(QKeyEvent *k) {
 	rebuild_list();
 	glDraw();
       }
+    }
+    break;
+  case Key_F5:
+    if (renderFlag == RW_LIGHT_TOGGLE) {
+      two_sided_material = !two_sided_material;
+      rebuild_list();
+      glDraw();
     }
     break;
   default:
