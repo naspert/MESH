@@ -1,4 +1,4 @@
-/* $Id: compute_error.h,v 1.18 2001/11/06 10:38:26 dsanta Exp $ */
+/* $Id: compute_error.h,v 1.19 2001/11/12 13:42:19 dsanta Exp $ */
 #ifndef _COMPUTE_ERROR_PROTO
 #define _COMPUTE_ERROR_PROTO
 
@@ -42,7 +42,7 @@ struct face_error {
 
 /* Model and error, plus miscellaneous model properties */
 struct model_error {
-  struct model *mesh;            /* The 3D model mesh */
+  struct model *mesh;     /* The 3D model mesh */
   float *verror;          /* The per vertex error array. NULL if not
                            * present. */
   float min_verror;       /* The minimum vertex error for the model */

@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.66 2001/11/06 10:38:25 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.67 2001/11/12 13:42:18 dsanta Exp $ */
 
 #include <compute_error.h>
 
@@ -94,8 +94,8 @@ struct t_in_cell_list {
 
 /* A list of samples of a surface in 3D space. */
 struct sample_list {
-  vertex_t* sample; /* Array of sample 3D coordinates */
-  int n_samples;  /* The number of samples in the array */
+  dvertex_t* sample; /* Array of sample 3D coordinates */
+  int n_samples;     /* The number of samples in the array */
 };
 
 /* A list of cells */
@@ -139,27 +139,27 @@ struct triangle_list {
 /* A triangle and useful associated information. AB is always the longest side
  * of the triangle. That way the projection of C on AB is always inside AB. */
 struct triangle_info {
-  vertex_t a;            /* The A vertex of the triangle */
-  vertex_t b;            /* The B vertex of the triangle */
-  vertex_t c;            /* The C vertex of the triangle. The projection of C
+  dvertex_t a;         /* The A vertex of the triangle */
+  dvertex_t b;         /* The B vertex of the triangle */
+  dvertex_t c;         /* The C vertex of the triangle. The projection of C
                         * on AB is always inside the AB segment. */
-  vertex_t ab;           /* The AB vector */
-  vertex_t ca;           /* The CA vector */
-  vertex_t cb;           /* The CB vector */
+  dvertex_t ab;        /* The AB vector */
+  dvertex_t ca;        /* The CA vector */
+  dvertex_t cb;        /* The CB vector */
   double ab_len_sqr;   /* The square of the length of AB */
   double ca_len_sqr;   /* The square of the length of CA */
   double cb_len_sqr;   /* The square of the length of CB */
   double ab_1_len_sqr; /* One over the square of the length of AB */
   double ca_1_len_sqr; /* One over the square of the length of CA */
   double cb_1_len_sqr; /* One over the square of the length of CB */
-  vertex_t normal;       /* The (unit length) normal of the ABC triangle
+  dvertex_t normal;    /* The (unit length) normal of the ABC triangle
                         * (orinted with the right hand rule turning from AB to
                         * AC). If the triangle is degenerate it is (0,0,0). */
-  vertex_t nhsab;        /* (unnormalized) normal of the plane trough AB,
+  dvertex_t nhsab;     /* (unnormalized) normal of the plane trough AB,
                         * perpendicular to ABC and pointing outside of ABC */
-  vertex_t nhsbc;        /* (unnormalized) normal of the plane trough BC,
+  dvertex_t nhsbc;     /* (unnormalized) normal of the plane trough BC,
                         * perpendicular to ABC and pointing outside of ABC */
-  vertex_t nhsca;        /* (unnormalized) normal of the plane trough CA,
+  dvertex_t nhsca;     /* (unnormalized) normal of the plane trough CA,
                         * perpendicular to ABC and pointing outside of ABC */
   double chsab;        /* constant of the plane equation: <p|npab>=cpab */
   double chsbc;        /* constant of the plane equation: <p|npbc>=cpbc */
@@ -229,18 +229,18 @@ static void calc_normals_as_oriented_model(struct model *m,
                                            const struct triangle_list *tl)
 {
   int k,kmax;
-  vertex_t *n;
+  vertex_t n;
 
   /* initialize all normals to zero */
   m->normals = xa_realloc(m->normals,m->num_vert*sizeof(*(m->normals)));
   memset(m->normals,0,m->num_vert*sizeof(*(m->normals)));
   /* add face normals to vertices, weighted by face area */
   for (k=0, kmax=m->num_faces; k < kmax; k++) {
-    n = &(tl->triangles[k].normal);
-    prod_v(tl->triangles[k].s_area,n,n);
-    add_v(n,&(m->normals[m->faces[k].f0]),&(m->normals[m->faces[k].f0]));
-    add_v(n,&(m->normals[m->faces[k].f1]),&(m->normals[m->faces[k].f1]));
-    add_v(n,&(m->normals[m->faces[k].f2]),&(m->normals[m->faces[k].f2]));
+    vertex_d2f_v(&(tl->triangles[k].normal),&n); /* convert double to float */
+    prod_v(tl->triangles[k].s_area,&n,&n);
+    add_v(&n,&(m->normals[m->faces[k].f0]),&(m->normals[m->faces[k].f0]));
+    add_v(&n,&(m->normals[m->faces[k].f1]),&(m->normals[m->faces[k].f1]));
+    add_v(&n,&(m->normals[m->faces[k].f2]),&(m->normals[m->faces[k].f2]));
   }
   /* normalize final normals */
   for (k=0, kmax=m->num_vert; k<kmax; k++) {
@@ -259,10 +259,11 @@ static void calc_normals_as_oriented_model(struct model *m,
 static int get_sampling_freq(const vertex_t *a, const vertex_t *b, 
 			     const vertex_t *c, double step)
 {
-  double ab_len_sqr;
-  double ac_len_sqr;
-  double bc_len_sqr;
-  double max_len_sqr;
+  /* NOTE: here we use float since precision is not really important */
+  float ab_len_sqr;
+  float ac_len_sqr;
+  float bc_len_sqr;
+  float max_len_sqr;
 
   /* Search for longest side */
   ab_len_sqr = dist2_v(a,b);
@@ -279,8 +280,8 @@ static int get_sampling_freq(const vertex_t *a, const vertex_t *b,
  * size. The cubic cell side length is returned and the grid size is stored in
  * *grid_sz. */
 static double get_cell_size(const struct triangle_list *tl,
-                            const vertex_t *bbox_min, const vertex_t *bbox_max,
-                            struct size3d *grid_sz)
+                            const dvertex_t *bbox_min,
+                            const dvertex_t *bbox_max, struct size3d *grid_sz)
 {
   double cell_sz;
   double f_gsz_x,f_gsz_y,f_gsz_z;
@@ -528,27 +529,32 @@ static void get_cells_at_distance(struct dist_cell_lists *dlists,
 static void init_triangle(const vertex_t *a, const vertex_t *b, 
 			  const vertex_t *c, struct triangle_info *t)
 {
-  vertex_t ab,ac,bc;
+  dvertex_t dv_a,dv_b,dv_c;
+  dvertex_t ab,ac,bc;
   double ab_len_sqr,ac_len_sqr,bc_len_sqr;
   double n_len;
   double ca_ab;
   double height_sqr;
   int is_point;
 
+  /* Convert float vertices to double */
+  vertex_f2d_dv(a,&dv_a);
+  vertex_f2d_dv(b,&dv_b);
+  vertex_f2d_dv(c,&dv_c);
   /* Get the vertices in the proper ordering (the orientation is not
    * changed). AB should be the longest side. */
-  substract_v(b,a,&ab);
-  substract_v(c,a,&ac);
-  substract_v(c,b,&bc);
-  ab_len_sqr = norm2_v(&ab);
-  ac_len_sqr = norm2_v(&ac);
-  bc_len_sqr = norm2_v(&bc);
+  substract_dv(&dv_b,&dv_a,&ab);
+  substract_dv(&dv_c,&dv_a,&ac);
+  substract_dv(&dv_c,&dv_b,&bc);
+  ab_len_sqr = norm2_dv(&ab);
+  ac_len_sqr = norm2_dv(&ac);
+  bc_len_sqr = norm2_dv(&bc);
   if (ab_len_sqr <= ac_len_sqr) {
     if (ac_len_sqr <= bc_len_sqr) { /* BC longest side => A to C */
       assert(bc_len_sqr >= ac_len_sqr && bc_len_sqr >= ab_len_sqr);
-      t->c = *a;
-      t->a = *b;
-      t->b = *c;
+      t->c = dv_a;
+      t->a = dv_b;
+      t->b = dv_c;
       t->ab = bc;
       t->ca = ab;
       t->cb = ac;
@@ -557,12 +563,12 @@ static void init_triangle(const vertex_t *a, const vertex_t *b,
       t->cb_len_sqr = ac_len_sqr;
     } else { /* AC longest side => B to C */
       assert(ac_len_sqr >= bc_len_sqr && ac_len_sqr >= ab_len_sqr);
-      t->b = *a;
-      t->c = *b;
-      t->a = *c;
-      neg_v(&ac,&(t->ab));
+      t->b = dv_a;
+      t->c = dv_b;
+      t->a = dv_c;
+      neg_dv(&ac,&(t->ab));
       t->ca = bc;
-      neg_v(&ab,&(t->cb));
+      neg_dv(&ab,&(t->cb));
       t->ab_len_sqr = ac_len_sqr;
       t->ca_len_sqr = bc_len_sqr;
       t->cb_len_sqr = ab_len_sqr;
@@ -570,9 +576,9 @@ static void init_triangle(const vertex_t *a, const vertex_t *b,
   } else {
     if (ab_len_sqr <= bc_len_sqr) { /* BC longest side => A to C */
       assert(bc_len_sqr >= ac_len_sqr && bc_len_sqr >= ab_len_sqr);
-      t->c = *a;
-      t->a = *b;
-      t->b = *c;
+      t->c = dv_a;
+      t->a = dv_b;
+      t->b = dv_c;
       t->ab = bc;
       t->ca = ab;
       t->cb = ac;
@@ -581,12 +587,12 @@ static void init_triangle(const vertex_t *a, const vertex_t *b,
       t->cb_len_sqr = ac_len_sqr;
     } else { /* AB longest side => C remains C */
       assert(ab_len_sqr >= ac_len_sqr && ab_len_sqr >= bc_len_sqr);
-      t->a = *a;
-      t->b = *b;
-      t->c = *c;
+      t->a = dv_a;
+      t->b = dv_b;
+      t->c = dv_c;
       t->ab = ab;
-      neg_v(&ac,&(t->ca));
-      neg_v(&bc,&(t->cb));
+      neg_dv(&ac,&(t->ca));
+      neg_dv(&bc,&(t->cb));
       t->ab_len_sqr = ab_len_sqr;
       t->ca_len_sqr = ac_len_sqr;
       t->cb_len_sqr = bc_len_sqr;
@@ -610,31 +616,31 @@ static void init_triangle(const vertex_t *a, const vertex_t *b,
   t->ca_1_len_sqr = 1/t->ca_len_sqr;
   t->cb_1_len_sqr = 1/t->cb_len_sqr;
   /* Get the triangle normal (normalized) */
-  crossprod_v(&(t->ca),&(t->ab),&(t->normal));
-  n_len = norm_v(&(t->normal));
+  crossprod_dv(&(t->ca),&(t->ab),&(t->normal));
+  n_len = norm_dv(&(t->normal));
   if (n_len < DBL_MIN*DMARGIN) {
     t->normal.x = 0;
     t->normal.y = 0;
     t->normal.z = 0;
   } else {
-    prod_v(1/n_len,&(t->normal),&(t->normal));
+    prod_dv(1/n_len,&(t->normal),&(t->normal));
   }
   /* Get planes trough sides */
-  crossprod_v(&(t->ab),&(t->normal),&(t->nhsab));
-  crossprod_v(&(t->normal),&(t->cb),&(t->nhsbc));
-  crossprod_v(&(t->ca),&(t->normal),&(t->nhsca));
+  crossprod_dv(&(t->ab),&(t->normal),&(t->nhsab));
+  crossprod_dv(&(t->normal),&(t->cb),&(t->nhsbc));
+  crossprod_dv(&(t->ca),&(t->normal),&(t->nhsca));
   /* Get constants for plane equations */
-  t->chsab = scalprod_v(&(t->a),&(t->nhsab));
-  t->chsca = scalprod_v(&(t->a),&(t->nhsca));
-  t->chsbc = scalprod_v(&(t->b),&(t->nhsbc));
+  t->chsab = scalprod_dv(&(t->a),&(t->nhsab));
+  t->chsca = scalprod_dv(&(t->a),&(t->nhsca));
+  t->chsbc = scalprod_dv(&(t->b),&(t->nhsbc));
   /* Miscellaneous fields */
   t->wide_at_c = (t->ab_len_sqr > t->ca_len_sqr+t->cb_len_sqr);
-  t->a_n = scalprod_v(&(t->a),&(t->normal));
+  t->a_n = scalprod_dv(&(t->a),&(t->normal));
   /* Get surface area */
   if (is_point) {
     t->s_area = 0;
   } else {
-    ca_ab = scalprod_v(&(t->ca),&(t->ab));
+    ca_ab = scalprod_dv(&(t->ca),&(t->ab));
     height_sqr = t->ca_len_sqr-ca_ab*ca_ab*t->ab_1_len_sqr;
     if (height_sqr < 0) height_sqr = 0; /* avoid rounding problems */
     t->s_area = sqrt(t->ab_len_sqr*height_sqr)*0.5;
@@ -645,11 +651,11 @@ static void init_triangle(const vertex_t *a, const vertex_t *b,
  * space. The distance from a point p to a triangle is defined as the
  * Euclidean distance from p to the closest point in the triangle. */
 static double dist_sqr_pt_triag(const struct triangle_info *t, 
-				const vertex_t *p)
+				const dvertex_t *p)
 {
   double dpp;             /* (signed) distance point to ABC plane */
   double ap_ab,cp_cb,cp_ca; /* scalar products */
-  vertex_t ap,cp;           /* Point to point vectors */
+  dvertex_t ap,cp;        /* Point to point vectors */
   double dmin_sqr;        /* minimum distance squared */
 
   /* NOTE: If the triangle has a wide angle (i.e. angle larger than 90
@@ -673,78 +679,78 @@ static double dist_sqr_pt_triag(const struct triangle_info *t,
    * triangles). Furthermore, if the AB side is degenerate (that is the
    * triangle degenerates to a point since AB is longest side) t->ab is
    * identically (0,0,0) also and the distance to A is calculated. */
-  if (scalprod_v(p,&(t->nhsab)) >= t->chsab) {
+  if (scalprod_dv(p,&(t->nhsab)) >= t->chsab) {
     /* P in the exterior side of hsab plane => closest to AB */
-    substract_v(p,&(t->a),&ap);
-    ap_ab = scalprod_v(&ap,&(t->ab));
+    substract_dv(p,&(t->a),&ap);
+    ap_ab = scalprod_dv(&ap,&(t->ab));
     if(ap_ab > 0) {
       if (ap_ab < t->ab_len_sqr) { /* projection of P on AB is in AB */
-        dmin_sqr = norm2_v(&ap) - (ap_ab*ap_ab)*t->ab_1_len_sqr;
+        dmin_sqr = norm2_dv(&ap) - (ap_ab*ap_ab)*t->ab_1_len_sqr;
         if (dmin_sqr < 0) dmin_sqr = 0; /* correct rounding problems */
         return dmin_sqr;
       } else { /* B is closer */
-        return dist2_v(p,&(t->b));
+        return dist2_dv(p,&(t->b));
       }
     } else { /* A is closer */
-      return norm2_v(&ap);
+      return norm2_dv(&ap);
     }
-  } else if (scalprod_v(p,&(t->nhsbc)) >= t->chsbc) {
+  } else if (scalprod_dv(p,&(t->nhsbc)) >= t->chsbc) {
     /* P in the exterior side of hsbc plane => closest to BC or AC */
-    substract_v(p,&(t->c),&cp);
-    cp_cb = scalprod_v(&cp,&(t->cb));
+    substract_dv(p,&(t->c),&cp);
+    cp_cb = scalprod_dv(&cp,&(t->cb));
     if(cp_cb > 0) {
       if (cp_cb < t->cb_len_sqr) { /* projection of P on BC is in BC */
-        dmin_sqr = norm2_v(&cp) - (cp_cb*cp_cb)*t->cb_1_len_sqr;
+        dmin_sqr = norm2_dv(&cp) - (cp_cb*cp_cb)*t->cb_1_len_sqr;
         if (dmin_sqr < 0) dmin_sqr = 0; /* correct rounding problems */
         return dmin_sqr;
       } else { /* B is closer */
-        return dist2_v(p,&(t->b));
+        return dist2_dv(p,&(t->b));
       }
     } else if (!t->wide_at_c) { /* C is closer */
-      return norm2_v(&cp);
+      return norm2_dv(&cp);
     } else { /* AC is closer */
-      cp_ca = scalprod_v(&cp,&(t->ca));
+      cp_ca = scalprod_dv(&cp,&(t->ca));
       if(cp_ca > 0) {
         if (cp_ca < t->ca_len_sqr) { /* projection of P on AC is in AC */
-          dmin_sqr = norm2_v(&cp) - (cp_ca*cp_ca)*t->ca_1_len_sqr;
+          dmin_sqr = norm2_dv(&cp) - (cp_ca*cp_ca)*t->ca_1_len_sqr;
           if (dmin_sqr < 0) dmin_sqr = 0; /* correct rounding problems */
           return dmin_sqr;
         } else { /* A is closer */
-          return dist2_v(p,&(t->a));
+          return dist2_dv(p,&(t->a));
         }
       } else { /* C is closer */
-        return norm2_v(&cp);
+        return norm2_dv(&cp);
       }
     }
-  } else if (scalprod_v(p,&(t->nhsca)) >= t->chsca) {
+  } else if (scalprod_dv(p,&(t->nhsca)) >= t->chsca) {
     /* P in the exterior side of hsca plane => closest to AC */
-    substract_v(p,&(t->c),&cp);
-    cp_ca = scalprod_v(&cp,&(t->ca));
+    substract_dv(p,&(t->c),&cp);
+    cp_ca = scalprod_dv(&cp,&(t->ca));
     if(cp_ca > 0) {
       if (cp_ca < t->ca_len_sqr) { /* projection of P on AC is in AC */
-        dmin_sqr = norm2_v(&cp) - (cp_ca*cp_ca)*t->ca_1_len_sqr;
+        dmin_sqr = norm2_dv(&cp) - (cp_ca*cp_ca)*t->ca_1_len_sqr;
         if (dmin_sqr < 0) dmin_sqr = 0; /* correct rounding problems */
         return dmin_sqr;
       } else { /* A is closer */
-        return dist2_v(p,&(t->a));
+        return dist2_dv(p,&(t->a));
       }
     } else { /* C is closer */
-      return norm2_v(&cp);
+      return norm2_dv(&cp);
     }
   } else { /* P projects into triangle */
-    dpp = scalprod_v(p,&(t->normal))-t->a_n;
+    dpp = scalprod_dv(p,&(t->normal))-t->a_n;
     return dpp*dpp;
   }
 }
 
 /* Calculates the square of the distance between a point p in cell
- * (gr_x,gr_y,gr_z) and cell cell_idx (liner index). The coordinates of p are
+ * (gr_x,gr_y,gr_z) and cell cell_idx (linear index). The coordinates of p are
  * relative to the minimum X,Y,Z coordinates of the bounding box from where
  * the cell grid is derived. All the cells are cubic, with a side of length
  * cell_sz. If the point p is in the cell (m,n,o) the distance is zero. The
  * number of cells in the grid along X is given by grid_sz_x, and the
  * separation between adjacent cells along Z is given by cell_stride_z. */
-static INLINE double dist_sqr_pt_cell(const vertex_t *p, int gr_x, int gr_y,
+static INLINE double dist_sqr_pt_cell(const dvertex_t *p, int gr_x, int gr_y,
                                       int gr_z, int cell_idx, int grid_sz_x,
                                       int cell_stride_z, double cell_sz)
 {
@@ -878,23 +884,23 @@ static void error_stat_triag(const struct triag_sample_error *tse,
  * i and j are the sampling indices along the ab and ac sides,
  * respectively. As a special case, if n equals 1, the triangle middle point
  * is used as the sample. */
-static void sample_triangle(const vertex_t *a, const vertex_t *b, 
-			    const vertex_t *c, int n, struct sample_list* s)
+static void sample_triangle(const dvertex_t *a, const dvertex_t *b, 
+			    const dvertex_t *c, int n, struct sample_list* s)
 {
-  vertex_t u,v;     /* basis parametrization vectors */
-  vertex_t a_cache; /* local (on stack) copy of a for faster access */
-  int i,j,maxj,k; /* counters and limits */
+  dvertex_t u,v;     /* basis parametrization vectors */
+  dvertex_t a_cache; /* local (on stack) copy of a for faster access */
+  int i,j,maxj,k;    /* counters and limits */
 
   /* initialize */
   a_cache = *a;
   s->n_samples = n*(n+1)/2;
-  s->sample = xa_realloc(s->sample,sizeof(vertex_t)*s->n_samples);
+  s->sample = xa_realloc(s->sample,sizeof(*(s->sample))*s->n_samples);
   /* get basis vectors */
-  substract_v(b,a,&u);
-  substract_v(c,a,&v);
+  substract_dv(b,a,&u);
+  substract_dv(c,a,&v);
   if (n != 1) { /* normal case */
-    prod_v(1/(double)(n-1),&u,&u);
-    prod_v(1/(double)(n-1),&v,&v);
+    prod_dv(1/(double)(n-1),&u,&u);
+    prod_dv(1/(double)(n-1),&v,&v);
     /* Sample triangle */
     for (k = 0, i = 0; i < n; i++) {
       for (j = 0, maxj = n-i; j < maxj; j++) {
@@ -919,7 +925,7 @@ static struct t_in_cell_list*
 triangles_in_cells(const struct triangle_list *tl,
 		   struct size3d grid_sz,
 		   double cell_sz,
-		   vertex_t bbox_min)
+		   dvertex_t bbox_min)
 {
   struct t_in_cell_list *lst; /* The list to return */
   struct sample_list sl;      /* samples from a triangle */
@@ -1061,7 +1067,7 @@ triangles_in_cells(const struct triangle_list *tl,
 
 /* Returns the distance from point p to the surface defined by the triangle
  * list tl. The distance from a point to a surface is defined as the distance
- * from a point to the closets point on the surface. To speed up the search
+ * from a point to the closest point on the surface. To speed up the search
  * for the closest triangle in the surface the bounding box of the model is
  * subdivided in cubic cells. The list of triangles that intersect each cell
  * is given by fic, as returned by the triangles_in_cells() function. The side
@@ -1076,16 +1082,16 @@ triangles_in_cells(const struct triangle_list *tl,
  * all zero on the first call to this function. The distance obtained from a
  * previous point *prev_p is prev_d (it is used to minimize the work). For the
  * first call set prev_d as zero. */
-static double dist_pt_surf(vertex_t p, const struct triangle_list *tl,
+static double dist_pt_surf(dvertex_t p, const struct triangle_list *tl,
                            const struct t_in_cell_list *fic,
 #ifdef DO_DIST_PT_SURF_STATS
                            struct dist_pt_surf_stats *stats,
 #endif
                            struct size3d grid_sz, double cell_sz,
-                           vertex_t bbox_min, struct dist_cell_lists *dcl,
-                           const vertex_t *prev_p, double prev_d)
+                           dvertex_t bbox_min, struct dist_cell_lists *dcl,
+                           const dvertex_t *prev_p, double prev_d)
 {
-  vertex_t p_rel;         /* coordinates of p relative to bbox_min */
+  dvertex_t p_rel;      /* coordinates of p relative to bbox_min */
   struct size3d grid_coord; /* coordinates of cell in which p is */
   int k;                /* cell index distance of current scan */
   int kmax;             /* maximum limit for k (avoid infinite loops) */
@@ -1116,7 +1122,7 @@ static double dist_pt_surf(vertex_t p, const struct triangle_list *tl,
   fic_triag_idx = fic->triag_idx;
 
   /* Get relative coordinates of point */
-  substract_v(&p,&bbox_min,&p_rel);
+  substract_dv(&p,&bbox_min,&p_rel);
   /* Get the cell coordinates of where point is. Since the bounding box bbox
    * is that of the model 2, the grid coordinates can be out of bounds (in
    * which case we limit them) */
@@ -1141,7 +1147,7 @@ static double dist_pt_surf(vertex_t p, const struct triangle_list *tl,
 
   /* Determine starting k, based on previous point (which is typically close
    * to current point) and its distance to closest triangle */
-  dmin = prev_d-dist_v(&p,prev_p);
+  dmin = prev_d-dist_dv(&p,prev_p);
   k = (int) floor(dmin*SQRT_1_3/cell_sz)-2;
   if (k <0) k = 0;
 
@@ -1221,7 +1227,7 @@ void dist_surf_surf(const struct model *m1, struct model *m2,
                     struct dist_surf_surf_stats *stats, int calc_normals,
                     struct prog_reporter *prog)
 {
-  vertex_t bbox_min,bbox_max;   /* min and max of bounding box of m1 and m2 */
+  dvertex_t bbox_min,bbox_max;/* min and max of bounding box of m1 and m2 */
   struct triangle_list *tl2;  /* triangle list for m2 */
   struct t_in_cell_list *fic; /* list of faces intersecting each cell */
   struct sample_list ts;      /* list of sample from a triangle */
@@ -1234,8 +1240,9 @@ void dist_surf_surf(const struct model *m1, struct model *m2,
   int report_step;            /* The step to update the progress report */
   struct dist_cell_lists *dcl;/* Cache for the list of non-empty cells at each
                                * distance, for each cell. */
-  vertex_t prev_p;              /* previous point */
+  dvertex_t prev_p;           /* previous point */
   double prev_d;              /* distance for previous point */
+  dvertex_t v1,v2,v3;         /* double version of triangle vertices */
 #ifdef DO_DIST_PT_SURF_STATS
   struct dist_pt_surf_stats dps_stats; /* Statistics */
 #endif
@@ -1243,7 +1250,7 @@ void dist_surf_surf(const struct model *m1, struct model *m2,
   /* Initialize */
   memset(&ts,0,sizeof(ts));
   memset(&tse,0,sizeof(tse));
-  report_step = m1->num_faces/(100.0/2); /* report every 2 % */
+  report_step = (int) (m1->num_faces/(100.0/2)); /* report every 2 % */
   if (report_step <= 0) report_step = 1;
   bbox_min.x = min(m1->bBox[0].x,m2->bBox[0].x);
   bbox_min.y = min(m1->bBox[0].y,m2->bBox[0].y);
@@ -1288,17 +1295,16 @@ void dist_surf_surf(const struct model *m1, struct model *m2,
     if (prog != NULL && k!=0 && k%report_step==0) {
       prog_report(prog,(100*k/(kmax-1)));
     }
-    fe[k].face_area = tri_area(m1->vertices[m1->faces[k].f0],
-                               m1->vertices[m1->faces[k].f1],
-                               m1->vertices[m1->faces[k].f2]);
+    vertex_f2d_dv(&(m1->vertices[m1->faces[k].f0]),&v1);
+    vertex_f2d_dv(&(m1->vertices[m1->faces[k].f1]),&v2);
+    vertex_f2d_dv(&(m1->vertices[m1->faces[k].f2]),&v3);
+    fe[k].face_area = tri_area_dv(&v1,&v2,&v3);
     n = get_sampling_freq(&(m1->vertices[m1->faces[k].f0]),
                           &(m1->vertices[m1->faces[k].f1]),
                           &(m1->vertices[m1->faces[k].f2]),sampling_step);
     stats->m1_samples += (n*(n+1))/2;
     realloc_triag_sample_error(&tse,n);
-    sample_triangle(&(m1->vertices[m1->faces[k].f0]),
-                    &(m1->vertices[m1->faces[k].f1]),
-                    &(m1->vertices[m1->faces[k].f2]),n,&ts);
+    sample_triangle(&v1,&v2,&v3,n,&ts);
     for (i=0; i<tse.n_samples_tot; i++) {
       tse.err_lin[i] = dist_pt_surf(ts.sample[i],tl2,fic,
 #ifdef DO_DIST_PT_SURF_STATS
