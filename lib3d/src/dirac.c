@@ -1,9 +1,9 @@
-/* $Id: dirac.c,v 1.7 2002/11/14 16:47:27 aspert Exp $ */
+/* $Id: dirac.c,v 1.8 2003/01/14 11:37:38 aspert Exp $ */
 #include <3dutils.h>
 
 int main(int argc, char **argv) {
-  int valence, i, j, fcount=0;
-  float h, step, r_step=1.5, th=0.0;
+  int valence, i, fcount=0;
+  float h, step, th=0.0;
   char *out_fname;
   struct model *dirac;
 
