@@ -122,6 +122,10 @@ SOURCE=.\mesh.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\mesh_run.c
+# End Source File
+# Begin Source File
+
 SOURCE=.\moc_InitWidget.cpp
 # End Source File
 # Begin Source File
@@ -216,6 +220,10 @@ InputName=InitWidget
 
 !ENDIF 
 
+# End Source File
+# Begin Source File
+
+SOURCE=.\mesh_run.h
 # End Source File
 # Begin Source File
 
