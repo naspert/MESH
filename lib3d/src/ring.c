@@ -1,4 +1,4 @@
-/* $Id: ring.c,v 1.4 2002/11/05 13:54:52 aspert Exp $ */
+/* $Id: ring.c,v 1.5 2002/11/07 07:52:41 aspert Exp $ */
 
 
 /*
@@ -273,7 +273,7 @@ void build_star(const struct model *raw_model, int v, struct ring_info *ring) {
 
   if (num_edges == 0) {
 #ifdef DEBUG
-    printf("Vertex %d has no face...\n", v);
+    fprintf(stderr, "Vertex %d has no face...\n", v);
 #endif
     ring->type = 0;
     ring->size = 0;
