@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.57 2003/03/12 17:54:59 aspert Exp $
+# $Id: Makefile,v 1.58 2003/05/09 11:45:37 aspert Exp $
 
 #Set PROFILE to something to enable profiling
 #PROFILE=1
@@ -13,7 +13,7 @@ GLXINFO = $(shell which glxinfo)
 STD_GLDIR = /usr/X11R6
 HP_GLDIR = /usr/GL/hp
 BASE_LIBFLAGS = -lm -lz
-TARGETS = torus cone dirac compare_curv lapl
+TARGETS = torus cone dirac compare_curv lapl compute_curv
 GSL_TARGETS = maps_lsq
 ifeq ($(OS), Linux)
 CC = gcc
