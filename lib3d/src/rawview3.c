@@ -1,9 +1,5 @@
-/* $Id: rawview3.c,v 1.13 2001/06/14 08:39:38 aspert Exp $ */
-/* $Log: rawview3.c,v $
- * Revision 1.13  2001/06/14 08:39:38  aspert
- * - Removed incorrect lighting parameter (GL_LIGHT_MODEL_TWO_SIDE must be GL_FALSE)
- * - Code cleanup
- * */
+/* $Id: rawview3.c,v 1.14 2001/06/14 08:41:09 aspert Exp $ */
+
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <GL/glut.h>
