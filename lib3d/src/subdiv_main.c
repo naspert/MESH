@@ -1,4 +1,4 @@
-/* $Id: subdiv_main.c,v 1.1 2002/03/22 16:11:34 aspert Exp $ */
+/* $Id: subdiv_main.c,v 1.2 2002/05/01 12:13:30 aspert Exp $ */
 #include <3dutils.h>
 #include <subdiv.h>
 #include <subdiv_methods.h>
@@ -8,7 +8,7 @@ int main(int argc, char **argv) {
   char *infile, *outfile;
   struct model *or_model, *sub_model=NULL;
   struct info_vertex* tmp_vert;
-  int i, lev, nlev=1;
+  int i, lev, nlev=1, rcode;
   int sub_method=-1;
 
 
@@ -43,7 +43,12 @@ int main(int argc, char **argv) {
   if (nlev < 1)
     nlev = 1;
 
-  or_model = read_raw_model(infile);
+  rcode = read_fmodel(&or_model, infile, MESH_FF_AUTO, 0);
+  if (rcode < 0) {
+    fprintf(stderr, "Unable to read model - error code %d\n", rcode);
+    exit(-1);
+  }  
+
 
   for (lev=0; lev<nlev; lev++) {
     if (or_model->normals == NULL && sub_method == SUBDIV_SPH) {
