@@ -8,6 +8,7 @@
 		  is implemented in the Error3DViewerWidget class
 		o The right GL windows also derives from Basic3DViewerWidget
 	          and is implemented in Lighted3DViewerWidget
+	- Added the spec file in the distribution.
 
 * Changes from v1.8 to v1.9:
 	- Added support for reading raw format with binary data: it provides
