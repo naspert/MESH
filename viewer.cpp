@@ -1,4 +1,4 @@
-/* $Id: viewer.cpp,v 1.12 2001/06/28 09:32:05 jacquet Exp $ */
+/* $Id: viewer.cpp,v 1.13 2001/06/28 13:45:49 aspert Exp $ */
 
 #include <qapplication.h>
 #include <ScreenWidget.h>
@@ -38,14 +38,14 @@ int main( int argc, char **argv )
   int i,j,h=0,k,l;
   sample *sample2;
   double **mem_err;
-  double triarea,surfacetot=0,surfacemoy=0;
+  double triarea,surfacetot=0,surfacemoy=0,diag;
   vertex bbox0,bbox1;
   double ccube;
   vertex grille;
   int facteur;
   info_vertex *curv;
   QString m1,n1,o1;
-  int text;
+  int text=1;
 
  /* affichage de la fenetre graphique */
  QApplication::setColorSpec( QApplication::CustomColor );
@@ -64,7 +64,6 @@ int main( int argc, char **argv )
    in_filename2=(char *)n1.latin1();
    thin=(char *)o1.latin1();
    samplethin=atof(thin);
-   text = 1;
  }
  else {
    if(strcmp("-t",argv[1]) == 0) {
@@ -83,7 +82,7 @@ int main( int argc, char **argv )
  } 
 
   k=(int)floor(1.0/samplethin);
-  printf("k= %d\n",k);
+//   printf("k= %d\n",k);
 
 //   if (argc!=4) {
 //     printf("nbre d'arg incorrect\n");
@@ -100,25 +99,27 @@ int main( int argc, char **argv )
   bbox0=raw_model1->bBox[0];
   bbox1=raw_model1->bBox[1];
   
-  printf("%lf %lf %lf\n",bbox0.x,bbox0.y,bbox0.z);
-  printf("%lf %lf %lf\n",bbox1.x,bbox1.y,bbox1.z);
+//   printf("%lf %lf %lf\n",bbox0.x,bbox0.y,bbox0.z);
+//   printf("%lf %lf %lf\n",bbox1.x,bbox1.y,bbox1.z);
   
   bbox0=raw_model2->bBox[0];
   bbox1=raw_model2->bBox[1];
   
-  printf("%lf %lf %lf\n",bbox0.x,bbox0.y,bbox0.z);
-  printf("%lf %lf %lf\n",bbox1.x,bbox1.y,bbox1.z);
+//   printf("%lf %lf %lf\n",bbox0.x,bbox0.y,bbox0.z);
+//   printf("%lf %lf %lf\n",bbox1.x,bbox1.y,bbox1.z);
 
   raw_model2->area = (double*)malloc(raw_model2->num_faces*sizeof(double));
   curv = (info_vertex*)malloc(raw_model2->num_vert*sizeof(info_vertex));
   
-  raw_model2->face_normals = compute_face_normals(raw_model2,curv);
-  
-  if (raw_model2->face_normals != NULL){
-    compute_vertex_normal(raw_model2, curv, raw_model2->face_normals);
-    for (i=0; i<raw_model2->num_vert; i++) 
-      free(curv[i].list_face);
-    free(curv);
+  if (raw_model2->normals==NULL && raw_model2->face_normals==NULL) {
+    raw_model2->face_normals = compute_face_normals(raw_model2,curv);
+    
+    if (raw_model2->face_normals != NULL){
+      compute_vertex_normal(raw_model2, curv, raw_model2->face_normals);
+      for (i=0; i<raw_model2->num_vert; i++) 
+	free(curv[i].list_face);
+      free(curv);
+    }
   }
 
   bbox0.x=min(raw_model1->bBox[0].x,raw_model2->bBox[0].x);
@@ -128,7 +129,8 @@ int main( int argc, char **argv )
   bbox1.x=max(raw_model1->bBox[1].x,raw_model2->bBox[1].x);
   bbox1.y=max(raw_model1->bBox[1].y,raw_model2->bBox[1].y);
   bbox1.z=max(raw_model1->bBox[1].z,raw_model2->bBox[1].z);
-
+  diag = dist(bbox0, bbox1);
+  printf("Bbox diag = %f\n", diag);
   /* calcul de la taille de la grille */
   if(raw_model2->num_faces<100)
     facteur=5;
@@ -169,7 +171,7 @@ int main( int argc, char **argv )
 		     raw_model1->vertices[raw_model1->faces[i].f2]);
     surfacetot+=triarea;
     error_per_face[i][1]=triarea;
-    printf("surfactriangle: %f ",triarea); 
+//     printf("surfactriangle: %f ",triarea); 
     
     mem_err=(double**)malloc((k+1)*sizeof(double*));
     for(j=0;j<k+1;j++)
@@ -205,7 +207,7 @@ int main( int argc, char **argv )
       free(mem_err[j]);
     free(mem_err);
 
-    printf("face numero %d: dmax= %lf dmoy= %lf\n",i+1,dmax,dmoy);
+     printf("face numero %d: dmax= %lf dmoy= %lf\n",i+1,dmax,dmoy);
     if(dmax>superdmax)
       superdmax=dmax;
     dmax=0;
@@ -222,9 +224,10 @@ int main( int argc, char **argv )
 
  printf("\ndistance maximale: %lf \n",superdmax);
  printf("distance minimale: %lf \n",superdmin); 
- printf("nbsampleteste: %d\n",h);
+//  printf("nbsampleteste: %d\n",h);
  printf("erreur moyenne: %lf\n",meanerror);
-
+ printf("err_max_rel = %f %%\nerr_moyenne_rel = %f %%\n", superdmax*100/diag, 
+	meanerror*100/diag);
 
  /* on assigne une couleur a chaque vertex qui est proportionnelle */
  /* a la moyenne de l'erreur sur les faces incidentes */
