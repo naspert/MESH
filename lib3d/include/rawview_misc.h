@@ -1,4 +1,4 @@
-/* $Id: rawview_misc.h,v 1.7 2002/11/07 09:51:42 aspert Exp $ */
+/* $Id: rawview_misc.h,v 1.8 2003/02/18 13:49:32 aspert Exp $ */
 
 #include <3dutils.h>
 #include <rawview.h>
@@ -16,6 +16,8 @@ extern "C" {
   void verbose_printf(int, char*, ...);
   void frame_grab(struct gl_render_context*);
   void ps_grab(struct gl_render_context*, struct display_lists_indices*, int);
+  void coord_grab(struct gl_render_context*);
+  void coord_load(char*, struct gl_render_context*);
   float** colormap_hsv(int);
   void free_colormap(float**);
   void set_light_on(void);

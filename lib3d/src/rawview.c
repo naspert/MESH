@@ -1,4 +1,4 @@
-/* $Id: rawview.c,v 1.30 2003/01/23 14:30:44 aspert Exp $ */
+/* $Id: rawview.c,v 1.31 2003/02/18 13:49:32 aspert Exp $ */
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -158,8 +158,10 @@ static void gfx_init() {
 
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
-  glGetDoublev(GL_MODELVIEW_MATRIX, gl_ctx.mvmatrix); /* Initialize
-                                                       * the temp matrix */
+  if (gl_ctx.load_coord == 0)
+    glGetDoublev(GL_MODELVIEW_MATRIX, gl_ctx.mvmatrix); /* Initialize
+                                                         * the temp
+                                                         * matrix */
 }
 
 
@@ -201,6 +203,11 @@ static void norm_key_pressed(unsigned char key, int x, int y) {
       glutPostRedisplay();
     } else 
       fprintf(stderr, "Butterfly subdivision failed\n");
+    break;
+  case 'd':
+  case 'D':
+    verbose_printf(gl_ctx.verbose, "Dumping viewing info\n");
+    coord_grab(&gl_ctx);
     break;
   case 'g':
   case 'G': /* Enable Gaussian curvature display */
@@ -466,21 +473,16 @@ static void sp_key_pressed(int key, int x, int y) {
     break;
 
   case GLUT_KEY_F11: /* backface culling when in wf mode */
-    if (gl_ctx.wf_bc) { /* goto classic wf mode */
+    if (gl_ctx.wf_bc)  /* goto classic wf mode */
       gl_ctx.wf_bc = 0;
-      glDisable(GL_LIGHTING);
-      glColor3f(1.0, 1.0, 1.0);
-      glFrontFace(GL_CCW);
-      glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-      rebuild_list(&gl_ctx, &dl_idx);
-    } else {
+    else 
       gl_ctx.wf_bc = 1;
-      glDisable(GL_LIGHTING);
-      glColor3f(1.0, 1.0, 1.0);
-      glFrontFace(GL_CCW);
-      glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-      rebuild_list(&gl_ctx, &dl_idx);
-    }
+    
+    glDisable(GL_LIGHTING);
+    glColor3f(1.0, 1.0, 1.0);
+    glFrontFace(GL_CCW);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    rebuild_list(&gl_ctx, &dl_idx);
     break;
 
   case GLUT_KEY_UP:
@@ -547,7 +549,7 @@ int main(int argc, char **argv) {
 
   int i, rcode=0;
   char *title;
-  const char s_title[]="Raw Mesh Viewer $Revision: 1.30 $ - ";
+  const char s_title[]="Raw Mesh Viewer $Revision: 1.31 $ - ";
   vertex_t center;
   struct model* raw_model;
 
@@ -559,18 +561,23 @@ int main(int argc, char **argv) {
     gl_ctx.in_filename = malloc((strlen(argv[1])+1)*sizeof(char));
     strcpy(gl_ctx.in_filename, argv[1]);
   }
-  else if (argc == 3) {
-    if (strcmp(argv[1], "--verbose") == 0)
-      gl_ctx.verbose = 1;
-    gl_ctx.in_filename = malloc((strlen(argv[2])+1)*sizeof(char));
-    strcpy(gl_ctx.in_filename, argv[2]);
+  else if (argc == 3 || argc == 4 || argc == 5) {
+    for (i=1; i<argc-1; i++) {
+      if (strcmp(argv[i], "--verbose") == 0)
+        gl_ctx.verbose = 1;
+      else if (strcmp(argv[i], "--coordload") == 0) 
+        coord_load(argv[++i], &gl_ctx);
+    }
+
+    gl_ctx.in_filename = malloc((strlen(argv[argc-1])+1)*sizeof(char));
+    strcpy(gl_ctx.in_filename, argv[argc-1]);
   } else {
 #ifdef DONT_USE_ZLIB
-    fprintf(stderr, "Usage:%s [--verbose] file.[raw, wrl, smf, ply, iv]\n", 
+    fprintf(stderr, "Usage:%s [--verbose,--coordload coordfile] file.[raw, wrl, smf, ply, iv]\n", 
             argv[0]);
 #else
     fprintf(stderr, 
-            "Usage:%s [--verbose] file.[raw, wrl, smf, ply, iv][.gz]\n", 
+            "Usage:%s [--verbose,--coordload coordfile] file.[raw, wrl, smf, ply, iv][.gz]\n", 
             argv[0]);
 #endif
     exit(-1);
@@ -608,8 +615,9 @@ int main(int argc, char **argv) {
 
   gl_ctx.tr_mode = 1; /* default -> wireframe w. triangles */
   
-  gl_ctx.distance = dist_v(&(raw_model->bBox[0]), &(raw_model->bBox[1]))/
-    tan(FOV*M_PI_2/180.0);
+  if (gl_ctx.load_coord == 0)
+    gl_ctx.distance = dist_v(&(raw_model->bBox[0]), &(raw_model->bBox[1]))/
+      tan(FOV*M_PI_2/180.0);
   
   gl_ctx.dstep = gl_ctx.distance*TRANSL_STEP;
 

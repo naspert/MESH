@@ -1,4 +1,4 @@
-/* $Id: rawview_grab.c,v 1.3 2003/01/23 14:30:44 aspert Exp $ */
+/* $Id: rawview_grab.c,v 1.4 2003/02/18 13:49:33 aspert Exp $ */
 
 #include <rawview_misc.h>
 
@@ -89,4 +89,42 @@ void ps_grab(struct gl_render_context *gl_ctx,
     glClearColor(0.0, 0.0, 0.0, 0.0);
     fclose(ps_file);
   }
+}
+
+void coord_grab(struct gl_render_context *gl_ctx) 
+{
+    char filename[13];
+    FILE *mat_file;
+    int i;
+
+    sprintf(filename, "coord%03d.mat", gl_ctx->dump_number);
+    mat_file = fopen(filename, "w");
+    if (mat_file == NULL)
+      fprintf(stderr, "Unable to open MAT outfile %s\n", filename);
+    else {
+      fprintf(mat_file, "%f\n", gl_ctx->distance);
+      for (i=0; i<16; i++)
+        fprintf(mat_file, "%f ", gl_ctx->mvmatrix[i]);
+      fclose(mat_file);
+      gl_ctx->dump_number++;
+    }
+} 
+
+void coord_load(char *filename, struct gl_render_context *gl_ctx) 
+{
+  FILE *mat_file;
+  int i;
+
+  mat_file = fopen(filename, "r");
+  if (mat_file == NULL)
+      fprintf(stderr, "Unable to open MAT infile %s\n", filename);
+  else {
+    fscanf(mat_file, "%f", &(gl_ctx->distance));
+    for (i=0; i<16; i++)
+      fscanf(mat_file, "%lf", &(gl_ctx->mvmatrix[i]));
+
+    gl_ctx->load_coord = 1;
+    fclose(mat_file);
+  }
+
 }
