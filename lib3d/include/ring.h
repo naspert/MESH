@@ -1,4 +1,4 @@
-/* $Id: ring.h,v 1.3 2003/01/13 12:46:09 aspert Exp $ */
+/* $Id: ring.h,v 1.4 2003/03/04 14:44:00 aspert Exp $ */
 
 
 /*
@@ -31,11 +31,17 @@
 
 struct ring_info {
   int *ord_vert; /* ordered list of vertex */
-  int type; /* 0=regular 1=boundary 2=non-manifold */
+  int type; /* 0=regular 1=boundary 2=non-manifold -1=emtpy*/
   int size;
   int n_faces;
   int *ord_face;
 };
+
+struct edge_v { 
+   int v0; 
+   int v1; 
+  int face;
+}; 
 
 #ifdef __cplusplus
 extern "C" {

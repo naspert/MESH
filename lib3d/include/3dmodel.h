@@ -1,4 +1,4 @@
-/* $Id: 3dmodel.h,v 1.35 2003/01/13 12:46:08 aspert Exp $ */
+/* $Id: 3dmodel.h,v 1.36 2003/03/04 14:44:00 aspert Exp $ */
 
 
 /*
@@ -138,10 +138,9 @@ struct info_vertex{
 };
 
 
-struct edge_v {
+struct edge_prim {
   int v0;
   int v1;
-  int face;
 };
 
 
@@ -149,8 +148,8 @@ struct face_tree {
   int face_idx;
   int visited;
   int node_type; /* 0 -> left_child 1 -> right_child */
-  struct edge_v prim_left;
-  struct edge_v prim_right;
+  struct edge_prim prim_left;
+  struct edge_prim prim_right;
   struct face_tree *left;
   struct face_tree *right;
   struct face_tree *parent;

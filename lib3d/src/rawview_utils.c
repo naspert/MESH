@@ -1,4 +1,4 @@
-/* $Id: rawview_utils.c,v 1.6 2002/11/07 09:51:44 aspert Exp $ */
+/* $Id: rawview_utils.c,v 1.7 2003/03/04 14:44:02 aspert Exp $ */
 #include <3dutils.h>
 #include <rawview.h>
 #include <rawview_misc.h>
@@ -128,22 +128,24 @@ void set_light_off() {
 }
 
 int do_normals(struct model* raw_model, int verbose) {
-  struct info_vertex *tmp;
+  struct ring_info *tmp;
   int i,rcode=0;
 
   verbose_printf(verbose, "Computing normals...\n");
   if (raw_model->area == NULL)
     raw_model->area = (float*)malloc(raw_model->num_faces*sizeof(float));
 
-  tmp = (struct info_vertex*)
-    malloc(raw_model->num_vert*sizeof(struct info_vertex));
+  tmp = (struct ring_info*)
+    malloc(raw_model->num_vert*sizeof(struct ring_info));
   
   raw_model->face_normals = compute_face_normals(raw_model, tmp);
   
   if (raw_model->face_normals != NULL){
     compute_vertex_normal(raw_model, tmp, raw_model->face_normals);
-    for (i=0; i<raw_model->num_vert; i++) 
-      free(tmp[i].list_face);
+    for (i=0; i<raw_model->num_vert; i++) {
+      free(tmp[i].ord_face);
+      free(tmp[i].ord_vert);
+    }
     free(tmp);
     verbose_printf(verbose, "Face and vertex normals done !\n");
   } else {
@@ -156,15 +158,13 @@ int do_normals(struct model* raw_model, int verbose) {
 }
 
 int do_spanning_tree(struct model *raw_model, int verbose) {
-  struct info_vertex* tmp;
+  struct ring_info* tmp;
   int i, ret=0;
 
-  tmp = (struct info_vertex*)
-    malloc(raw_model->num_vert*sizeof(struct info_vertex));
-  for(i=0; i<raw_model->num_vert; i++) {
-    tmp[i].list_face = (int*)malloc(sizeof(int));
-    tmp[i].num_faces = 0;
-  }
+  tmp = (struct ring_info*)
+    malloc(raw_model->num_vert*sizeof(struct ring_info));
+  build_star_global(raw_model, tmp);
+
   verbose_printf(verbose, "Building spanning tree\n");
   /* Compute spanning tree of the dual graph */
   raw_model->tree = bfs_build_spanning_tree(raw_model, tmp); 
@@ -176,8 +176,10 @@ int do_spanning_tree(struct model *raw_model, int verbose) {
   if (ret == 0) 
     verbose_printf(verbose, "Spanning tree done\n");
   
-  for(i=0; i<raw_model->num_vert; i++) 
-    free(tmp[i].list_face);
+  for(i=0; i<raw_model->num_vert; i++) {
+    free(tmp[i].ord_face);
+    free(tmp[i].ord_vert);
+  } 
   free(tmp);
   return ret;
 }

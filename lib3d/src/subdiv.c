@@ -1,4 +1,4 @@
-/* $Id: subdiv.c,v 1.29 2002/11/26 13:25:10 aspert Exp $ */
+/* $Id: subdiv.c,v 1.30 2003/03/04 14:44:02 aspert Exp $ */
 #include <3dutils.h>
 #include <subdiv_methods.h>
 #include <subdiv.h>
@@ -206,7 +206,7 @@ struct model* subdiv(struct model *raw_model,
     update_func(raw_model, subdiv_model, rings);
   
   if (gather_block_list(tmp_v, &(subdiv_model->vertices[raw_model->num_vert]), 
-                        nedges*sizeof(vertex_t)) !=0)
+                        nedges*sizeof(vertex_t)) != 0)
     abort();
   free_block_list(&tmp_v);
   

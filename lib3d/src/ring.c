@@ -1,4 +1,4 @@
-/* $Id: ring.c,v 1.8 2003/01/13 12:46:10 aspert Exp $ */
+/* $Id: ring.c,v 1.9 2003/03/04 14:44:02 aspert Exp $ */
 
 
 /*
@@ -26,6 +26,7 @@
 
 #include <3dmodel.h>
 #include <ring.h>
+
 #if defined(DEBUG) || defined(RING_DEBUG) || defined(NORM_DEBUG)
 # include <debug_print.h>
 #endif
@@ -79,10 +80,12 @@ void build_star_global(const struct model *raw_model,
   
   for (i=0; i<raw_model->num_vert; i++) {
     if(num_edges[i] == 0) {
+      ring[i].type = -1; 
+      
 #ifdef DEBUG
       DEBUG_PRINT("Vertex %d has no face...\n", i);
 #endif
-      continue;
+      goto singularity_encountered; 
     }
     /* build ring of each vertex */
     done = (unsigned char*)calloc(num_edges[i], 
@@ -174,14 +177,16 @@ void build_star_global(const struct model *raw_model,
          *  ring[i].ord_vert = NULL;
          *
          */
-        continue;
+        goto singularity_encountered;
       }
     }
+
     if (final_star[0] == final_star[star_size-1]) {    /* Regular vertex */
       star_size--;
       ring[i].type = 0;
     } else     /* Boundary vertex */
       ring[i].type = 1;
+
     ring[i].size = star_size;
     ring[i].ord_vert = (int*)malloc(star_size*sizeof(int));
     memcpy(ring[i].ord_vert, final_star, star_size*sizeof(int));
@@ -203,6 +208,8 @@ void build_star_global(const struct model *raw_model,
     free(final_star);
     free(face_star);
     free(done);
+
+  singularity_encountered: /* still, we need to free this one */
     free(edge_list_primal[i]);
   }
   free(edge_list_primal);

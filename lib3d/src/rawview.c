@@ -1,4 +1,4 @@
-/* $Id: rawview.c,v 1.32 2003/02/19 09:18:12 aspert Exp $ */
+/* $Id: rawview.c,v 1.33 2003/03/04 14:44:01 aspert Exp $ */
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -549,8 +549,8 @@ static void sp_key_pressed(int key, int x, int y) {
 int main(int argc, char **argv) {
 
   int i, rcode=0;
-  char *title;
-  const char s_title[]="Raw Mesh Viewer $Revision: 1.32 $ - ";
+  char *title=NULL;
+  const char s_title[]="Raw Mesh Viewer $Revision: 1.33 $ - ";
   vertex_t center;
   struct model* raw_model;
 
