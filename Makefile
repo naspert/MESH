@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.47 2002/05/06 08:31:13 aspert Exp $
+# $Id: Makefile,v 1.48 2002/05/07 11:03:49 aspert Exp $
 
 
 
@@ -66,27 +66,38 @@ MESHVER := $(shell sed '/char *\* *version *= *"[^"]*" *; *$$/ { s/[^"]*"\([^"]*
 # Autodetect platform
 OS := $(shell uname -s)
 ARCH := $(shell uname -m)
-CPU = P3 #default -> P3
+CPU = P3 #default -> Pentium III
 ifeq ($(ARCH),i686)
 # Let's try to autodetect the CPU ...
-TMP1 := $(shell grep "Pentium" /proc/cpuinfo | uniq | cut -d: -f2 | awk '{print $$1$$2}')
-TMP2 := $(shell grep "Pentium" /proc/cpuinfo | uniq | cut -d: -f2 | awk '{print $$2$$3}')
-ifeq ($(TMP2),Pentium(R)4) # Pentium 4
-CPU = P4
-endif
+TMP1 := $(shell grep "model name" /proc/cpuinfo | uniq | cut -d: -f2 | awk '{print $$1$$2}')
+# Just for Pentium 4 and Athlon XP
+TMP2 := $(shell grep "model name" /proc/cpuinfo | uniq | cut -d: -f2 | awk '{print $$2$$3}')
+
 ifeq ($(TMP1),PentiumII) # Pentium II
 CPU = P2
 endif
 ifeq ($(TMP1),PentiumIII) # Pentium III
 CPU = P3
 endif
-# TODO: Athlon stuff here
+ifeq ($(TMP2),Pentium(R)4) # Pentium 4
+CPU = P4
 endif
+
+ifeq ($(TMP1),AMDAthlon(tm)) # Athlon
+CPU = ATHLON
+endif
+ifeq ($(CPU), ATHLON) # test for Athlon XPs
+ifeq ($(TMP2),Athlon(tm)XP)
+CPU = ATHLONXP
+endif
+endif
+
+endif # ifeq($(ARCH) i686)
 
 # If you want to override platform detection 
 # (in order to compile for another one for instance), set the CPU var. 
 # to the desired value below
-# Possible values : P2, P3 and P4 (Athlon to come...)
+# Possible values : P2, P3, P4, ATHLON and ATHLONXP
 # CPU = P4
 
 
@@ -188,6 +199,14 @@ ifeq ($(CPU),P4)
 XTRA_CFLAGS += -ansi -g -tpp7 -ip
 XTRA_CFLAGS += -xW
 endif
+ifeq ($(CPU),ATHLON)
+XTRA_CFLAGS += -ansi -g -tpp6 -ip
+XTRA_CFLAGS += -xK
+endif
+ifeq ($(CPU),ATHLONXP)
+XTRA_CFLAGS += -ansi -g -tpp7 -ip
+XTRA_CFLAGS += -xW
+endif
 endif
 
 ifeq ($(CC_IS_PGCC)-$(OS),pgcc-Linux)
@@ -198,26 +217,41 @@ XTRA_CFLAGS += -Mvect -Munroll -Mcache_align -Mvect=smallvect:3 \
 XTRA_CFLAGS += -Minline=dist_sqr_pt_cell -Minline=size:50,levels=3
 
 ifeq ($(CPU), P4)
+# Specify target processor:  p7 (Pentium IV)
 XTRA_CFLAGS += -tp p7
 # Enable vectorized floating-point (requires Pentium III/IV or AthlonXP)
 XTRA_CFLAGS += -Mvect=sse
 # Enable prefetch (requires Pentium III/IV, Athlon or AthlonXP)
 XTRA_CFLAGS += -Mvect=prefetch
-# Specify target processor: p6 (Pentium Pro/II/III), p7 (Pentium IV), athlon
-# (Athlon) or athlonxp (Athlon XP/MP)
+endif
+
+ifeq ($(CPU), ATHLONXP)
+# Specify target processor:  athlonxp (AMD Athlon XP)
+XTRA_CFLAGS += -tp athlonxp
+# Enable vectorized floating-point (requires Pentium III/IV or AthlonXP)
+XTRA_CFLAGS += -Mvect=sse
+# Enable prefetch (requires Pentium III/IV, Athlon or AthlonXP)
+XTRA_CFLAGS += -Mvect=prefetch
+endif
+
+ifeq ($(CPU), ATHLON)
+# Specify target processor:  athlon (AMD Athlon)
+XTRA_CFLAGS += -tp athlon
+# Enable prefetch (requires Pentium III/IV, Athlon or AthlonXP)
+XTRA_CFLAGS += -Mvect=prefetch
 endif
 
 ifeq ($(CPU), P3)
+# Specify target processor: p6 (Pentium Pro/II/III)
 XTRA_CFLAGS += -tp p6
 # Enable vectorized floating-point (requires Pentium III/IV or AthlonXP)
 XTRA_CFLAGS += -Mvect=sse
 # Enable prefetch (requires Pentium III/IV, Athlon or AthlonXP)
 XTRA_CFLAGS += -Mvect=prefetch
-# Specify target processor: p6 (Pentium Pro/II/III), p7 (Pentium IV), athlon
-# (Athlon) or athlonxp (Athlon XP/MP)
 endif
 
 ifeq ($(CPU), P2)
+# Specify target processor: p6 (Pentium Pro/II/III)
 XTRA_CFLAGS += -tp p6
 endif
 

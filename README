@@ -30,6 +30,12 @@ GNU make and supports Linux (with GCC), IRIX (with the MIPSPro compilers)
 and Solaris (with the Sun compiler). Other configurations might require some 
 (hopefully minor) modifications.
 
+* Notes for using Intel compiler (ICC) or Portland Group compiler (PGCC)
+This section only applies for Linux. The Makefile will try to detect your
+CPU model via '/proc/cpuinfo'. You can always override the detection by
+setting the 'CPU' variable for your target machine after the detection 
+code (around line 100).
+
 * Installation - Windows
 You *MUST* install the Qt library prior to any other step. Please note that 
 you have to install it in a path that does not contain a space (e.g. not 
@@ -37,18 +43,21 @@ in 'C:\Program Files\Qt', but for instance in 'C:\Qt'). We provide the
 Micro$oft Visual C++ 6 dsp and dsw files needed to build the program.
 
 * Input data format 
-The input file format for the triangular meshes is a raw ASCII format,
-VRML2, Inventor 2.x and SMF format (used by M. Garland's 'QSlim'). 
-On systems having zlib (>= 1.1) installed, MESH offers the possiblity
-of directly reading gzipped files (gzipped VRML is in the standard). 
-Please note that most of Win32 systems do not have zlib installed. Therefore, 
-on such systems, the program is build without this support for gzipped files.
-However, it is possible to install zlib on Win32 systems. If you did so,
-and wish to build MESH with zlib on Win32 system, uncomment the relevant part 
-in 'lib3d/include/model_in.h' (lines 83-85), and please provide feedback to
-us about your successes/failures. We have been able to make it work, but this 
-has not been 'automated' in the build process under VC++ (this is your chance
-to add your name in the author list ;-).
+The input file format for the triangular meshes is a raw ASCII format, VRML2, 
+Inventor 2.x and SMF format (used by  M. Garland's 'QSlim'). On systems having 
+zlib (>= 1.1) installed, MESH offers the possiblity of directly reading 
+gzipped files (gzipped VRML is in the standard). Please note that most of 
+Win32 systems do not have zlib installed. Therefore, on such systems, the
+program is build without this support for gzipped files.  However,
+it is possible to install zlib on Win32 systems. If you did so, and
+wish to build MESH with zlib on Win32 system, uncomment the relevant
+part in 'lib3d/include/model_in.h' (lines 83-85), tweak the project
+files, and please provide feedback to us about your successes/failures. 
+We have been able to make it work, but this has not been 'automated' in the 
+build process under VC++ (this is your chance to add your name in the author 
+list ;-).
+
+
 
 * The raw ASCII format describes the vertices, the vertex connectivity
 and optionally the vertex normals. The first line should contain two or three
