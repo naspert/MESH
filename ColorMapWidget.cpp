@@ -1,6 +1,5 @@
-/* $Id: ColorMapWidget.cpp,v 1.13 2002/02/01 09:03:51 aspert Exp $ */
+/* $Id: ColorMapWidget.cpp,v 1.14 2002/02/01 09:04:24 aspert Exp $ */
 #include <ColorMapWidget.h>
-#include <stdio.h>
 #include <qapplication.h>
 #include <qpainter.h>
 #include <ColorMap.h>
