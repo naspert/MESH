@@ -1,4 +1,4 @@
-/* $Id: ScreenWidget.h,v 1.15 2002/01/15 17:02:05 aspert Exp $ */
+/* $Id: ScreenWidget.h,v 1.16 2002/02/20 18:28:37 dsanta Exp $ */
 #ifndef SCREENWIDGET_H
 #define SCREENWIDGET_H
 
@@ -25,18 +25,11 @@ public:
   ScreenWidget(struct model_error *model1, struct model_error *model2,
                QWidget *parent=0, const char *name=0 );
 
-signals:
-  void actualUpdate(double dmoymin, double dmoymax);
-
 public slots:
   void aboutKeys();
   void aboutBugs();
   void quit();
 
-
-private:
-  struct model_error *model_data;
-  
 };
 
 

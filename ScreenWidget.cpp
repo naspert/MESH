@@ -1,4 +1,4 @@
-/* $Id: ScreenWidget.cpp,v 1.26 2002/01/15 17:02:04 aspert Exp $ */
+/* $Id: ScreenWidget.cpp,v 1.27 2002/02/20 18:28:37 dsanta Exp $ */
 #include <ScreenWidget.h>
 
 #include <qhbox.h>
@@ -20,10 +20,11 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   RawWidget *glModel1, *glModel2;
   ColorMapWidget *errorColorBar;
   QPushButton *quitBut;
+  QRadioButton *verrBut, *fmerrBut, *serrBut;
+  QButtonGroup *radGrp=NULL;
 
 
   setCaption("Mesh: visualization");
-  model_data = model1;
 
   fileQuitAction = new QAction( "Quit", "Quit", CTRL+Key_Q, this, "quit" );
   connect(fileQuitAction, SIGNAL(activated()) , 
@@ -63,9 +64,7 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   glModel1->setFocusPolicy(StrongFocus);
   glModel2 = new RawWidget(model2, RW_LIGHT_TOGGLE, frameModel2, "glModel2");
   glModel2->setFocusPolicy(StrongFocus);
-  errorColorBar = new ColorMapWidget(model1->min_verror,
-				     model1->max_verror, this, 
-				     "errorColorBar");
+  errorColorBar = new ColorMapWidget(model1, this, "errorColorBar");
 
   // This is to synchronize the viewpoints of the two models
   // We need to pass the viewing matrix from one RawWidget
@@ -106,6 +105,19 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
 	  glModel2, SLOT(setLine(bool)));
   connect(glModel2, SIGNAL(toggleLine()),lineSwitch2, SLOT(toggle()));
 
+  // Build error mode selection buttons
+  radGrp = new QHButtonGroup(this);
+  radGrp->layout()->setMargin(3);
+  verrBut = new QRadioButton("Vertex error", radGrp);
+  verrBut->setChecked(TRUE);
+  fmerrBut = new QRadioButton("Face mean error", radGrp);
+  serrBut = new QRadioButton("Sample error", radGrp);
+  radGrp->insert(verrBut, RawWidget::VERTEX_ERROR);
+  radGrp->insert(fmerrBut, RawWidget::MEAN_FACE_ERROR);
+  radGrp->insert(serrBut, RawWidget::SAMPLE_ERROR);
+  connect(radGrp, SIGNAL(clicked(int)), glModel1, SLOT(setErrorMode(int)));
+
+
   // Build the topmost grid layout
   bigGrid = new QGridLayout (this, 3, 7, 5);
   bigGrid->setMenuBar(mainBar);
@@ -115,7 +127,7 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   bigGrid->addWidget(lineSwitch1, 1, 2, Qt::AlignCenter);
   bigGrid->addWidget(lineSwitch2, 1, 5, Qt::AlignCenter);
   bigGrid->addMultiCellWidget(syncBut, 1, 1, 3, 4, Qt::AlignCenter);
-
+  bigGrid->addWidget(radGrp, 2, 2, Qt::AlignCenter);
   bigGrid->addMultiCellWidget(quitBut, 2, 2, 3, 4, Qt::AlignCenter);
 
   // Now set a sensible default widget size
