@@ -1,4 +1,6 @@
-/* $Id: subdiv_methods.h,v 1.8 2002/02/21 13:35:24 aspert Exp $ */
+/* $Id: subdiv_methods.h,v 1.9 2002/05/13 13:50:46 aspert Exp $ */
+#include <3dmodel.h>
+#include <ring.h>
 
 #ifndef __SUBDIV_METHODS_PROTO
 # define __SUBDIV_METHODS_PROTO

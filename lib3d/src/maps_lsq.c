@@ -1,4 +1,5 @@
 #include <3dutils.h>
+#include <ring.h>
 #include <gsl/gsl_multifit.h>
 
 

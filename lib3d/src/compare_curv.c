@@ -1,6 +1,6 @@
-/* $Id: compare_curv.c,v 1.9 2002/04/16 06:46:05 aspert Exp $ */
+/* $Id: compare_curv.c,v 1.10 2002/05/13 13:50:47 aspert Exp $ */
 #include <3dutils.h>
-
+#include <ring.h>
 
 /* Returns the angle lying at vertex v0 in the triangle v0v1v2 */
 double get_top_angle(const vertex_t *v0, const vertex_t *v1, 

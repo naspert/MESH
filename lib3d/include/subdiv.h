@@ -1,8 +1,7 @@
+/* $Id: subdiv.h,v 1.3 2002/05/13 13:50:46 aspert Exp $ */
 
-/* Bitmask for the midpoint search */
-#define U0_FOUND 0x01
-#define U1_FOUND 0x02
-#define U2_FOUND 0x04
+#include <3dmodel.h>
+#include <ring.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -1,4 +1,4 @@
-/* $Id: normals.h,v 1.15 2002/04/16 06:42:23 aspert Exp $ */
+/* $Id: normals.h,v 1.16 2002/05/13 13:50:46 aspert Exp $ */
 #include <3dmodel.h>
 
 #ifndef _NORMALS_PROTO
@@ -13,13 +13,6 @@ typedef int bitmap_t;
 #define BITMAP_SET_BIT(bm, i) \
         ((bm)[(i)/BITMAP_T_BITS] |= 1 << ((i)&BITMAP_T_MASK))
 
-struct ring_info {
-  int *ord_vert; /* ordered list of vertex */
-  int type; /* 0=regular 1=boundary 2=non-manifold */
-  int size;
-  int n_faces;
-  int *ord_face;
-};
 
 struct edge_sort {
   struct edge_v prim;
@@ -53,8 +46,6 @@ struct edge_list {
 #ifdef __cplusplus
 extern "C" {
 #endif
-  void build_star_global(const struct model*, struct ring_info*);
-  void build_star(const struct model*, int, struct ring_info*);
   int compar(const void*, const void*);
   void add_edge_dg(struct dual_graph_info*, const struct edge_sort*, 
 		   const struct edge_sort*);

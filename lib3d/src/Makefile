@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.35 2002/04/22 10:27:24 aspert Exp $
+# $Id: Makefile,v 1.36 2002/05/13 13:50:47 aspert Exp $
 
 
 OS := $(shell uname -s)
@@ -61,7 +61,7 @@ GL_CFLAGS = $(INCLFLAGS) $(GLINCLFLAGS) $(XTRA_CFLAGS)
 # Objects
 #
 BASE_OBJECTS = $(OBJDIR)/geomutils.o $(OBJDIR)/normals.o \
-	$(OBJDIR)/3dmodel_io.o $(OBJDIR)/model_in.o
+	$(OBJDIR)/3dmodel_io.o $(OBJDIR)/model_in.o $(OBJDIR)/ring.o
 GL_OBJECTS = $(OBJDIR)/rawview.o $(OBJDIR)/gl2ps.o
 GSL_OBJECTS = $(OBJDIR)/maps_lsq.o
 
@@ -92,9 +92,6 @@ $(TARGETS): % : $(OBJDIR)/%.o $(BASE_OBJECTS)
 
 $(GSL_TARGETS): % : $(OBJDIR)/%.o $(BASE_OBJECTS)
 	$(CC) -o $(BINDIR)/$@ $^ $(GSL_LDFLAGS)
-
-read: % : $(OBJDIR)/%.o $(OBJDIR)/model_in.o
-	$(CC) -o $(BINDIR)/$@ $^ $(BASE_LDFLAGS)
 
 isoca: $(OBJDIR)/isoca.o $(OBJDIR)/subdiv.o $(BASE_OBJECTS)
 	$(CC) -o $(BINDIR)/$@ $^ $(BASE_LDFLAGS) 
