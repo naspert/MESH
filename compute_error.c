@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.44 2001/08/22 09:26:08 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.45 2001/08/22 09:55:36 dsanta Exp $ */
 
 #include <compute_error.h>
 
@@ -296,13 +296,15 @@ static double get_cell_size(const struct triangle_list *tl,
   return cell_sz;
 }
 
-/* Gets the list of non-empty cells at distance k in the X, Y or Z direction
- * from the cell with grid coordinates cell_gr_coord. The list is stored in
- * dlists->list[k] and dlists->n_dists is updated to reflect the number of
- * calculated distances. The list of cells at distances less than k must have
- * already been calculated. The list of empty cells is obtained from the list
- * of faces in each cell, fic. The size of the cell grid is given by
- * grid_sz. */
+/* Gets the list of non-empty cells that are at distance k in the X, Y or Z
+ * direction from the center cell with grid coordinates cell_gr_coord. The
+ * list is stored in dlists->list[k] and dlists->n_dists is updated to reflect
+ * the number of calculated distances. The list of cells at distances less
+ * than k must have already been calculated. The list of empty cells is
+ * obtained from the list of faces in each cell, fic. The size of the cell
+ * grid is given by grid_sz. The distance between two cells is the minimum
+ * distance between points in each cell. For distance zero the center cell is
+ * also included in the list. */
 static void get_cells_at_distance(struct dist_cell_lists *dlists,
                                   struct size3d cell_gr_coord,
                                   struct size3d grid_sz, int k,
@@ -316,6 +318,7 @@ static void get_cells_at_distance(struct dist_cell_lists *dlists,
   int cll;
   int m,n,o;
   int min_m,max_m,min_n,max_n,min_o,max_o;
+  int d;
 
   assert(k == 0 || dlists->n_dists == k);
 
@@ -327,31 +330,25 @@ static void get_cells_at_distance(struct dist_cell_lists *dlists,
   dlists->list = xa_realloc(dlists->list,(k+1)*sizeof(*(dlists->list)));
   dlists->n_dists = k+1;
 
-  /* Get list of cells at distance k in X, Y or Z direction */
-
-  if (k == 0) { /* zero distance, only cell is center one */
+  /* Get the cells that are at distance k in the X, Y or Z direction from the
+   * center cell. For the zero distance we also include the center cell. */
+  max_n_cells = 6*(2*k+1)*(2*k+1)+12*(2*k+1)+8;
+  if (k == 0) max_n_cells += 1; /* add center cell */
+  cell_list = xa_malloc(max_n_cells*sizeof(*cell_list));
+  cll = 0;
+  if (k == 0) { /* add center cell */
     cell_idx = cell_gr_coord.x+cell_gr_coord.y*grid_sz.x+
       cell_gr_coord.z*cell_stride_z;
     if (!EC_BITMAP_TEST_BIT(fic_empty_cell,cell_idx)) {
-      dlists->list[k].cell = xa_malloc(sizeof(*cell_list));
-      dlists->list[k].cell[0] = cell_idx;
-      dlists->list[k].n_cells = 1;
-    } else { /* empty cell */
-      dlists->list[k].cell = NULL;
-      dlists->list[k].n_cells = 0;
+      cell_list[cll++] = cell_idx;
     }
-    return;
   }
-
-  /* Non-zero distance k */
-  max_n_cells = 6*(2*k-1)*(2*k-1)+12*(2*k-1)+8;
-  cell_list = xa_malloc(max_n_cells*sizeof(*cell_list));
-  cll = 0;
-  min_m = max(cell_gr_coord.x-k,0);
-  max_m = min(cell_gr_coord.x+k,grid_sz.x-1);
-  min_n = max(cell_gr_coord.y-k,0);
-  max_n = min(cell_gr_coord.y+k,grid_sz.y-1);
-  if ((o = cell_gr_coord.z-k) >= 0) { /* bottom layer */
+  d = k+1; /* max displacement */
+  min_m = max(cell_gr_coord.x-d,0);
+  max_m = min(cell_gr_coord.x+d,grid_sz.x-1);
+  min_n = max(cell_gr_coord.y-d,0);
+  max_n = min(cell_gr_coord.y+d,grid_sz.y-1);
+  if ((o = cell_gr_coord.z-d) >= 0) { /* bottom layer */
     for (n = min_n; n <= max_n; n++) {
       for (m = min_m; m <= max_m; m++) {
         cell_idx = m+n*grid_sz.x+o*cell_stride_z;
@@ -361,7 +358,7 @@ static void get_cells_at_distance(struct dist_cell_lists *dlists,
       }
     }
   }
-  if ((o = cell_gr_coord.z+k) < grid_sz.z) { /* top layer */
+  if ((o = cell_gr_coord.z+d) < grid_sz.z) { /* top layer */
     for (n = min_n; n <= max_n; n++) {
       for (m = min_m; m <= max_m; m++) {
         cell_idx = m+n*grid_sz.x+o*cell_stride_z;
@@ -371,9 +368,9 @@ static void get_cells_at_distance(struct dist_cell_lists *dlists,
       }
     }
   }
-  min_o = max(cell_gr_coord.z-k+1,0);
-  max_o = min(cell_gr_coord.z+k-1,grid_sz.z-1);
-  if ((n = cell_gr_coord.y-k) >= 0) { /* back layer */
+  min_o = max(cell_gr_coord.z-d+1,0);
+  max_o = min(cell_gr_coord.z+d-1,grid_sz.z-1);
+  if ((n = cell_gr_coord.y-d) >= 0) { /* back layer */
     for (o = min_o; o <= max_o; o++) {
       for (m = min_m; m <= max_m; m++) {
         cell_idx = m+n*grid_sz.x+o*cell_stride_z;
@@ -383,7 +380,7 @@ static void get_cells_at_distance(struct dist_cell_lists *dlists,
       }
     }
   }
-  if ((n = cell_gr_coord.y+k) < grid_sz.y) { /* front layer */
+  if ((n = cell_gr_coord.y+d) < grid_sz.y) { /* front layer */
     for (o = min_o; o <= max_o; o++) {
       for (m = min_m; m <= max_m; m++) {
         cell_idx = m+n*grid_sz.x+o*cell_stride_z;
@@ -395,7 +392,7 @@ static void get_cells_at_distance(struct dist_cell_lists *dlists,
   }
   min_n = max(cell_gr_coord.y-k+1,0);
   max_n = min(cell_gr_coord.y+k-1,grid_sz.y-1);
-  if ((m = cell_gr_coord.x-k) >= 0) { /* left layer */
+  if ((m = cell_gr_coord.x-d) >= 0) { /* left layer */
     for (o = min_o; o <= max_o; o++) {
       for (n = min_n; n <= max_n; n++) {
         cell_idx = m+n*grid_sz.x+o*cell_stride_z;
@@ -405,7 +402,7 @@ static void get_cells_at_distance(struct dist_cell_lists *dlists,
       }
     }
   }
-  if ((m = cell_gr_coord.x+k) < grid_sz.x) { /* right layer */
+  if ((m = cell_gr_coord.x+d) < grid_sz.x) { /* right layer */
     for (o = min_o; o <= max_o; o++) {
       for (n = min_n; n <= max_n; n++) {
         cell_idx = m+n*grid_sz.x+o*cell_stride_z;
@@ -416,8 +413,14 @@ static void get_cells_at_distance(struct dist_cell_lists *dlists,
     }
   }
   /* Store resulting cell list */
-  dlists->list[k].cell = xa_realloc(cell_list,cll*sizeof(*cell_list));
-  dlists->list[k].n_cells = cll;
+  if (cll != 0) {
+    dlists->list[k].cell = xa_realloc(cell_list,cll*sizeof(*cell_list));
+    dlists->list[k].n_cells = cll;
+  } else {
+    dlists->list[k].cell = NULL;
+    dlists->list[k].n_cells = 0;
+    free(cell_list);
+  }
 }
 
 /* --------------------------------------------------------------------------*
@@ -1122,7 +1125,7 @@ static double dist_pt_surf(vertex p, const struct triangle_list *tl,
      * larger than the minimum distance to a face found so far; or until all
      * cells have been tested. */
     k++;
-  } while (k < kmax && (k == 0 || dmin_sqr >= (k-1)*(k-1)*cell_sz_sqr));
+  } while (k < kmax && dmin_sqr >= k*k*cell_sz_sqr);
   if (dmin_sqr >= DBL_MAX || dmin_sqr != dmin_sqr || dmin_sqr < 0) {
     /* Something is going wrong (probably NaNs, etc.). The x != x test is for
      * NaNs (if supported, otherwise always true) */
