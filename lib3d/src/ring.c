@@ -1,4 +1,4 @@
-/* $Id: ring.c,v 1.10 2003/06/16 12:35:30 aspert Exp $ */
+/* $Id: ring.c,v 1.11 2003/06/17 14:44:48 aspert Exp $ */
 
 
 /*
@@ -108,7 +108,7 @@ void build_star_global(const struct model *raw_model,
   for (i=0; i<raw_model->num_vert; i++) {
     if(num_edges[i] == 0) {
       ring[i].type = -1; 
-      
+      list_tail = edge_list_primal[i];
 #ifdef DEBUG
       DEBUG_PRINT("Vertex %d has no face...\n", i);
 #endif
