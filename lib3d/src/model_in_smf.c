@@ -1,4 +1,4 @@
-/* $Id: model_in_smf.c,v 1.4 2002/11/04 15:27:47 aspert Exp $ */
+/* $Id: model_in_smf.c,v 1.5 2002/11/04 15:38:26 aspert Exp $ */
 
 
 /*
@@ -61,7 +61,6 @@ int read_smf_tmesh(struct model **tmesh_ref, struct file_data *data) {
   int max_vidx=-1;
   int nvtcs=0;
   int nfaces=0;
-  int l_vertices=0, l_faces=0;
   int f0, f1, f2;
   float x, y, z;
   int rcode = 1;
@@ -191,7 +190,7 @@ int read_smf_tmesh(struct model **tmesh_ref, struct file_data *data) {
     memset(&bbmax, 0, sizeof(bbmax));
   }
 
-  if (rcode > 0) {
+  if (rcode >= 0) {
     tmesh->bBox[0] = bbmin;
     tmesh->bBox[1] = bbmax;
     tmesh->num_vert = nvtcs;
@@ -204,7 +203,7 @@ int read_smf_tmesh(struct model **tmesh_ref, struct file_data *data) {
                               nfaces*sizeof(face_t));
     free_block_list(&head_verts);
     free_block_list(&head_faces);
-    if (rcode == 0)
+    if (rcode >= 0)
       *tmesh_ref = tmesh;
     else 
       __free_raw_model(tmesh);
