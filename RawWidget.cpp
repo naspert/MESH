@@ -1,4 +1,4 @@
-/* $Id: RawWidget.cpp,v 1.12 2001/08/10 10:03:48 dsanta Exp $ */
+/* $Id: RawWidget.cpp,v 1.13 2001/08/10 10:10:42 dsanta Exp $ */
 #include <RawWidget.h>
 
 // 
@@ -434,15 +434,18 @@ void RawWidget::keyPressEvent(QKeyEvent *k) {
     }
     break;
   case Key_F5:
-    if (computed_normals) {
-      fprintf(stderr,"Normals have already been computed (or attempted to)\n");
-      break;
-    }
-    free(rawModelStruct->face_normals); // force calculation of new normals
-    rawModelStruct->face_normals = NULL;
-    if (compute_normals()) {
-      rebuild_list(); // rebuild display list to include new normals
-      glDraw();
+    if (renderFlag == RW_LIGHT_TOGGLE) {
+      if (computed_normals) {
+        fprintf(stderr,
+                "Normals have already been computed (or attempted to)\n");
+        break;
+      }
+      free(rawModelStruct->face_normals); // force calculation of new normals
+      rawModelStruct->face_normals = NULL;
+      if (compute_normals()) {
+        rebuild_list(); // rebuild display list to include new normals
+        glDraw();
+      }
     }
     break;
   default:
