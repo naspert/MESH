@@ -1,6 +1,12 @@
-/* $Id: compute_error.h,v 1.13 2001/09/10 15:07:43 dsanta Exp $ */
+/* $Id: compute_error.h,v 1.14 2001/09/11 16:29:39 dsanta Exp $ */
 #ifndef _COMPUTE_ERROR_PROTO
 #define _COMPUTE_ERROR_PROTO
+
+/* --------------------------------------------------------------------------*
+ *                         External includes                                 *
+ * --------------------------------------------------------------------------*/
+
+#include <model_analysis.h>
 
 #ifdef __cplusplus
 #define BEGIN_DECL extern "C" {
@@ -9,12 +15,6 @@
 #define BEGIN_DECL
 #define END_DECL
 #endif
-
-/* --------------------------------------------------------------------------*
- *                         External includes                                 *
- * --------------------------------------------------------------------------*/
-
-#include <3dmodel.h>
 
 BEGIN_DECL
 #undef BEGIN_DECL
@@ -37,6 +37,16 @@ struct face_error {
   double max_error;      /* The maximum error for the face */
   double mean_error;     /* The mean error for the face */
   double mean_sqr_error; /* The mean squared error for the face */
+};
+
+/* Model and error, plus miscellaneous model properties */
+struct model_error {
+  model *mesh;            /* The 3D model mesh */
+  float *verror;          /* The per vertex error array. NULL if not
+                           * present. */
+  float min_verror;       /* The minimum vertex error for the model */
+  float max_verror;       /* The maximum vertex error for the model */
+  struct model_info *info;/* The model information. NULL if not present. */
 };
 
 /* Statistics from the dist_surf_surf function */
@@ -79,6 +89,12 @@ void dist_surf_surf(const model *m1, model *m2, double sampling_step,
 /* Frees the memory allocated by dist_surf_surf() for the per face error
  * metrics. */
 void free_face_error(struct face_error *fe);
+
+/* Calculates the per vertex error and stores it in me, given the per face
+ * error metrics in fe. The list of faces incident on each vertex should be
+ * given in vfl. If NULL a temporary list is generated. */
+void calc_vertex_error(struct model_error *me, const struct face_error *fe,
+                       const struct face_list *vfl);
 
 END_DECL
 #undef END_DECL
