@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.25 2001/08/09 15:44:47 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.26 2001/08/09 15:56:24 dsanta Exp $ */
 
 #include <compute_error.h>
 
@@ -686,6 +686,7 @@ static double dist_pt_surf(vertex p, const struct triangle_list *tl,
   vertex p_rel;         /* coordinates of p relative to bbox_min */
   struct size3d grid_coord; /* coordinates of cell in which p is */
   int k;                /* cell index distance of current scan */
+  int kmax;             /* maximum limit for k (avoid infinite loops) */
   int m,n,o;            /* 3D cell indices */
   int cell_idx;         /* linear cell index */
   double dmin_sqr;      /* minimum distance squared */
@@ -753,6 +754,7 @@ static double dist_pt_surf(vertex p, const struct triangle_list *tl,
 
   /* Scan cells, at sequentially increasing index distance k */
   k = 0;
+  kmax = max3(grid_sz.x,grid_sz.y,grid_sz.z);
   dmin_sqr = DBL_MAX;
   do {
     dmin_update = 0;
@@ -875,7 +877,13 @@ static double dist_pt_surf(vertex p, const struct triangle_list *tl,
      * distance, we need to scan all triangles in cells at distance k+1, to
      * see if there is a smaller distance. */
     k++;
-  } while (dmin_sqr == DBL_MAX || dmin_update == 1);
+  } while ((dmin_sqr == DBL_MAX || dmin_update == 1) && (k <= kmax));
+  if (k > kmax) { /* Something is going wrong (probably NaNs, etc.) */
+    fprintf(stderr,
+            "ERROR: entered infinite loop! NaN or infinte value in model ?\n"
+            "       (otherwise you have stumbled on a bug, please report)\n");
+    exit(1);
+  }
 
   return sqrt(dmin_sqr);
 }
