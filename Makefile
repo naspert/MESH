@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.17 2001/08/23 08:47:26 dsanta Exp $
+# $Id: Makefile,v 1.18 2001/09/11 16:35:56 dsanta Exp $
 
 #
 # If the make variable PROFILE is defined to a non-empty value, profiling
@@ -130,7 +130,7 @@ VIEWER_EXE := $(BINDIR)/viewer
 VIEWER_C_SRCS := $(wildcard *.c)
 VIEWER_CXX_SRCS := $(filter-out moc_%.cpp,$(wildcard *.cpp))
 VIEWER_MOC_SRCS := RawWidget.h ScreenWidget.h InitWidget.h
-LIB3D_C_SRCS = 3dmodel_io.c normals.c geomutils.c
+LIB3D_C_SRCS = 3dmodel_io.c geomutils.c
 
 # Compiler and linker flags
 INCFLAGS = -I$(LIB3DDIR)/include -I.
@@ -149,7 +149,7 @@ LOADLIBES = -L$(QTDIR)/lib -L/usr/X11R6/lib
 LDFLAGS =
 
 # Preprocessor flags
-CPPFLAGS = $(INCFLAGS) -D_METRO $(XTRA_CPPFLAGS)
+CPPFLAGS = $(INCFLAGS) $(XTRA_CPPFLAGS)
 
 # Construct basic compiler flags
 CFLAGS = $(WARN_CFLAGS) $(XTRA_CFLAGS)
