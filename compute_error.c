@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.97 2004/04/30 07:50:21 aspert Exp $ */
+/* $Id: compute_error.c,v 1.98 2004/08/17 15:11:46 aspert Exp $ */
 
 
 /*
@@ -63,7 +63,7 @@
 
 /* Ratio used to derive the cell size. It is the ratio between the cubic cell
  * side length and the side length of an average equilateral triangle. */
-#define CELL_TRIAG_RATIO 1
+#define CELL_TRIAG_RATIO 0.707
 
 /* If defined statistics for the dist_pt_surf() function are computed */
 /* #define DO_DIST_PT_SURF_STATS */
@@ -368,7 +368,7 @@ static double get_cell_size(const struct triangle_list *tl,
    * as the side of an equilateral triangle which's surface equals the average
    * triangle surface of m2. The cubic cell side is then CELL_TRIAG_RATIO
    * times that. */
-  cell_sz = CELL_TRIAG_RATIO*sqrt(tl->area/tl->n_triangles*2/sqrt(3));
+  cell_sz = CELL_TRIAG_RATIO*sqrt(tl->area/tl->n_triangles*4/sqrt(3));
 
   /* Avoid values that can overflow or underflow */
   if (cell_sz < DBL_MIN*DMARGIN) { /* Avoid division by zero with cell_sz */

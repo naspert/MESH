@@ -30,11 +30,14 @@ GNU make and supports Linux (with GCC), IRIX (with the MIPSPro compilers)
 and Solaris (with the Sun compiler). Other configurations might require some 
 (hopefully minor) modifications.
 
-* Specific notes for RedHat :
+* Specific notes for RedHat/Fedora :
       - If you experience crashes and/or various troubles with OpenGL apps, 
 	and you are using NVidia's driver, please check that you are using 
 	*recent* drivers (version 1.0-4191 or more, apparently they solved
 	quite some issues in this release).
+      - With Fedora 2, you have to use different compilation flags:
+	 o line 355, replace "-lqt" with "-lqt-mt" in the LDLIBS value
+	 o line 280, add a "-Wno-long-long" to the WARN_CXX_FLAGS value
 
 * Notes for using Intel compiler (ICC) or Portland Group compiler (PGCC)
 This section only applies for Linux. The Makefile will try to detect your

@@ -1,3 +1,8 @@
+* Changes from v1.11 to v1.12
+	- Cleanup up the file format detection code
+	- Fixed (again) the case when a file starts with whitespaces before header
+	- Corrected the cell_sz computation logic (pointed out by Xia Ning)
+
 * Changes from v1.10 to v1.11:
 	- Fixed a bug in the file format detection code (SMF files with no 
 	  leading comments were incorrectly read)
