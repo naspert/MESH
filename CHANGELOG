@@ -1,7 +1,7 @@
 * Chnages from v1.5 to v1.6 :
 	- Updated the paper status in copyright headers 
 	  (no longer 'submitted to' but 'accepted')
-	- Added a basic PLY reader (ASCII only)
+	- Added a basic PLY reader (ASCII and binary)
 	- Split 'model_in.c' into per-format files
 
 * Changes from v1.4 to v1.5 :

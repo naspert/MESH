@@ -30,7 +30,7 @@ GNU make and supports Linux (with GCC), IRIX (with the MIPSPro compilers)
 and Solaris (with the Sun compiler). Other configurations might require some 
 (hopefully minor) modifications.
 
-* Specific notes for RedHat-7.3 :
+* Specific notes for RedHat-7.3  :
 Several things are broken, on RedHat/NVidia's side:
       - In some cases, the OpenGL window cannot open, since calling the 
 	QGLWidget constructor does a segfault in Qt internals (reported as
@@ -92,8 +92,11 @@ icluding Normal vectors.
 * The SMF parser will *only* read vertices and triangular faces. It
 will ignore everything else in the SMF specification (bindings, colors, 
 transforms, begin/end ...).
-* The PLY parser only reads vertices and triangular faces. It will not read 
-any 'property' field. Moreover, only the ASCII format is supported.
+* The PLY parser only reads vertices and triangular faces. It will not
+read any unneeded 'property' field. The ASCII and binary format are
+supported. If a binary model cannot be read, try to hand-edit the
+header, turning the 'binary_little_endian' field into
+'binary_big_endian' (or the contrary).
 
 
 Please report any bugs or comments to:
