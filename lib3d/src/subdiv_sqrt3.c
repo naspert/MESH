@@ -1,4 +1,4 @@
-/* $Id: subdiv_sqrt3.c,v 1.4 2003/03/24 12:16:39 aspert Exp $ */
+/* $Id: subdiv_sqrt3.c,v 1.5 2004/04/30 06:54:00 aspert Exp $ */
 #include <3dutils.h>
 #include <subdiv_methods.h>
 #include <subdiv.h>
@@ -42,9 +42,6 @@ struct model* subdiv_sqrt3(struct model *raw_model,
     
   build_star_global(raw_model, rings);
 
- 
-  /* FIXME : This may be too small a storage in case of a mesh
-     w. boundaries. Replace this w. a block_list maybe... */
   temp_face = (struct block_list*)malloc(sizeof(struct block_list));
   if (init_block_list(temp_face, sizeof(face_t)) != 0)
     abort();
