@@ -1,4 +1,4 @@
-/* $Id: model_analysis.c,v 1.26 2002/03/29 17:20:30 dsanta Exp $ */
+/* $Id: model_analysis.c,v 1.27 2002/03/29 17:36:09 dsanta Exp $ */
 
 
 /*
@@ -822,22 +822,16 @@ static bmap_t * model_topology(int n_vtcs, const face_t *mfaces,
  * --------------------------------------------------------------------------*/
 
 /* See model_analysis.h */
-void analyze_model(struct model *m, const struct face_list *flist,
-                   struct model_info *info, int do_orient)
+void analyze_model(struct model *m, struct model_info *info, int do_orient)
 {
-  struct face_list *flist_local; /* the locally generated flist, if any */
+  struct face_list *flist;       /* list of faces incident on each vertex */
   bmap_t *face_revo;             /* flag for each face: if its orientation
                                   * should be reversed. */
   bmap_t *manifold_vtcs;         /* array flagging manifold vertices */
 
   /* Initialize */
   memset(info,0,sizeof(*info));
-  if (flist == NULL) {
-    flist_local = faces_of_vertex(m);
-    flist = flist_local;
-  } else {
-    flist_local = NULL;
-  }
+  flist = faces_of_vertex(m,&(info->n_degenerate));
 
   /* Make topology and orientation analysis */
   manifold_vtcs = model_topology(m->num_vert,m->faces,flist,info);
@@ -854,11 +848,11 @@ void analyze_model(struct model *m, const struct face_list *flist,
   /* Free memory */
   free(face_revo);
   free(manifold_vtcs);
-  free_face_lists(flist_local,m->num_vert);
+  free_face_lists(flist,m->num_vert);
 }
 
 /* See model_analysis.h */
-struct face_list *faces_of_vertex(const struct model *m)
+struct face_list *faces_of_vertex(const struct model *m, int *n_degenerate)
 {
   int j,jmax;           /* indices and loop limits */
   int v0,v1,v2;         /* current triangle's vertex indices */
@@ -871,12 +865,15 @@ struct face_list *faces_of_vertex(const struct model *m)
 
   fl = xa_calloc(m->num_vert,sizeof(*fl));
   /* First scan: count number of incident faces per vertex */
-  for (j=0, jmax=m->num_faces; j<jmax; j++) {
+  for (*n_degenerate=0, j=0, jmax=m->num_faces; j<jmax; j++) {
     v0 = m->faces[j].f0;
     v1 = m->faces[j].f1;
     v2 = m->faces[j].f2;
     /* degenerate faces not included */
-    if (v0 == v1 || v0 == v2 || v1 == v2) continue;
+    if (v0 == v1 || v0 == v2 || v1 == v2) {
+      (*n_degenerate)++;
+      continue;
+    }
     fl[v0].n_faces++;
     fl[v1].n_faces++;
     fl[v2].n_faces++;

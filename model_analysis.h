@@ -1,4 +1,4 @@
-/* $Id: model_analysis.h,v 1.8 2002/03/29 13:34:46 dsanta Exp $ */
+/* $Id: model_analysis.h,v 1.9 2002/03/29 17:36:09 dsanta Exp $ */
 
 
 /*
@@ -80,6 +80,7 @@ struct model_info {
   int orig_oriented;    /* Model is originally oriented. */
   int manifold;         /* Model is manifold. */
   int closed;           /* Model is closed (i.e. defines a volume) */
+  int n_degenerate;     /* The number of degenerate faces */
   int n_disjoint_parts; /* The number of disjoint (i.e. not connected) parts
                          * in the model. If there are more than one, the other
                          * fields refer to the union of all parts (i.e. if the
@@ -94,18 +95,17 @@ struct model_info {
  * --------------------------------------------------------------------------*/
 
 /* Analyzes model m, returning the information in *info. Degenerate faces in m
- * are ignored in the analysis. The list of faces incident on each vertex (as
- * obtained by faces_of_vertex()) is given by flist. If NULL a list is locally
- * generated. If do_orient is non-zero and the model is orientable, the model
- * m will be modified so as to be oriented (if the model is not orientable, no
- * modification is done). The entries for each vertex in flist are reordered,
- * but the contents are the same. */
-void analyze_model(struct model *m, const struct face_list *flist,
-                   struct model_info *info, int do_orient);
+ * are ignored in the analysis. If do_orient is non-zero and the model is
+ * orientable, the model m will be modified so as to be oriented (if the model
+ * is not orientable, no modification is done). The entries for each vertex in
+ * flist are reordered, but the contents are the same. */
+void analyze_model(struct model *m, struct model_info *info, int do_orient);
 
 /* Returns an array of length m->num_vert with the list of faces incident on
- * each vertex. Degenerate faces are ignored. */
-struct face_list *faces_of_vertex(const struct model *m);
+ * each vertex. The number of degenerate faces is returned in
+ * *n_degenerate. Degenerate faces are ignored (i.e. not included as incident
+ * on any vertex). */
+struct face_list *faces_of_vertex(const struct model *m, int *n_degenerate);
 
 /* Frees the storage for the array of face lists fl, of length n */
 void free_face_lists(struct face_list *fl, int n);

@@ -1,4 +1,4 @@
-/* $Id: mesh_run.c,v 1.17 2002/03/29 13:34:46 dsanta Exp $ */
+/* $Id: mesh_run.c,v 1.18 2002/03/29 17:36:08 dsanta Exp $ */
 
 
 /*
@@ -132,9 +132,9 @@ void mesh_run(const struct args *args, struct model_error *model1,
   start_time = clock();
   bbox1_diag = dist(model1->mesh->bBox[0], model1->mesh->bBox[1]);
   bbox2_diag = dist(model2->mesh->bBox[0], model2->mesh->bBox[1]);
-  analyze_model(model1->mesh,NULL,m1info,0);
+  analyze_model(model1->mesh,m1info,0);
   model1->info = m1info;
-  analyze_model(model2->mesh,NULL,m2info,1);
+  analyze_model(model2->mesh,m2info,1);
   model2->info = m2info;
   /* Adjust sampling step size */
   abs_sampling_step = args->sampling_step*bbox2_diag;
@@ -147,6 +147,8 @@ void mesh_run(const struct args *args, struct model_error *model1,
                 model1->mesh->num_vert,model2->mesh->num_vert);
   outbuf_printf(out,"Number of triangles:    \t%11d\t%11d\n",
                 model1->mesh->num_faces,model2->mesh->num_faces);
+  outbuf_printf(out,"Degenerate triangles:   \t%11d\t%11d\n",
+                m1info->n_degenerate,m2info->n_degenerate);
   outbuf_printf(out,"BoundingBox diagonal:   \t%11g\t%11g\n",
                 bbox1_diag,bbox2_diag);
   outbuf_printf(out,"Number of disjoint parts:\t%11d\t%11d\n",
