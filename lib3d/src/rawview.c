@@ -1,4 +1,4 @@
-/* $Id: rawview.c,v 1.12 2002/06/04 13:06:39 aspert Exp $ */
+/* $Id: rawview.c,v 1.13 2002/06/04 13:10:55 aspert Exp $ */
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -34,8 +34,8 @@ struct display_lists_indices dl_idx;
 /* Here is the callback function when mouse buttons are pressed */
 /* or released. It does nothing else than store their state     */
 /* ************************************************************ */
-void mouse_button(int button, int state, int x, int y) {
-switch(button) {
+static void mouse_button(int button, int state, int x, int y) {
+  switch(button) {
   case GLUT_LEFT_BUTTON:
     if (state==GLUT_DOWN) {
       mouse.oldx = x;
@@ -60,6 +60,8 @@ switch(button) {
     } else if (state == GLUT_UP)
       mouse.right_button_state = 0;
     break;
+  default:
+    break;
   }
 }
 
@@ -68,7 +70,7 @@ switch(button) {
 /* Callback function when the mouse is dragged in the window */
 /* Only does sthg when a button is pressed                   */
 /* ********************************************************* */
-void motion_mouse(int x, int y) {
+static void motion_mouse(int x, int y) {
   int dx, dy;
   GLfloat dth, dph, dpsi;
 
@@ -111,7 +113,7 @@ void motion_mouse(int x, int y) {
 /* Reshape callbak function. Only sets correct values for the */
 /* viewport and projection matrices.                          */
 /* ********************************************************** */
-void reshape(int width, int height) {
+static void reshape(int width, int height) {
   glViewport(0, 0, width, height);
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
@@ -126,7 +128,7 @@ void reshape(int width, int height) {
 /* ******************************************** */
 /* Initial settings of the rendering parameters */
 /* ******************************************** */
-void gfx_init(struct model *raw_model) {
+static void gfx_init(struct model *raw_model) {
   const char *glverstr;
 
   glverstr = (const char*)glGetString(GL_VERSION);
@@ -161,7 +163,7 @@ void gfx_init(struct model *raw_model) {
  * Display callback - This just calls the *true* function which lies
  * inside rawview_misc.c 
  * ***************************************************************** */
-void display() {
+static void display() {
   display_wrapper(&gl_ctx, &dl_idx);
 }
 
@@ -170,7 +172,7 @@ void display() {
 /* **************************** */
 /* Callback for the normal keys */
 /* **************************** */
-void norm_key_pressed(unsigned char key, int x, int y) {
+static void norm_key_pressed(unsigned char key, int x, int y) {
   switch(key) {
   case 'i':
   case 'I':
@@ -184,6 +186,8 @@ void norm_key_pressed(unsigned char key, int x, int y) {
     __free_raw_model(gl_ctx.raw_model);
     exit(0);
     break;
+  default:
+    break;
   }
 }
 
@@ -192,7 +196,7 @@ void norm_key_pressed(unsigned char key, int x, int y) {
 /* ********************************************************* */
 /* Callback function for the special keys (arrows, function) */
 /* ********************************************************* */
-void sp_key_pressed(int key, int x, int y) {
+static void sp_key_pressed(int key, int x, int y) {
 
 
   GLboolean light_mode;
