@@ -1,4 +1,5 @@
-/* $Id: model_in_raw.c,v 1.1 2002/08/15 15:39:03 aspert Exp $ */
+/* $Id: model_in_raw.c,v 1.2 2002/08/30 07:56:04 aspert Exp $ */
+
 
 /*
  *
@@ -35,9 +36,12 @@
  *
  *  Reference :
  *   "MESH : Measuring Errors between Surfaces using the Hausdorff distance"
- *   Accepted for publication, ICME 2002, available on http://mesh.epfl.ch
+ *   in Proceedings of IEEE Intl. Conf. on Multimedia and Expo (ICME) 2002, 
+ *   pp. 705-708, available on http://mesh.epfl.ch
  *
  */
+
+
 #include <model_in.h>
 
 /* Reads 'n_faces' triangular faces from the '*data' stream in raw ascii

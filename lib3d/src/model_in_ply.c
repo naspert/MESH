@@ -1,4 +1,5 @@
-/* $Id: model_in_ply.c,v 1.13 2002/08/27 13:09:00 aspert Exp $ */
+/* $Id: model_in_ply.c,v 1.14 2002/08/30 07:56:03 aspert Exp $ */
+
 
 /*
  *
@@ -35,9 +36,12 @@
  *
  *  Reference :
  *   "MESH : Measuring Errors between Surfaces using the Hausdorff distance"
- *   Accepted for publication, ICME 2002, available on http://mesh.epfl.ch
+ *   in Proceedings of IEEE Intl. Conf. on Multimedia and Expo (ICME) 2002, 
+ *   pp. 705-708, available on http://mesh.epfl.ch
  *
  */
+
+
 
 /* PLY file format reader written by N. Aspert 
  * 

@@ -1,4 +1,5 @@
-/* $Id: types.h,v 1.1 2002/08/26 12:11:27 aspert Exp $ */
+/* $Id: types.h,v 1.2 2002/08/30 07:56:03 aspert Exp $ */
+
 
 /*
  *
@@ -35,9 +36,12 @@
  *
  *  Reference :
  *   "MESH : Measuring Errors between Surfaces using the Hausdorff distance"
- *   Accepted for publication, ICME 2002, available on http://mesh.epfl.ch
+ *   in Proceedings of IEEE Intl. Conf. on Multimedia and Expo (ICME) 2002, 
+ *   pp. 705-708, available on http://mesh.epfl.ch
  *
  */
+
+
 
 
 /*
