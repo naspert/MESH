@@ -1,4 +1,4 @@
-/* $Id: ScreenWidget.cpp,v 1.43 2002/03/15 16:46:31 aspert Exp $ */
+/* $Id: ScreenWidget.cpp,v 1.44 2002/04/02 08:05:17 aspert Exp $ */
 
 
 /*
@@ -345,6 +345,10 @@ void ScreenWidget::infoModel(struct model_error *model, int id)
 
   fullText += tmp.sprintf("%d connected component(s)\n", 
                           model->info->n_disjoint_parts);
+
+  if (model->info->n_degenerate > 0) 
+    fullText += tmp.sprintf("%d degenerate triangle(s)\n", 
+                            model->info->n_degenerate);
 
   switch(id) {
   case LEFT_MODEL:
