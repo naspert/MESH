@@ -1,4 +1,4 @@
-/* $Id: mesh_run.c,v 1.18 2002/03/29 17:36:08 dsanta Exp $ */
+/* $Id: mesh_run.c,v 1.19 2002/03/29 22:02:58 dsanta Exp $ */
 
 
 /*
@@ -132,9 +132,9 @@ void mesh_run(const struct args *args, struct model_error *model1,
   start_time = clock();
   bbox1_diag = dist(model1->mesh->bBox[0], model1->mesh->bBox[1]);
   bbox2_diag = dist(model2->mesh->bBox[0], model2->mesh->bBox[1]);
-  analyze_model(model1->mesh,m1info,0);
+  analyze_model(model1->mesh,m1info,0,args->verb_analysis,out,"model 1");
   model1->info = m1info;
-  analyze_model(model2->mesh,m2info,1);
+  analyze_model(model2->mesh,m2info,1,args->verb_analysis,out,"model 2");
   model2->info = m2info;
   /* Adjust sampling step size */
   abs_sampling_step = args->sampling_step*bbox2_diag;

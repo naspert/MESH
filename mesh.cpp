@@ -1,4 +1,4 @@
-/* $Id: mesh.cpp,v 1.34 2002/03/18 14:04:22 aspert Exp $ */
+/* $Id: mesh.cpp,v 1.35 2002/03/29 22:02:58 dsanta Exp $ */
 
 
 /*
@@ -147,6 +147,9 @@ static void print_usage(FILE *out)
   fprintf(out,"\n");
   fprintf(out,"  -q\tQuiet, do not print progress meter.\n");
   fprintf(out,"\n");
+  fprintf(out,"  -va\tBe verbose about non-manifold vertices during the\n");
+  fprintf(out,"     \tmodel analysis phase.\n");
+  fprintf(out,"\n");
   fprintf(out,"  -t\tDisplay only textual results, do not display the GUI.\n");
   fprintf(out,"\n");
   fprintf(out,
@@ -209,6 +212,8 @@ static void parse_args(int argc, char **argv, struct args *pargs)
         pargs->no_gui = 1;
       } else if (strcmp(argv[i],"-q") == 0) { /* quiet */
         pargs->quiet = 1;
+      } else if (strcmp(argv[i],"-va") == 0) { /* verbose analysis */
+        pargs->verb_analysis = 1;
       } else if (strcmp(argv[i],"-s") == 0) { /* symmetric distance */
         pargs->do_symmetric = 1;
       } else if (strcmp(argv[i],"-l") == 0) { /* sampling step */

@@ -1,4 +1,4 @@
-/* $Id: mesh_run.h,v 1.10 2002/03/15 16:32:14 aspert Exp $ */
+/* $Id: mesh_run.h,v 1.11 2002/03/29 22:02:58 dsanta Exp $ */
 
 
 /*
@@ -63,6 +63,7 @@ struct args {
   char *m2_fname; /* filename of model 2 */
   int  no_gui;    /* text only flag */
   int quiet;      /* do not display extra info flag*/
+  int verb_analysis; /* verbose analysis */
   double sampling_step; /* The sampling step, as fraction of the bounding box
                          * diagonal of model 2. */
   int min_sample_freq;  /* Minimum sampling frequency to enfore on each

@@ -1,4 +1,4 @@
-/* $Id: InitWidget.cpp,v 1.28 2002/03/15 16:32:05 aspert Exp $ */
+/* $Id: InitWidget.cpp,v 1.29 2002/03/29 22:02:58 dsanta Exp $ */
 
 
 /*
@@ -123,6 +123,10 @@ InitWidget::InitWidget(struct args defArgs,
   chkLogWindow = new QCheckBox("Log output in external window", this);
   chkLogWindow->setChecked(pargs.do_wlog);
 
+  /* Verbose non-manifolds enable checkbox */
+  chkVerbNMV = new QCheckBox("Verbose non-manifold vertices", this);
+  chkVerbNMV->setChecked(pargs.verb_analysis);
+  
   /* Texture enable checkbox */
   chkTexture = new QCheckBox("Enable error display with texture (CAUTION)", 
                              this);
@@ -133,7 +137,7 @@ InitWidget::InitWidget(struct args defArgs,
   connect(OK, SIGNAL(clicked()), this, SLOT(getParameters()));
 
   /* Build the grid layout */
-  bigGrid = new QGridLayout( this, 10, 3, 20 );
+  bigGrid = new QGridLayout( this, 11, 3, 10 );
 
   /* 1st mesh input */
   bigGrid->addWidget(qlabMesh1, 0, 0, Qt::AlignRight);
@@ -157,13 +161,14 @@ InitWidget::InitWidget(struct args defArgs,
   /* Build grid layout for symmetric distance checkbox */
   bigGrid->addMultiCellWidget(chkSymDist, 6, 6, 0, 2, Qt::AlignLeft);
   bigGrid->addMultiCellWidget(chkLogWindow, 7, 7, 0, 2, Qt::AlignLeft);
-  bigGrid->addMultiCellWidget(chkTexture, 8, 8, 0, 2, Qt::AlignLeft);
+  bigGrid->addMultiCellWidget(chkVerbNMV, 8, 8, 0, 2, Qt::AlignLeft);
+  bigGrid->addMultiCellWidget(chkTexture, 9, 9, 0, 2, Qt::AlignLeft);
 
 
   /* Build grid layout for OK button */
   setMinimumWidth(100);
   OK->setMinimumWidth((int)(0.4*minimumWidth()));
-  bigGrid->addWidget(OK, 9, 1, Qt::AlignCenter);
+  bigGrid->addWidget(OK, 10, 1, Qt::AlignCenter);
   qpxMeshIcon = new QPixmap((const char**)meshIcon);
   setIcon(*qpxMeshIcon);
   tmp.sprintf("MESH %s",version);
@@ -248,6 +253,7 @@ void InitWidget::meshSetUp() {
   pargs.do_symmetric = chkSymDist->isChecked() == TRUE;
   pargs.min_sample_freq = atoi((char*)qledMinSplFreq->text().latin1());
   pargs.do_wlog = chkLogWindow->isChecked() == TRUE;
+  pargs.verb_analysis = (chkVerbNMV->isChecked() == TRUE);
   pargs.do_texture = (chkTexture->isChecked() == TRUE);
 
   if (!pargs.do_wlog) {
