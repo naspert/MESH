@@ -1,4 +1,4 @@
-/* $Id: viewer.cpp,v 1.6 2001/05/30 15:17:05 jacquet Exp $ */
+/* $Id: viewer.cpp,v 1.7 2001/05/30 15:25:31 jacquet Exp $ */
 
 #include <qapplication.h>
 #include <ScreenWidget.h>
@@ -6,7 +6,7 @@
 #define min3(x,y,z) (((x)<(y))?(((x)<(z))?(x):(z)):(((y)<(z))?(y):(z)))
 
 /*****************************************************************************/
-/***********   fonction principale                                      ******/
+/*             fonction principale                                           */
 /*****************************************************************************/
 
 
@@ -39,18 +39,21 @@ int main( int argc, char **argv )
     exit(-1);
   }
 
+
   in_filename1 = argv[1];
   in_filename2 = argv[2];
   samplethin=atof(argv[3]);
   k=(int)floor(1.0/samplethin);
   printf("k= %d\n",k);
   
+  /* mise en memoire de chaque point des deux objets */
   raw_model1=read_raw_model(in_filename1);
   raw_model2=read_raw_model(in_filename2);
   
   bbox0=raw_model2->bBox[0];
   bbox1=raw_model2->bBox[1];
 
+  /* calcul de la taille de la grille */
   ccube=min3(bbox1.x-bbox0.x,bbox1.y-bbox0.y,bbox1.z-bbox0.z)/20;
 
   grille.x=floor((bbox1.x-bbox0.x)/ccube)+1;
@@ -58,6 +61,7 @@ int main( int argc, char **argv )
   grille.z=floor((bbox1.z-bbox0.z)/ccube)+1;
   printf("ccube: %lf grille: %lf %lf %lf\n",ccube,grille.x,grille.y,grille.z);
 
+  /* on repertorie pour chaque cellule la liste des faces qu'elle contient */
   cell=liste(raw_model2,samplethin,grille,ccube);
   repface=cublist(cell,raw_model2,grille);
   
@@ -68,6 +72,8 @@ int main( int argc, char **argv )
   listoffaces(raw_model1,nbfaces,list_face);
   error_per_face=(double**)malloc(raw_model1->num_faces*sizeof(double*));
 
+
+  /* on calcule pour chaque echantillon la distance a l'objet2 */ 
   for(i=0;i<raw_model1->num_faces;i++) {
     error_per_face[i]=(double*)malloc(2*sizeof(double));
     
@@ -124,11 +130,15 @@ int main( int argc, char **argv )
     
  }
  meanerror/=surfacetot;
- printf("distance maximale: %lf \n",superdmax);
+
+ printf("\ndistance maximale: %lf \n",superdmax);
  printf("distance minimale: %lf \n",superdmin); 
  printf("nbsampleteste: %d\n",h);
  printf("erreur moyenne: %lf\n",meanerror);
 
+
+ /* on assigne une couleur a chaque vertex qui est proportionnelle */
+ /* a la moyenne de l'erreur sur les faces incidentes */
  raw_model1->error=(int *)malloc(raw_model1->num_vert*sizeof(int));
  raw_model2->error=(int *)calloc(raw_model2->num_vert,sizeof(int));
 
@@ -160,12 +170,12 @@ int main( int argc, char **argv )
      raw_model1->error[i]=0;
  }
 
-
-  QApplication::setColorSpec( QApplication::CustomColor );
-  QApplication a( argc, argv );  
-  
-  ScreenWidget w(raw_model1,raw_model2);
-  a.setMainWidget( &w );
-  w.show();
-  return a.exec();
+ /* affichage de la fenetre graphique */
+ QApplication::setColorSpec( QApplication::CustomColor );
+ QApplication a( argc, argv );  
+ 
+ ScreenWidget w(raw_model1,raw_model2);
+ a.setMainWidget( &w );
+ w.show();
+ return a.exec();
 }
