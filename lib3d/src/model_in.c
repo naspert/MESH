@@ -1,4 +1,4 @@
-/* $Id: model_in.c,v 1.18 2002/04/11 15:33:52 aspert Exp $ */
+/* $Id: model_in.c,v 1.19 2002/04/12 11:49:07 aspert Exp $ */
 
 
 /*
@@ -1297,6 +1297,9 @@ static int read_vrml_ifs(struct model *tmesh, struct file_data *data)
     if (n_vtcs == -1) n_vtcs = 0;
     if (n_faces == -1) n_faces = 0;
     if (n_vtcs <= max_vidx) {
+#ifdef DEBUG
+      printf("[read_vrml_ifs] n_vtcs=%d <= max_vidx=%d\n", n_vtcs, max_vidx);
+#endif
       rcode = MESH_MODEL_ERR;
     } else {
       n_vtcs = max_vidx+1;
@@ -1804,26 +1807,26 @@ static int read_smf_tmesh(struct model **tmesh_ref, struct file_data *data) {
       /* Do not forget that SMF vertex indices start at 1 !! */
       if ((c = sscanf(line_buf, "%s %d %d %d %d\n", 
                       tmp, &f0, &f1, &f2, &f3)) == 4) {
-        tmesh->faces[nfaces].f0 = f0-1;
-        tmesh->faces[nfaces].f1 = f1-1;
-        tmesh->faces[nfaces++].f2 = f2-1;
+        tmesh->faces[nfaces].f0 = --f0;
+        tmesh->faces[nfaces].f1 = --f1;
+        tmesh->faces[nfaces++].f2 = --f2;
 
-        if (f0 > max_vidx) max_vidx = f0-1;
-        if (f1 > max_vidx) max_vidx = f1-1;
-        if (f2 > max_vidx) max_vidx = f2-1;
+        if (f0 > max_vidx) max_vidx = f0;
+        if (f1 > max_vidx) max_vidx = f1;
+        if (f2 > max_vidx) max_vidx = f2;
       } else if (c == 5) { /* quad -> split it */
-        tmesh->faces[nfaces].f0 = f0-1;
-        tmesh->faces[nfaces].f1 = f1-1;
-        tmesh->faces[nfaces++].f2 = f2-1;
+        tmesh->faces[nfaces].f0 = --f0;
+        tmesh->faces[nfaces].f1 = --f1;
+        tmesh->faces[nfaces++].f2 = --f2;
 
-        tmesh->faces[nfaces].f0 = f1-1;
-        tmesh->faces[nfaces].f1 = f2-1;
-        tmesh->faces[nfaces++].f2 = f3-1;
+        tmesh->faces[nfaces].f0 = f1;
+        tmesh->faces[nfaces].f1 = f2;
+        tmesh->faces[nfaces++].f2 = --f3;
 
-        if (f0 > max_vidx) max_vidx = f0-1;
-        if (f1 > max_vidx) max_vidx = f1-1;
-        if (f2 > max_vidx) max_vidx = f2-1;
-        if (f3 > max_vidx) max_vidx = f3-1;
+        if (f0 > max_vidx) max_vidx = f0;
+        if (f1 > max_vidx) max_vidx = f1;
+        if (f2 > max_vidx) max_vidx = f2;
+        if (f3 > max_vidx) max_vidx = f3;
       } else {
         rcode = MESH_CORRUPTED;
         break;
