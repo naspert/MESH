@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.41 2002/03/15 16:03:47 aspert Exp $
+# $Id: Makefile,v 1.42 2002/03/18 09:12:59 aspert Exp $
 
 
 
@@ -220,7 +220,7 @@ MESH_MOC_SRCS := RawWidget.h ScreenWidget.h InitWidget.h ColorMapWidget.h
 LIB3D_C_SRCS = geomutils.c model_in.c
 
 # Files for distribution
-MISC_FILES = Makefile Mesh.dsp Mesh.dsw meshIcon.xpm
+MISC_FILES = Makefile Mesh.dsp Mesh.dsw meshIcon.xpm README COPYING AUTHORS
 LIB3D_INCLUDES = 3dmodel.h geomutils.h model_in.h
 MESH_INCLUDES := $(wildcard *.h)
 
