@@ -1,4 +1,4 @@
-/* $Id: subdiv_butterfly.c,v 1.3 2002/06/04 08:46:04 aspert Exp $ */
+/* $Id: subdiv_butterfly.c,v 1.4 2002/09/11 07:02:56 aspert Exp $ */
 
 #include <3dmodel.h>
 #include <normals.h>
@@ -15,17 +15,17 @@
 # define _5_12   0.4166666666666 /* 5.0/12.0 */
 
 /* Precomputed regular stencil */
-const static float reg_sten[6] = {0.25 - _2W_,  
+static const float reg_sten[6] = {0.25 - _2W_,  
                                   0.125 + _2W_, -0.125 - _2W_, 
                                   _2W_, -0.125 - _2W_, 0.125 + _2W_};
-const static float sten_4[4] = {0.375, 0.0, -0.125, 0.0};
-const static float sten_3[3] = {_5_12, _M1_12, _M1_12};
+static const float sten_4[4] = {0.375, 0.0, -0.125, 0.0};
+static const float sten_3[3] = {_5_12, _M1_12, _M1_12};
 
 /* 
  * Builds a Butterfly subd. mask of size n for irregular vertices.
  * The array must be pre-malloc'ed !
  */
-void make_sub_mask(float *mask, int n) {
+static void make_sub_mask(float *mask, int n) {
   int j;
   float inv_n;
 
