@@ -1,4 +1,4 @@
-/* $Id: RawWidget.cpp,v 1.62 2003/01/13 12:18:23 aspert Exp $ */
+/* $Id: RawWidget.cpp,v 1.63 2003/01/13 12:36:32 aspert Exp $ */
 
 
 /*
@@ -164,6 +164,7 @@ void RawWidget::setLine(bool state) {
   // state=FALSE -> switch to fill
   GLint line_state[2]; // front and back values
 
+
   if (!gl_initialized) {
     fprintf(stderr,
             "RawWidget::setLine() called before GL context is initialized!\n");
@@ -176,10 +177,17 @@ void RawWidget::setLine(bool state) {
 
   glGetIntegerv(GL_POLYGON_MODE,line_state);
   if (line_state[0]==GL_FILL && line_state[1]==GL_FILL && state==TRUE) {
+    
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    QApplication::setOverrideCursor(Qt::waitCursor);
+    rebuildList();
+    QApplication::restoreOverrideCursor();
   } else if (line_state[0]==GL_LINE && line_state[1]==GL_LINE && 
 	     state==FALSE) {
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    QApplication::setOverrideCursor(Qt::waitCursor);
+    rebuildList();
+    QApplication::restoreOverrideCursor();
   } else {
     printf("Invalid state value found for GL_POLYGON_MODE: %d %d\n",
            line_state[0],line_state[1]);
@@ -211,7 +219,8 @@ void RawWidget::setLight(bool state) {
         fprintf(stderr,"ERROR: normals were not computed!\n");
       }
     }
-    else if (light_state==GL_TRUE){// We are now switching to wireframe mode
+    else if (light_state==GL_TRUE){// We are now switching to
+                                   // non-lighted mode
       glDisable(GL_LIGHTING);
     }
     checkGlErrors("setLight()");
