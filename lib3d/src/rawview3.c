@@ -1,4 +1,4 @@
-/* $Id: rawview3.c,v 1.10 2001/05/01 12:34:39 aspert Exp $ */
+/* $Id: rawview3.c,v 1.11 2001/05/04 12:35:00 aspert Exp $ */
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <GL/glut.h>
@@ -13,7 +13,9 @@ GLdouble distance, dstep; /* distance and incremental distance step */
 GLdouble mvmatrix[16]; /* Buffer for GL_MODELVIEW_MATRIX */
 GLuint model_list = 0; /* display lists idx storage */
 GLuint normal_list = 0;
-
+#ifdef DRAW_VTX_LABELS
+GLuint char_list = 0;
+#endif
 int oldx, oldy;
 int left_button_state;
 int middle_button_state;
@@ -21,6 +23,9 @@ int right_button_state;
 int tr_mode = 1; /* Default = draw triangles */
 int light_mode = 0;
 int draw_normals = 0;
+#ifdef DRAW_VTX_LABELS
+int draw_vtx_labels = 0;
+#endif
 vertex center;
 int normals_done = 0;
 model *raw_model;
@@ -28,8 +33,9 @@ char *in_filename;
 int grab_number = 0;
 int mesa_minor = -1; /* Used 'cause Mesa > 3.1 is not trusted when rendering */
 /* in the 'lighted' mode */
-
-
+#ifdef DRAW_VTX_LABELS
+model *r_model;
+#endif
 /* *********************************************************** */
 /* This is a _basic_ frame grabber -> copy all the RGB buffers */
 /* and put'em into grab$$$.ppm where $$$ is [000; 999]         */
@@ -181,8 +187,27 @@ void rebuild_list(model *raw_model) {
     glDeleteLists(normal_list, 1);
   model_list = glGenLists(1);
 
+#ifdef DRAW_VTX_LABELS
+  if (glIsList(char_list) == GL_TRUE)
+    glDeleteLists(char_list, 256);
+#endif
+
   if (draw_normals)
     normal_list = glGenLists(1);
+
+#ifdef DRAW_VTX_LABELS
+  if (draw_vtx_labels) {
+    char_list = glGenLists(256);
+    if (char_list == 0)
+      printf("Unable to create char_list\n");
+
+    for (i=32; i<127; i++) { /* build display lists for labels */
+      glNewList(char_list+i, GL_COMPILE);
+      glutBitmapCharacter(GLUT_BITMAP_8_BY_13, i);
+      glEndList();
+    }
+  }
+#endif
 
 #ifdef DEBUG
    printf("dn = %d lm = %d nf = %d\n", draw_normals, light_mode, 
@@ -368,6 +393,7 @@ void gfx_init(model *raw_model) {
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
   gluPerspective(FOV, 1.0, distance/10.0, 10.0*distance);
+
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
   glGetDoublev(GL_MODELVIEW_MATRIX, mvmatrix); /* Initialize the temp matrix */
@@ -586,6 +612,19 @@ void sp_key_pressed(int key, int x, int y) {
     rebuild_list(raw_model);
     glutPostRedisplay();
     break;
+#ifdef DRAW_VTX_LABELS
+  case GLUT_KEY_F8: /* draw labels for vertices */
+    if (draw_vtx_labels == 1) {
+      draw_vtx_labels = 0;
+      printf("Stop drawing labels\n");
+    } else if (draw_vtx_labels == 0) {
+      draw_vtx_labels = 1;
+      printf("Drawing labels\n");
+    }
+    rebuild_list(raw_model);
+    glutPostRedisplay();
+    break;
+#endif
   case GLUT_KEY_UP:
     glPushMatrix(); /* Save transform context */
     glLoadIdentity();
@@ -643,6 +682,30 @@ void sp_key_pressed(int key, int x, int y) {
   }
 }
 
+#ifdef DRAW_VTX_LABELS
+void display_vtx_labels() {
+  int i, len;
+  char str[42],fmt[24];
+
+  glPushAttrib(GL_ALL_ATTRIB_BITS);
+  glDisable(GL_LIGHTING);
+  glColor3f(0.0, 1.0, 0.0);
+
+  glListBase(char_list);
+  strcpy(fmt, "%i");
+  for (i=0; i<r_model->num_vert; i++) {
+    glRasterPos3f(r_model->vertices[i].x,
+		  r_model->vertices[i].y,
+		  r_model->vertices[i].z);
+    glBitmap(0,0,0,0,7,7,NULL); /* Add an offset to avoid drawing the label on the vertex*/
+    len = sprintf(str, fmt, i);
+    glCallLists(len, GL_UNSIGNED_BYTE, str);
+  }
+  
+  glPopAttrib();
+}
+#endif
+
 /* ***************************************************************** */
 /* Display function : clear buffers, build correct MODELVIEW matrix, */
 /* call display list and swap the buffers                            */
@@ -657,7 +720,10 @@ void display() {
   glCallList(model_list);
   if (draw_normals)
     glCallList(normal_list);
-
+#ifdef DRAW_VTX_LABELS
+  if (draw_vtx_labels)
+    display_vtx_labels();
+#endif
  /* Check for errors (leave at the end) */
   while ((errorCode = glGetError()) != GL_NO_ERROR) {
     fprintf(stderr,"GL error: %s\n",(const char *)gluErrorString(errorCode));
@@ -716,6 +782,9 @@ int main(int argc, char **argv) {
   
   dstep = distance*0.01;
 
+#ifdef DRAW_VTX_LABELS
+  r_model = raw_model;
+#endif
 
   /* Init the rendering window */
   glutInit(&argc, argv);
