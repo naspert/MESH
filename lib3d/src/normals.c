@@ -1,4 +1,4 @@
-/* $Id: normals.c,v 1.32 2002/06/11 15:41:36 aspert Exp $ */
+/* $Id: normals.c,v 1.33 2002/08/26 12:26:50 aspert Exp $ */
 #include <3dmodel.h>
 #include <geomutils.h>
 #include <normals.h>
@@ -364,24 +364,25 @@ struct face_tree** bfs_build_spanning_tree(const struct model *raw_model,
 
 
 
-int find_center(const face_t *cur,const int v1, const int v2) {
+static int find_center(const face_t *cur,const int v1, const int v2) {
+  int ret;
   if (cur->f0==v1) {
     if (cur->f1==v2)
-      return cur->f2;
+      ret = cur->f2;
     else
-      return cur->f1;
+      ret = cur->f1;
   } else if (cur->f1==v1) {
     if (cur->f0==v2)
-      return cur->f2;
+      ret = cur->f2;
     else
-      return cur->f0;
+      ret = cur->f0;
   } else {
     if (cur->f1==v2)
-      return cur->f0;
+      ret = cur->f0;
     else
-      return cur->f1;
+      ret = cur->f1;
   }
-  return -1;
+  return ret;
 }
 
 
