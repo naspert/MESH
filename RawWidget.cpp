@@ -1,4 +1,4 @@
-/* $Id: RawWidget.cpp,v 1.42 2002/02/22 12:54:29 aspert Exp $ */
+/* $Id: RawWidget.cpp,v 1.43 2002/02/22 13:06:07 aspert Exp $ */
 
 #include <RawWidget.h>
 #include <qmessagebox.h>
@@ -98,7 +98,7 @@ void RawWidget::transfer(double dist,double *mvmat) {
 void RawWidget::switchSync(bool state) {
   if (state) {
     move_state = 1;
-    emit(transfervalue(distance, mvmatrix));
+    emit(transferValue(distance, mvmatrix));
   } else
     move_state = 0;
 }
@@ -124,7 +124,7 @@ void RawWidget::setLine(bool state) {
            line_state[0],line_state[1]);
     return;
   }
-  check_gl_errors("setLine(bool)");
+  checkGlErrors("setLine(bool)");
   updateGL();
 }
 
@@ -146,13 +146,13 @@ void RawWidget::setLight() {
     else if (light_state==GL_TRUE){// We are now switching to wireframe mode
       glDisable(GL_LIGHTING);
     }
-    check_gl_errors("setLight()");
+    checkGlErrors("setLight()");
     updateGL();
   }
 }
 
 // Returns the ceil(log(v)/log(2)), if v is zero or less it returns zero
-int RawWidget::ceil_log2(int v) {
+int RawWidget::ceilLog2(int v) {
   int i;
   i = 0;
   v -= 1;
@@ -179,7 +179,7 @@ int RawWidget::fillTexture(const struct face_error *fe,
     }
     return 1;
   } else {
-    sz = 1<<ceil_log2(n);
+    sz = 1<<ceilLog2(n);
     drange = model->max_error-model->min_error;
     if (drange < FLT_MIN*100) drange = 1;
     r = g = b = 0; // to keep compiler happy
@@ -239,12 +239,12 @@ void RawWidget::genErrorTextures() {
   for (i=0; i<model->mesh->num_faces; i++) {
     if (max_n < model->fe[i].sample_freq) max_n = model->fe[i].sample_freq;
   }
-  max_n = 1<<ceil_log2(max_n); // round (towards infinity) to power of two
+  max_n = 1<<ceilLog2(max_n); // round (towards infinity) to power of two
   // Test if OpenGL implementation can deal with maximum texture size
   glTexImage2D(GL_PROXY_TEXTURE_2D,0,internalformat,max_n+2,max_n+2,1,GL_RGB,
                GL_UNSIGNED_BYTE,NULL);
   glGetTexLevelParameteriv(GL_PROXY_TEXTURE_2D, 0,GL_TEXTURE_WIDTH, &tw);
-  check_gl_errors("error texture size check");
+  checkGlErrors("error texture size check");
   if (tw == 0) {
     QString tmps;
     tmps.sprintf("The OpenGL implementation does not support\n"
@@ -272,7 +272,7 @@ void RawWidget::genErrorTextures() {
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
   }
-  check_gl_errors("error texture generation");
+  checkGlErrors("error texture generation");
   free(texture);
   QApplication::restoreOverrideCursor();
 }
@@ -283,7 +283,7 @@ void RawWidget::setErrorMode(int emode) {
         emode == SAMPLE_ERROR) {
       error_mode = emode;
       makeCurrent();
-      rebuild_list();
+      rebuildList();
       updateGL();
     } else {
       fprintf(stderr,"invalid mode in setErrorMode()\n");
@@ -294,7 +294,7 @@ void RawWidget::setErrorMode(int emode) {
 // display callback
 void RawWidget::paintGL() {
   display(distance);
-  check_gl_errors("paintGL()");
+  checkGlErrors("paintGL()");
 }
 
 // resize callback
@@ -306,7 +306,7 @@ void RawWidget::resizeGL(int width ,int height) {
 		 10.0*distance);
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
-  check_gl_errors("resizeGL()");
+  checkGlErrors("resizeGL()");
 }
 
 // Initializations for the renderer
@@ -331,7 +331,7 @@ void RawWidget::initializeGL() {
   glEnable(GL_LIGHT0);
   glFrontFace(GL_CCW);
 
-  rebuild_list();
+  rebuildList();
   
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
@@ -352,7 +352,7 @@ void RawWidget::initializeGL() {
       fprintf(stderr,"ERROR: normals where not computed!\n");
     }
   }
-  check_gl_errors("initializeGL()");
+  checkGlErrors("initializeGL()");
 }
 
 
@@ -374,7 +374,7 @@ void RawWidget::display(double distance) {
 
 // This function generates the model's display list, depending on the
 // viewing parameters (light...)
-void RawWidget::rebuild_list() {
+void RawWidget::rebuildList() {
   // Surface material characteristics for lighted mode
   static const float front_amb_mat[4] = {0.11f, 0.06f, 0.11f, 1.0f};
   static const float front_diff_mat[4] = {0.43f, 0.47f, 0.54f, 1.0f};
@@ -392,7 +392,7 @@ void RawWidget::rebuild_list() {
   face_t *cur_face;
   GLenum glerr;
 
-  check_gl_errors("rebuild_list() start");
+  checkGlErrors("rebuildList() start");
 
   // Get a display list, if we don't have one yet.
   if (model_list == 0) {
@@ -653,10 +653,10 @@ void RawWidget::mouseMoveEvent(QMouseEvent *event) {
     glPopMatrix(); /* Reload previous transform context */
     updateGL();
   }
-  check_gl_errors("keyPressEvent(QMouseEvent)");
+  checkGlErrors("keyPressEvent(QMouseEvent)");
 
   if(move_state==1)
-    emit(transfervalue(distance, mvmatrix));
+    emit(transferValue(distance, mvmatrix));
   oldx = event->x();
   oldy = event->y();
 
@@ -676,7 +676,7 @@ void RawWidget::keyPressEvent(QKeyEvent *k) {
   case Key_F3:
     // if we are going to sync make sure other widgets get out transformation
     // matrix first
-    if (move_state==0) emit transfervalue(distance, mvmatrix);
+    if (move_state==0) emit transferValue(distance, mvmatrix);
     // now send the signal that we need to toggle synchronization
     emit toggleSync();
     break;
@@ -688,7 +688,7 @@ void RawWidget::keyPressEvent(QKeyEvent *k) {
 	for (i=0; i<model->mesh->num_vert; i++) 
 	  neg_v(&(model->mesh->normals[i]), &(model->mesh->normals[i]));
 	
-	rebuild_list();
+	rebuildList();
         updateGL();
       }
     }
@@ -697,7 +697,7 @@ void RawWidget::keyPressEvent(QKeyEvent *k) {
     if ((renderFlag & RW_CAPA_MASK) == RW_LIGHT_TOGGLE) {
       makeCurrent();
       two_sided_material = !two_sided_material;
-      rebuild_list();
+      rebuildList();
       updateGL();
     }
     break;
@@ -707,7 +707,7 @@ void RawWidget::keyPressEvent(QKeyEvent *k) {
 }
 
 // Check the OpenGl error state
-void RawWidget::check_gl_errors(const char* where) {
+void RawWidget::checkGlErrors(const char* where) {
   GLenum glerr;
   while ((glerr = glGetError()) != GL_NO_ERROR) {
     fprintf(stderr,"ERROR: at %s start: OpenGL: %s\n",where,

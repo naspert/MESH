@@ -1,4 +1,4 @@
-/* $Id: RawWidget.h,v 1.26 2002/02/21 09:28:35 dsanta Exp $ */
+/* $Id: RawWidget.h,v 1.27 2002/02/22 13:06:07 aspert Exp $ */
 #ifndef RAWWIDGET_H
 #define RAWWIDGET_H
 
@@ -35,13 +35,12 @@ public:
 
 public slots: 
   void setLine(bool state);
-  void setLight();
   void switchSync(bool state);
   void transfer(double dist,double *mvmat);
   void setErrorMode(int emode);
   
 signals:
-  void transfervalue(double,double*);
+  void transferValue(double,double*);
   void toggleSync();
   void toggleLine();
    
@@ -56,11 +55,12 @@ protected:
 private:  
 // functions 
   void display(double distance);
-  void rebuild_list();
-  static void check_gl_errors(const char* where);
+  void rebuildList();
+  void setLight();
+  static void checkGlErrors(const char* where);
   void genErrorTextures();
   int fillTexture(const struct face_error *fe, GLubyte *texture) const;
-  static int ceil_log2(int v);
+  static int ceilLog2(int v);
 
 // vars
   int renderFlag; // flag to indicate whether the widget can be set in
