@@ -1,7 +1,8 @@
-/* $Id: image.h,v 1.2 2001/03/13 10:17:26 aspert Exp $ */
+/* $Id: image.h,v 1.3 2001/04/25 09:10:26 aspert Exp $ */
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <math.h>
 #include <assert.h>
 #include <limits.h>
