@@ -1,4 +1,4 @@
-/* $Id: normals.c,v 1.21 2002/02/14 09:33:31 aspert Exp $ */
+/* $Id: normals.c,v 1.22 2002/02/15 09:42:27 aspert Exp $ */
 #include <3dmodel.h>
 #include <geomutils.h>
 #include <normals.h>
@@ -453,12 +453,9 @@ int build_edge_list(struct model *raw_model,
 					(curv[v2].num_faces + 1)*sizeof(int));
       
 
-    curv[v0].list_face[curv[v0].num_faces] = i;
-    curv[v0].num_faces ++;
-    curv[v1].list_face[curv[v1].num_faces] = i;
-    curv[v1].num_faces ++;
-    curv[v2].list_face[curv[v2].num_faces] = i;
-    curv[v2].num_faces ++;
+    curv[v0].list_face[curv[v0].num_faces++] = i;
+    curv[v1].list_face[curv[v1].num_faces++] = i;
+    curv[v2].list_face[curv[v2].num_faces++] = i;
 
     if(v0 > v1) {
       list[nedges].prim.v0 = v1;
@@ -467,8 +464,8 @@ int build_edge_list(struct model *raw_model,
       list[nedges].prim.v0 = v0;
       list[nedges].prim.v1 = v1;
     }
-    list[nedges].face = i;
-    nedges++;
+    list[nedges++].face = i;
+
 
     if(v1 > v2) {
       list[nedges].prim.v0 = v2;
@@ -477,8 +474,8 @@ int build_edge_list(struct model *raw_model,
       list[nedges].prim.v0 = v1;
       list[nedges].prim.v1 = v2;
     }
-    list[nedges].face = i;
-    nedges++;
+    list[nedges++].face = i;
+
     
     if(v2 > v0) {
       list[nedges].prim.v0 = v0;
@@ -487,27 +484,24 @@ int build_edge_list(struct model *raw_model,
       list[nedges].prim.v0 = v2;
       list[nedges].prim.v1 = v0;
     }
-    list[nedges].face = i;
-    nedges++;
+    list[nedges++].face = i;
     
   }
   
   qsort(list, nedges, sizeof(struct edge_sort), compar);
 
   for (i=0; i<3*raw_model->num_faces-1; i++) {
-    if (compar(&(list[i]), &(list[i+1])) == 0) {/*New entry in the dual graph*/
+    if (!compar(&(list[i]), &(list[i+1]))) {/*New entry in the dual graph*/
       add_edge_dg(dual_graph, &(list[i]), &(list[i+1]));
 
 
       /* update the index */
       f = list[i].face;
-      (*dg_idx)[f].ring[(*dg_idx)[f].face_info] = dual_graph->num_edges_dual;
-      (*dg_idx)[f].face_info++;
+      (*dg_idx)[f].ring[(*dg_idx)[f].face_info++] = dual_graph->num_edges_dual;
 
 
       f = list[i+1].face;      
-      (*dg_idx)[f].ring[(*dg_idx)[f].face_info] = dual_graph->num_edges_dual;
-      (*dg_idx)[f].face_info++;
+      (*dg_idx)[f].ring[(*dg_idx)[f].face_info++] = dual_graph->num_edges_dual;
 
 
       dual_graph->num_edges_dual++;
@@ -517,7 +511,7 @@ int build_edge_list(struct model *raw_model,
 
       /* test for non-manifoldness */
       if (i<3*raw_model->num_faces-2 && 
-	  compar(&(list[i+1]), &(list[i+2]))==0) {
+	  !compar(&(list[i+1]), &(list[i+2]))) {
 	printf("Non-manifold edge %d %d\n", list[i].prim.v0, list[i].prim.v1);
 	free(list);        
 	return -1;
@@ -616,8 +610,8 @@ struct face_tree** bfs_build_spanning_tree(struct model *raw_model,
 	   dual_graph->num_edges_dual, dual_graph->edges[i].face0, 
 	   dual_graph->edges[i].face1, dual_graph->edges[i].common.v0, 
 	   dual_graph->edges[i].common.v1);
-  
 #endif
+
   printf("Building spanning tree...");fflush(stdout);
   list = (struct edge_list**)malloc(sizeof(struct edge_list*)); 
   *list = (struct edge_list*)malloc(sizeof(struct edge_list));
@@ -658,11 +652,13 @@ struct face_tree** bfs_build_spanning_tree(struct model *raw_model,
       if (cur_node->left == NULL) {
 	cur_node->left = tree[cur_list->edge.face1];
 	cur_node->prim_left = cur_list->edge.common;
+
 #ifdef NORM_DEBUG_BFS
 	printf("[bfs_build_spanning_tree]: face0=%d face1=%d left %d %d\n", 
 	       (cur_list->edge).face0, (cur_list->edge).face1, 
 	       cur_node->prim_left.v0, cur_node->prim_left.v1);
 #endif
+
 	new_node = cur_node->left;
 	new_node->parent = cur_node;
 	new_node->node_type = 0;
@@ -676,11 +672,13 @@ struct face_tree** bfs_build_spanning_tree(struct model *raw_model,
       } else if (cur_node->right == NULL) {
 	cur_node->prim_right = cur_list->edge.common;
 	cur_node->right = tree[cur_list->edge.face1];
+
 #ifdef NORM_DEBUG_BFS
 	printf("[bfs_build_spanning_tree]: face0=%d face1=%d right %d %d\n", 
  	       (cur_list->edge).face0, (cur_list->edge).face1, 
 	       cur_node->prim_right.v0, cur_node->prim_right.v1);
 #endif
+
 	new_node = cur_node->right;
 	new_node->parent = cur_node;
 	new_node->node_type = 1;
@@ -697,11 +695,13 @@ struct face_tree** bfs_build_spanning_tree(struct model *raw_model,
 	top = new_node; /* We have to update this */
 	new_node->left = cur_node;/*this is arbitrary...*/
 	new_node->prim_left = cur_list->edge.common;
+
 #ifdef NORM_DEBUG_BFS
 	printf("[bfs_build_spanning_tree]: face0=%d face1=%d up %d %d\n", 
  	       cur_list->edge.face0, cur_list->edge.face1,
 	       new_node->prim_left.v0, new_node->prim_left.v1);
 #endif
+
 	new_node->node_type = 0;
 	new_node->face_idx = cur_list->edge.face1;
 	new_node->visited = 1;
@@ -741,6 +741,7 @@ struct face_tree** bfs_build_spanning_tree(struct model *raw_model,
   printf("[bfs_build_spanning_tree]:faces_traversed = %d num_faces = %d\n", 
 	 faces_traversed, raw_model->num_faces); 
 #endif
+
   free(bot->next);  /* should be alloc'd but nothing inside */
   free(bot);
   free(dual_graph->edges);

@@ -1,8 +1,19 @@
-/* $Id: subdiv_methods.c,v 1.9 2002/02/14 07:44:30 aspert Exp $ */
+/* $Id: subdiv_methods.c,v 1.10 2002/02/15 09:42:28 aspert Exp $ */
 #include <3dmodel.h>
 #include <geomutils.h>
 #include <subdiv_methods.h>
 
+/* 
+ * Check for broken compilers that are doing nasty tricks in inlined 
+ * functions. Currently, only triggered by RH-7.2 gcc-2.96. Hopefully
+ * removed in a future version...
+ */
+#ifdef __BROKEN_INLINE_GCC__
+# error Name clash for __BROKEN_INLINE_GCC__
+#endif
+#if defined __GNUC__ && (__GNUC__ == 2 && __GNUC_MINOR__ == 96)
+# define __BROKEN_INLINE_GCC__
+#endif
 
 /* ph -> h(ph) */
 float h(float ph) {
@@ -173,6 +184,10 @@ void compute_midpoint_butterfly(struct ring_info *rings,
   struct ring_info ring_op = rings[center2]; /* center of opp ring */
   int m = ring_op.size; /* size of opp. ring */
   int v2 = 0; /* index of center vertex_t in opp. ring */
+#ifdef __BROKEN_INLINE_GCC__
+  vertex_t tmp;
+#endif
+
 
 #ifdef __BOUNDARY_SUBDIV_DEBUG
   printf("Subdiv edge %d %d\n", center, center2);
@@ -197,11 +212,11 @@ void compute_midpoint_butterfly(struct ring_info *rings,
     s = (float*)malloc(n*sizeof(float));
     t = (float*)malloc(m*sizeof(float));
 
-    /* Compute values of stencil for end-vertex_t */
+    /* Compute values of stencil for end-vertex */
     make_sub_mask(t, m);
 
 
-    /* Compute values of stencil for center vertex_t */
+    /* Compute values of stencil for center vertex */
     make_sub_mask(s, n);
 
     p.x = 0.0;
@@ -212,10 +227,16 @@ void compute_midpoint_butterfly(struct ring_info *rings,
     r.y = 0.0;
     r.z = 0.0;
 
-    /* Apply stencil to 1st vertex_t */
+
+    /* Apply stencil to 1st vertex */
     for (j=0; j<n; j++) {
+#ifndef __BROKEN_INLINE_GCC__
       add_prod_v(s[j], &(raw_model->vertices[ring.ord_vert[(v1+j)%n]]), &p, 
 		 &p);
+#else
+      prod_v(s[j], &(raw_model->vertices[ring.ord_vert[(v1+j)%n]]), &tmp);
+      add_v(&tmp, &p, &p);
+#endif
 
 #ifdef __SUBDIV_BUTTERFLY_DEBUG
       printf("s[%d]=%f\n",j, s[j]);
@@ -231,10 +252,17 @@ void compute_midpoint_butterfly(struct ring_info *rings,
 
 
     
-    /* Apply stencil to end vertex_t */
-    for (j=0; j<m; j++) 
-      add_prod_v(t[j], &(raw_model->vertices[ring_op.ord_vert[(v2+j)%m]]), 
-		 &r, &r);
+    /* Apply stencil to end vertex */
+    for (j=0; j<m; j++) {
+#ifndef __BROKEN_INLINE_GCC__
+      add_prod_v(t[j], &(raw_model->vertices[ring_op.ord_vert[(v2+j)%m]]), &r, 
+		 &r);
+#else
+      prod_v(t[j], &(raw_model->vertices[ring_op.ord_vert[(v2+j)%m]]), &tmp);
+      add_v(&tmp, &r, &r);
+#endif
+    }
+
 
     add_prod_v(__QT, &(raw_model->vertices[center2]), &r, &r); 
 
@@ -263,20 +291,32 @@ void compute_midpoint_butterfly(struct ring_info *rings,
     r.z = 0.0;
 
     /* Apply stencil to 1st vertex_t */
-    for (j=0; j<6; j++) 
+    for (j=0; j<6; j++) {
+#ifndef __BROKEN_INLINE_GCC__
       add_prod_v(reg_sten[j], 
-                 &(raw_model->vertices[ring.ord_vert[(v1+j)%6]]), 
-                 &p, &p);
+                 &(raw_model->vertices[ring.ord_vert[(v1+j)%6]]), &p, &p);
+#else
+      prod_v(reg_sten[j], &(raw_model->vertices[ring.ord_vert[(v1+j)%6]]), 
+             &tmp);
+      add_v(&tmp, &p, &p);
+#endif
+    }
 
     add_prod_v(__QS, &(raw_model->vertices[center]), &p, &p);
 
 
     /* Apply stencil to end vertex_t */
-    for (j=0; j<6; j++) 
+    for (j=0; j<6; j++) {
+#ifndef __BROKEN_INLINE_GCC__
       add_prod_v(reg_sten[j], 
                  &(raw_model->vertices[ring_op.ord_vert[(v2+j)%6]]),
                  &p, &p);
-
+#else
+      prod_v(reg_sten[j], &(raw_model->vertices[ring_op.ord_vert[(v2+j)%6]]), 
+             &tmp);
+      add_v(&tmp, &p, &p);
+#endif
+    }
     add_prod_v(__QS, &(raw_model->vertices[center2]), &p, &p);
 
 
@@ -291,10 +331,15 @@ void compute_midpoint_butterfly(struct ring_info *rings,
     p.y = 0.0;
     p.z = 0.0;
 
-    for (j=0; j<n; j++) 
+    for (j=0; j<n; j++) {
+#ifndef __BROKEN_INLINE_GCC__
       add_prod_v(s[j], &(raw_model->vertices[ring.ord_vert[(v1+j)%n]]), &p, 
 		 &p);
-
+#else
+      prod_v(s[j], &(raw_model->vertices[ring.ord_vert[(v1+j)%n]]), &tmp);
+      add_v(&tmp, &p, &p);
+#endif
+    }
     add_prod_v(__QS, &(raw_model->vertices[center]), &p, &p);
 
     free(s);
@@ -309,11 +354,15 @@ void compute_midpoint_butterfly(struct ring_info *rings,
     p.y = 0.0;
     p.z = 0.0;
 
-    for (j=0; j<m; j++) 
-      add_prod_v(t[j], 
-                 &(raw_model->vertices[ring_op.ord_vert[(v2+j)%m]]), &p,
+    for (j=0; j<m; j++) {
+#ifndef __BROKEN_INLINE_GCC__
+      add_prod_v(t[j], &(raw_model->vertices[ring_op.ord_vert[(v2+j)%m]]), &p,
 		 &p);
-
+#else
+      prod_v(t[j], &(raw_model->vertices[ring_op.ord_vert[(v2+j)%m]]), &tmp);
+      add_v(&tmp, &p, &p);
+#endif
+    }
 
     add_prod_v(__QT, &(raw_model->vertices[center2]), &p, &p);
 

@@ -1,4 +1,4 @@
-/* $Id: subdiv_methods.h,v 1.6 2002/02/14 07:44:30 aspert Exp $ */
+/* $Id: subdiv_methods.h,v 1.7 2002/02/15 09:42:26 aspert Exp $ */
 
 
 #ifndef __SUBDIV_METHODS_PROTO
@@ -27,7 +27,7 @@
 const static float reg_sten[6] = {0.25 - __2W,  0.125 + __2W, -0.125 - __2W, 
                                   __2W, -0.125 - __2W, 0.125 + __2W};
 const static float sten_3[3] = {_5_12, _M1_12, _M1_12};
-const static float sten_4[4] = { 0.375, 0.0, -0.125, 0.0};
+const static float sten_4[4] = {0.375, 0.0, -0.125, 0.0};
 
 # ifdef __cplusplus
 extern "C" {
