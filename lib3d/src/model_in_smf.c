@@ -1,4 +1,4 @@
-/* $Id: model_in_smf.c,v 1.7 2002/11/13 12:18:23 aspert Exp $ */
+/* $Id: model_in_smf.c,v 1.8 2003/01/13 09:26:14 aspert Exp $ */
 
 
 /*
@@ -208,8 +208,10 @@ int read_smf_tmesh(struct model **tmesh_ref, struct file_data *data) {
                               nfaces*sizeof(face_t));
     free_block_list(&head_verts);
     free_block_list(&head_faces);
-    if (rcode >= 0)
+    if (rcode >= 0) {
       *tmesh_ref = tmesh;
+      rcode = 1;
+    }
     else 
       __free_raw_model(tmesh);
   } else 
