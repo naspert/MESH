@@ -1,4 +1,4 @@
-/* $Id: model_analysis.c,v 1.14 2002/03/25 16:02:42 dsanta Exp $ */
+/* $Id: model_analysis.c,v 1.15 2002/03/26 18:31:31 dsanta Exp $ */
 
 
 /*
@@ -284,6 +284,10 @@ static void analyze_faces_rec(const face_t *mfaces, int vidx, int pfidx,
          * a cycle */
         if (!new_degen && !(nf_left == 0 && v2 == vstart)) {
           st->minfo.manifold = 0;
+          /* The vidx-v2 edge is shared by more than two non-degenerate
+           * triangles => cannot be orientable nor oriented */
+          st->minfo.oriented = 0;
+          st->minfo.orientable = 0;
         }
       }
       cur_degen = new_degen;
@@ -331,6 +335,12 @@ static void analyze_faces_rec(const face_t *mfaces, int vidx, int pfidx,
         cur_degen = (vidx == vstart || vidx == v2 || vstart == v2);
         vstart_was_in_list = vtx_in_list_or_add(&vlist,vstart);
         v2_was_in_list = vtx_in_list_or_add(&vlist,v2);
+        if (!cur_degen && (vstart_was_in_list || v2_was_in_list)) {
+          /* The vidx-vstart or vidx-v2 edge is shared by more than two
+           * non-degenerate triangles => can not be orientable nor oriented */
+          st->minfo.oriented = 0;
+          st->minfo.orientable = 0;
+        }
       } else {
         /* we reverse scanning orientation and continue from the other side */
         rev_orient = 1;
