@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.10 2001/07/02 12:50:03 aspert Exp $
+# $Id: Makefile,v 1.11 2001/07/13 06:55:52 aspert Exp $
 
 CC = gcc
 CPP = g++
@@ -13,7 +13,7 @@ HPGLDIR = /usr/GL/hp
 INCLFLAGS = -I../include
 GLINCLFLAGS = -I$(HPGLDIR)/include -I$(GLDIR)/include
 DEBUGINCFLAGS = -I/home/sun1/aspert/debug
-XTRA_CFLAGS = -g  -Wall -O2  -ansi -pg
+XTRA_CFLAGS = -g  -Wall -O2  -ansi 
 
 BASE_CFLAGS = $(INCLFLAGS) $(XTRA_CFLAGS) 
 GL_CFLAGS = $(INCLFLAGS) $(GLINCLFLAGS) $(XTRA_CFLAGS) 
@@ -33,7 +33,7 @@ default : rawview3
 all: dirs rawview3 torus subdiv subdiv_sph
 
 clean : 
-	rm $(OBJDIR)/*.o $(BINDIR)/* $(LIBDIR)/*
+	rm -f $(OBJDIR)/*.o $(BINDIR)/* $(LIBDIR)/*
 
 rawview : $(OBJDIR)/rawview3.o $(OBJDIR)/geomutils.o $(OBJDIR)/normals.o $(OBJDIR)/3dmodel_io.o $(OBJDIR)/image.o $(OBJDIR)/gl2ps.o
 	$(CC) $^ -o $(BINDIR)/$@ $(STATIC_GLFLAGS)
@@ -63,10 +63,10 @@ lib3d : $(OBJDIR)/geomutils.o $(OBJDIR)/3dmodel_io.o $(OBJDIR)/normals.o
 make_brep: $(OBJDIR)/make_brep.o lib3d
 	$(CC) -g -o $(BINDIR)/$@ $< $(BASE_LDFLAGS) -l3d
 
-$(OBJDIR)/viewer.o :viewer.cpp
-	$(CPP) $(QTINCL) $(BASE_CFLAGS) -c $< -o $@
-
 $(OBJDIR)/rawview3.o : rawview3.c
+	$(CC) $(GL_CFLAGS) -c $< -o $@
+
+$(OBJDIR)/gl2ps.o : gl2ps.c
 	$(CC) $(GL_CFLAGS) -c $< -o $@
 
 $(OBJDIR)/%.o : %.c
