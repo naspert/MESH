@@ -1,4 +1,4 @@
-/* $Id: ScreenWidget.cpp,v 1.29 2002/02/21 12:45:00 aspert Exp $ */
+/* $Id: ScreenWidget.cpp,v 1.30 2002/02/22 09:37:24 aspert Exp $ */
 #include <ScreenWidget.h>
 
 #include <qhbox.h>
@@ -109,7 +109,7 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   connect(glModel2, SIGNAL(toggleLine()),lineSwitch2, SLOT(toggle()));
 
   // Build error mode selection buttons
-  radGrp = new QHButtonGroup(this);
+  radGrp = new QHButtonGroup("Displayed information",this);
   radGrp->layout()->setMargin(3);
   verrBut = new QRadioButton("Vertex error", radGrp);
   verrBut->setChecked(TRUE);
@@ -121,10 +121,10 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   connect(radGrp, SIGNAL(clicked(int)), glModel1, SLOT(setErrorMode(int)));
 
   // Build scale selection buttons
-  histoGrp = new QVButtonGroup(this);
-  linBut = new QRadioButton("Linear scale", histoGrp);
+  histoGrp = new QVButtonGroup("Histogram scale",this);
+  linBut = new QRadioButton("Linear", histoGrp);
   linBut->setChecked(TRUE);
-  logBut = new QRadioButton("Log. scale", histoGrp);
+  logBut = new QRadioButton("Logarithmic", histoGrp);
   histoGrp->insert(linBut, ColorMapWidget::LIN_SCALE);
   histoGrp->insert(logBut, ColorMapWidget::LOG_SCALE);
   connect(histoGrp, SIGNAL(clicked(int)), 
@@ -141,7 +141,7 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   bigGrid->addMultiCellWidget(syncBut, 1, 1, 3, 4, Qt::AlignCenter);
   bigGrid->addMultiCellWidget(radGrp, 2, 2, 2, 5, Qt::AlignCenter);
   bigGrid->addMultiCellWidget(histoGrp, 1, 2, 0, 0, Qt::AlignCenter);
-  bigGrid->addWidget(quitBut, 3, 0, Qt::AlignCenter);
+  bigGrid->addMultiCellWidget(quitBut, 3, 3, 3, 4, Qt::AlignCenter);
 
   // Now set a sensible default widget size
   QSize prefSize = layout()->sizeHint();
