@@ -1,4 +1,4 @@
-/* $Id: model_in.h,v 1.16 2002/08/26 12:27:27 aspert Exp $ */
+/* $Id: model_in.h,v 1.17 2002/08/27 07:46:03 aspert Exp $ */
 
 
 /*
@@ -47,8 +47,8 @@
  *
  * Author: Diego Santa Cruz
  *
- * N. Aspert is guilty for all the cruft to read gzipped files + Inventor & 
- * SMF parsers.
+ * N. Aspert is guilty for all the cruft to read gzipped files + Inventor + 
+ * SMF and PLY parsers.
  *
  * Currently supported file formats:
  *
@@ -77,9 +77,12 @@
  *
  * - Ply ascii:
  *     Only the vertices and triangular faces are read. The 'property'
- *     fields are *not* read. Binary PLY should be OK. However,
- *     changing the 'binary_big_endian' into a 'binary_big_endian' (or
- *     the contrary) in the header can improve things sometimes...
+ *     fields are *not* read (only those describing vertex coordinates
+ *     and face indices are considered, others are skipped). Binary
+ *     PLY should be OK. However, changing the 'binary_big_endian'
+ *     into a 'binary_big_endian' (or the contrary) in the header can
+ *     improve things sometimes, especially if you converted your
+ *     ASCII file into a binary one using 'ply2binary'...
  *
  */
 

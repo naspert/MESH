@@ -1,4 +1,4 @@
-/* $Id: model_in_ply.c,v 1.11 2002/08/26 14:27:27 aspert Exp $ */
+/* $Id: model_in_ply.c,v 1.12 2002/08/27 07:46:03 aspert Exp $ */
 
 /*
  *
@@ -70,9 +70,37 @@ static int skip_ws_str_scanf(struct file_data *data, char *out)
   return string_scanf(data, out);
 }
 
+static int skip_field(struct file_data *data, const int type) {
+  int rcode = 0;
+  int tmp_int;
+  float tmp_float;
+
+  switch (type) {
+  case uint8:
+  case int8:
+  case uint16:
+  case int16:
+  case uint32:
+  case int32:
+    if (int_scanf(data, &tmp_int) != 1)
+      rcode = MESH_CORRUPTED;
+    break;
+  case float32:
+  case float64:
+    if (float_scanf(data, &tmp_float) != 1)
+      rcode = MESH_CORRUPTED;
+    break;
+  default: /* should never get here !!! */
+    rcode = MESH_CORRUPTED;
+    break;
+  }
+
+  return rcode;
+}
+
 /* Skip 'nbytes' bytes in stream 'data'. Returns 0 if successfull or a
  * negative value if a failure occurs. */
-static int skip_bytes(struct file_data *data, size_t nbytes) 
+static int skip_bytes(struct file_data *data, const size_t nbytes) 
 {
   size_t i;
   int c;
@@ -95,7 +123,8 @@ static int skip_bytes(struct file_data *data, size_t nbytes)
 /* The read_[type] function reads a [type] from 'data' and puts the
  * result into 'out'. Returns 0 upon success and a negative value in
  * case of failure. */
-static int read_uint16(struct file_data *data, int swap_bytes, t_uint16 *out ) 
+static int read_uint16(struct file_data *data, const int swap_bytes, 
+		       t_uint16 *out ) 
 {
   union sw_uint16 tmp;
   int c, i;
@@ -130,7 +159,8 @@ static int read_uint16(struct file_data *data, int swap_bytes, t_uint16 *out )
 }
 
 
-static int read_int16(struct file_data *data, int swap_bytes, t_int16 *out ) 
+static int read_int16(struct file_data *data, const int swap_bytes, 
+		      t_int16 *out ) 
 {
   union sw_int16 tmp;
   int c, i;
@@ -164,7 +194,8 @@ static int read_int16(struct file_data *data, int swap_bytes, t_int16 *out )
   return rcode;
 }
 
-static int read_uint32(struct file_data *data, int swap_bytes, t_uint32 *out ) 
+static int read_uint32(struct file_data *data, const int swap_bytes, 
+		       t_uint32 *out ) 
 {
   union sw_uint32 tmp;
   int i, c;
@@ -198,7 +229,8 @@ static int read_uint32(struct file_data *data, int swap_bytes, t_uint32 *out )
   return rcode;
 }
 
-static int read_int32(struct file_data *data, int swap_bytes, t_int32 *out ) 
+static int read_int32(struct file_data *data, const int swap_bytes, 
+		      t_int32 *out ) 
 {
   union sw_int32 tmp;
   int i, c;
@@ -232,7 +264,8 @@ static int read_int32(struct file_data *data, int swap_bytes, t_int32 *out )
   return rcode;
 }
 
-static int read_float32(struct file_data *data, int swap_bytes, float *out ) 
+static int read_float32(struct file_data *data, const int swap_bytes, 
+			float *out ) 
 {
   union sw_float32 tmp;
   int i, c;
@@ -274,7 +307,8 @@ static int read_float32(struct file_data *data, int swap_bytes, float *out )
   return rcode;
 }
 
-static int read_float64(struct file_data *data, int swap_bytes, double *out ) 
+static int read_float64(struct file_data *data, const int swap_bytes, 
+			double *out ) 
 {
   union sw_float32 tmp;
   int i, c;
@@ -311,8 +345,8 @@ static int read_float64(struct file_data *data, int swap_bytes, double *out )
 
 /* Reads a property of type 'prop_type' from 'data', and puts the
  * result 'out'. Returns 0 upon success, a negative value otherwise */
-static int read_ply_property(struct file_data *data, int prop_type, 
-                             int swap_bytes, void *out) 
+static int read_ply_property(struct file_data *data, const int prop_type, 
+                             const int swap_bytes, void *out) 
 {
   int c, rcode=0;
   /* Just local pointers to copy the result from the 'read_[type]'
@@ -381,7 +415,7 @@ static int read_ply_property(struct file_data *data, int prop_type,
  * of characters 'str' (see 'model_in_ply.h' for all types). It also
  * supports the 'old-fashioned' types, defined in a previous version
  * of the PLY file format. */
-static int get_type(char* str) 
+static int get_type(const char* str) 
 {
   int t;
   
@@ -410,7 +444,7 @@ static int get_type(char* str)
 /* Try to match a property name to the ones that are currently handled
  * (i.e. vertex coord and face index). Returns the integer associated
  * to the property (see 'model_in_ply.h' for more details) */
-static int get_prop_name(char *str) 
+static int get_prop_name(const char *str) 
 {
   int name;
   
@@ -478,20 +512,22 @@ static int read_properties(struct file_data *data, struct ply_prop **prop)
   return (rcode < 0) ? rcode : n_prop;
 }
 
-/* Read 'n_faces' faces of the model from a binary 'data'. 
+/* Read 'n_faces' faces of the model from a binary/ascii 'data' stream. 
  * Returns 0 if successful and a negative value in case of trouble. 
  * Non-triangular faces are NOT supported. Moreover, the face's vertex
  * indices have to be consistent with the number of vertices in the
  * model 'n_vtcs'. The 'n_f_prop' properties associated with the faces
  * are passed in the 'face_prop' array.*/
-static int read_bin_ply_faces(face_t *faces, struct file_data *data,
-                              int n_faces, int n_vtcs,
-                              int swap_bytes,
-                              struct ply_prop *face_prop, int n_f_prop) 
+static int read_ply_faces(face_t *faces, struct file_data *data,
+                          const int is_bin,
+                          const int n_faces, const int n_vtcs,
+                          const int swap_bytes,
+                          const struct ply_prop *face_prop, 
+                          const int n_f_prop) 
 {
   int i, j, f0, f1, f2;
   int rcode=0;
-  t_uint8 tmp=0;
+  int tmp=0;
 
   for (i=0; i<n_faces && rcode >=0; i++) {
     for (j=0; j<n_f_prop && rcode >=0; j++) {
@@ -499,8 +535,15 @@ static int read_bin_ply_faces(face_t *faces, struct file_data *data,
         if (!face_prop[j].is_list)
           rcode = MESH_CORRUPTED;
         else {
-          rcode = read_ply_property(data, face_prop[j].type_list, swap_bytes,
-                                    &tmp);
+	  if (is_bin)
+	    rcode = read_ply_property(data, face_prop[j].type_list, 
+				      swap_bytes, &tmp);
+	  else {
+	    if (int_scanf(data, &tmp) != 1) {
+	      rcode = MESH_CORRUPTED;
+	      break;
+	    }
+	  }
           if (tmp != 3) { /* Non triangular mesh -> bail out */
 #ifdef DEBUG
             printf("[read_bin_ply_faces] found a %d face\n", tmp);
@@ -508,12 +551,30 @@ static int read_bin_ply_faces(face_t *faces, struct file_data *data,
             rcode = MESH_NOT_TRIAG;
             break;
           }
-          rcode = read_ply_property(data, face_prop[j].type_prop, swap_bytes,
-                                    &f0);
-          rcode = read_ply_property(data, face_prop[j].type_prop, swap_bytes,
-                                    &f1);
-          rcode = read_ply_property(data, face_prop[j].type_prop, swap_bytes,
-                                    &f2);
+	  if (is_bin) {
+	    rcode = read_ply_property(data, face_prop[j].type_prop, swap_bytes,
+				      &f0);
+	    rcode = read_ply_property(data, face_prop[j].type_prop, swap_bytes,
+				      &f1);
+	    rcode = read_ply_property(data, face_prop[j].type_prop, swap_bytes,
+				      &f2);
+	  } else {
+	     if (int_scanf(data, &f0) != 1) {
+	       rcode = MESH_CORRUPTED;
+	       break;
+	     }
+	     
+	     if (int_scanf(data, &f1) != 1) {
+	       rcode = MESH_CORRUPTED;
+	       break;
+	     }
+	     
+	     if (int_scanf(data, &f2) != 1) {
+	       rcode = MESH_CORRUPTED;
+	       break;
+	     }
+
+	  }
           if (f0 < 0 || f1 < 0 || f2 < 0 || 
               f0 >= n_vtcs || f1 >= n_vtcs || f2 >= n_vtcs ) {
             rcode = MESH_MODEL_ERR;
@@ -525,9 +586,12 @@ static int read_bin_ply_faces(face_t *faces, struct file_data *data,
           
         }
       } else {
-        rcode = skip_bytes(data,  
-                           ply_sizes[face_prop[j].type_prop]*
-                           sizeof(unsigned char));
+	if (is_bin)
+	  rcode = skip_bytes(data,  
+			     ply_sizes[face_prop[j].type_prop]*
+			     sizeof(unsigned char));
+	else
+	  rcode = skip_field(data, face_prop[j].type_prop);
       }
     }
   }
@@ -535,83 +599,18 @@ static int read_bin_ply_faces(face_t *faces, struct file_data *data,
   return rcode;
 }
 
-
-/* Read 'n_faces' faces of the model from 'data'. 
- * Returns 0 if successful and a negative value in case of trouble. 
- * Non-triangular faces are NOT supported. Moreover, the face's vertex
- * indices have to be consistent with the number of vertices in the
- * model 'n_vtcs'. */
-static int read_ascii_ply_faces(face_t *faces, struct file_data *data,
-                                int n_faces, int n_vtcs)
-{
-  int i, c, f0, f1, f2;
-  int rcode=0;
-
-
-  for(i=0; i<n_faces; i++) {
-    
-    if (int_scanf(data, &c) != 1) {
-      rcode = MESH_CORRUPTED;
-      break;
-    }
-
-    if (c != 3) { /* Non-triangular mesh -> bail out */
-      rcode =  MESH_NOT_TRIAG;
-      break;
-    }
-        
-    /* Read faces */
-    if (int_scanf(data, &f0) != 1) {
-      rcode = MESH_CORRUPTED;
-      break;
-    }
-
-    if (int_scanf(data, &f1) != 1) {
-      rcode = MESH_CORRUPTED;
-      break;
-    }
-
-    if (int_scanf(data, &f2) != 1) {
-      rcode = MESH_CORRUPTED;
-      break;
-    }
-
-    /* Check if indices are consistent ...*/
-    if (f0 < 0 || f1 < 0 || f2 < 0 || 
-        f0 >= n_vtcs || f1 >= n_vtcs || f2 >= n_vtcs ) {
-      rcode = MESH_MODEL_ERR;
-      break;
-    }
-    /* skip the rest of the current line, which can contain
-     * additional informations, but currently ignored
-     */
-    do {
-      c = getc(data);
-    } while (c != '\n' && c != '\r' && c != EOF);
-    
-    if (c == EOF) {
-      rcode = MESH_CORRUPTED;
-      break;
-    }
-    faces[i].f0 = f0;
-    faces[i].f1 = f1;
-    faces[i].f2 = f2;
-  } /* end face loop */
-
-  return rcode;
-}
-
-/* Reads 'n_vtcs' vertex points from the 'data' stream in binary format
+/* Reads 'n_vtcs' vertex points from the 'data' stream in binary/ascii format
  * and stores them in the 'vtcs' array. Zero is returned on success, or the
  * negative error code otherwise. If no error occurs the bounding box minium
  * and maximum are returned in 'bbox_min' and 'bbox_max'. The
  * 'n_v_prop' properties associated to the vertices are fed through
  * the 'v_prop' array. */
-static int read_bin_ply_vertices(vertex_t *vtcs, struct file_data *data,
-                                 int n_vtcs, 
-                                 vertex_t *bbox_min, vertex_t *bbox_max,
-                                 int swap_bytes,
-                                 struct ply_prop *v_prop, int n_v_prop) 
+static int read_ply_vertices(vertex_t *vtcs, struct file_data *data,
+                             const int is_bin, const int n_vtcs, 
+                             vertex_t *bbox_min, vertex_t *bbox_max,
+                             const int swap_bytes,
+                             const struct ply_prop *v_prop, 
+                             const int n_v_prop) 
 {
   int rcode = 0;
   int i, j;
@@ -624,33 +623,52 @@ static int read_bin_ply_vertices(vertex_t *vtcs, struct file_data *data,
     for (j=0; j<n_v_prop && rcode>=0; j++) {
       switch (v_prop[j].prop) {
       case v_x:
-        rcode = read_ply_property(data, v_prop[j].type_prop, swap_bytes, 
-                                  &(vtcs[i].x));
+	if (is_bin)
+	  rcode = read_ply_property(data, v_prop[j].type_prop, swap_bytes, 
+				    &(vtcs[i].x));
+	else {
+	  if (float_scanf(data, &(vtcs[i].x)) != 1)
+	    rcode = MESH_CORRUPTED;
+	}
         if (rcode == 0) {
           if (vtcs[i].x < bbmin.x) bbmin.x = vtcs[i].x;
           if (vtcs[i].x > bbmax.x) bbmax.x = vtcs[i].x;
         }
         break;
       case v_y:
-        rcode = read_ply_property(data, v_prop[j].type_prop, swap_bytes, 
-                                  &(vtcs[i].y));
+	if (is_bin)
+	  rcode = read_ply_property(data, v_prop[j].type_prop, swap_bytes, 
+				    &(vtcs[i].y));
+	else {
+	  if (float_scanf(data, &(vtcs[i].y)) != 1)
+	    rcode = MESH_CORRUPTED;
+	}
         if (rcode == 0) {
           if (vtcs[i].y < bbmin.y) bbmin.y = vtcs[i].y;
           if (vtcs[i].y > bbmax.y) bbmax.y = vtcs[i].y;
         }
         break;
       case v_z:
-        rcode = read_ply_property(data, v_prop[j].type_prop, swap_bytes, 
-                                  &(vtcs[i].z));
+	if (is_bin)
+	  rcode = read_ply_property(data, v_prop[j].type_prop, swap_bytes, 
+				    &(vtcs[i].z));
+	else {
+	  if (float_scanf(data, &(vtcs[i].z)) != 1)
+	    rcode = MESH_CORRUPTED;
+	}
         if (rcode == 0) {
           if (vtcs[i].z < bbmin.z) bbmin.z = vtcs[i].z;
           if (vtcs[i].z > bbmax.z) bbmax.z = vtcs[i].z;
         }
         break;
       default:
-        rcode = skip_bytes(data, 
-                           ply_sizes[v_prop[j].type_prop] * 
-                           sizeof(unsigned char));
+	if (is_bin)
+	  rcode = skip_bytes(data, 
+			     ply_sizes[v_prop[j].type_prop] * 
+			     sizeof(unsigned char));
+	else 
+	  rcode = skip_field(data, v_prop[j].type_prop);
+	
         break;
       }
     }
@@ -666,60 +684,6 @@ static int read_bin_ply_vertices(vertex_t *vtcs, struct file_data *data,
   return rcode;
 }
 
-/* Reads 'n_vtcs' vertex points from the '*data' stream in raw ascii format
- * and stores them in the 'vtcs' array. Zero is returned on success, or the
- * negative error code otherwise. If no error occurs the bounding box minium
- * and maximum are returned in 'bbox_min' and 'bbox_max'. */
-static int read_ascii_ply_vertices(vertex_t *vtcs, struct file_data *data, 
-                                   int n_vtcs, 
-                                   vertex_t *bbox_min, vertex_t *bbox_max)
-{
-  vertex_t bbmin, bbmax;
-  int i, c, rcode=0;
-
-  bbmin.x = bbmin.y = bbmin.z = FLT_MAX;
-  bbmax.x = bbmax.y = bbmax.z = -FLT_MAX;
-
-  for (i=0; i< n_vtcs; i++) {
-    if (float_scanf(data, &(vtcs[i].x)) != 1) {
-      rcode = MESH_CORRUPTED;
-      break;
-    }
-    if (float_scanf(data, &(vtcs[i].y)) != 1) {
-      rcode = MESH_CORRUPTED;
-      break;
-    }
-    if (float_scanf(data, &(vtcs[i].z)) != 1) {
-      rcode = MESH_CORRUPTED;
-      break;
-    }
-    /* skip the rest of the current line, which can contain
-     * additional informations (e.g. color), but currently ignored
-     */
-    do {
-      c = getc(data);
-    } while (c != '\n' && c != '\r' && c != EOF);
-    
-    if (c == EOF) {
-      rcode = MESH_CORRUPTED;
-      break;
-    }
-
-    if (vtcs[i].x < bbmin.x) bbmin.x = vtcs[i].x;
-    if (vtcs[i].y < bbmin.y) bbmin.y = vtcs[i].y;
-    if (vtcs[i].z < bbmin.z) bbmin.z = vtcs[i].z;
-    if (vtcs[i].x > bbmax.x) bbmax.x = vtcs[i].x;
-    if (vtcs[i].y > bbmax.y) bbmax.y = vtcs[i].y;
-    if (vtcs[i].z > bbmax.z) bbmax.z = vtcs[i].z;
-  }
-   if (n_vtcs == 0) {
-    memset(&bbmin,0,sizeof(bbmin));
-    memset(&bbmax,0,sizeof(bbmax));
-  }
-  *bbox_min = bbmin;
-  *bbox_max = bbmax;
-  return rcode;
-}
 
 /* Reads a _triangular_ mesh from a PLY ASCII file. Note that no
  * binary formats are supported, although PLY format allows
@@ -820,18 +784,8 @@ int read_ply_tmesh(struct model **tmesh_ref, struct file_data *data)
       if (tmesh->vertices == NULL || tmesh->faces == NULL)
         rcode = MESH_NO_MEM;
       else {
-        if (!is_bin) { /* ascii format */
-          /* Read vertices */
-          rcode = read_ascii_ply_vertices(tmesh->vertices, data, 
-                                          tmesh->num_vert, 
-                                          &bbmin, &bbmax);
-          
-          /* Read face list */
-          rcode = read_ascii_ply_faces(tmesh->faces, data, 
-                                       tmesh->num_faces, tmesh->num_vert);
-        } else { /* binary format */
+        if (is_bin) { 
           /* check endianness of the platform, just in case ;-) */
-          rcode = MESH_BAD_FF;
           if (test_byte_order.bo == TEST_BIG_ENDIAN)
             platform_endianness = 1;
           else if (test_byte_order.bo != TEST_LITTLE_ENDIAN) {
@@ -839,17 +793,23 @@ int read_ply_tmesh(struct model **tmesh_ref, struct file_data *data)
             platform_endianness = -1;
           }
           swap_bytes = (file_endianness == platform_endianness)?0:1;
-          skip_ws_comm(data);
-          rcode = read_bin_ply_vertices(tmesh->vertices, data, tmesh->num_vert,
-                                        &bbmin, &bbmax, 
-                                        swap_bytes,
-                                        vertex_prop, n_vert_prop);
-
-          rcode = read_bin_ply_faces(tmesh->faces, data, tmesh->num_faces,
-                                     tmesh->num_vert,
-                                     swap_bytes,
-                                     face_prop, n_face_prop);
+          skip_ws_comm(data); /* find the first relevant byte */
         }
+        
+        /* read the vertices */
+        rcode = read_ply_vertices(tmesh->vertices, data, is_bin,
+                                      tmesh->num_vert,
+                                      &bbmin, &bbmax, 
+                                      swap_bytes,
+                                      vertex_prop, n_vert_prop);
+        
+        /* read the faces */
+        rcode = read_ply_faces(tmesh->faces, data, is_bin,
+                                   tmesh->num_faces,
+                                   tmesh->num_vert,
+                                   swap_bytes,
+                                   face_prop, n_face_prop);
+
       }
     }
   }
