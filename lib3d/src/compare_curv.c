@@ -1,4 +1,4 @@
-/* $Id: compare_curv.c,v 1.5 2001/10/25 12:03:31 aspert Exp $ */
+/* $Id: compare_curv.c,v 1.6 2001/10/30 09:25:58 aspert Exp $ */
 #include <3dutils.h>
 
 
@@ -208,7 +208,7 @@ int main(int argc, char **argv) {
   double maxk1=-FLT_MAX, maxk2=-FLT_MAX, maxkg=-FLT_MAX;
   double max_rel_k1=-FLT_MAX, max_rel_k2=-FLT_MAX, max_rel_kg=-FLT_MAX;
   double mean_dk1=0.0, mean_dk2=0.0, mean_dkg=0.0;
-  double area=0.0;
+  float area=0.0;
 
   if (argc != 3) {
     fprintf(stderr, "Usage: compare_curv or_file.raw mod_file.raw\n");
@@ -237,8 +237,8 @@ int main(int argc, char **argv) {
   raw_model2->face_normals = compute_face_normals(raw_model2, info2);
 
   printf("Computing vertex normals...\n");
-  raw_model1->area = (double*)malloc(raw_model1->num_faces*sizeof(double));
-  raw_model2->area = (double*)malloc(raw_model2->num_faces*sizeof(double));
+  raw_model1->area = (float*)malloc(raw_model1->num_faces*sizeof(float));
+  raw_model2->area = (float*)malloc(raw_model2->num_faces*sizeof(float));
   compute_vertex_normal(raw_model1, info1, raw_model1->face_normals); 
   compute_vertex_normal(raw_model2, info2, raw_model2->face_normals); 
 

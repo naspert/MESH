@@ -1,4 +1,4 @@
-/* $Id: normals.c,v 1.15 2001/10/25 11:46:28 aspert Exp $ */
+/* $Id: normals.c,v 1.16 2001/10/30 09:26:07 aspert Exp $ */
 #include <3dmodel.h>
 #include <geomutils.h>
 #include <normals.h>
@@ -680,7 +680,6 @@ void build_normals(struct model *raw_model, struct face_tree *tree,
 		   vertex_t* normals) {
 
   int v0=-1, v1=-1, v2=-1;
-/*  double tmp;*/
 
 
   if (tree->parent == NULL) {/* root of the tree */

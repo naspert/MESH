@@ -1,4 +1,4 @@
-/* $Id: subdiv_methods.c,v 1.5 2001/10/22 08:58:34 aspert Exp $ */
+/* $Id: subdiv_methods.c,v 1.6 2001/10/30 09:26:16 aspert Exp $ */
 #include <3dmodel.h>
 #include <geomutils.h>
 #include <subdiv_methods.h>
@@ -10,7 +10,7 @@ void compute_midpoint_sph(struct ring_info *rings, int center, int v1,
   struct ring_info ring_op = rings[center2];
   int v2 = 0;
   vertex_t n,p, vj, dir, m, u, v, np1, np2, np;
-  double r, ph, lambda, pl_off, nr, nph, dz, rp, g;
+  float r, ph, lambda, pl_off, nr, nph, dz, rp, g;
 
 
   n = raw_model->normals[center];
@@ -149,8 +149,8 @@ void compute_midpoint_sph(struct ring_info *rings, int center, int v1,
 
 void compute_midpoint_butterfly(struct ring_info *rings, int center,  int v1, 
 				struct model *raw_model, vertex_t *vout) {
-  double *s, *t;
-  double qt=0.0, qs=0.0;
+  float *s, *t;
+  float qt=0.0, qs=0.0;
   int j;
   vertex_t p, r;
   int n = rings[center].size;
@@ -180,14 +180,14 @@ void compute_midpoint_butterfly(struct ring_info *rings, int center,  int v1,
     while (ring_op.ord_vert[v2] != center)
       v2++;
     
-    s = (double*)malloc(n*sizeof(double));
-    t = (double*)malloc(m*sizeof(double));
+    s = (float*)malloc(n*sizeof(float));
+    t = (float*)malloc(m*sizeof(float));
 
     /* Compute values of stencil for end-vertex_t */
     if (m > 4) {
       for (j=0; j<m; j++) {
- 	t[j] = (0.25 + cos(2*M_PI*j/(double)m) + 
-		0.5*cos(4*M_PI*j/(double)m))/(double)m;
+ 	t[j] = (0.25 + cos(2*M_PI*j/(float)m) + 
+		0.5*cos(4*M_PI*j/(float)m))/(float)m;
       }
       qt = 0.75;
       
@@ -208,8 +208,8 @@ void compute_midpoint_butterfly(struct ring_info *rings, int center,  int v1,
     /* Compute values of stencil for center vertex_t */
     if (n > 4) {
       for (j=0; j<n; j++) {
-	s[j] = (0.25 + cos(2*M_PI*j/(double)n) + 
-		0.5*cos(4*M_PI*j/(double)n))/(double)n;
+	s[j] = (0.25 + cos(2*M_PI*j/(float)n) + 
+		0.5*cos(4*M_PI*j/(float)n))/(float)n;
       }
       qs = 0.75;
       
@@ -271,7 +271,7 @@ void compute_midpoint_butterfly(struct ring_info *rings, int center,  int v1,
   }
   else if (n == 6 && m == 6) {/* regular */
     /* apply the 10 point stencil */
-    s = (double*)malloc(6*sizeof(double));
+    s = (float*)malloc(6*sizeof(float));
     s[0] = 0.25 - 2.0*w;
     s[1] = 0.125 + 2.0*w;
     s[2] = -s[1];
@@ -313,11 +313,11 @@ void compute_midpoint_butterfly(struct ring_info *rings, int center,  int v1,
     free(s);
   }
   else if (n!=6 && m==6){ /* only one irreg. vertex_t */
-    s = (double*)malloc(n*sizeof(double));
+    s = (float*)malloc(n*sizeof(float));
     if (n > 4) {
       for (j=0; j<n; j++) {
-	s[j] = (0.25 + cos(2*M_PI*j/(double)n) + 
-		0.5*cos(4*M_PI*j/(double)n))/(double)n;
+	s[j] = (0.25 + cos(2*M_PI*j/(float)n) + 
+		0.5*cos(4*M_PI*j/(float)n))/(float)n;
       }
       qs = 0.75;
       
@@ -346,15 +346,15 @@ void compute_midpoint_butterfly(struct ring_info *rings, int center,  int v1,
 
     free(s);
   } else if (n==6 && m!=6) {
-    t = (double*)malloc(m*sizeof(double));
+    t = (float*)malloc(m*sizeof(float));
 
     while (ring_op.ord_vert[v2] != center)
       v2++;
 
     if (m > 4) {
       for (j=0; j<m; j++) {
-	t[j] = (0.25 + cos(2*M_PI*j/(double)m) + 
-		0.5*cos(4*M_PI*j/(double)m))/(double)m;
+	t[j] = (0.25 + cos(2*M_PI*j/(float)m) + 
+		0.5*cos(4*M_PI*j/(float)m))/(float)m;
       }
       qt = 0.75;
       
@@ -420,7 +420,7 @@ void update_vertices_loop(struct model *or_model,
 			  struct model *subdiv_model, 
 			  struct ring_info *rings) {
   int i, j, v, n;
-  double beta;
+  float beta;
   vertex_t tmp;
   for (i=0; i<or_model->num_vert; i++) {
     n = rings[i].size;
@@ -453,7 +453,7 @@ void compute_midpoint_butterfly_crease(struct ring_info *rings, int center,
   int v2 = 0; /* index of center vertex_t in opp. ring */
   int i;
   vertex_t p;
-  double *s, thk, q;
+  float *s, thk, q;
 
   while (ring_op.ord_vert[v2] != center)
     v2++;
@@ -520,7 +520,7 @@ void compute_midpoint_butterfly_crease(struct ring_info *rings, int center,
 #ifdef __BUTTERFLY_CREASE_DEBUG
       fprintf(stderr, "reg. int-crease %d %d\n", center2, center);
 #endif
-      s = (double*)malloc(4*sizeof(double));
+      s = (float*)malloc(4*sizeof(float));
       s[0] = -0.0625;
       s[3] = s[0];
       if (v1 == 1) {
@@ -542,7 +542,7 @@ void compute_midpoint_butterfly_crease(struct ring_info *rings, int center,
 #endif
       }
       free(s);
-      s = (double*)malloc(6*sizeof(double));
+      s = (float*)malloc(6*sizeof(float));
       s[v2] = 0.25;
       s[(v2+1)%6] = 0.125;
       s[(v2+2)%6] = -0.0625;
@@ -564,8 +564,8 @@ void compute_midpoint_butterfly_crease(struct ring_info *rings, int center,
       free(s);
       return;
     } else { /* extr. crease */
-      s = (double*)malloc(n*sizeof(double));
-      thk = M_PI/(double)(n-2);
+      s = (float*)malloc(n*sizeof(float));
+      thk = M_PI/(float)(n-2);
       q = 1.0 - sin(thk)*sin(v1*thk)/((n-2)*(1 - cos(thk)));
       prod_v(q, &(raw_model->vertices[center]), vout);
       
@@ -577,7 +577,7 @@ void compute_midpoint_butterfly_crease(struct ring_info *rings, int center,
 		 vout, vout);
       for (i=1; i<n-1; i++) {
 	s[i] = (sin(v1*thk)*sin(i*thk) + 0.5*sin(2*v1*thk)*sin(2*i*thk))/
-	  (double)(n-1);
+	  (float)(n-1);
 	add_prod_v(s[i], &(raw_model->vertices[ring.ord_vert[i]]), vout, vout);
       }
       free(s);
@@ -588,7 +588,7 @@ void compute_midpoint_butterfly_crease(struct ring_info *rings, int center,
 #ifdef __BUTTERFLY_CREASE_DEBUG
       fprintf(stderr, "reg. int-crease %d %d\n", center, center2);
 #endif
-      s = (double*)malloc(4*sizeof(double));
+      s = (float*)malloc(4*sizeof(float));
       s[0] = -0.0625;
       s[3] = s[0];
       if (v2 == 1) {
@@ -612,7 +612,7 @@ void compute_midpoint_butterfly_crease(struct ring_info *rings, int center,
 #endif
       }
       free(s);
-      s = (double*)malloc(6*sizeof(double));
+      s = (float*)malloc(6*sizeof(float));
       s[v1] = 0.25;
       s[(v1+1)%6] = 0.125;
       s[(v1+2)%6] = -0.0625;
@@ -637,8 +637,8 @@ void compute_midpoint_butterfly_crease(struct ring_info *rings, int center,
 #ifdef __BUTTERFLY_CREASE_DEBUG
       fprintf(stderr, "extr. crease %d\n", center2);
 #endif
-      s = (double*)malloc(m*sizeof(double));
-      thk = M_PI/(double)(m-2);
+      s = (float*)malloc(m*sizeof(float));
+      thk = M_PI/(float)(m-2);
       q = 1.0 - sin(thk)*sin(v2*thk)/((m-2)*(1 - cos(thk)));
       prod_v(q, &(raw_model->vertices[center2]), vout);
       
@@ -651,7 +651,7 @@ void compute_midpoint_butterfly_crease(struct ring_info *rings, int center,
 		 vout);
       for (i=1; i<m-1; i++) {
 	s[i] = (sin(v2*thk)*sin(i*thk) + 0.5*sin(2*v2*thk)*sin(2*i*thk))/
-	  (double)(m-1);
+	  (float)(m-1);
 	add_prod_v(s[i], &(raw_model->vertices[ring_op.ord_vert[i]]), 
 		   vout, vout);
       }
@@ -712,7 +712,7 @@ void update_vertices_loop_crease(struct model *or_model,
 				 struct model *subdiv_model, 
 				 struct ring_info *rings) {
   int i, j, v, n;
-  double beta;
+  float beta;
   vertex_t tmp;
   for (i=0; i<or_model->num_vert; i++) {
     n = rings[i].size;

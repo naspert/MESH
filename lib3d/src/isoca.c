@@ -1,4 +1,4 @@
-/* $Id: isoca.c,v 1.3 2001/09/27 13:38:14 aspert Exp $ */
+/* $Id: isoca.c,v 1.4 2001/10/30 09:26:06 aspert Exp $ */
 #include <3dutils.h>
 
 
@@ -122,8 +122,8 @@ struct model* subdiv(struct model *raw_model) {
 }
 
 int main(int argc, char **argv) {
-  double phi,stheta;
-  double z,x,y;
+  float phi,stheta;
+  float z,x,y;
   int i,j;
   int n;
   char *filename;

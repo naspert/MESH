@@ -1,9 +1,9 @@
-/* $Id: dirac.c,v 1.2 2001/10/16 12:05:26 aspert Exp $ */
+/* $Id: dirac.c,v 1.3 2001/10/30 09:26:03 aspert Exp $ */
 #include <3dutils.h>
 
 int main(int argc, char **argv) {
   int valence, i, j, fcount=0, nrings, offset;
-  double h, step, r_step=1.5, th=0.0;
+  float h, step, r_step=1.5, th=0.0;
   char *out_fname;
   struct model *dirac;
 
@@ -33,7 +33,7 @@ int main(int argc, char **argv) {
   dirac->vertices[0].x = 0.0;
   dirac->vertices[0].z = h;
 
-  step = 2*M_PI/(double)valence;
+  step = 2*M_PI/(float)valence;
   offset = valence + 1;
 
   for (i=1; i<=valence; i++, th+=step) {

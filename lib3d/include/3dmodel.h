@@ -1,4 +1,4 @@
-/* $Id: 3dmodel.h,v 1.24 2001/10/25 12:03:56 aspert Exp $ */
+/* $Id: 3dmodel.h,v 1.25 2001/10/30 09:25:51 aspert Exp $ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -58,9 +58,9 @@
 #define _3D_MODEL
 
 typedef struct {
-  double x;
-  double y;
-  double z;
+  float x;
+  float y;
+  float z;
 }vertex_t;
 
 typedef struct {
@@ -135,8 +135,8 @@ struct model {
   vertex_t *normals; /* Normals for each vertex of the model */
   vertex_t *face_normals;
   face_t *faces;
-  double *area; /* area of each face */
-  double total_area; /* area of the whole model */
+  float *area; /* area of each face */
+  float total_area; /* area of the whole model */
   vertex_t bBox[2]; /* bBox[0] is the min  bBox[1] is the max */
   struct face_tree **tree; /* spanning tree of the dual graph */
 };

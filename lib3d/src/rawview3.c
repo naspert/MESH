@@ -1,4 +1,4 @@
-/* $Id: rawview3.c,v 1.23 2001/09/27 13:38:15 aspert Exp $ */
+/* $Id: rawview3.c,v 1.24 2001/10/30 09:26:09 aspert Exp $ */
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -21,7 +21,7 @@
 /* Useful Global vars */
 /* ****************** */
 GLfloat FOV = 40.0; /* vertical field of view */
-GLdouble distance, dstep; /* distance and incremental distance step */
+GLfloat distance, dstep; /* distance and incremental distance step */
 GLdouble mvmatrix[16]; /* Buffer for GL_MODELVIEW_MATRIX */
 GLuint model_list = 0; /* display lists idx storage */
 GLuint normal_list = 0;
@@ -137,7 +137,7 @@ switch(button) {
 /* ********************************************************* */
 void motion_mouse(int x, int y) {
   int dx, dy;
-  GLdouble dth, dph, dpsi;
+  GLfloat dth, dph, dpsi;
 
   dx = x - oldx;
   dy = y - oldy;
@@ -194,7 +194,7 @@ void reshape(int width, int height) {
 void rebuild_list(struct model *raw_model) {
   int i;
   GLboolean light_mode;
-  double scale_fact;
+  float scale_fact;
   face_t *cur_face;
   vertex_t center1, center2;
   face_t *cur_face2;
@@ -587,7 +587,7 @@ void sp_key_pressed(int key, int x, int y) {
       printf("Lighted mode\n");
       if (normals_done != 1) {/* We have to build the normals */
 	printf("Computing normals...\n");
-	raw_model->area = (double*)malloc(raw_model->num_faces*sizeof(double));
+	raw_model->area = (float*)malloc(raw_model->num_faces*sizeof(float));
 	curv = (struct info_vertex*)
 	  malloc(raw_model->num_vert*sizeof(struct info_vertex));
 
@@ -667,7 +667,7 @@ void sp_key_pressed(int key, int x, int y) {
       if (normals_done != 1) {/* We have to build the normals */
 	printf("Computing normals...");
 	fflush(stdout);
-	raw_model->area = (double*)malloc(raw_model->num_faces*sizeof(double));
+	raw_model->area = (float*)malloc(raw_model->num_faces*sizeof(float));
 	curv = (struct info_vertex*)
 	  malloc(raw_model->num_vert*sizeof(struct info_vertex));
 	raw_model->face_normals = compute_face_normals(raw_model, curv);

@@ -1,9 +1,9 @@
-/* $Id: cone.c,v 1.2 2001/09/27 12:53:41 aspert Exp $ */
+/* $Id: cone.c,v 1.3 2001/10/30 09:26:02 aspert Exp $ */
 #include <3dutils.h>
 
 int main(int argc, char **argv) {
   int valence, i, fcount=0;
-  double h, step, th=0.0;
+  float h, step, th=0.0;
   char *out_fname;
   struct model *cone;
 
@@ -17,6 +17,7 @@ int main(int argc, char **argv) {
   out_fname = argv[3];
   
   cone = (struct model*)malloc(sizeof(struct model));
+  cone = memset(cone, 0, sizeof(struct model));
   cone->num_vert = valence + 2;
   cone->vertices = (vertex_t*)malloc(cone->num_vert*sizeof(vertex_t));
   cone->num_faces = 2*valence;
@@ -30,7 +31,7 @@ int main(int argc, char **argv) {
   cone->vertices[1].y = 0.0;
   cone->vertices[1].z = h;
 
-  step = 2*M_PI/(double)valence;
+  step = 2*M_PI/(float)valence;
 
   for (i=2; i<cone->num_vert; i++, th+=step) {
     cone->vertices[i].x = cos(th);

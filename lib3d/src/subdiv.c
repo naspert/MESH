@@ -1,4 +1,4 @@
-/* $Id: subdiv.c,v 1.13 2001/10/22 11:24:47 aspert Exp $ */
+/* $Id: subdiv.c,v 1.14 2001/10/30 09:26:12 aspert Exp $ */
 #include <3dutils.h>
 #include <subdiv_methods.h>
 #include <assert.h>
@@ -348,7 +348,7 @@ int main(int argc, char **argv) {
     if (or_model->normals == NULL && sub_method == SUBDIV_SPH) {
       tmp_vert = (struct info_vertex*)
 	malloc(or_model->num_vert*sizeof(struct info_vertex));
-      or_model->area = (double*)malloc(or_model->num_faces*sizeof(double));
+      or_model->area = (float*)malloc(or_model->num_faces*sizeof(float));
       or_model->face_normals = compute_face_normals(or_model, tmp_vert);
       compute_vertex_normal(or_model, tmp_vert, or_model->face_normals);
       for (i=0; i<or_model->num_vert; i++) 

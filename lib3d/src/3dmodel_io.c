@@ -1,4 +1,4 @@
-/* $Id: 3dmodel_io.c,v 1.19 2001/10/25 15:00:40 aspert Exp $ */
+/* $Id: 3dmodel_io.c,v 1.20 2001/10/30 09:25:54 aspert Exp $ */
 #include <3dmodel.h>
 #include <3dmodel_io.h>
 #include <normals.h>
@@ -42,7 +42,7 @@ struct model* alloc_read_model(FILE *pf, int* header_fields) {
 
   struct model *raw_model;
   int i;
-  double x,y,z;
+  float x,y,z;
   int v0, v1, v2;
   int nvert=header_fields[0], nfaces=header_fields[1];
   int nnorms=header_fields[2], nfnorms=header_fields[3];
@@ -77,7 +77,7 @@ struct model* alloc_read_model(FILE *pf, int* header_fields) {
   
 
   for (i=0; i<nvert; i++) {
-    fscanf(pf,"%lf %lf %lf",&x, &y, &z);
+    fscanf(pf,"%f %f %f",&x, &y, &z);
     raw_model->vertices[i].x = x;
     raw_model->vertices[i].y = y;
     raw_model->vertices[i].z = z;
@@ -106,7 +106,7 @@ struct model* alloc_read_model(FILE *pf, int* header_fields) {
   
   if (nnorms > 0) {
     for (i=0; i<nnorms; i++) {
-      fscanf(pf,"%lf %lf %lf",&x, &y, &z);
+      fscanf(pf,"%f %f %f",&x, &y, &z);
       raw_model->normals[i].x = x;
       raw_model->normals[i].y = y;
       raw_model->normals[i].z = z;
@@ -114,7 +114,7 @@ struct model* alloc_read_model(FILE *pf, int* header_fields) {
   }
   if (nfnorms > 0) {
     for (i=0; i<nfnorms; i++) {
-      fscanf(pf,"%lf %lf %lf",&x, &y, &z);
+      fscanf(pf,"%f %f %f",&x, &y, &z);
       raw_model->face_normals[i].x = x;
       raw_model->face_normals[i].y = y;
       raw_model->face_normals[i].z = z;

@@ -1,4 +1,4 @@
-/* $Id: torus.c,v 1.4 2001/09/27 11:44:47 aspert Exp $ */
+/* $Id: torus.c,v 1.5 2001/10/30 09:26:18 aspert Exp $ */
 #include <3dmodel.h>
 #include <geomutils.h>
 #include <3dmodel_io.h>
@@ -7,8 +7,9 @@
 int main(int argc, char **argv) {
   int i,j,k;
   struct model *torus;
-  double theta, phi, dth, dph;
-  double r,h, k1, k2;
+  float theta, phi, dth, dph;
+  float r,h;
+  double k1, k2;
   int nh, nr;
   char *filename;
 
@@ -39,8 +40,8 @@ int main(int argc, char **argv) {
   torus->num_vert = nr*nh;
   torus->vertices = (vertex_t*)malloc(torus->num_vert*sizeof(vertex_t));
   torus->faces = (face_t*)malloc(torus->num_faces*sizeof(face_t));
-  dth = 2.0*M_PI/(double)nr;
-  dph = 2.0*M_PI/(double)nh;
+  dth = 2.0*M_PI/(float)nr;
+  dph = 2.0*M_PI/(float)nh;
   k2 = 1.0/h;
 
 

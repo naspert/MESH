@@ -1,7 +1,16 @@
-# $Id: Makefile,v 1.20 2001/10/14 12:32:10 aspert Exp $
+# $Id: Makefile,v 1.21 2001/10/30 09:25:56 aspert Exp $
 
 #CC = /home/sun1/aspert/gcc/bin/gcc
 CC = gcc
+OS := $(shell uname -s)
+ARCH := $(shell uname -m)
+
+ifeq ($(OS),Linux)
+XTRA_CFLAGS = -D__LINUX
+endif
+ifeq ($(ARCH),i686)
+XTRA_CFLAGS += -march=i686 -fstrict-aliasing -ffast-math -fno-math-errno
+endif
 
 BINDIR = ../bin
 LIBDIR = ../lib
@@ -13,7 +22,7 @@ HPGLDIR = /usr/GL/hp
 
 INCLFLAGS = -I../include
 GLINCLFLAGS = -I$(HPGLDIR)/include -I$(GLDIR)/include
-XTRA_CFLAGS = -g  -pipe -Wall -O2  -ansi -pedantic 
+XTRA_CFLAGS += -g  -pipe -Wall -O2  -ansi -pedantic #-D__RING_DEBUG
 
 BASE_CFLAGS = $(INCLFLAGS) $(XTRA_CFLAGS) 
 GL_CFLAGS = $(INCLFLAGS) $(GLINCLFLAGS) $(XTRA_CFLAGS) 
@@ -25,7 +34,7 @@ GL_LIBFLAGS = -L$(LIBDIR) -L$(HPGLDIR)/lib -L$(GLDIR)/lib -lglut -lGLU -lGL \
 STATIC_GLFLAGS =   -L$(LIBDIR) -L$(GLDIR)/lib -lglut -lGLU -lGL -lXmu -lXext \
 	-lX11 -lXi -lm 
 
-BASE_LDFLAGS = -g $(BASE_LIBFLAGS) 
+BASE_LDFLAGS = -g $(BASE_LIBFLAGS) #-pg
 GL_LDFLAGS = -g $(GL_LIBFLAGS) 
 
 
