@@ -1,3 +1,14 @@
+* Changes from v1.6 to v1.7 :
+	- Removed deprecated stuff from 'geomutils.c'
+	- Better triangle area computation, and thus better degeneracy
+	  handling in 'compute_error.c'
+	- Removed a potential buffer overflow when refilling the buffer in 
+	  'model_in.c'. The buffer will now use 'grow_array' when needed.
+	- Tweaks for float_scanf on Win32 (still slow ...)
+	- Replaced most of the 'grow_arrays' by single-linked lists of 
+	  memory block. Much faster on Win32 than realloc-ing a big array. 
+	  And not slower on Linux...
+
 * Changes from v1.5 to v1.6 :
 	- Updated the paper status in copyright headers 
 	  (no longer 'submitted to' but 'accepted')
