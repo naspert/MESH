@@ -1,4 +1,4 @@
-/* $Id: mesh_run.c,v 1.21 2002/04/24 12:04:03 aspert Exp $ */
+/* $Id: mesh_run.c,v 1.22 2002/05/01 09:13:09 aspert Exp $ */
 
 
 /*
@@ -247,7 +247,7 @@ void mesh_run(const struct args *args, struct model_error *model1,
                   ((double)stats.m1_samples)/model2->mesh->num_faces,
                   stats.st_m1_area/stats.m1_area*100.0);
   } else {
-    outbuf_printf(out,"Sampling step: \t%15g\t%14g\t%10d\t%7d\n",
+    outbuf_printf(out,"Sampling step:   \t%8g\t   %7g     \t   %7d\t%7d\n",
                   abs_sampling_step,abs_sampling_step/bbox2_diag*100,
                   (int)(stats.m1_area*abs_sampling_dens),
                   (int)(stats.m2_area*abs_sampling_dens));
