@@ -1,4 +1,4 @@
-/* $Id: subdiv.c,v 1.23 2002/10/31 10:26:12 aspert Exp $ */
+/* $Id: subdiv.c,v 1.24 2002/11/05 10:20:10 aspert Exp $ */
 #include <3dutils.h>
 #include <subdiv_methods.h>
 #include <subdiv.h>
@@ -74,41 +74,27 @@ struct model* subdiv(struct model *raw_model,
       if (rings[i].type==1 || rings[rings[i].ord_vert[j]].type==1) {
 	if (midpoint_func_bound == NULL)
 	  continue;
-	else {
+	else 
 	  midpoint_func_bound(rings, i, j, raw_model, &p);
-	  nedges ++;
-	  mp_info[i].midpoint_idx[j] = v_idx;
-	  mp_info[i].midpoint[j] = p;
-	  v2 = rings[i].ord_vert[j];
-	  v0 = 0;
-	  while (rings[v2].ord_vert[v0] != i)
-	    v0++;
-	  mp_info[v2].midpoint_idx[v0] = v_idx++;
-	  mp_info[v2].midpoint[v0] = p;
-	  continue;
-	}
-      }
-	  
-      
-      midpoint_func(rings, i, j, raw_model, &p);
+	
+      } else /* true regular edge */
+        midpoint_func(rings, i, j, raw_model, &p);
+
       nedges ++;
-
-
-#ifdef __SUBDIV_DEBUG
-      printf("i=%d j=%d  rings[%d].ord_vert[%d]=%d\n",i,j, 
-	      i, j, rings[i].ord_vert[j]);
-      printf("nedges-1=%d\n",nedges-1);
-#endif
-
-
       mp_info[i].midpoint_idx[j] = v_idx;
       mp_info[i].midpoint[j] = p;
       v2 = rings[i].ord_vert[j];
       v0 = 0;
       while (rings[v2].ord_vert[v0] != i)
-	v0++;
+        v0++;
       mp_info[v2].midpoint_idx[v0] = v_idx++;
       mp_info[v2].midpoint[v0] = p;
+
+#ifdef __SUBDIV_DEBUG
+        printf("i=%d j=%d  rings[%d].ord_vert[%d]=%d\n",i,j, 
+               i, j, rings[i].ord_vert[j]);
+        printf("nedges-1=%d\n",nedges-1);
+#endif
     }
 
   }
