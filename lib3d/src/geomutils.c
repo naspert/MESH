@@ -1,4 +1,4 @@
-/* $Id: geomutils.c,v 1.15 2002/09/26 12:39:40 dsanta Exp $ */
+/* $Id: geomutils.c,v 1.16 2002/09/26 13:01:41 aspert Exp $ */
 
 
 /*
@@ -96,9 +96,9 @@ void compute_circle2d(vertex_t p1, vertex_t p2, vertex_t p3,
     cp = v1.x*v2.y - v1.y*v2.x;
 
     if (fabs(cp)>1e-10) {
-	np1 = norm(p1);
-	np2 = norm(p2);
-	np3 = norm(p3);
+	np1 = __norm_v(p1);
+	np2 = __norm_v(p2);
+	np3 = __norm_v(p3);
 	num = np1*(p2.y - p3.y) + np2*(p3.y - p1.y) +
 	    np3*(p1.y - p2.y);
 	center->x = num/(2.0f*cp);
@@ -111,7 +111,7 @@ void compute_circle2d(vertex_t p1, vertex_t p2, vertex_t p3,
     v1.y = center->y - p1.y;
     v1.z = 0.0;
 
-    *r = norm(v1);
+    *r = __norm_v(v1);
 
 }
 
