@@ -1,4 +1,4 @@
-/* $Id: model_in_ply.c,v 1.9 2002/08/26 13:44:22 aspert Exp $ */
+/* $Id: model_in_ply.c,v 1.10 2002/08/26 14:22:29 aspert Exp $ */
 
 /*
  *
@@ -132,7 +132,7 @@ static int read_uint16(struct file_data *data, int swap_bytes, t_uint16 *out )
 
 static int read_int16(struct file_data *data, int swap_bytes, t_int16 *out ) 
 {
-  union sw_uint16 tmp;
+  union sw_int16 tmp;
   int c, i;
   int rcode = 0;
 
