@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.37 2001/08/20 09:46:21 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.38 2001/08/20 10:12:38 dsanta Exp $ */
 
 #include <compute_error.h>
 
@@ -24,9 +24,8 @@
  * mark it as degenerate. */
 #define DMARGIN 1e10
 
-/* Maximum size of the grid in any direction (80 gives a maximum of 512000
- * cells) */
-#define GRID_SZ_MAX 70
+/* Maximum number of cells in the grid. */
+#define GRID_CELLS_MAX 512000
 
 /* Define inlining directive for C99 or as compiler specific C89 extension */
 #if defined(__GNUC__) /* GCC's interpretation is inverse of C99 */
@@ -238,6 +237,55 @@ static void calc_normals_as_oriented_model(model *m,
   for (k=0, kmax=m->num_vert; k<kmax; k++) {
     normalize_v(&(m->normals[k]));
   }
+}
+
+/* Given a the triangle list tl of a model, and the minimum and maximum
+ * coordinates of its bounding box, bbox_min and bbox_max, calculates the grid
+ * cell size as well as the grid size. The cubic cell side length is returned
+ * and the grid size is stored in *grid_sz. */
+static double get_cell_size(const struct triangle_list *tl,
+                            const vertex *bbox_min, const vertex *bbox_max,
+                            struct size3d *grid_sz)
+{
+  double cell_sz;
+  double f_gsz_x,f_gsz_y,f_gsz_z;
+
+  /* Derive the grid size. For that we derive the average triangle side length
+   * as the side of an equilateral triangle which's surface equals the average
+   * triangle surface of m2. The cubic cell side is then CELL_TRIAG_RATIO
+   * times that. */
+  cell_sz = CELL_TRIAG_RATIO*sqrt(tl->area/tl->n_triangles*2/sqrt(3));
+
+  /* Avoid values that can overflow or underflow */
+  if (cell_sz < DBL_MIN*DMARGIN) { /* Avoid division by zero with cell_sz */
+    cell_sz = DBL_MIN*DMARGIN;
+  } else if (cell_sz >= DBL_MAX/DMARGIN) {
+    fprintf(stderr,"ERROR: coordinate overflow. Are models OK?\n");
+    exit(1);
+  }
+
+  /* Limit to maximum number of cells */
+  f_gsz_x = ceil((bbox_max->x-bbox_min->x)/cell_sz);
+  if (f_gsz_x <= 0) f_gsz_x = 1;
+  f_gsz_y = ceil((bbox_max->y-bbox_min->y)/cell_sz);
+  if (f_gsz_y <= 0) f_gsz_y = 1;
+  f_gsz_z = ceil((bbox_max->z-bbox_min->z)/cell_sz);
+  if (f_gsz_z <= 0) f_gsz_z = 1;
+  if (f_gsz_x*f_gsz_y*f_gsz_z > GRID_CELLS_MAX) {
+    cell_sz = pow(f_gsz_x*f_gsz_y*f_gsz_z/GRID_CELLS_MAX,1/3);
+    f_gsz_x = ceil((bbox_max->x-bbox_min->x)/cell_sz);
+    if (f_gsz_x <= 0) f_gsz_x = 1;
+    f_gsz_y = ceil((bbox_max->y-bbox_min->y)/cell_sz);
+    if (f_gsz_y <= 0) f_gsz_y = 1;
+    f_gsz_z = ceil((bbox_max->z-bbox_min->z)/cell_sz);
+    if (f_gsz_z <= 0) f_gsz_z = 1;
+  }
+
+  /* Return values */
+  grid_sz->x = (int) f_gsz_x;
+  grid_sz->y = (int) f_gsz_y;
+  grid_sz->z = (int) f_gsz_z;
+  return cell_sz;
 }
 
 /* --------------------------------------------------------------------------*
@@ -1051,7 +1099,6 @@ void dist_surf_surf(const model *m1, model *m2, int n_spt,
   struct triag_sample_error tse; /* the errors at the triangle samples */
   int i,k,kmax;               /* counters and loop limits */
   double cell_sz;             /* side length of the cubic cells */
-  double f_gsz_x,f_gsz_y,f_gsz_z; /* floating-point grid size */
   struct size3d grid_sz;      /* number of cells in the X, Y and Z directions */
   struct face_error *fe;      /* The error metrics for each face of m1 */
   int report_step;            /* The step to update the progress report */
@@ -1067,51 +1114,9 @@ void dist_surf_surf(const model *m1, model *m2, int n_spt,
   bbox2_min = m2->bBox[0];
   bbox2_max = m2->bBox[1];
   
-  /* Get the triangle list from model 2 */
+  /* Get the triangle list from model 2 and determine the grid and cell size */
   tl2 = model_to_triangle_list(m2);
-  
-  /* Derive the grid size. For that we derive the average triangle side length
-   * as the side of an equilateral triangle which's surface equals the average
-   * triangle surface of m2. The cubic cell side is then CELL_TRIAG_RATIO
-   * times that. */
-  cell_sz = CELL_TRIAG_RATIO*sqrt(tl2->area/tl2->n_triangles*2/sqrt(3));
-  if (cell_sz < DBL_MIN*DMARGIN) { /* Avoid division by zero with cell_sz */
-    cell_sz = DBL_MIN*DMARGIN;
-  } else if (cell_sz >= DBL_MAX/DMARGIN) {
-    fprintf(stderr,"ERROR: coordinate overflow. Are models OK?\n");
-    exit(1);
-  }
-  /* Watch out for overflowing values */
-  f_gsz_x = ceil((bbox2_max.x-bbox2_min.x)/cell_sz);
-  f_gsz_y = ceil((bbox2_max.y-bbox2_min.y)/cell_sz);
-  f_gsz_z = ceil((bbox2_max.z-bbox2_min.z)/cell_sz);
-  if (f_gsz_x >= GRID_SZ_MAX || f_gsz_y >= GRID_SZ_MAX ||
-      f_gsz_z >= GRID_SZ_MAX) {
-    if (bbox2_max.x-bbox2_min.x >= bbox2_max.y-bbox2_min.y) {
-      if (bbox2_max.z-bbox2_min.z >= bbox2_max.x-bbox2_min.x) { /* Z largest */
-        cell_sz = (bbox2_max.z-bbox2_min.z)/GRID_SZ_MAX;
-      } else { /* X largest */
-        cell_sz = (bbox2_max.x-bbox2_min.x)/GRID_SZ_MAX;
-      }
-    } else {
-      if (bbox2_max.z-bbox2_min.z >= bbox2_max.y-bbox2_min.y) { /* Z largest */
-        cell_sz = (bbox2_max.z-bbox2_min.z)/GRID_SZ_MAX;
-      } else { /* Y largest */
-        cell_sz = (bbox2_max.y-bbox2_min.y)/GRID_SZ_MAX;
-      }
-    }
-    grid_sz.x = (int) ceil((bbox2_max.x-bbox2_min.x)/cell_sz);
-    grid_sz.y = (int) ceil((bbox2_max.y-bbox2_min.y)/cell_sz);
-    grid_sz.z = (int) ceil((bbox2_max.z-bbox2_min.z)/cell_sz);
-  } else {
-    grid_sz.x = (int) f_gsz_x;
-    grid_sz.y = (int) f_gsz_y;
-    grid_sz.z = (int) f_gsz_z;
-  }
-  /* Watch out for underflow */
-  if (grid_sz.x == 0) grid_sz.x = 1;
-  if (grid_sz.y == 0) grid_sz.y = 1;
-  if (grid_sz.z == 0) grid_sz.z = 1;
+  cell_sz = get_cell_size(tl2,&bbox2_min,&bbox2_max,&grid_sz);
 
   /* Get the list of triangles in each cell */
   fic = triangles_in_cells(tl2,grid_sz,cell_sz,bbox2_min);
