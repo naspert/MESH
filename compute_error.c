@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.47 2001/08/22 14:51:07 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.48 2001/08/23 09:06:17 dsanta Exp $ */
 
 #include <compute_error.h>
 
@@ -133,37 +133,34 @@ struct triangle_list {
 /* A triangle and useful associated information. AB is always the longest side
  * of the triangle. That way the projection of C on AB is always inside AB. */
 struct triangle_info {
-  int is_degenerate;   /* Indicates if the triangle is degenerate. If 0 not
-                        * degenerate, if 1 degenerates to the AB segment, if 2
-                        * degenerates to a point. */
   vertex a;            /* The A vertex of the triangle */
   vertex b;            /* The B vertex of the triangle */
   vertex c;            /* The C vertex of the triangle. The projection of C
                         * on AB is always inside the AB segment. */
   vertex ab;           /* The AB vector */
-  vertex ac;           /* The AC vector */
-  vertex bc;           /* The BC vector */
+  vertex ca;           /* The CA vector */
+  vertex cb;           /* The CB vector */
   double ab_len_sqr;   /* The square of the length of AB */
-  double ac_len_sqr;   /* The square of the length of AC */
-  double bc_len_sqr;   /* The square of the length of BC */
+  double ca_len_sqr;   /* The square of the length of CA */
+  double cb_len_sqr;   /* The square of the length of CB */
   double ab_1_len_sqr; /* One over the square of the length of AB */
-  double ac_1_len_sqr; /* One over the square of the length of AC */
-  double bc_1_len_sqr; /* One over the square of the length of BC */
-  vertex d;            /* The perpendicular projection of C on AB. Always in
-                        * the AB segment. */
-  vertex dc;           /* The DC vector */
-  double dc_1_len_sqr; /* One over the square of the length of DC */
-  double da_1_max_coord; /* One over the max (in absolute value) coordinate of
-                          * DA.  */
-  double db_1_max_coord; /* One over the max (in absolute value) coordinate of
-                          * DB */
-  int da_max_c_idx;    /* The index of the coordinate corresponding to
-                        * da_max_coord: 0 for X, 1 for Y, 2 for Z*/
-  int db_max_c_idx;    /* The index of the coordinate corresponding to
-                        * db_max_coord: 0 for X, 1 for Y, 2 for Z*/
+  double ca_1_len_sqr; /* One over the square of the length of CA */
+  double cb_1_len_sqr; /* One over the square of the length of CB */
   vertex normal;       /* The (unit length) normal of the ABC triangle
                         * (orinted with the right hand rule turning from AB to
                         * AC). If the triangle is degenerate it is (0,0,0). */
+  vertex nhsab;        /* (unnormalized) normal of the plane trough AB,
+                        * perpendicular to ABC and pointing outside of ABC */
+  vertex nhsbc;        /* (unnormalized) normal of the plane trough BC,
+                        * perpendicular to ABC and pointing outside of ABC */
+  vertex nhsca;        /* (unnormalized) normal of the plane trough CA,
+                        * perpendicular to ABC and pointing outside of ABC */
+  double chsab;        /* constant of the plane equation: <p|npab>=cpab */
+  double chsbc;        /* constant of the plane equation: <p|npbc>=cpbc */
+  double chsca;        /* constant of the plane equation: <p|npca>=cpca */
+  double a_n;          /* scalar product of A with the unit length normal */
+  int wide_at_c;       /* Flag indicating if the angle at C is larger than 90
+                        * degrees */
   double s_area;       /* The surface area of the triangle */
 };
 
@@ -174,6 +171,7 @@ struct dist_pt_surf_stats {
   int n_cell_t_scans;     /* Number of cells that for which their triangles are
                            * scanned */
   int n_triag_scans;      /* Number of triangles that are scanned */
+  int sum_kmax;           /* the sum of athe max k for each sample point */
 };
 
 /* --------------------------------------------------------------------------*
@@ -436,10 +434,11 @@ static void init_triangle(const vertex *a, const vertex *b, const vertex *c,
 {
   vertex ab,ac,bc;
   double ab_len_sqr,ac_len_sqr,bc_len_sqr;
-  vertex da,db;
-  double dc_len_sqr;
+  double n_len;
+  double ca_ab;
+  double height_sqr;
+  int is_point;
 
-  t->is_degenerate = 0;
   /* Get the vertices in the proper ordering (the orientation is not
    * changed). AB should be the longest side. */
   substract_v(b,a,&ab);
@@ -455,22 +454,22 @@ static void init_triangle(const vertex *a, const vertex *b, const vertex *c,
       t->a = *b;
       t->b = *c;
       t->ab = bc;
-      neg_v(&ab,&(t->ac));
-      neg_v(&ac,&(t->bc));
+      t->ca = ab;
+      t->cb = ac;
       t->ab_len_sqr = bc_len_sqr;
-      t->ac_len_sqr = ab_len_sqr;
-      t->bc_len_sqr = ac_len_sqr;
+      t->ca_len_sqr = ab_len_sqr;
+      t->cb_len_sqr = ac_len_sqr;
     } else { /* AC longest side => B to C */
       assert(ac_len_sqr >= bc_len_sqr && ac_len_sqr >= ab_len_sqr);
       t->b = *a;
       t->c = *b;
       t->a = *c;
       neg_v(&ac,&(t->ab));
-      neg_v(&bc,&(t->ac));
-      t->bc = ab;
+      t->ca = bc;
+      neg_v(&ab,&(t->cb));
       t->ab_len_sqr = ac_len_sqr;
-      t->ac_len_sqr = bc_len_sqr;
-      t->bc_len_sqr = ab_len_sqr;
+      t->ca_len_sqr = bc_len_sqr;
+      t->cb_len_sqr = ab_len_sqr;
     }
   } else {
     if (ab_len_sqr <= bc_len_sqr) { /* BC longest side => A to C */
@@ -479,97 +478,71 @@ static void init_triangle(const vertex *a, const vertex *b, const vertex *c,
       t->a = *b;
       t->b = *c;
       t->ab = bc;
-      neg_v(&ab,&(t->ac));
-      neg_v(&ac,&(t->bc));
+      t->ca = ab;
+      t->cb = ac;
       t->ab_len_sqr = bc_len_sqr;
-      t->ac_len_sqr = ab_len_sqr;
-      t->bc_len_sqr = ac_len_sqr;
+      t->ca_len_sqr = ab_len_sqr;
+      t->cb_len_sqr = ac_len_sqr;
     } else { /* AB longest side => C remains C */
       assert(ab_len_sqr >= ac_len_sqr && ab_len_sqr >= bc_len_sqr);
       t->a = *a;
       t->b = *b;
       t->c = *c;
       t->ab = ab;
-      t->ac = ac;
-      t->bc = bc;
+      neg_v(&ac,&(t->ca));
+      neg_v(&bc,&(t->cb));
       t->ab_len_sqr = ab_len_sqr;
-      t->ac_len_sqr = ac_len_sqr;
-      t->bc_len_sqr = bc_len_sqr;
+      t->ca_len_sqr = ac_len_sqr;
+      t->cb_len_sqr = bc_len_sqr;
     }
   }
   if (t->ab_len_sqr < DBL_MIN*DMARGIN) {
-    t->is_degenerate = 2; /* ABC coincident => degenerates to a point */
+    is_point = 1; /* ABC coincident => degenerates to a point */
+    t->ab.x = 0;
+    t->ab.y = 0;
+    t->ab.z = 0;
+    t->cb = t->ab;
+    t->ca = t->ab;
+    t->ab_len_sqr = 0;
+    t->ca_len_sqr = 0;
+    t->cb_len_sqr = 0;
+  } else {
+    is_point = 0;
   }
   /* Get side lengths */
   t->ab_1_len_sqr = 1/t->ab_len_sqr;
-  t->ac_1_len_sqr = 1/t->ac_len_sqr;
-  t->bc_1_len_sqr = 1/t->bc_len_sqr;
-  /* Get D, projection of C on AB */
-  if (t->is_degenerate != 2) { /* normal case, A != B */
-    prod_v(-scalprod_v(&(t->ac),&(t->ab))*t->ab_1_len_sqr,&(t->ab),&da);
-    substract_v(&(t->a),&da,&(t->d));
-    add_v(&da,&(t->ab),&db);
-    add_v(&da,&(t->ac),&(t->dc));
-  } else { /* degenerate, A == B, set D = A */
-    t->d = t->a;
-    da.x = 0;
-    da.y = 0;
-    da.z = 0;
-    db = t->ab;
-    t->dc = t->ac;
-  }
-  /* Get the D relative lengths */
-  dc_len_sqr = norm2_v(&(t->dc));
-  if (dc_len_sqr < DBL_MIN*DMARGIN) {
-    t->is_degenerate = 1; /* C is on AB => degenerates to a line */
-  }
-  t->dc_1_len_sqr = 1/dc_len_sqr;
-  /* Get max coords of DA and DB */
-  if (fabs(da.x) > fabs(da.y)) {
-    if (fabs(da.x) >= fabs(da.z)) {
-      t->da_1_max_coord = 1/da.x;
-      t->da_max_c_idx = 0;
-    } else {
-      t->da_1_max_coord = 1/da.z;
-      t->da_max_c_idx = 2;
-    }
-  } else {
-    if (fabs(da.y) >= fabs(da.z)) {
-      t->da_1_max_coord = 1/da.y;
-      t->da_max_c_idx = 1;
-    } else {
-      t->da_1_max_coord = 1/da.z;
-      t->da_max_c_idx = 2;
-    }
-  }
-  if (fabs(db.x) > fabs(db.y)) {
-    if (fabs(db.x) >= fabs(db.z)) {
-      t->db_1_max_coord = 1/db.x;
-      t->db_max_c_idx = 0;
-    } else {
-      t->db_1_max_coord = 1/db.z;
-      t->db_max_c_idx = 2;
-    }
-  } else {
-    if (fabs(db.y) >= fabs(db.z)) {
-      t->db_1_max_coord = 1/db.y;
-      t->db_max_c_idx = 1;
-    } else {
-      t->db_1_max_coord = 1/db.z;
-      t->db_max_c_idx = 2;
-    }
-  }
+  t->ca_1_len_sqr = 1/t->ca_len_sqr;
+  t->cb_1_len_sqr = 1/t->cb_len_sqr;
   /* Get the triangle normal (normalized) */
-  if (!t->is_degenerate) {
-    crossprod_v(&(t->ab),&(t->ac),&(t->normal));
-    normalize_v(&(t->normal));
-  } else {
+  crossprod_v(&(t->ca),&(t->ab),&(t->normal));
+  n_len = norm_v(&(t->normal));
+  if (n_len < DBL_MIN*DMARGIN) {
     t->normal.x = 0;
     t->normal.y = 0;
     t->normal.z = 0;
+  } else {
+    prod_v(1/n_len,&(t->normal),&(t->normal));
   }
+  /* Get planes trough sides */
+  crossprod_v(&(t->ab),&(t->normal),&(t->nhsab));
+  crossprod_v(&(t->normal),&(t->cb),&(t->nhsbc));
+  crossprod_v(&(t->ca),&(t->normal),&(t->nhsca));
+  /* Get constants for plane equations */
+  t->chsab = scalprod_v(&(t->a),&(t->nhsab));
+  t->chsca = scalprod_v(&(t->a),&(t->nhsca));
+  t->chsbc = scalprod_v(&(t->b),&(t->nhsbc));
+  /* Miscellaneous fields */
+  t->wide_at_c = (t->ab_len_sqr > t->ca_len_sqr+t->cb_len_sqr);
+  t->a_n = scalprod_v(&(t->a),&(t->normal));
   /* Get surface area */
-  t->s_area = sqrt(t->ab_len_sqr*dc_len_sqr)/2;
+  if (is_point) {
+    t->s_area = 0;
+  } else {
+    ca_ab = scalprod_v(&(t->ca),&(t->ab));
+    height_sqr = t->ca_len_sqr-ca_ab*ca_ab*t->ab_1_len_sqr;
+    if (height_sqr < 0) height_sqr = 0; /* avoid rounding problems */
+    t->s_area = sqrt(t->ab_len_sqr*height_sqr)*0.5;
+  }
 }
 
 /* Compute the square of the distance between point 'p' and triangle 't' in 3D
@@ -578,120 +551,93 @@ static void init_triangle(const vertex *a, const vertex *b, const vertex *c,
 static double dist_sqr_pt_triag(const struct triangle_info *t, const vertex *p)
 {
   double dpp;             /* (signed) distance point to ABC plane */
-  double l,m_adc,m_bdc;   /* l amd m triangle parametrization veraibles */
-  double dq_dc,ap_ab,ap_ac,bp_bc; /* scalra products */
-  vertex q;               /* projection of p on ABC plane */
-  double res[3];          /* residue of AQ, parallel to AB */
-  vertex dq,ap,bp,cp;     /* Point to point vectors */
+  double ap_ab,cp_cb,cp_ca; /* scalar products */
+  vertex ap,cp;           /* Point to point vectors */
   double dmin_sqr;        /* minimum distance squared */
 
-  substract_v(p,&(t->a),&ap);
+  /* NOTE: If the triangle has a wide angle (i.e. angle larger than 90
+   * degrees) it is the angle at the C vertex (never at A or B). */
 
-  /* Handle special cases first */
-  if (t->is_degenerate) {
-    if (t->is_degenerate == 2) { /* triangle degenerates to a point */
-      return norm2_v(&ap);
-    } else { /* triangle degenerates to AB segment */
-      ap_ab = scalprod_v(&ap,&(t->ab));
-      if(ap_ab > 0) {
-        if (ap_ab < t->ab_len_sqr) { /* projection of P on AB is in AB */
-          dmin_sqr = norm2_v(&ap) - (ap_ab*ap_ab)*t->ab_1_len_sqr;
-          if (dmin_sqr < 0) dmin_sqr = 0; /* correct rounding problems */
-        } else { /* B is closer */
-          substract_v(p,&(t->b),&bp);
-          dmin_sqr = norm2_v(&bp);
-        }
-      } else { /* A is closer */
-        dmin_sqr = norm2_v(&ap);
-      }
-      return dmin_sqr;
-    }
-  }
-  
-  /* Get Q: projection of point on ABC plane. */
-  dpp = scalprod_v(&(t->normal),&ap); /* signed distance from p to ABC plane */
-  prod_v(dpp,&(t->normal),&q);
-  substract_v(p,&q,&q);
+  /* We get the distance from point P to triangle ABC by first testing on
+   * which side of the planes (hsab, hsbc and hsca) perpendicular to the ABC
+   * plane trough AB, BC and CA is P. If P is towards the triangle center from
+   * all three planes, the projection of P on the ABC plane is interior to ABC
+   * and thus the distance to ABC is the distance to the ABC plane. If P is
+   * towards the triangle exterior from the plane hsab, then the distance from
+   * P to ABC is the distance to the AB segment. Otherwise if P is towards the
+   * triangle exterior from the plane hsbc the distance from P to ABC is the
+   * minimum of the distance to the BC and CA segments (only BC is the angle
+   * at C is not wide). Otherwise P is towards the triangle exterior from the
+   * plane hsac and the distance from P to ABC is the distance to the CA
+   * segment. */
 
-  /* Is Q inside ABC (including border) ? */
-  /* NOTE: the triangle ABC is decomposed into triangles ADC and BDC and the
-   * point is tested on each of these. Since D always belongs to the AB
-   * segment, if the point is in any of those triangles, it is in ABC. ADC and
-   * BDC have square angles at D, and thus testing the point Q for being in or
-   * out is rather easy. We use the fact that Q belongs to ADC, if and only if
-   * l>=0, m>=0 and l+m<=1, where DQ = l*DC+m*DA. To obtain l we use a
-   * perpendicular projection of Q on DC. We proceed analogously for the BDC
-   * triangle. */
-
-  /* Get projection on DC and l */
-  substract_v(&q,&(t->d),&dq);
-  dq_dc = scalprod_v(&dq,&(t->dc));
-  if (dq_dc < 0) { /* AB is closest to Q and thus to P */
+  /* NOTE: if the triangle is degenerate t->npab and t->cpab are identically
+   * (0,0,0), so first 'if' test is true (other 'if's never get degenerated
+   * triangles). Furthermore, if the AB side is degenerate (that is the
+   * triangle degenerates to a point since AB is longest side) t->ab is
+   * identically (0,0,0) also and the distance to A is calculated. */
+  if (scalprod_v(p,&(t->nhsab)) >= t->chsab) {
+    /* P in the exterior side of hsab plane => closest to AB */
+    substract_v(p,&(t->a),&ap);
     ap_ab = scalprod_v(&ap,&(t->ab));
     if(ap_ab > 0) {
       if (ap_ab < t->ab_len_sqr) { /* projection of P on AB is in AB */
         dmin_sqr = norm2_v(&ap) - (ap_ab*ap_ab)*t->ab_1_len_sqr;
         if (dmin_sqr < 0) dmin_sqr = 0; /* correct rounding problems */
+        return dmin_sqr;
       } else { /* B is closer */
-        substract_v(p,&(t->b),&bp);
-        dmin_sqr = norm2_v(&bp);
+        return dist2_v(p,&(t->b));
       }
     } else { /* A is closer */
-      dmin_sqr = norm2_v(&ap);
+      return norm2_v(&ap);
     }
-  } else { /* continue testing if Q belongs to ABC */
-    l = dq_dc*t->dc_1_len_sqr; /* normalize l relative to the length DC */
-    /* Get residue parallel to DA and DB */
-    res[0] = dq.x-l*t->dc.x;
-    res[1] = dq.y-l*t->dc.y;
-    res[2] = dq.z-l*t->dc.z;
-    /* Get m for ADC. We use the maximum coordinate of AD to avoid division by
-     * zero or very small numbers. */
-    m_adc = res[t->da_max_c_idx]*t->da_1_max_coord;
-    if (m_adc >= 0) { /* Q on same side of DC as A */
-      if (l+m_adc <= 1) {
-        /* Q inside ADC and thus ABC, distance to ABC is distance to plane */
-        dmin_sqr = dpp*dpp;
-      } else { /* AC is closest to Q and thus to P */
-        ap_ac = scalprod_v(&ap,&(t->ac));
-        if(ap_ac > 0) {
-          if (ap_ac < t->ac_len_sqr) { /* projection of P on AC is in AC */
-            dmin_sqr = norm2_v(&ap) - (ap_ac*ap_ac)*t->ac_1_len_sqr;
+  } else if (scalprod_v(p,&(t->nhsbc)) >= t->chsbc) {
+    /* P in the exterior side of hsbc plane => closest to BC or AC */
+    substract_v(p,&(t->c),&cp);
+    cp_cb = scalprod_v(&cp,&(t->cb));
+    if(cp_cb > 0) {
+      if (cp_cb < t->cb_len_sqr) { /* projection of P on BC is in BC */
+        dmin_sqr = norm2_v(&cp) - (cp_cb*cp_cb)*t->cb_1_len_sqr;
+        if (dmin_sqr < 0) dmin_sqr = 0; /* correct rounding problems */
+        return dmin_sqr;
+      } else if (!t->wide_at_c) { /* C is closer */
+        return norm2_v(&cp);
+      } else { /* AC is closer */
+        cp_ca = scalprod_v(&cp,&(t->ca));
+        if(cp_ca > 0) {
+          if (cp_ca < t->ca_len_sqr) { /* projection of P on AC is in AC */
+            dmin_sqr = norm2_v(&cp) - (cp_ca*cp_ca)*t->ca_1_len_sqr;
             if (dmin_sqr < 0) dmin_sqr = 0; /* correct rounding problems */
+            return dmin_sqr;
           } else { /* C is closer */
-            substract_v(p,&(t->c),&cp);
-            dmin_sqr = norm2_v(&cp);
+            return norm2_v(&cp);
           }
         } else { /* A is closer */
-          dmin_sqr = norm2_v(&ap);
+          return dist2_v(p,&(t->a));
         }
       }
-    } else { /* Q on same side of DC as B, we need to test BDC */
-      m_bdc = res[t->db_max_c_idx]*t->db_1_max_coord;
-      /* m_bdc is always positive (up to the rounding precision), since m_adc
-       * is negative. */
-      if (l+m_bdc <= 1) {
-        /* Q inside BDC and thus ABC, distance to ABC is distance to plane */
-        dmin_sqr = dpp*dpp;
-      } else { /* BC is closest to Q and thus to P */
-        substract_v(p,&(t->b),&bp);
-        bp_bc = scalprod_v(&bp,&(t->bc));
-        if(bp_bc > 0) {
-          if (bp_bc < t->bc_len_sqr) { /* projection of P on BC is in BC */
-            dmin_sqr = norm2_v(&bp) - (bp_bc*bp_bc)*t->bc_1_len_sqr;
-            if (dmin_sqr < 0) dmin_sqr = 0; /* correct rounding problems */
-          } else { /* C is closer */
-            substract_v(p,&(t->c),&cp);
-            dmin_sqr = norm2_v(&cp);
-          }
-        } else { /* B is closer */
-          dmin_sqr = norm2_v(&bp);
-        }
-      }
+    } else { /* B is closer */
+      return dist2_v(p,&(t->b));
     }
+  } else if (scalprod_v(p,&(t->nhsca)) >= t->chsca) {
+    /* P in the exterior side of hsca plane => closest to AC */
+    substract_v(p,&(t->c),&cp);
+    cp_ca = scalprod_v(&cp,&(t->ca));
+    if(cp_ca > 0) {
+      if (cp_ca < t->ca_len_sqr) { /* projection of P on AC is in AC */
+        dmin_sqr = norm2_v(&cp) - (cp_ca*cp_ca)*t->ca_1_len_sqr;
+        if (dmin_sqr < 0) dmin_sqr = 0; /* correct rounding problems */
+        return dmin_sqr;
+      } else { /* C is closer */
+        return norm2_v(&cp);
+      }
+    } else { /* A is closer */
+      return dist2_v(p,&(t->a));
+    }
+  } else { /* P projects into triangle */
+    dpp = scalprod_v(p,&(t->normal))-t->a_n;
+    return dpp*dpp;
   }
-
-  return dmin_sqr;
 }
 
 /* Calculates the square of the distance between a point p in cell
@@ -1131,6 +1077,9 @@ static double dist_pt_surf(vertex p, const struct triangle_list *tl,
      * cells have been tested. */
     k++;
   } while (k < kmax && dmin_sqr >= k*k*cell_sz_sqr);
+#ifdef DO_DIST_PT_SURF_STATS
+  stats->sum_kmax += k-1;
+#endif
   if (dmin_sqr >= DBL_MAX || dmin_sqr != dmin_sqr || dmin_sqr < 0) {
     /* Something is going wrong (probably NaNs, etc.). The x != x test is for
      * NaNs (if supported, otherwise always true) */
@@ -1247,6 +1196,8 @@ void dist_surf_surf(const model *m1, model *m2, int n_spt,
            (double)(dps_stats.n_cell_t_scans)/n_tot_samples);
     printf("Average number of triangles scanned per sample: %g\n",
            (double)(dps_stats.n_triag_scans)/n_tot_samples);
+    printf("Average maximum cell to cell distance: %g\n",
+           (double)(dps_stats.sum_kmax)/n_tot_samples);
   }
 #endif
   /* Finalize overall statistics */
