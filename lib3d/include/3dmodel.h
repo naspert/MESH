@@ -1,9 +1,9 @@
-/* $Id: 3dmodel.h,v 1.38 2003/06/25 14:40:43 aspert Exp $ */
+/* $Id: 3dmodel.h,v 1.39 2004/04/30 07:50:21 aspert Exp $ */
 
 
 /*
  *
- *  Copyright (C) 2001-2003 EPFL (Swiss Federal Institute of Technology,
+ *  Copyright (C) 2001-2004 EPFL (Swiss Federal Institute of Technology,
  *  Lausanne) This program is free software; you can redistribute it
  *  and/or modify it under the terms of the GNU General Public License
  *  as published by the Free Software Foundation; either version 2 of

@@ -1,9 +1,9 @@
-/* $Id: model_in_smf.c,v 1.11 2003/03/24 12:16:37 aspert Exp $ */
+/* $Id: model_in_smf.c,v 1.12 2004/04/30 07:50:22 aspert Exp $ */
 
 
 /*
  *
- *  Copyright (C) 2001-2003 EPFL (Swiss Federal Institute of Technology,
+ *  Copyright (C) 2001-2004 EPFL (Swiss Federal Institute of Technology,
  *  Lausanne) This program is free software; you can redistribute it
  *  and/or modify it under the terms of the GNU General Public License
  *  as published by the Free Software Foundation; either version 2 of

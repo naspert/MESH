@@ -1,9 +1,9 @@
-/* $Id: TextWidget.h,v 1.11 2003/01/13 12:46:06 aspert Exp $ */
+/* $Id: TextWidget.h,v 1.12 2004/04/30 07:50:20 aspert Exp $ */
 
 
 /*
  *
- *  Copyright (C) 2001-2003 EPFL (Swiss Federal Institute of Technology,
+ *  Copyright (C) 2001-2004 EPFL (Swiss Federal Institute of Technology,
  *  Lausanne) This program is free software; you can redistribute it
  *  and/or modify it under the terms of the GNU General Public License
  *  as published by the Free Software Foundation; either version 2 of

@@ -1,8 +1,8 @@
-/* $Id: Error3DViewerWidget.h,v 1.1 2003/04/17 10:45:36 aspert Exp $ */
+/* $Id: Error3DViewerWidget.h,v 1.2 2004/04/30 07:50:20 aspert Exp $ */
 
 /*
  *
- *  Copyright (C) 2001-2003 EPFL (Swiss Federal Institute of Technology,
+ *  Copyright (C) 2001-2004 EPFL (Swiss Federal Institute of Technology,
  *  Lausanne) This program is free software; you can redistribute it
  *  and/or modify it under the terms of the GNU General Public License
  *  as published by the Free Software Foundation; either version 2 of

@@ -1,9 +1,9 @@
-/* $Id: compute_error.c,v 1.96 2003/04/08 09:09:15 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.97 2004/04/30 07:50:21 aspert Exp $ */
 
 
 /*
  *
- *  Copyright (C) 2001-2003 EPFL (Swiss Federal Institute of Technology,
+ *  Copyright (C) 2001-2004 EPFL (Swiss Federal Institute of Technology,
  *  Lausanne) This program is free software; you can redistribute it
  *  and/or modify it under the terms of the GNU General Public License
  *  as published by the Free Software Foundation; either version 2 of

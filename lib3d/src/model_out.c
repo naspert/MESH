@@ -1,9 +1,9 @@
-/* $Id: model_out.c,v 1.3 2003/01/13 12:46:10 aspert Exp $ */
+/* $Id: model_out.c,v 1.4 2004/04/30 07:50:22 aspert Exp $ */
 
 
 /*
  *
- *  Copyright (C) 2001-2003 EPFL (Swiss Federal Institute of Technology,
+ *  Copyright (C) 2001-2004 EPFL (Swiss Federal Institute of Technology,
  *  Lausanne)
  *  You are not allowed to redistribute this program without the explicit
  *  permission of the author.

@@ -1,6 +1,8 @@
 * Changes from v1.10 to v1.11:
 	- Fixed a bug in the file format detection code (SMF files with no 
 	  leading comments were incorrectly read)
+	- Allow files to have spaces in the 1st lines 
+	  (occurs for some raw files)
 
 * Changes from v1.9 to v1.10:
 	- Added support for panning the 3D views, activated with Ctrl key +
