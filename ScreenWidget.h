@@ -1,4 +1,4 @@
-/* $Id: ScreenWidget.h,v 1.6 2001/06/13 14:13:37 jacquet Exp $ */
+/* $Id: ScreenWidget.h,v 1.7 2001/08/07 09:21:54 aspert Exp $ */
 #ifndef SCREENWIDGET_H
 #define SCREENWIDGET_H
 
@@ -22,16 +22,15 @@
 
 
 
-class ScreenWidget : public QWidget
-{
+class ScreenWidget : public QWidget {
   Q_OBJECT
 public:
-  ScreenWidget( model *raw_model1,model *raw_model2,double dmoymin, double dmoymax, QWidget *parent=0, const char *name=0 );
-/*   void keyPressEvent(QKeyEvent *k); */
+  ScreenWidget(model *raw_model1, model *raw_model2, double dmoymin, 
+	       double dmoymax, QWidget *parent=0, const char *name=0 );
 
   public slots:
-    void about();
-    void about2();
+    void aboutKeys();
+    void aboutBugs();
 
  private:
   QString filename;  
