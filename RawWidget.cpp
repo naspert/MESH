@@ -365,7 +365,6 @@ void RawWidget::keyPressEvent(QKeyEvent *k)
 	glLightfv(GL_LIGHT0, GL_SPECULAR, spec);
 	glLightfv(GL_LIGHT0, GL_POSITION, lpos);  
 	glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, ldir);  
-	glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
 	glLightModelfv(GL_LIGHT_MODEL_AMBIENT,amb_light);
 	glEnable(GL_LIGHT0);
 	glFrontFace(GL_CCW);
