@@ -1,4 +1,4 @@
-/* $Id: rawview3.c,v 1.1 2001/03/12 14:50:32 aspert Exp $ */
+/* $Id: rawview3.c,v 1.2 2001/03/12 16:48:49 aspert Exp $ */
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <GL/glut.h>
@@ -183,7 +183,7 @@ void rebuild_list(model *raw_model) {
 #ifdef DEBUG
    printf("dn = %d lm = %d nf = %d\n", draw_normals, light_mode, 
 	  raw_model->num_faces); 
-#endif DEBUG
+#endif
 
   if (light_mode == 0) { /* Store a wireframe model */
     glNewList(model_list, GL_COMPILE);
@@ -338,14 +338,21 @@ void sp_key_pressed(int key, int x, int y) {
   GLfloat amb[] = {0.5, 0.5, 0.5, 1.0};
   GLfloat dif[] = {0.5, 0.5, 0.5, 1.0};
   GLfloat spec[] = {0.5, 0.5, 0.5, 0.5};
-  GLfloat lpos[] = {0.0, 0.0, -distance, 0.0};
   GLfloat ldir[] = {0.0, 0.0, 0.0, 0.0};
   GLfloat mat_spec[] = {0.3, 0.7, 0.5, 0.5};
   GLfloat shine[] = {0.6};
+
+
 /*   vertex *model_normals; */
   info_vertex *curv;
   int i;
 
+  /* This one must be handled 'by hand' to please the MIPS compiler on SGI */
+  GLfloat lpos[4];
+  lpos[0] = 0.0;
+  lpos[1] = 0.0;
+  lpos[2] = -distance;
+  lpos[3] = 0.0;
 
   switch(key) {
   case GLUT_KEY_F1:/* Print MODELVIEW matrix */
