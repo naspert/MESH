@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.46 2002/04/24 11:47:52 aspert Exp $
+# $Id: Makefile,v 1.47 2002/05/06 08:31:13 aspert Exp $
 
 
 
@@ -66,6 +66,29 @@ MESHVER := $(shell sed '/char *\* *version *= *"[^"]*" *; *$$/ { s/[^"]*"\([^"]*
 # Autodetect platform
 OS := $(shell uname -s)
 ARCH := $(shell uname -m)
+CPU = P3 #default -> P3
+ifeq ($(ARCH),i686)
+# Let's try to autodetect the CPU ...
+TMP1 := $(shell grep "Pentium" /proc/cpuinfo | uniq | cut -d: -f2 | awk '{print $$1$$2}')
+TMP2 := $(shell grep "Pentium" /proc/cpuinfo | uniq | cut -d: -f2 | awk '{print $$2$$3}')
+ifeq ($(TMP2),Pentium(R)4) # Pentium 4
+CPU = P4
+endif
+ifeq ($(TMP1),PentiumII) # Pentium II
+CPU = P2
+endif
+ifeq ($(TMP1),PentiumIII) # Pentium III
+CPU = P3
+endif
+# TODO: Athlon stuff here
+endif
+
+# If you want to override platform detection 
+# (in order to compile for another one for instance), set the CPU var. 
+# to the desired value below
+# Possible values : P2, P3 and P4 (Athlon to come...)
+# CPU = P4
+
 
 # If OS is IRIX64 make it IRIX since it's the same for us
 ifeq ($(OS),IRIX64)
@@ -148,28 +171,56 @@ WARN_CFLAGS = -pedantic -Wall -W -Winline -Wmissing-prototypes \
 # is modified (only ANSI C aliasing allowed, and no math error checking)
 XTRA_CFLAGS += -fstrict-aliasing -fno-math-errno
 endif
+
 ifeq ($(CC_IS_ICC),Intel)
 C_PROF_OPT = -p
-XTRA_CFLAGS += -ansi -g -tpp7 -ip
-endif
-ifeq ($(CC_IS_ICC)-$(OS)-$(ARCH),Intel-Linux-i686)
 # Target processor: i: Pentium Pro/II, M: MMX, K: streaming SIMD - SSE,
 # W: Pentium IV (W implies iMK and K implies iM, but M does not imply i)
+ifeq ($(CPU),P2)
+XTRA_CFLAGS += -ansi -g -tpp6 -ip
+XTRA_CFLAGS += -xiM
+endif
+ifeq ($(CPU),P3)
+XTRA_CFLAGS += -ansi -g -tpp6 -ip
+XTRA_CFLAGS += -xK
+endif
+ifeq ($(CPU),P4)
+XTRA_CFLAGS += -ansi -g -tpp7 -ip
 XTRA_CFLAGS += -xW
 endif
+endif
+
 ifeq ($(CC_IS_PGCC)-$(OS),pgcc-Linux)
 #XTRA_CFLAGS += -Mnodalign
 XTRA_CFLAGS += -Mvect -Munroll -Mcache_align -Mvect=smallvect:3 \
 	-Mnoframe -Mnoreentrant
 # PGCC does not obey the __inline flag, so force inlining
 XTRA_CFLAGS += -Minline=dist_sqr_pt_cell -Minline=size:50,levels=3
+
+ifeq ($(CPU), P4)
+XTRA_CFLAGS += -tp p7
 # Enable vectorized floating-point (requires Pentium III/IV or AthlonXP)
 XTRA_CFLAGS += -Mvect=sse
 # Enable prefetch (requires Pentium III/IV, Athlon or AthlonXP)
 XTRA_CFLAGS += -Mvect=prefetch
 # Specify target processor: p6 (Pentium Pro/II/III), p7 (Pentium IV), athlon
 # (Athlon) or athlonxp (Athlon XP/MP)
-XTRA_CFLAGS += -tp p7
+endif
+
+ifeq ($(CPU), P3)
+XTRA_CFLAGS += -tp p6
+# Enable vectorized floating-point (requires Pentium III/IV or AthlonXP)
+XTRA_CFLAGS += -Mvect=sse
+# Enable prefetch (requires Pentium III/IV, Athlon or AthlonXP)
+XTRA_CFLAGS += -Mvect=prefetch
+# Specify target processor: p6 (Pentium Pro/II/III), p7 (Pentium IV), athlon
+# (Athlon) or athlonxp (Athlon XP/MP)
+endif
+
+ifeq ($(CPU), P2)
+XTRA_CFLAGS += -tp p6
+endif
+
 # Need these so that g++ can link PGCC compiled objects
 XTRA_LDFLAGS += -L$(PGI)/linux86/lib
 XTRA_LDLIBS += -lpgc
