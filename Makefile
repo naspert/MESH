@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.24 2001/10/23 11:43:13 aspert Exp $
+# $Id: Makefile,v 1.25 2001/11/19 18:00:21 dsanta Exp $
 
 #
 # If the make variable PROFILE is defined to a non-empty value, profiling
@@ -53,9 +53,10 @@ endif
 # Auxiliary executables
 MOC = $(QTDIR)/bin/moc
 
-# Autodetect GCC
+# Autodetect GCC and/or ICC
 CC_IS_GCC := $(findstring gcc,$(shell $(CC) -v 2>&1))
 CXX_IS_GCC := $(findstring gcc,$(shell $(CXX) -v 2>&1))
+CC_IS_ICC := $(findstring Intel,$(shell $(CC) -V 2>&1))
 
 # Extra compiler flags (optimization, profiling, debug, etc.)
 XTRA_CFLAGS = -O2 -ansi
@@ -75,6 +76,13 @@ WARN_CFLAGS = -pedantic -Wall -W -Winline -Wmissing-prototypes \
 # Following options might produce incorrect behaviour if code
 # is modified (only ANSI C aliasing allowed, and no strict IEEE math)
 XTRA_CFLAGS += -fstrict-aliasing -ffast-math -fno-math-errno
+endif
+ifeq ($(CC_IS_ICC),Intel)
+C_PROF_OPT = -p
+XTRA_CFLAGS += -g -tpp6 -ip
+endif
+ifeq ($(CC_IS_ICC)-$(OS)-$(ARCH),Intel-Linux-i686)
+XTRA_CFLAGS += -xiM
 endif
 ifeq ($(CC_IS_GCC)$(OS),IRIX)
 C_PROF_OPT = -fbgen
@@ -178,7 +186,7 @@ default: clean_moc $(MESH_EXE)
 all: dirs  $(MESH_EXE)
 
 clean: clean_moc
-	-rm -f *.d $(OBJDIR)/*.o $(BINDIR)/* $(LIBDIR)/*
+	-rm -f *.d $(OBJDIR)/*.o $(OBJDIR)/*.il $(BINDIR)/* $(LIBDIR)/*
 
 clean_moc:
 	-rm -f moc_*.cpp

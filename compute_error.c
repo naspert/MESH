@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.69 2001/11/13 10:25:27 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.70 2001/11/19 18:00:21 dsanta Exp $ */
 
 #include <compute_error.h>
 
@@ -35,6 +35,8 @@
 # define INLINE __inline
 #elif defined(__GNUC__) /* GCC's interpretation is inverse of C99 */
 # define INLINE __inline__
+#elif defined(__INTEL_COMPILER) && (__INTEL_COMPILER >= 500)
+# define INLINE __inline
 #elif defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)
 # define INLINE inline
 #else

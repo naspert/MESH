@@ -1,4 +1,4 @@
-/* $Id: geomutils.h,v 1.18 2001/11/12 15:26:39 dsanta Exp $ */
+/* $Id: geomutils.h,v 1.19 2001/11/19 18:00:22 dsanta Exp $ */
 #include <3dmodel.h>
 
 #ifndef _GEOMUTILS_PROTO_
@@ -92,6 +92,8 @@ extern "C" {
 # endif
 #else /* including from other files */
 # if defined (_MSC_VER)
+#  define INLINE __inline
+# elif defined(__INTEL_COMPILER) && (__INTEL_COMPILER >= 500)
 #  define INLINE __inline
 # elif defined(__GNUC__)
 #  define INLINE extern __inline__
