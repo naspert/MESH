@@ -1,4 +1,4 @@
-/* $Id: subdiv.c,v 1.14 2001/10/30 09:26:12 aspert Exp $ */
+/* $Id: subdiv.c,v 1.15 2001/12/07 17:16:43 aspert Exp $ */
 #include <3dutils.h>
 #include <subdiv_methods.h>
 #include <assert.h>
@@ -44,8 +44,7 @@ struct model* subdiv(struct model *raw_model,
     mp_info[i].size = rings[i].size;
     mp_info[i].midpoint_idx = (int*)malloc(mp_info[i].size*sizeof(int));
     /* Initialize the values of this array to -1 */
-    mp_info[i].midpoint_idx = memset(mp_info[i].midpoint_idx, 0xff, 
-				     mp_info[i].size*sizeof(int));
+    memset(mp_info[i].midpoint_idx, 0xff, mp_info[i].size*sizeof(int));
     mp_info[i].midpoint = (vertex_t*)malloc(mp_info[i].size*sizeof(vertex_t));
       
 #ifdef __SUBDIV_DEBUG
@@ -114,7 +113,7 @@ struct model* subdiv(struct model *raw_model,
   printf("subdiv_model->num_vert = %d\n", nedges+raw_model->num_vert);
 
   subdiv_model = (struct model*)malloc(sizeof(struct model));
-  subdiv_model = memset(subdiv_model, 0, sizeof(struct model));
+  memset(subdiv_model, 0, sizeof(struct model));
   subdiv_model->num_vert = raw_model->num_vert + nedges;
   subdiv_model->num_faces = 4*raw_model->num_faces;
   subdiv_model->faces = (face_t*)
