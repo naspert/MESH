@@ -1,4 +1,4 @@
-/* $Id: viewer.cpp,v 1.40 2001/08/20 12:04:16 dsanta Exp $ */
+/* $Id: viewer.cpp,v 1.41 2001/08/20 12:07:25 dsanta Exp $ */
 
 #include <time.h>
 #include <string.h>
@@ -190,6 +190,9 @@ int main( int argc, char **argv )
   printf("Orientable:             \t%11s\t%11s\n",
          (m1info.orientable ? "yes" : "no"),
          (m2info.orientable ? "yes" : "no"));
+  printf("Closed:                 \t%11s\t%11s\n",
+         (m1info.closed ? "yes" : "no"),
+         (m2info.closed ? "yes" : "no"));
   fflush(stdout);
 
   /* Compute the distance from one model to the other */
