@@ -1,4 +1,4 @@
-/* $Id: model_in.c,v 1.13 2002/04/08 15:28:03 dsanta Exp $ */
+/* $Id: model_in.c,v 1.14 2002/04/09 10:38:37 aspert Exp $ */
 
 
 /*
@@ -1580,6 +1580,103 @@ static int read_raw_tmesh(struct model **tmesh_ref, struct file_data *data)
   return rcode;
 }
 
+/* Reads a triangular mesh from an Inventor file (which can be
+ * gzipped). Only the 'Coordinate3' and 'IndexedFaceSet' fields are
+ * read. Everything else (normals, etc...) is silently
+ * ignored. Multiple 'Coordinate3' and 'IndexedFaceSet' are *NOT*
+ * supported. It returns the number of meshes read (i.e. 1) if
+ * successful, and a negative code if it failed. */
+static int read_iv_tmesh(struct model **tmesh_ref, struct file_data *data) {
+  int c, rcode=0;
+  struct model *tmesh;
+  char stmp[MAX_WORD_LEN+1];
+  vertex_t bbmin, bbmax;
+  vertex_t *vtcs=NULL;
+  face_t *faces=NULL;
+  int n_vtcs=-1, n_faces=-1, max_vidx=-1;
+  
+
+  tmesh = (struct model*)calloc(1, sizeof(*tmesh));
+  c = find_string(data, "Separator");
+  if (c != EOF) {
+
+    do {
+      c = skip_ws_comm(data);
+      if (c == '}')
+        getc(data);
+      else if (c != EOF && string_scanf(data, stmp) == 1) {
+
+        if (strcmp(stmp, "Coordinate3") == 0) { /* Coordinate3 */
+#ifdef DEBUG
+          printf("[read_iv_tmesh] Coordinate3 found\n");
+#endif
+          if (n_vtcs != -1)
+            rcode = MESH_CORRUPTED;
+          else {
+            n_vtcs = read_vrml_coordinate(&vtcs, data, &bbmin, &bbmax);
+#ifdef DEBUG
+            printf("[read_iv_tmesh] nvtcs=%d\n", n_vtcs);
+#endif
+            if (n_vtcs < 0) rcode = n_vtcs; /* error */
+          }
+        } 
+        else if (strcmp(stmp, "IndexedFaceSet") == 0) { /* IFS */
+#ifdef DEBUG
+          printf("[read_iv_tmesh] IndexedFaceSet found\n");
+#endif
+         /* a 'coordIndex' field should not be too far ...*/
+          c = find_string(data, "coordIndex"); 
+          if (c == EOF) 
+            return MESH_CORRUPTED;
+#ifdef DEBUG
+          printf("[read_iv_tmesh] coordIndex found\n");
+#endif
+          if (n_faces != -1)
+            rcode = MESH_CORRUPTED;
+          else {
+            n_faces = read_tcoordindex(&faces, data, &max_vidx);
+#ifdef DEBUG
+            printf("[read_iv_tmesh] nfaces=%d\n", n_faces);
+#endif
+            if (n_faces < 0) rcode = n_faces; /* error */
+          }
+        } else /* Ignore everything else ... */
+          rcode = skip_vrml_field(data); 
+
+      } 
+    } while (c != '}' && rcode == 0);
+
+    if (rcode == 0) {
+      if (n_vtcs == -1) n_vtcs = 0;
+      if (n_faces == -1) n_faces = 0;
+      if (n_vtcs <= max_vidx) {
+        rcode = MESH_MODEL_ERR;
+      } else {
+        n_vtcs = max_vidx+1;
+      }
+    }
+
+    if (rcode == 0) {
+      memset(tmesh,0,sizeof(*tmesh)); /* reset *tmesh */
+      tmesh->vertices = vtcs;
+      tmesh->num_vert = n_vtcs;
+      tmesh->faces = faces;
+      tmesh->num_faces = n_faces;
+      tmesh->bBox[0] = bbmin;
+      tmesh->bBox[1] = bbmax;
+      *tmesh_ref = tmesh;
+      rcode = 1;
+    }
+
+  } else { /* c == EOF */
+    free(vtcs);
+    free(faces);
+    free(tmesh);
+    rcode =  MESH_CORRUPTED;
+  }
+  return rcode;
+}
+
 /* Detect the file format of the '*data' stream, returning the detected
  * type. The header identifying the file format, if any, is stripped out and
  * the '*data' stream is positioned just after it. If an I/O error occurs
@@ -1680,6 +1777,10 @@ int read_model(struct model **models_ref, struct file_data *data,
   case MESH_FF_VRML:
     rcode = read_vrml_tmesh(&models,data,concat);
     break;
+  case MESH_FF_IV:
+    rcode = read_iv_tmesh(&models, data);
+    break;
+  case MESH_FF_PLY:
   default:
     rcode = MESH_BAD_FF;
   }
