@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.9 2001/08/06 09:28:58 dsanta Exp $
+# $Id: Makefile,v 1.10 2001/08/07 08:31:41 aspert Exp $
 
 # Default compiler for C and C++ (CPP is normally the C preprocessor)
 CC = gcc
@@ -24,7 +24,7 @@ XTRA_LDFLAGS = -g
 VIEWER_EXE := $(BINDIR)/viewer
 VIEWER_C_SRCS := $(wildcard *.c)
 VIEWER_CXX_SRCS := $(wildcard *.cpp)
-VIEWER_MOC_SRCS := RawWidget.h ScreenWidget.h init.h
+VIEWER_MOC_SRCS := RawWidget.h ScreenWidget.h InitWidget.h
 LIB3D_C_SRCS = 3dmodel_io.c normals.c geomutils.c
 
 # Compiler and linker flags

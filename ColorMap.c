@@ -1,12 +1,9 @@
-/* $Id: ColorMap.c,v 1.3 2001/08/06 11:48:34 aspert Exp $ */
+/* $Id: ColorMap.c,v 1.4 2001/08/07 08:31:40 aspert Exp $ */
 #include <ColorMap.h>
 
 
-
-
-/*****************************************************************************/
-/*            creation d'une colormap                                        */
-/*****************************************************************************/
+/* This function generates a colormap for the HSV colorspace using */
+/* normalized RGB values. */
 double** HSVtoRGB()
 {
   double **colormap;
@@ -22,7 +19,7 @@ double** HSVtoRGB()
 
   for(h=0; h<240; h+=30){
     hue = ((double)h)/60.0;
-    i = floor(hue);
+    i = (int)floor(hue);
     f = hue - (double)i;
     p = 0.0;
     q = 1.0 - f;
