@@ -1,4 +1,4 @@
-/* $Id: RawWidget.cpp,v 1.48 2002/03/05 07:51:43 aspert Exp $ */
+/* $Id: RawWidget.cpp,v 1.49 2002/03/07 15:04:05 aspert Exp $ */
 
 #include <RawWidget.h>
 #include <qmessagebox.h>
@@ -503,7 +503,9 @@ void RawWidget::setErrorMode(int emode) {
         emode == SAMPLE_ERROR) {
       error_mode = emode;
       makeCurrent();
+      QApplication::setOverrideCursor(Qt::waitCursor);
       rebuildList();
+      QApplication::restoreOverrideCursor();
       updateGL();
     } else {
       fprintf(stderr,"invalid mode in setErrorMode()\n");
