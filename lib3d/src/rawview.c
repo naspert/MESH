@@ -1,4 +1,4 @@
-/* $Id: rawview.c,v 1.33 2003/03/04 14:44:01 aspert Exp $ */
+/* $Id: rawview.c,v 1.34 2003/03/04 16:08:24 aspert Exp $ */
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -187,7 +187,8 @@ static void norm_key_pressed(unsigned char key, int x, int y) {
   case 'b':
   case 'B':
     verbose_printf(gl_ctx.verbose, "Butterfly subdivision...\n");
-    sub_model = subdiv(gl_ctx.raw_model, compute_midpoint_butterfly, 
+    sub_model = subdiv(gl_ctx.raw_model, SUBDIV_BUTTERFLY,
+                       compute_midpoint_butterfly, 
                        compute_midpoint_butterfly_crease, NULL);
     if (sub_model != NULL) {
       sub_model->bBox[0] = gl_ctx.raw_model->bBox[0];
@@ -241,7 +242,7 @@ static void norm_key_pressed(unsigned char key, int x, int y) {
   case 'l':
   case 'L':
     verbose_printf(gl_ctx.verbose, "Loop subdivision...\n");
-    sub_model = subdiv(gl_ctx.raw_model, compute_midpoint_loop, 
+    sub_model = subdiv(gl_ctx.raw_model, SUBDIV_LOOP, compute_midpoint_loop, 
                        compute_midpoint_loop_crease, update_vertices_loop);
     if (sub_model != NULL) {
       sub_model->bBox[0] = gl_ctx.raw_model->bBox[0];
@@ -305,7 +306,7 @@ static void norm_key_pressed(unsigned char key, int x, int y) {
         break;
       }
     }
-    sub_model = subdiv(gl_ctx.raw_model, compute_midpoint_sph, 
+    sub_model = subdiv(gl_ctx.raw_model, SUBDIV_SPH, compute_midpoint_sph, 
                        compute_midpoint_sph_crease, NULL);
     if (sub_model != NULL) {
       sub_model->bBox[0] = gl_ctx.raw_model->bBox[0];
@@ -550,7 +551,7 @@ int main(int argc, char **argv) {
 
   int i, rcode=0;
   char *title=NULL;
-  const char s_title[]="Raw Mesh Viewer $Revision: 1.33 $ - ";
+  const char s_title[]="Raw Mesh Viewer $Revision: 1.34 $ - ";
   vertex_t center;
   struct model* raw_model;
 

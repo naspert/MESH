@@ -1,4 +1,4 @@
-/* $Id: subdiv.c,v 1.30 2003/03/04 14:44:02 aspert Exp $ */
+/* $Id: subdiv.c,v 1.31 2003/03/04 16:08:24 aspert Exp $ */
 #include <3dutils.h>
 #include <subdiv_methods.h>
 #include <subdiv.h>
@@ -18,7 +18,7 @@
    the postion of 'old' vertices. This is only used for 
    non-interpolating subd. (i.e. Loop). For interpolating subd. 
    you just pass NULL as argument */
-struct model* subdiv(struct model *raw_model, 
+struct model* subdiv(struct model *raw_model, const int sub_method,
 		     void (*midpoint_func)(const struct ring_info*, const int,
                                            const int, 
 					   const struct model*, vertex_t*), 
@@ -28,12 +28,12 @@ struct model* subdiv(struct model *raw_model,
                                                  vertex_t*), 
 		     void (*update_func)(const struct model*, struct model*, 
 					 const struct ring_info*) ) {
-  struct ring_info *rings;
+
   struct model *subdiv_model;
   int i, i0, i1, i2;
   int v0, v1, v2;
   int u0, u1, u2;
-
+  struct ring_info *rings;
   vertex_t p;
   int nedges = 0;
   int face_idx = 0;
@@ -50,12 +50,19 @@ struct model* subdiv(struct model *raw_model,
 
   rings = (struct ring_info*)
     malloc(raw_model->num_vert*sizeof(struct ring_info));
+    
+  build_star_global(raw_model, rings);
+
+  /* Spherical subdivision needs to have normals computed */
+  if (raw_model->normals == NULL && sub_method == SUBDIV_SPH) {
+      raw_model->area = (float*)malloc(raw_model->num_faces*sizeof(float));
+      raw_model->face_normals = compute_face_normals(raw_model, rings);
+      compute_vertex_normal(raw_model, rings, raw_model->face_normals);
+  }
   
   mp_info = (struct midpoint_info*)
     malloc(raw_model->num_vert*sizeof(struct midpoint_info));
 
-
-  build_star_global(raw_model, rings);
   temp_face = (face_t*)malloc(4*raw_model->num_faces*sizeof(face_t));
 
   tmp_v = (struct block_list*)malloc(sizeof(struct block_list));
@@ -211,19 +218,17 @@ struct model* subdiv(struct model *raw_model,
   free_block_list(&tmp_v);
   
 #ifdef SUBDIV_TIME
-  printf("time = %f sec.\n", (double)(clock()-start)/CLOCKS_PER_SEC);
+  printf("subdiv time = %f sec.\n", (clock()-start)/(float)CLOCKS_PER_SEC);
 #endif
 #ifdef SUBDIV_DEBUG
   DEBUG_PRINT("face_idx = %d vert_idx = %d\n", face_idx, vert_idx);
 #endif
 
   for (i=0; i<raw_model->num_vert; i++) {
-    free(rings[i].ord_vert);
-    free(rings[i].ord_face);
     free(mp_info[i].midpoint_idx);
     free(mp_info[i].edge_subdiv_done);
   }
-  free(rings);
+
   free(mp_info);
   return subdiv_model;
 }

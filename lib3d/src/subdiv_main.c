@@ -1,4 +1,4 @@
-/* $Id: subdiv_main.c,v 1.4 2002/11/01 10:06:14 aspert Exp $ */
+/* $Id: subdiv_main.c,v 1.5 2003/03/04 16:08:25 aspert Exp $ */
 #include <3dutils.h>
 #include <subdiv.h>
 #include <subdiv_methods.h>
@@ -7,7 +7,6 @@
 int main(int argc, char **argv) {
   char *infile, *outfile;
   struct model *or_model, *sub_model=NULL;
-  struct info_vertex* tmp_vert;
   int i, lev, nlev=1, rcode;
   int sub_method=-1;
 
@@ -49,30 +48,21 @@ int main(int argc, char **argv) {
 
 
   for (lev=0; lev<nlev; lev++) {
-    if (or_model->normals == NULL && sub_method == SUBDIV_SPH) {
-      tmp_vert = (struct info_vertex*)
-	malloc(or_model->num_vert*sizeof(struct info_vertex));
-      or_model->area = (float*)malloc(or_model->num_faces*sizeof(float));
-      or_model->face_normals = compute_face_normals(or_model, tmp_vert);
-      compute_vertex_normal(or_model, tmp_vert, or_model->face_normals);
-      for (i=0; i<or_model->num_vert; i++) 
- 	free(tmp_vert[i].list_face); 
-      free(tmp_vert);
-    }
 
     /* performs the subdivision */
     switch (sub_method) {
     case SUBDIV_SPH:
-      sub_model = subdiv(or_model, compute_midpoint_sph, 
+      sub_model = subdiv(or_model, SUBDIV_SPH, compute_midpoint_sph, 
                          compute_midpoint_sph_crease, NULL);
       break;
     case SUBDIV_LOOP:
-      sub_model = subdiv(or_model, compute_midpoint_loop, 
+      sub_model = subdiv(or_model, SUBDIV_LOOP, compute_midpoint_loop, 
 			 compute_midpoint_loop_crease,
 			 update_vertices_loop);
       break;
     case SUBDIV_BUTTERFLY:
-      sub_model = subdiv(or_model, compute_midpoint_butterfly, 
+      sub_model = subdiv(or_model, SUBDIV_BUTTERFLY, 
+                         compute_midpoint_butterfly, 
 			 compute_midpoint_butterfly_crease, NULL);
       break;
     default:
@@ -82,7 +72,11 @@ int main(int argc, char **argv) {
       break;
     }
 
-    
+    for (i=0; i<or_model->num_vert; i++) {
+      free(rings[i].ord_face);
+      free(rings[i].ord_vert);
+    }
+    free(rings);
     __free_raw_model(or_model);
     
     or_model = sub_model;
