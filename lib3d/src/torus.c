@@ -1,29 +1,7 @@
-/* $Id: torus.c,v 1.2 2001/03/12 15:57:55 aspert Exp $ */
+/* $Id: torus.c,v 1.3 2001/03/13 07:46:52 aspert Exp $ */
 #include <3dmodel.h>
 #include <geomutils.h>
-
-void write_raw_model(model *raw_model, char *filename) {
-  FILE *pf;
-  int i;
-
-  pf = fopen(filename,"w");
-  if (pf == NULL) {
-    printf("Unable to open %s\n",filename);
-    exit(0);
-  }
-
-  fprintf(pf,"%d %d\n",raw_model->num_vert,raw_model->num_faces);
-  for (i=0; i<raw_model->num_vert; i++)
-    fprintf(pf, "%f %f %f\n",raw_model->vertices[i].x,
-	    raw_model->vertices[i].y, raw_model->vertices[i].z);
-
-  for (i=0; i<raw_model->num_faces; i++)
-    fprintf(pf, "%d %d %d\n",raw_model->faces[i].f0,
-	    raw_model->faces[i].f1,raw_model->faces[i].f2);
-
-  fclose(pf);
-}
-
+#include <3dmodel_io.h>
 
 
 int main(int argc, char **argv) {
