@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.34 2002/02/27 09:54:41 aspert Exp $
+# $Id: Makefile,v 1.35 2002/02/27 12:40:17 aspert Exp $
 
 #
 # If the make variable PROFILE is defined to a non-empty value, profiling
@@ -275,7 +275,9 @@ dist: distdir
 #
 
 ifneq ($(findstring clean,$(MAKECMDGOALS)),clean)
-include $(MESH_C_SRCS:.c=.d) $(LIB3D_C_SRCS:.c=.d) $(MESH_CXX_SRCS:.cpp=.d)
+ifneq ($(findstring dist,$(MAKECMDGOALS)), dist)
+include $(MESH_C_SRCS:.c=.d) $(LIB3D_C_SRCS:.c=.d) $(MESH_CXX_SRCS:.cpp=.d)i
+endif
 endif
 # Regexp escaped version of $(OBJDIR)/
 OBJDIRRE := $(shell echo $(OBJDIR)/ | sed 's/\./\\\./g;s/\//\\\//g;')
