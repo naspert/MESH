@@ -1,0 +1,80 @@
+# $Id: Makefile2.sgi,v 1.1 2001/04/27 07:22:38 jacquet Exp $
+
+CC = cc
+CPP = CC
+#CC = /usr/freeware/bin/gcc
+
+BINDIR = ../bin
+LIBDIR = /home/sun1/jacquet/lib3d/lib
+OBJDIR = ../obj
+
+INCLFLAGS = -I../include
+QTINCFLAGS = -I$(QTDIR)/include
+GLINCLFLAGS = $(INCLFLAGS)
+DEBUGINCFLAGS = -I/home/sun1/aspert/debug
+XTRA_CFLAGS = -g -O2
+
+BASE_CFLAGS = $(INCLFLAGS) $(XTRA_CFLAGS)
+GL_CFLAGS = $(GLINCLFLAGS) $(XTRA_CFLAGS)
+
+BASE_LIBFLAGS = -L$(LIBDIR)  -lm
+GL_LIBFLAGS = -L$(LIBDIR) -lglut -lGLU -lGL -lXmu -lXext -lX11 -l3d -limage -lm
+
+
+BASE_LDFLAGS = -g -O2 $(BASE_LIBFLAGS)
+GL_LDFLAGS = -g -O2 $(GL_LIBFLAGS)
+QT_LIBFLAGS = -L/home/sun1/jacquet/qt-CC/lib -lqt
+QTGL_LIBFLAGS = -L$(LIBDIR) -lGLU -lGL -l3d -lm
+
+
+default : viewer
+
+all: dirs viewer rawview3
+
+clean : 
+	rm $(OBJDIR)/*.o $(BINDIR)/* $(LIBDIR)/*
+
+final2 : $(OBJDIR)/final2.o lib3d	
+	$(CC) $(OBJDIR)/final2.o -o $(BINDIR)/final2 $(BASE_LIBFLAGS) -l3d
+
+test : 
+	$(CPP) $(QTINCFLAGS) test.cpp -o $(BINDIR)/test $(QT_LIBFLAGS)
+
+viewer : $(OBJDIR)/viewer.o lib3d
+	$(CPP) $(OBJDIR)/viewer.o -o $(BINDIR)/viewer $(QTGL_LIBFLAGS) $(QT_LIBFLAGS)
+
+rawview3 : $(OBJDIR)/rawview3.o lib3d libimage
+	$(CC) $(OBJDIR)/rawview3.o -o $(BINDIR)/rawview3 $(GL_LDFLAGS)
+
+torus : $(OBJDIR)/torus.o lib3d
+	$(CC) -o $(BINDIR)/torus $< $(BASE_LDFLAGS) -l3d
+
+subdiv : $(OBJDIR)/subdiv.o lib3d
+	$(CC) -o $(BINDIR)/subdiv $< $(BASE_LDFLAGS) -l3d
+
+libimage : $(OBJDIR)/image.o
+	$(CC) -g -shared  -o $(LIBDIR)/libimage.so $<
+
+lib3d : $(OBJDIR)/geomutils.o $(OBJDIR)/3dmodel_io.o $(OBJDIR)/normals.o $(OBJDIR)/compute_error.o
+	$(CC) -g -shared -o $(LIBDIR)/lib3d.so $^
+
+$(OBJDIR)/viewer.o : viewer.cpp
+	$(CPP) $(QTINCFLAGS) $(GL_CFLAGS) -D_CPLUSPLUS -c $< -o $@
+
+
+$(OBJDIR)/rawview3.o : rawview3.c
+	$(CC) $(GL_CFLAGS) -c rawview3.c -o $@
+
+$(OBJDIR)/%.o : %.c
+	$(CC) $(BASE_CFLAGS) -c $< -o $@	
+
+dirs : libdir bindir objdir
+
+libdir : 
+	-[ -d $(LIBDIR) ] || mkdir $(LIBDIR)
+
+bindir : 
+	-[ -d $(BINDIR) ] || mkdir $(BINDIR)
+
+objdir :
+	-[ -d $(OBJDIR) ] || mkdir $(OBJDIR)
