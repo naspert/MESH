@@ -1,4 +1,4 @@
-/* $Id: model_in.h,v 1.9 2002/04/12 13:51:15 aspert Exp $ */
+/* $Id: model_in.h,v 1.10 2002/04/12 14:01:41 aspert Exp $ */
 
 
 /*
@@ -44,8 +44,9 @@
  * Functions to read 3D model data from files
  *
  * Author: Diego Santa Cruz
- * The guilty for all the cruft to read gzipped files + Inventor & 
- * SMF parsers is N. Aspert
+ *
+ * N. Aspert is guilty for all the cruft to read gzipped files + Inventor & 
+ * SMF parsers.
  *
  * Currently supported file formats:
  *
