@@ -1,4 +1,4 @@
-/* $Id: model_in_off.c,v 1.3 2004/10/12 13:43:22 aspert Exp $ */
+/* $Id: model_in_off.c,v 1.4 2004/10/12 15:06:19 aspert Exp $ */
 /*
  *
  *  Copyright (C) 2004 EPFL (Swiss Federal Institute of Technology,
@@ -156,9 +156,7 @@ int read_off_tmesh(struct model **tmesh_ref,struct file_data *data)
   do {
     tmp = skip_ws_comm(data);
     i = 0;
-    if (tmp != EOF)
-      tmp = ungetc(tmp, data);
-    else
+    if (tmp == EOF)
       return MESH_CORRUPTED;
     do {/* buffer one non-comment line */
       tmp = getc(data);

@@ -1,4 +1,4 @@
-/* $Id: model_in.c,v 1.45 2004/10/12 12:32:11 aspert Exp $ */
+/* $Id: model_in.c,v 1.46 2004/10/12 15:06:19 aspert Exp $ */
 
 
 /*
@@ -586,14 +586,15 @@ static int detect_vrml_inventor(struct file_data *data)
       if (getc(data) == ' ' && buf_fscanf_1arg(data,swfmt,stmp) == 1 &&
 	  strcmp(stmp,"V2.0") == 0 && getc(data) == ' ' &&
 	  buf_fscanf_1arg(data,swfmt,stmp) == 1 && strcmp(stmp,"utf8") == 0 &&
-	  ((c = getc(data)) == '\n' || c == '\r' || c == ' ' || 
-	   c == '\t')) {
-	while (c != EOF && c != '\n' && c != '\r') { /* skip rest of header */
-	  c = getc(data);
-	}
-	rcode = (c != EOF) ? MESH_FF_VRML : MESH_CORRUPTED;
+	 ((c = getc(data)) == '\n' || c == '\r' || c == ' ' || c == '\t')) {
+	      
+	    while (c != EOF && c != '\n' && c != '\r') { 
+			/* skip rest of header */
+		c = getc(data);
+	    }
+	    rcode = (c != EOF) ? MESH_FF_VRML : MESH_CORRUPTED;
       } else {
-	rcode = loc_ferror(data->f) ? MESH_CORRUPTED : MESH_BAD_FF;
+	   rcode = loc_ferror(data->f) ? MESH_CORRUPTED : MESH_BAD_FF;
       }
     } else if (strcmp(stmp,"Inventor") == 0) {
       if (getc(data) == ' ' && buf_fscanf_1arg(data,svfmt,stmp) == 1 &&
@@ -601,12 +602,13 @@ static int detect_vrml_inventor(struct file_data *data)
 	  ver < 3 && *eptr == '\0' && getc(data) == ' ' &&
 	  buf_fscanf_1arg(data,swfmt,stmp) == 1 && strcmp(stmp,"ascii") == 0 &&
 	  ((c = getc(data)) == '\n' || c == '\r' || c == ' ' || c == '\t')) {
-	while (c != EOF && c != '\n' && c != '\r') { /* skip rest of header */
-	  c = getc(data);
-	}
-	rcode = (c != EOF) ? MESH_FF_IV : MESH_CORRUPTED;
+	     while (c != EOF && c != '\n' && c != '\r') { 
+		     /* skip rest of header */
+		c = getc(data);
+	     }
+	  rcode = (c != EOF) ? MESH_FF_IV : MESH_CORRUPTED;
       } else {
-	rcode = loc_ferror(data->f) ? MESH_CORRUPTED : MESH_BAD_FF;
+	  rcode = loc_ferror(data->f) ? MESH_CORRUPTED : MESH_BAD_FF;
       }
     }
   }
@@ -636,27 +638,29 @@ static int detect_file_format(struct file_data *data)
       rcode = loc_ferror(data->f) ? MESH_CORRUPTED : MESH_BAD_FF;
       return rcode;
     }
+  }
     /* else this is a meaningful char (at last), 
      * try to re-detect file format*/
     c = ungetc(c, data);
-  }
 
     switch (c){
     case '#':
+      /* goto next char */
+      c = getc(data);
       /* test for VRML or Inventor */
       rcode = detect_vrml_inventor(data);
     
       if (rcode != MESH_FF_VRML && rcode != MESH_FF_IV) {
 	/* possible SMF leading comment -> check SMF */
 	data->pos = 1; /* rewind file */
-	if ((c = skip_ws_comm(data)) == EOF) rcode = MESH_BAD_FF;
-	if (c == 'v' || c == 'b' || c == 'f' || c == 'c') {
-	  c = ungetc(c, data);
-	  rcode = MESH_FF_SMF;
-	} else if (c == 'O') {
-	  c = ungetc(c, data);
-	  rcode = MESH_FF_OFF;
+	if ((c = skip_ws_comm(data)) == EOF) {
+	  rcode = MESH_BAD_FF;
+	  break;
 	}
+	if (c == 'v' || c == 'b' || c == 'f' || c == 'c') 
+	  rcode = MESH_FF_SMF;
+	else if (c == 'O') 
+	  rcode = MESH_FF_OFF;
 	else 
 	  rcode = loc_ferror(data->f) ? MESH_CORRUPTED : MESH_BAD_FF;
       }
@@ -664,15 +668,10 @@ static int detect_file_format(struct file_data *data)
       
     case 'p':
       /* test for PLY */
-      c = ungetc(c,data);
-      if (c != EOF) {
-	if (string_scanf(data, stmp) == 1 && strcmp(stmp, "ply") == 0) {
+      if (string_scanf(data, stmp) == 1 && strcmp(stmp, "ply") == 0) {
 	  rcode = MESH_FF_PLY;
-	} else {
-	  rcode = loc_ferror(data->f) ? MESH_CORRUPTED : MESH_BAD_FF;
-	}
       } else {
-	rcode = MESH_CORRUPTED;
+	  rcode = loc_ferror(data->f) ? MESH_CORRUPTED : MESH_BAD_FF;
       }
       break;
       
@@ -686,8 +685,7 @@ static int detect_file_format(struct file_data *data)
     case '7':
     case '8':
     case '9':
-      c = ungetc(c, data);
-      rcode = (c != EOF) ? MESH_FF_RAW : MESH_CORRUPTED;
+      rcode = MESH_FF_RAW;
       break;
       
     case 'b':
