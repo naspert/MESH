@@ -1,8 +1,8 @@
-/* $Id: RawWidget.h,v 1.11 2001/08/10 10:03:48 dsanta Exp $ */
+/* $Id: RawWidget.h,v 1.12 2001/09/11 16:33:09 dsanta Exp $ */
 #ifndef RAWWIDGET_H
 #define RAWWIDGET_H
 
-#include <3dutils.h>
+#include <compute_error.h>
 #include <qgl.h>
 #include <qevent.h>
 #include <ColorMap.h>
@@ -27,7 +27,7 @@ class RawWidget : public QGLWidget
   Q_OBJECT 
 
 public:  
-  RawWidget(model *raw_model, int renderType, QWidget *parent=0, 
+  RawWidget(model_error *model, int renderType, QWidget *parent=0, 
 	    const char *name=0); // Constructor
 
   
@@ -62,7 +62,7 @@ private:
   // the lighted mode or not
   GLdouble dth, dph, dpsi;
   double **colormap;
-  model *rawModelStruct;
+  model_error *model;
   GLdouble distance, dstep;
   int oldx,oldy;
   GLdouble mvmatrix[16]; // Buffer for GL_MODELVIEW_MATRIX 
@@ -73,9 +73,7 @@ private:
   int right_button_state;
 
   int move_state;
-  int computed_normals; // flag if normals have been computed or loaded
-
-
+  int not_orientable_warned;
 };
 
 #endif
