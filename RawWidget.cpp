@@ -1,101 +1,109 @@
+/* $Id: RawWidget.cpp,v 1.9 2001/08/07 12:32:21 aspert Exp $ */
 #include <RawWidget.h>
 
-
-
-/***************************************************************************/
-/*        definition de la classe RawWidget                                */
-/***************************************************************************/
+// 
+// This is a derived class from QGLWidget used to render models
+//
 
 RawWidget::RawWidget(model *raw_model, QWidget *parent, const char *name) 
-  : QGLWidget( parent, name)
-{ 
+  : QGLWidget( parent, name) { 
   
-  
-  setMinimumSize( 512, 512 );
-  setMaximumSize( 512, 512 );
-  FOV = 40;
-  model_list=0;
-  colormap=HSVtoRGB();
-  raw_model2=raw_model;
-  move_state=0;
-  line_state=0;
-  light_mode=0;
-  center.x = 0.5*(raw_model2->bBox[1].x + raw_model2->bBox[0].x);
-  center.y = 0.5*(raw_model2->bBox[1].y + raw_model2->bBox[0].y);
-  center.z = 0.5*(raw_model2->bBox[1].z + raw_model2->bBox[0].z);
+  int i;
+  vertex center;
 
+  // Fixed size widget
+  setMinimumSize(512, 512);
+  setMaximumSize(512, 512);
+
+  // 0 is not a valid display list index
+  model_list = 0;
   
-  for (i=0; i<raw_model2->num_vert; i++) {
-    raw_model2->vertices[i].x -= center.x;
-    raw_model2->vertices[i].y -= center.y;
-    raw_model2->vertices[i].z -= center.z;
+  // Build the colormap used to display the mean error onto the surface of
+  // the model
+  colormap = HSVtoRGB();
+
+  // Get the structure containing the model
+  rawModelStruct = raw_model;
+
+  // Initialize the state
+  move_state=0;
+
+
+  // Compute the center of the bounding box of the model
+  center.x = 0.5*(rawModelStruct->bBox[1].x + rawModelStruct->bBox[0].x);
+  center.y = 0.5*(rawModelStruct->bBox[1].y + rawModelStruct->bBox[0].y);
+  center.z = 0.5*(rawModelStruct->bBox[1].z + rawModelStruct->bBox[0].z);
+
+  // Center the model around (0, 0, 0)
+  for (i=0; i<rawModelStruct->num_vert; i++) {
+    rawModelStruct->vertices[i].x -= center.x;
+    rawModelStruct->vertices[i].y -= center.y;
+    rawModelStruct->vertices[i].z -= center.z;
   }
   
-  distance = dist(raw_model2->bBox[0], raw_model2->bBox[1])/
+  // This should be enough to see the whole model when starting
+  distance = dist(rawModelStruct->bBox[0], rawModelStruct->bBox[1])/
     tan(FOV*M_PI_2/180.0);
-  
+
+  // This is the increment used when moving closer/farther from the object
   dstep = distance*0.01;
 
 }
 
-void RawWidget::aslot()
-{
+void RawWidget::aslot() {
   if(move_state==0){
-    move_state=1;
-    emit transfervalue(distance,mvmatrix);
+    move_state = 1;
+    emit(transfervalue(distance,mvmatrix));
   }
   else
-    move_state=0;
+    move_state = 0;
 }
 
 
-void RawWidget::transfer(double dist,double *mvmat)
-{
+void RawWidget::transfer(double dist,double *mvmat) {
 
-  distance=dist;
+  distance = dist;
+  // Copy the 4x4 transformation matrix
   memcpy(mvmatrix, mvmat, 16*sizeof(double)); 
+  // update display
   glDraw();
 }
 
-void RawWidget::setLine()
-{
+void RawWidget::setLine() {
+  GLint line_state;
 
-  printf("\nsetline: appel no %d\n",j);
-  j++;
-  glGetIntegerv(GL_POLYGON_MODE,&state);
-  if(state==GL_FILL) {
+  glGetIntegerv(GL_POLYGON_MODE,&line_state);
+  if (line_state==GL_FILL) {
       glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     printf("FILL->LINE\n");
     glDraw();
   }
-  else if(state==GL_LINE) {
+  else if (line_state==GL_LINE) {
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-    glGetIntegerv(GL_POLYGON_MODE,&state);
     printf("LINE->FILL\n");
-    printf("state: %d\n",state);
     glDraw(); 
-  } else {
-    printf("Uh ?\n");
-  }
+  } else 
+    printf("Invalid state value found for GL_POLYGON_MODE: %d\n", line_state);
+  
 }
 
-void RawWidget::setLight()
-{
+void RawWidget::setLight() {
+
+  GLboolean light_state;
   GLfloat amb[] = {0.5, 0.5, 0.5, 1.0};
   GLfloat dif[] = {0.5, 0.5, 0.5, 1.0};
   GLfloat spec[] = {0.5, 0.5, 0.5, 0.5};
   GLfloat ldir[] = {0.0, 0.0, 0.0, 0.0};
-//   GLfloat mat_spec[] = {0.3, 0.7, 0.5, 0.5};
   GLfloat amb_light[] = {0.6, 0.6, 0.6, 1.0};
-//   GLfloat shine[] = {0.6};
   GLfloat lpos[] = {0.0, 0.0, -distance, 0.0} ;
+  info_vertex *curv; /* used for normal computation */
+  int i;
 
-  
-  light_state=glIsEnabled(GL_LIGHTING);
-  if(light_state==FALSE){
-    if(raw_model2->face_normals !=NULL){
-//       printf("light state= %d\n",light_mode);
+  // Get state from renderer
+  light_state = glIsEnabled(GL_LIGHTING);
 
+  if (light_state==GL_FALSE){ // We are now switching to lighted mode
+    if (rawModelStruct->normals !=NULL){// Are these ones computed ?
       glEnable(GL_LIGHTING);
       glLightfv(GL_LIGHT0, GL_AMBIENT, amb); 
       glLightfv(GL_LIGHT0, GL_DIFFUSE, dif);
@@ -104,37 +112,60 @@ void RawWidget::setLight()
       glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, ldir);  
       glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
       glLightModelfv(GL_LIGHT_MODEL_AMBIENT,amb_light);
-//       glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, mat_spec);
-//       glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, shine);
       glEnable(GL_LIGHT0);
-      //     glColor3f(1.0, 1.0, 1.0);
       glFrontFace(GL_CCW);
-//       glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-//       light_mode=1;
-    } else {
-//       printf("light state= %d\n",light_mode);
-      light_mode=0;
-      printf("Unable to compute normals... non_manifold model\n");
+    } else {// Attempt to compute normals
+      if (rawModelStruct->area==NULL)
+	rawModelStruct->area = 
+	  (double*)malloc(rawModelStruct->num_vert*sizeof(double));
+      curv = 
+	(info_vertex*)malloc(rawModelStruct->num_vert*sizeof(info_vertex));
+      if (rawModelStruct->face_normals==NULL)
+	rawModelStruct->face_normals = compute_face_normals(rawModelStruct, 
+							    curv);
+      if (rawModelStruct->face_normals==NULL) {// No way...
+	fprintf(stderr, "Unable to compute normals\n");
+	free(rawModelStruct->area);
+	glDisable(GL_LIGHTING); // Just to be sure
+      }
+      else { // Compute a normal for each vertex
+	compute_vertex_normal(rawModelStruct, curv, 
+			      rawModelStruct->face_normals);
+
+	for (i=0; i<rawModelStruct->num_vert; i++) 
+	  free(curv[i].list_face);
+	free(curv);	
+	free(rawModelStruct->face_normals);
+	free(rawModelStruct->area);
+
+	glEnable(GL_LIGHTING);
+	glLightfv(GL_LIGHT0, GL_AMBIENT, amb); 
+	glLightfv(GL_LIGHT0, GL_DIFFUSE, dif);
+	glLightfv(GL_LIGHT0, GL_SPECULAR, spec);
+	glLightfv(GL_LIGHT0, GL_POSITION, lpos);  
+	glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, ldir);  
+	glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
+	glLightModelfv(GL_LIGHT_MODEL_AMBIENT,amb_light);
+	glEnable(GL_LIGHT0);
+	glFrontFace(GL_CCW);
+      }
     }
   }
-  else if(light_state==TRUE){
-//     printf("light state= %d\n",light_mode);
-//     light_mode=0;
+  else if (light_state==GL_TRUE){// We are now switching to wireframe mode
     glDisable(GL_LIGHTING);
     glFrontFace(GL_CCW);
-//     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
   }
   glDraw();
 }
 
 
-void RawWidget::paintGL()
-{
+// display callback
+void RawWidget::paintGL() {
   display(distance);
 }
 
-void RawWidget::resizeGL(int width ,int height)
-{
+// resize callback
+void RawWidget::resizeGL(int width ,int height) {
   glViewport(0, 0, width, height);
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
@@ -145,21 +176,17 @@ void RawWidget::resizeGL(int width ,int height)
   
 }
 
-void RawWidget::initializeGL()
-{ 
+// Initializations for the renderer
+void RawWidget::initializeGL() { 
   glDepthFunc(GL_LESS);
   glEnable(GL_DEPTH_TEST);
   glShadeModel(GL_SMOOTH);
-//   glShadeModel(GL_FLAT);
+
 
   glClearColor(0.0, 0.0, 0.0, 0.0);
-  /*glColor3f(1.0, 1.0, 1.0); Settings for wireframe model */
-//   glFrontFace(GL_CCW);
-//   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-  model_list=glGenLists(1);
-  glNewList(model_list, GL_COMPILE);
-  rebuild_list(colormap,raw_model2);
+
+  rebuild_list();
   glEndList();
   
   glMatrixMode(GL_PROJECTION);
@@ -170,87 +197,90 @@ void RawWidget::initializeGL()
   glGetDoublev(GL_MODELVIEW_MATRIX, mvmatrix); /* Initialize the temp matrix */
 }  
 
-/* ***************************************************************** */
-/* Display function : clear buffers, build correct MODELVIEW matrix, */
-/* call display list and swap the buffers                            */
-/* ***************************************************************** */
+
+// 'display' function called by the paintGL call back
+// clears the buffers, computes correct transformation matrix
+// and calls the model's display list
 void RawWidget::display(double distance) {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glLoadIdentity();
-  glTranslated(0.0, 0.0, -distance); /* Translate the object along z */
+  glTranslated(0.0, 0.0, -distance); /* Translate the object along z axis */
   glMultMatrixd(mvmatrix); /* Perform rotation */
   glCallList(model_list);
 }
 
 
-/* ************************************************************* */
-/* This functions rebuilds the display list of the current model */
-/* It is called when the viewing setting (light...) are changed  */
-/* ************************************************************* */
-void RawWidget::rebuild_list(double **colormap,model *raw_model) {
+// This function generates the model's display list, depending on the
+// viewing parameters (light...)
+void RawWidget::rebuild_list() {
   int i;
   face *cur_face;
 
-  /*  if (glIsList(list) == GL_TRUE)
-    glDeleteLists(list,1);
-	       
-    glNewList(list, GL_COMPILE);*/
-  glBegin(GL_TRIANGLES);
-  
-  if(raw_model->normals!=NULL){
-    for (i=0; i<raw_model->num_faces; i++) {
-      cur_face = &(raw_model->faces[i]);
+  if (glIsList(model_list)==GL_TRUE) 
+    glDeleteLists(model_list, 1);
+
+  model_list=glGenLists(1);
+
+  if(rawModelStruct->normals!=NULL){
+    glNewList(model_list, GL_COMPILE);
+    glBegin(GL_TRIANGLES);  
+    for (i=0; i<rawModelStruct->num_faces; i++) {
+      cur_face = &(rawModelStruct->faces[i]);
       glColor3f(1.0,1.0,1.0);
 
-      glNormal3d(raw_model->normals[cur_face->f0].x,
-		 raw_model->normals[cur_face->f0].y,
-		 raw_model->normals[cur_face->f0].z);
-      glVertex3d(raw_model->vertices[cur_face->f0].x,
-		 raw_model->vertices[cur_face->f0].y,
-		 raw_model->vertices[cur_face->f0].z); 
+      glNormal3d(rawModelStruct->normals[cur_face->f0].x,
+		 rawModelStruct->normals[cur_face->f0].y,
+		 rawModelStruct->normals[cur_face->f0].z);
+      glVertex3d(rawModelStruct->vertices[cur_face->f0].x,
+		 rawModelStruct->vertices[cur_face->f0].y,
+		 rawModelStruct->vertices[cur_face->f0].z); 
       
-      glNormal3d(raw_model->normals[cur_face->f1].x,
-	       raw_model->normals[cur_face->f1].y,
-		 raw_model->normals[cur_face->f1].z);  
-      glVertex3d(raw_model->vertices[cur_face->f1].x,
-		 raw_model->vertices[cur_face->f1].y,
-		 raw_model->vertices[cur_face->f1].z); 
+      glNormal3d(rawModelStruct->normals[cur_face->f1].x,
+	       rawModelStruct->normals[cur_face->f1].y,
+		 rawModelStruct->normals[cur_face->f1].z);  
+      glVertex3d(rawModelStruct->vertices[cur_face->f1].x,
+		 rawModelStruct->vertices[cur_face->f1].y,
+		 rawModelStruct->vertices[cur_face->f1].z); 
       
-      glNormal3d(raw_model->normals[cur_face->f2].x,
-		 raw_model->normals[cur_face->f2].y,
-		 raw_model->normals[cur_face->f2].z); 
-      glVertex3d(raw_model->vertices[cur_face->f2].x,
-	       raw_model->vertices[cur_face->f2].y,
-		 raw_model->vertices[cur_face->f2].z);       
+      glNormal3d(rawModelStruct->normals[cur_face->f2].x,
+		 rawModelStruct->normals[cur_face->f2].y,
+		 rawModelStruct->normals[cur_face->f2].z); 
+      glVertex3d(rawModelStruct->vertices[cur_face->f2].x,
+	       rawModelStruct->vertices[cur_face->f2].y,
+		 rawModelStruct->vertices[cur_face->f2].z);       
     }
+    glEnd();
+    glEndList();
   } else {
-    for (i=0; i<raw_model->num_faces; i++) {
-      cur_face = &(raw_model->faces[i]);
+    glNewList(model_list, GL_COMPILE);
+    glBegin(GL_TRIANGLES);  
+    for (i=0; i<rawModelStruct->num_faces; i++) {
+      cur_face = &(rawModelStruct->faces[i]);
+      glColor3f(colormap[rawModelStruct->error[cur_face->f0]][0],
+		colormap[rawModelStruct->error[cur_face->f0]][1],
+		colormap[rawModelStruct->error[cur_face->f0]][2]);  
+      glVertex3d(rawModelStruct->vertices[cur_face->f0].x,
+		 rawModelStruct->vertices[cur_face->f0].y,
+		 rawModelStruct->vertices[cur_face->f0].z); 
       
-      glColor3f(colormap[raw_model->error[cur_face->f0]][0],
-		colormap[raw_model->error[cur_face->f0]][1],
-		colormap[raw_model->error[cur_face->f0]][2]);  
-      glVertex3d(raw_model->vertices[cur_face->f0].x,
-		 raw_model->vertices[cur_face->f0].y,
-		 raw_model->vertices[cur_face->f0].z); 
+      glColor3f(colormap[rawModelStruct->error[cur_face->f1]][0],
+		colormap[rawModelStruct->error[cur_face->f1]][1],
+		colormap[rawModelStruct->error[cur_face->f1]][2]);
+      glVertex3d(rawModelStruct->vertices[cur_face->f1].x,
+		 rawModelStruct->vertices[cur_face->f1].y,
+		 rawModelStruct->vertices[cur_face->f1].z); 
       
-      glColor3f(colormap[raw_model->error[cur_face->f1]][0],
-		colormap[raw_model->error[cur_face->f1]][1],
-		colormap[raw_model->error[cur_face->f1]][2]);
-      glVertex3d(raw_model->vertices[cur_face->f1].x,
-		 raw_model->vertices[cur_face->f1].y,
-		 raw_model->vertices[cur_face->f1].z); 
-      
-      glColor3f(colormap[raw_model->error[cur_face->f2]][0],
-		colormap[raw_model->error[cur_face->f2]][1],
-		colormap[raw_model->error[cur_face->f2]][2]);
-      glVertex3d(raw_model->vertices[cur_face->f2].x,
-		 raw_model->vertices[cur_face->f2].y,
-		 raw_model->vertices[cur_face->f2].z);       
+      glColor3f(colormap[rawModelStruct->error[cur_face->f2]][0],
+		colormap[rawModelStruct->error[cur_face->f2]][1],
+		colormap[rawModelStruct->error[cur_face->f2]][2]);
+      glVertex3d(rawModelStruct->vertices[cur_face->f2].x,
+		 rawModelStruct->vertices[cur_face->f2].y,
+		 rawModelStruct->vertices[cur_face->f2].z);       
     }
+    glEnd();
+    glEndList();
   }    
-  glEnd();
-  /*glEndList();*/
+
 }
 
 
@@ -287,8 +317,7 @@ else
 /* Callback function when the mouse is dragged in the window */
 /* Only does sthg when a button is pressed                   */
 /* ********************************************************* */
-void RawWidget::mouseMoveEvent(QMouseEvent *event)
-{
+void RawWidget::mouseMoveEvent(QMouseEvent *event) {
   int dx,dy;
 
   dx= event->x() - oldx;
@@ -324,41 +353,41 @@ void RawWidget::mouseMoveEvent(QMouseEvent *event)
   }
 
   if(move_state==1)
-    emit transfervalue(distance,mvmatrix);
+    emit(transfervalue(distance, mvmatrix));
   oldx = event->x();
   oldy = event->y();
 
 }
 
-void RawWidget::keyPressEvent(QKeyEvent *k)
-{
+void RawWidget::keyPressEvent(QKeyEvent *k) {
+  GLint line_state;
+  GLboolean light_state;
   GLfloat amb[] = {0.5, 0.5, 0.5, 1.0};
   GLfloat dif[] = {0.5, 0.5, 0.5, 1.0};
   GLfloat spec[] = {0.5, 0.5, 0.5, 0.5};
   GLfloat ldir[] = {0.0, 0.0, 0.0, 0.0};
-//   GLfloat mat_spec[] = {0.3, 0.7, 0.5, 0.5};
   GLfloat amb_light[] = {0.6, 0.6, 0.6, 1.0};
-//   GLfloat shine[] = {0.6};
   GLfloat lpos[] = {0.0, 0.0, -distance, 0.0} ;
-
-  if(k->key()==Key_F1){
-    glGetIntegerv(GL_POLYGON_MODE,&state);
-    if(state==GL_FILL) {
+  info_vertex *curv;
+  int i;
+  
+  if (k->key()==Key_F1){
+    glGetIntegerv(GL_POLYGON_MODE, &line_state);
+    if (line_state==GL_FILL) {
       glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
       glDraw();
     }
-    else if(state==GL_LINE) {
+    else if (line_state==GL_LINE) {
       glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-      glGetIntegerv(GL_POLYGON_MODE,&state);
       glDraw(); 
-    } else {
-      printf("Uh ?\n");
-    }
+    } else 
+      printf("Invalid value in GL_POLYGON_MODE : %d\n", line_state);
+    
   } 
-  if(k->key()==Key_F2){
-    light_state=glIsEnabled(GL_LIGHTING);
-    if(light_state==FALSE){
-      if(raw_model2->face_normals !=NULL){	
+  if (k->key()==Key_F2){
+    light_state = glIsEnabled(GL_LIGHTING);
+    if (light_state==GL_FALSE){
+      if (rawModelStruct->normals !=NULL){	
 	glEnable(GL_LIGHTING);
 	glLightfv(GL_LIGHT0, GL_AMBIENT, amb); 
 	glLightfv(GL_LIGHT0, GL_DIFFUSE, dif);
@@ -368,26 +397,57 @@ void RawWidget::keyPressEvent(QKeyEvent *k)
 	glLightModelfv(GL_LIGHT_MODEL_AMBIENT,amb_light);
 	glEnable(GL_LIGHT0);
 	glFrontFace(GL_CCW);
-      } else {
-	light_mode=0;
-	printf("Unable to compute normals... non_manifold model\n");
+      } else { // Attempt to compute normals
+	if (rawModelStruct->area==NULL)
+	  rawModelStruct->area = 
+	    (double*)malloc(rawModelStruct->num_vert*sizeof(double));
+	curv = 
+	  (info_vertex*)malloc(rawModelStruct->num_vert*sizeof(info_vertex));
+	if (rawModelStruct->face_normals==NULL)
+	  rawModelStruct->face_normals = compute_face_normals(rawModelStruct, 
+							      curv);
+	if (rawModelStruct->face_normals == NULL) {
+	  fprintf(stderr, "Unable to compute normals\n");
+	  free(rawModelStruct->area);
+	  glDisable(GL_LIGHTING); // Just to be sure
+	}
+	else { // Compute a normal for each vertex
+	  compute_vertex_normal(rawModelStruct, curv, 
+				rawModelStruct->face_normals);
+	  for (i=0; i<rawModelStruct->num_vert; i++) 
+	    free(curv[i].list_face);
+	  free(curv);	
+	  free(rawModelStruct->face_normals);
+	  free(rawModelStruct->area);
+	  
+	  glEnable(GL_LIGHTING);
+	  glLightfv(GL_LIGHT0, GL_AMBIENT, amb); 
+	  glLightfv(GL_LIGHT0, GL_DIFFUSE, dif);
+	  glLightfv(GL_LIGHT0, GL_SPECULAR, spec);
+	  glLightfv(GL_LIGHT0, GL_POSITION, lpos);  
+	  glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, ldir);  
+	  glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
+	  glLightModelfv(GL_LIGHT_MODEL_AMBIENT,amb_light);
+	  glEnable(GL_LIGHT0);
+	  glFrontFace(GL_CCW);
+	}
       }
     }
-    else if(light_state==TRUE){
-    glDisable(GL_LIGHTING);
-    glFrontFace(GL_CCW);
+    else if (light_state==GL_TRUE){
+      glDisable(GL_LIGHTING);
+      glFrontFace(GL_CCW);
     }
     glDraw();
   }
-  if(k->key()==Key_F3){
-    if(move_state==0){
+  if (k->key()==Key_F3){
+    if (move_state==0) {
       move_state=1;
-      emit transfervalue(distance,mvmatrix);
+      emit(transfervalue(distance,mvmatrix));
     }
     else
       move_state=0;
   }  
-
+  
 }
 
 
