@@ -1,4 +1,4 @@
-/* $Id: TextWidget.cpp,v 1.10 2002/04/05 11:06:22 aspert Exp $ */
+/* $Id: TextWidget.cpp,v 1.11 2002/04/08 08:04:23 aspert Exp $ */
 
 
 /*
@@ -50,7 +50,11 @@ TextWidget::TextWidget(QWidget *parent, const char *name)
 
   layout = new QGridLayout(this,2,1);
   view = new QTextView(this);
+
+#if QT_VERSION >= 300 // Only in Qt >= 3.0
   view->setWordWrap(QTextEdit::NoWrap);
+#endif
+
   view->setTextFormat(Qt::PlainText);
   font.setFamily("courier");
   font.setStyleHint(QFont::TypeWriter,QFont::PreferQuality);
