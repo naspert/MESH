@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.30 2001/08/15 12:47:23 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.31 2001/08/15 15:33:00 dsanta Exp $ */
 
 #include <compute_error.h>
 
@@ -919,8 +919,10 @@ static double dist_pt_surf(vertex p, const struct triangle_list *tl,
      * distance, we need to scan all triangles in cells at distance k+1, to
      * see if there is a smaller distance. */
     k++;
-  } while ((dmin_sqr == DBL_MAX || dmin_update == 1) && (k <= kmax));
-  if (k > kmax) { /* Something is going wrong (probably NaNs, etc.) */
+  } while ((dmin_sqr == DBL_MAX || dmin_update == 1) && (k < kmax));
+  if (dmin_sqr >= DBL_MAX || dmin_sqr != dmin_sqr || dmin_sqr < 0) {
+    /* Something is going wrong (probably NaNs, etc.). The x != x test is for
+     * NaNs (if supported, otherwise always true) */
     fprintf(stderr,
             "ERROR: entered infinite loop! NaN or infinte value in model ?\n"
             "       (otherwise you have stumbled on a bug, please report)\n");
@@ -996,6 +998,7 @@ void dist_surf_surf(const model *m1, model *m2, int n_spt,
   memset(&ts,0,sizeof(ts));
   memset(&tse,0,sizeof(tse));
   report_step = m1->num_faces/(100/2); /* report every 2 % */
+  if (report_step <= 0) report_step = 1;
   bbox2_min = m2->bBox[0];
   bbox2_max = m2->bBox[1];
   
