@@ -1,9 +1,16 @@
-/* $Id: normals.c,v 1.5 2001/06/29 14:16:19 aspert Exp $ */
+/* $Id: normals.c,v 1.6 2001/08/02 09:59:19 aspert Exp $ */
 #include <3dmodel.h>
 #include <geomutils.h>
 
+/** 
+ * 
+ * 
+ * @param raw_model Pointer to the input model
+ * @param v Index of the vertex to build the 1-ring for
+ * 
+ * @return Structure containing the ordered 1-ring of the vertex v
+ */
 
-/* find the 1-ring of vertex v */
 ring_info build_star2(model *raw_model, int v) {
 
   int i,j,k;
@@ -166,7 +173,11 @@ ring_info build_star2(model *raw_model, int v) {
 
 
 
-/* tree destructor */
+/** 
+ * 
+ * 
+ * @param tree Root of the tree to be freed
+ */
 void destroy_tree(face_tree_ptr tree) {
   
   if (tree->left != NULL)
@@ -188,7 +199,14 @@ void destroy_tree(face_tree_ptr tree) {
 
 
 
-/* Compares two edges (s.t. they are in lexico. order after qsort) */
+/** 
+ * 
+ * 
+ * @param ed0 Edge of the model
+ * @param ed1 Edge of the model
+ * 
+ * @return -1 if ed0<ed1 (lex. order), 0 if they are equal and 1 if ed0>ed1
+ */
 int compar(const void* ed0, const void* ed1) {
   edge_sort *e0, *e1;
 
@@ -679,9 +697,8 @@ void build_normals(model *raw_model, face_tree_ptr tree, vertex* normals) {
   tree->v1 = v1;
   tree->v2 = v2;
 
-  normals[tree->face_idx] = ncrossp(raw_model->vertices[v0],
-				    raw_model->vertices[v1], 
-				    raw_model->vertices[v2]);
+  ncrossp_v(&raw_model->vertices[v0], &raw_model->vertices[v1], 
+	    &raw_model->vertices[v2], &normals[tree->face_idx]);
 #ifdef NORM_DEBUG
   if (tree->parent != NULL) {
     printf("Parent=%d type=%d n=%f %f %f\n", tree->parent->face_idx, 
@@ -779,7 +796,7 @@ void compute_vertex_normal(model* raw_model, info_vertex* curv,
     p2 = raw_model->vertices[raw_model->faces[i].f1];
     p3 = raw_model->vertices[raw_model->faces[i].f2];
     
-    raw_model->area[i] = tri_area(p1, p2, p3);
+    raw_model->area[i] = tri_area_v(&p1, &p2, &p3);
   }
 
   /* Alloc array for normal of each vertex */

@@ -1,5 +1,7 @@
-/* $Id: geomutils.c,v 1.5 2001/05/15 08:05:41 aspert Exp $ */
+/* $Id: geomutils.c,v 1.6 2001/08/02 09:59:19 aspert Exp $ */
 #include <3dmodel.h>
+#define _GEOMUTILS_C_
+#include <geomutils.h> /* catch the inlined functions */
 
 /* Computes the normalized cross product between vectors p2p1 and p3p1 */
 vertex ncrossp(vertex p1, vertex p2, vertex p3) {
