@@ -1,4 +1,4 @@
-/* $Id: model_in.c,v 1.14 2002/04/09 10:38:37 aspert Exp $ */
+/* $Id: model_in.c,v 1.15 2002/04/10 17:42:15 aspert Exp $ */
 
 
 /*
@@ -1677,6 +1677,156 @@ static int read_iv_tmesh(struct model **tmesh_ref, struct file_data *data) {
   return rcode;
 }
 
+static int read_line(char*line_buf, int max_len, struct file_data *data) {
+  int i=0;
+  int tmp;
+  do {
+    tmp = getc(data);
+    line_buf[i] = (char)tmp;
+    i++;
+  } while (i < max_len && tmp != '\r' && tmp != '\n' && 
+	   tmp != EOF);
+
+  if (tmp == EOF) {
+    if (i > 0 && i < max_len) { /* we have been able to read a last
+                                 *  line */
+      line_buf[--i]='\0';  
+      return i;
+    }
+    return MESH_CORRUPTED;
+  }
+
+  line_buf[--i]='\0';  
+
+  return i;
+}
+
+static int read_smf_tmesh(struct model **tmesh_ref, struct file_data *data) {
+  char line_buf[256], tmp[10];
+  int  c;
+  struct model *tmesh;
+  vertex_t bbmin, bbmax;
+  int nread=0;
+  int max_vidx=-1;
+  int nvtcs=0;
+  int nfaces=0;
+  int l_vertices=0, l_faces=0;
+  int f0, f1, f2, f3;
+  float x, y, z;
+  int rcode = 1;
+
+
+
+  bbmin.x = bbmin.y = bbmin.z = FLT_MAX;
+  bbmax.x = bbmax.y = bbmax.z = -FLT_MAX;
+  tmesh = (struct model*)calloc(1, sizeof(struct model));
+  do {
+    c = skip_ws_comm(data);
+    if (c == EOF) break; /* maybe ok if we have reached the end of
+                          *  file */
+    nread = read_line(line_buf, (int)sizeof(line_buf), data);
+
+    switch (line_buf[0]) {
+    case 'v': /* vertex line found */
+      if (nvtcs == l_vertices) { /* Reallocate storage if needed */
+        tmesh->vertices = grow_array(tmesh->vertices, sizeof(*(tmesh->vertices)), 
+                                     &l_vertices, SZ_MAX_INCR);
+        if (tmesh->vertices == NULL) {
+          rcode = MESH_NO_MEM;
+          break;
+        }
+      }
+      if ((c = sscanf(line_buf, "%s %f %f %f", tmp, &x, &y, &z)) != 4) {
+        rcode = MESH_CORRUPTED;
+        break;
+      }
+
+      tmesh->vertices[nvtcs].x = x;
+      tmesh->vertices[nvtcs].y = y;
+      tmesh->vertices[nvtcs++].z = z;
+      if (x < bbmin.x) bbmin.x = x;
+      if (x > bbmax.x) bbmax.x = x;
+      if (y < bbmin.y) bbmin.y = y;
+      if (y > bbmax.y) bbmax.y = y;
+      if (z < bbmin.z) bbmin.z = z;
+      if (z > bbmax.z) bbmax.z = z;
+
+#ifdef DEBUG
+      printf("[read_smf_tmesh] v %f %f %f\n", x, y, z);
+#endif
+
+      break;
+    case 'f':/* face line found */
+      if (nfaces == l_faces) { /* Reallocate storage if needed */
+        tmesh->faces = grow_array(tmesh->faces, sizeof(*(tmesh->faces)), 
+                                  &l_faces, SZ_MAX_INCR);
+        if (tmesh->faces == NULL) {
+          rcode = MESH_NO_MEM;
+          break;
+        }
+      }
+      /* Do not forget that SMF vertex indices start at 1 !! */
+      if ((c = sscanf(line_buf, "%s %d %d %d %d\n", tmp, &f0, &f1, &f2, &f3)) == 4) {
+        tmesh->faces[nfaces].f0 = f0-1;
+        tmesh->faces[nfaces].f1 = f1-1;
+        tmesh->faces[nfaces++].f2 = f2-1;
+
+        if (f0 > max_vidx) max_vidx = f0-1;
+        if (f1 > max_vidx) max_vidx = f1-1;
+        if (f2 > max_vidx) max_vidx = f2-1;
+      } else if (c == 5) { /* quad -> split it */
+        tmesh->faces[nfaces].f0 = f0-1;
+        tmesh->faces[nfaces].f1 = f1-1;
+        tmesh->faces[nfaces++].f2 = f2-1;
+
+        tmesh->faces[nfaces].f0 = f1-1;
+        tmesh->faces[nfaces].f1 = f2-1;
+        tmesh->faces[nfaces++].f2 = f3-1;
+
+        if (f0 > max_vidx) max_vidx = f0-1;
+        if (f1 > max_vidx) max_vidx = f1-1;
+        if (f2 > max_vidx) max_vidx = f2-1;
+        if (f3 > max_vidx) max_vidx = f3-1;
+      } else {
+        rcode = MESH_CORRUPTED;
+        break;
+      }
+#ifdef DEBUG
+      printf("[read_smf_tmesh] f %d %d %d\n", f0, f1, f2);
+#endif
+      break;
+
+    default: /* only the faces & vertices are read. We choose to
+              *  ignore every other field from the SMF spec. */
+#ifdef DEBUG
+    printf("[read_smf_tmesh]nread=%d line_buf = %s\n", nread, line_buf);
+#endif
+      break;
+    }
+
+  } while(nread > 0 && rcode > 0);
+
+  if (max_vidx > nvtcs)
+    rcode = MESH_CORRUPTED;
+
+  if (nvtcs == 0) {
+    memset(&bbmin, 0, sizeof(bbmin));
+    memset(&bbmax, 0, sizeof(bbmax));
+  }
+  
+  if (rcode > 0) {
+    tmesh->bBox[0] = bbmin;
+    tmesh->bBox[1] = bbmax;
+    tmesh->num_vert = nvtcs;
+    tmesh->num_faces = nfaces;
+    *tmesh_ref = tmesh;
+  } else {
+    __free_raw_model(tmesh);
+    free(tmesh);
+  }
+  return rcode;
+}
+
 /* Detect the file format of the '*data' stream, returning the detected
  * type. The header identifying the file format, if any, is stripped out and
  * the '*data' stream is positioned just after it. If an I/O error occurs
@@ -1695,7 +1845,7 @@ static int detect_file_format(struct file_data *data)
   
 
   c = getc(data);
-  if (c == '#') { /* Probably VRML or Inventor */
+  if (c == '#') { /* Probably VRML or Inventor but can also be a SMF comment */
     if (buf_fscanf_1arg(data,swfmt,stmp) == 1) {
       if (strcmp(stmp,"VRML") == 0) {
         if (getc(data) == ' ' && buf_fscanf_1arg(data,swfmt,stmp) == 1 &&
@@ -1724,10 +1874,23 @@ static int detect_file_format(struct file_data *data)
           rcode = ferror((FILE*)data->f) ? MESH_CORRUPTED : MESH_BAD_FF;
         }
       } else {
-        rcode = MESH_BAD_FF;
+        /* Is is a comment line of a SMF file ? */
+        data->pos = 1; /* rewind file */
+        if ((c = skip_ws_comm(data)) == EOF) rcode = MESH_BAD_FF;
+        if (c == 'v' || c == 'b' || c == 'f' || c == 'c')
+          rcode = MESH_FF_SMF;
+        else 
+          rcode = MESH_BAD_FF;
       }
     } else {
-      rcode = ferror((FILE*)data->f) ? MESH_CORRUPTED : MESH_BAD_FF;
+      /* We need to test for SMF files here also, maybe a comment line
+       * */
+      data->pos = 1; /* rewind file */
+      if((c = skip_ws_comm(data)) == EOF) rcode = MESH_BAD_FF;
+      if (c == 'v' || c == 'b' || c == 'f' || c == 'c')
+        rcode = MESH_FF_SMF;
+      else 
+        rcode = MESH_BAD_FF;
     }
   } else if (c == 'p') { /* Probably ply */
     c = ungetc(c,data);
@@ -1751,7 +1914,12 @@ static int detect_file_format(struct file_data *data)
     c = ungetc(c,data);
     rcode = (c != EOF) ? MESH_FF_RAW : MESH_CORRUPTED;
   } else { /* error */
-    rcode = ferror((FILE*)data->f) ? MESH_CORRUPTED : MESH_BAD_FF;
+    /* test for SMF also here before returning */
+    if ((c = skip_ws_comm(data)) == EOF) rcode = MESH_BAD_FF;
+    if (c == 'v' || c == 'b' || c == 'f' || c == 'c')
+      rcode = MESH_FF_SMF;
+    else 
+      rcode = MESH_BAD_FF;
   }
   return rcode;
 }
@@ -1779,6 +1947,9 @@ int read_model(struct model **models_ref, struct file_data *data,
     break;
   case MESH_FF_IV:
     rcode = read_iv_tmesh(&models, data);
+    break;
+  case MESH_FF_SMF:
+    rcode = read_smf_tmesh(&models, data);
     break;
   case MESH_FF_PLY:
   default:

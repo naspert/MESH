@@ -1,4 +1,4 @@
-/* $Id: model_in.h,v 1.4 2002/04/03 09:04:36 aspert Exp $ */
+/* $Id: model_in.h,v 1.5 2002/04/10 17:42:14 aspert Exp $ */
 
 
 /*
@@ -109,6 +109,7 @@ BEGIN_DECL
 #define MESH_FF_VRML      2 /* VRML 2 utf8 (a.k.a. VRML97) */
 #define MESH_FF_IV        3 /* Inventor 2 ascii */
 #define MESH_FF_PLY       4 /* Ply ascii */
+#define MESH_FF_SMF       5 /* SMF format from QSlim */
 
 /* --------------------------------------------------------------------------
    ERROR CODES (always negative)
