@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.36 2002/02/27 15:39:23 aspert Exp $
+# $Id: Makefile,v 1.37 2002/02/28 10:12:55 aspert Exp $
 
 #
 # If the make variable PROFILE is defined to a non-empty value, profiling
@@ -266,9 +266,11 @@ dist: distdir
 	cd $(DISTDIR) && \
 	zip -9 -r Mesh-$(MESHVER).zip Mesh-$(MESHVER) && \
 	tar cvf Mesh-$(MESHVER).tar Mesh-$(MESHVER) && \
-	gzip -9 Mesh-$(MESHVER).tar && \
+	gzip -9 -c Mesh-$(MESHVER).tar > Mesh-$(MESHVER).tar.gz && \
+	bzip2 Mesh-$(MESHVER).tar && \
 	rm -rf Mesh-$(MESHVER) || \
-	rm -f Mesh-$(MESHVER).tar Mesh-$(MESHVER).tar.gz Mesh-$(MESHVER).zip
+	rm -f Mesh-$(MESHVER).tar Mesh-$(MESHVER).tar.gz Mesh-$(MESHVER).zip \
+	Mesh-$(MESHVER).tar.bz2
 
 #
 # Automatic dependency
