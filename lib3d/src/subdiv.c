@@ -1,4 +1,4 @@
-/* $Id: subdiv.c,v 1.2 2001/03/13 13:26:11 aspert Exp $ */
+/* $Id: subdiv.c,v 1.3 2001/04/10 08:21:54 aspert Exp $ */
 #include <3dutils.h>
 
 /* v0 & v1 are the indices in rings[center].ord_vert */
@@ -16,6 +16,10 @@ vertex compute_midpoint(ring_info *rings, int center,  int v1,
   int m = ring_op.size; /* size of opp. ring */
   int v2 = 0; /* index of center vertex in opp. ring */
 
+#ifdef _BOUNDARY_SUBDIV_DEBUG
+  printf("Subdiv edge %d %d\n", center, center2);
+  printf("n=%d m=%d\n", n, m);
+#endif
 
 #ifdef SUBDIV_DEBUG
   printf("Subdiv edge %d %d\n", center, center2);
@@ -217,6 +221,8 @@ vertex compute_midpoint(ring_info *rings, int center,  int v1,
     p.x += qs*raw_model->vertices[center].x;
     p.y += qs*raw_model->vertices[center].y;
     p.z += qs*raw_model->vertices[center].z;
+
+    free(s);
   } else if (n==6 && m!=6) {
     t = (double*)malloc(m*sizeof(double));
 
@@ -263,10 +269,465 @@ vertex compute_midpoint(ring_info *rings, int center,  int v1,
 }
 
 
+vertex reg_interior_crease_sub(ring_info *rings, int center, int v1, 
+			       int center2, model *raw_model) {
+
+  vertex p;
+  ring_info ring=rings[center], ring_op=rings[center2];
+  int i;
+
+  p.x = 3.0*raw_model->vertices[center2].x/8.0;
+  p.y = 3.0*raw_model->vertices[center2].y/8.0;
+  p.z = 3.0*raw_model->vertices[center2].z/8.0;
+  
+  p.x += 5.0*raw_model->vertices[center].x/8.0;
+  p.y += 5.0*raw_model->vertices[center].y/8.0;
+  p.z += 5.0*raw_model->vertices[center].z/8.0;
+  
+  if (ring.ord_vert[(v1+1)%6] == ring_op.ord_vert[0]) {    
+    p.x += (raw_model->vertices[ring_op.ord_vert[0]].x - 
+	    raw_model->vertices[ring_op.ord_vert[3]].x)/16.0;
+    p.y += (raw_model->vertices[ring_op.ord_vert[0]].y - 
+	    raw_model->vertices[ring_op.ord_vert[3]].y)/16.0;
+    p.z += (raw_model->vertices[ring_op.ord_vert[0]].z - 
+	    raw_model->vertices[ring_op.ord_vert[3]].z)/16.0;
+    
+    p.x -= raw_model->vertices[ring.ord_vert[(v1+2)%6]].x/16.0;
+    p.y -= raw_model->vertices[ring.ord_vert[(v1+2)%6]].y/16.0;
+    p.z -= raw_model->vertices[ring.ord_vert[(v1+2)%6]].z/16.0;
+    
+    p.x += 3.0*raw_model->vertices[ring.ord_vert[(v1-1)%6]].x/16.0;
+    p.y += 3.0*raw_model->vertices[ring.ord_vert[(v1-1)%6]].y/16.0;
+    p.z += 3.0*raw_model->vertices[ring.ord_vert[(v1-1)%6]].z/16.0;
+    
+    p.x -= raw_model->vertices[ring.ord_vert[(v1-2)%6]].x/8.0;
+    p.y -= raw_model->vertices[ring.ord_vert[(v1-2)%6]].y/8.0;
+    p.z -= raw_model->vertices[ring.ord_vert[(v1-2)%6]].z/8.0;
+    
+    return p;
+  } else if (ring.ord_vert[(v1+1)%6] == ring_op.ord_vert[3]) {
+    
+    p.x += (raw_model->vertices[ring_op.ord_vert[3]].x - 
+	    raw_model->vertices[ring_op.ord_vert[0]].x)/16.0;
+    p.y += (raw_model->vertices[ring_op.ord_vert[3]].y - 
+	    raw_model->vertices[ring_op.ord_vert[0]].y)/16.0;
+    p.z += (raw_model->vertices[ring_op.ord_vert[3]].z - 
+	    raw_model->vertices[ring_op.ord_vert[0]].z)/16.0;
+    
+    p.x -= raw_model->vertices[ring.ord_vert[(v1+2)%6]].x/16.0;
+    p.y -= raw_model->vertices[ring.ord_vert[(v1+2)%6]].y/16.0;
+    p.z -= raw_model->vertices[ring.ord_vert[(v1+2)%6]].z/16.0;
+    
+    p.x += 3.0*raw_model->vertices[ring.ord_vert[(v1-1)%6]].x/16.0;
+    p.y += 3.0*raw_model->vertices[ring.ord_vert[(v1-1)%6]].y/16.0;
+    p.z += 3.0*raw_model->vertices[ring.ord_vert[(v1-1)%6]].z/16.0;
+    
+    p.x -= raw_model->vertices[ring.ord_vert[(v1-2)%6]].x/8.0;
+    p.y -= raw_model->vertices[ring.ord_vert[(v1-2)%6]].y/8.0;
+    p.z -= raw_model->vertices[ring.ord_vert[(v1-2)%6]].z/8.0;
+    
+    return p;
+  } else if (ring.ord_vert[(v1+5)%6] == ring_op.ord_vert[0]){
+    
+    p.x += (raw_model->vertices[ring_op.ord_vert[0]].x - 
+	    raw_model->vertices[ring_op.ord_vert[3]].x)/16.0;
+
+    p.y += (raw_model->vertices[ring_op.ord_vert[0]].y - 
+	    raw_model->vertices[ring_op.ord_vert[3]].y)/16.0;
+
+    p.z += (raw_model->vertices[ring_op.ord_vert[0]].z - 
+	    raw_model->vertices[ring_op.ord_vert[3]].z)/16.0;
+    
+    p.x -= raw_model->vertices[ring.ord_vert[(v1+4)%6]].x/16.0;
+    p.y -= raw_model->vertices[ring.ord_vert[(v1+4)%6]].y/16.0;
+    p.z -= raw_model->vertices[ring.ord_vert[(v1+4)%6]].z/16.0;
+    
+    p.x += 3.0*raw_model->vertices[ring.ord_vert[(v1+1)%6]].x/16.0;
+    p.y += 3.0*raw_model->vertices[ring.ord_vert[(v1+1)%6]].y/16.0;
+    p.z += 3.0*raw_model->vertices[ring.ord_vert[(v1+1)%6]].z/16.0;
+    
+    p.x -= raw_model->vertices[ring.ord_vert[(v1+2)%6]].x/8.0;
+    p.y -= raw_model->vertices[ring.ord_vert[(v1+2)%6]].y/8.0;
+    p.z -= raw_model->vertices[ring.ord_vert[(v1+2)%6]].z/8.0;
+    
+    return p;
+  } else if (ring.ord_vert[(v1+5)%6] == ring_op.ord_vert[3]) {
+    
+    p.x += (raw_model->vertices[ring_op.ord_vert[3]].x - 
+	    raw_model->vertices[ring_op.ord_vert[0]].x)/16.0;
+    p.y += (raw_model->vertices[ring_op.ord_vert[3]].y - 
+	    raw_model->vertices[ring_op.ord_vert[0]].y)/16.0;
+    p.z += (raw_model->vertices[ring_op.ord_vert[3]].z - 
+	    raw_model->vertices[ring_op.ord_vert[0]].z)/16.0;
+    
+    p.x -= raw_model->vertices[ring.ord_vert[(v1+4)%6]].x/16.0;
+    p.y -= raw_model->vertices[ring.ord_vert[(v1+4)%6]].y/16.0;
+    p.z -= raw_model->vertices[ring.ord_vert[(v1+4)%6]].z/16.0;
+    
+    p.x += 3.0*raw_model->vertices[ring.ord_vert[(v1+1)%6]].x/16.0;
+    p.y += 3.0*raw_model->vertices[ring.ord_vert[(v1+1)%6]].y/16.0;
+    p.z += 3.0*raw_model->vertices[ring.ord_vert[(v1+1)%6]].z/16.0;
+    
+    p.x -= raw_model->vertices[ring.ord_vert[(v1+2)%6]].x/8.0;
+    p.y -= raw_model->vertices[ring.ord_vert[(v1+2)%6]].y/8.0;
+    p.z -= raw_model->vertices[ring.ord_vert[(v1+2)%6]].z/8.0;
+    return p;
+  } else {
+    printf("Incorrect ??\n");
+    printf("v1=%d %d %d\n", v1, (v1+1)%6, (v1+5)%6);
+    printf("%d ring n=%d t=%d:\n", center, ring.size, ring.type);
+    for (i=0; i<ring.size; i++) 
+      printf("ring[%d] = %d\n", i, ring.ord_vert[i]);
+    printf("%d ring_op n=%d t=%d:\n", center2, ring_op.size, ring_op.type);
+    for (i=0; i<ring_op.size; i++) 
+      printf("ring_op[%d] = %d\n", i, ring_op.ord_vert[i]);
+    exit(-1);
+    
+  }
+
+}
+
+vertex four_point_subdiv(ring_info *rings, int center, int v1, int center2,
+			 int v2, model *raw_model) {
+  vertex p;
+  double a=-1.0/16.0, b=9.0/16.0;
+  int p0, p1, p2, p3;
+  ring_info ring=rings[center], ring_op=rings[center2];
+  int n=ring.size, m=ring_op.size;
+
+  p1 = center;
+  p2 = center2;
+  
+  /* ring.ord_vert[v1] = center2 */
+  /* ring_op.ord_vert[v2] = center */     
+  if (v1==0 && v2==0) { 
+    p0 = ring.ord_vert[n-1];
+    p3 = ring_op.ord_vert[m-1];
+  } else if (v1==0 && v2==m-1) {
+    p0 = ring.ord_vert[n-1];
+    p3 = ring_op.ord_vert[0];
+  } else if (v1==n-1 && v2==0) {
+    p0 = ring.ord_vert[0];
+    p3 = ring_op.ord_vert[m-1];
+  } else {
+    p0 = ring.ord_vert[0];
+    p3 = ring_op.ord_vert[0];
+  }
+
+#ifdef BOUNDARY_SUBDIV_DEBUG
+  printf("p0=%d p1=%d p2=%d p3=%d\n", p0, p1, p2, p3);
+#endif
+  
+  p.x = a*(raw_model->vertices[p0].x + raw_model->vertices[p3].x) + 
+    b*(raw_model->vertices[p1].x + raw_model->vertices[p2].x);
+  p.y = a*(raw_model->vertices[p0].y + raw_model->vertices[p3].y) + 
+    b*(raw_model->vertices[p1].y + raw_model->vertices[p2].y);
+  p.z = a*(raw_model->vertices[p0].z + raw_model->vertices[p3].z) + 
+    b*(raw_model->vertices[p1].z + raw_model->vertices[p2].z);
+  return p;
+}
+
+vertex extr_crease_sub(ring_info ring, int center, int v1, model *raw_model) {
+ double  *ci, c0, thk;
+ int n=ring.size, j;
+ vertex p;
+
+#ifdef BOUNDARY_SUBDIV_DEBUG
+ double sum=0.0;
+#endif
+
+ ci = (double*)malloc(n*sizeof(double));
+ thk = M_PI/(double)(n-2);
+ c0 = 1.0 - sin(thk)*sin(v1*thk)/((1.0 - cos(thk))*((double)(n-2)));
+ 
+#ifdef BOUNDARY_SUBDIV_DEBUG
+ sum += c0;
+ printf("n=%d\tc0=%f\tthk=%f\n", n, c0, thk);
+#endif
+
+ ci[0] =  0.25*(cos(v1*thk) - 
+   sin(2*thk)*sin(2*thk*v1)/((cos(thk)-cos(2*thk))*(n-2.0)));
+ ci[n-1] = ci[0];
+
+#ifdef BOUNDARY_SUBDIV_DEBUG
+ sum += 2*ci[0];
+ printf("c[0]=c[%d]=%f\n", n-1, ci[0]);
+#endif
+
+ p.x = c0*raw_model->vertices[center].x;
+ p.y = c0*raw_model->vertices[center].y;
+ p.z = c0*raw_model->vertices[center].z;
+
+ p.x += ci[0]*raw_model->vertices[ring.ord_vert[0]].x;
+ p.y += ci[0]*raw_model->vertices[ring.ord_vert[0]].y;
+ p.z += ci[0]*raw_model->vertices[ring.ord_vert[0]].z;
+
+ for (j=1; j<n-1; j++) {
+   ci[j] = (sin(v1*thk)*sin(j*thk) + 
+	    0.5*sin(2*v1*thk)*sin(2*j*thk))/(double)(n-1);
+
+#ifdef BOUNDARY_SUBDIV_DEBUG
+   sum += ci[j];
+   printf("c[%d]=%f\n", j, ci[j]);
+#endif
+
+   p.x += ci[j]*raw_model->vertices[ring.ord_vert[j]].x;
+   p.y += ci[j]*raw_model->vertices[ring.ord_vert[j]].y;
+   p.z += ci[j]*raw_model->vertices[ring.ord_vert[j]].z;
+ }
+
+#ifdef BOUNDARY_SUBDIV_DEBUG
+ printf("sum = %f\n", sum);
+#endif
+
+ p.x += ci[n-1]*raw_model->vertices[ring.ord_vert[n-1]].x;
+ p.y += ci[n-1]*raw_model->vertices[ring.ord_vert[n-1]].y;
+ p.z += ci[n-1]*raw_model->vertices[ring.ord_vert[n-1]].z;
+
+ free(ci);
+ return p;
+ 
+}
+
+vertex compute_midpoint_boundary(ring_info *rings, int center, int v1, 
+				 model *raw_model) {
+
+  ring_info ring=rings[center];
+  int center2=ring.ord_vert[v1];
+  ring_info ring_op=rings[center2]; /* center of opp. ring */
+  int n=ring.size, m=ring_op.size; /* size of opp. ring */
+  int v2 = 0; /* index of center vertex in opp. ring */
+  vertex p, p2;
+  int old_size=-1;
+
+  /* find the edge in the opp. ring */
+  while (ring_op.ord_vert[v2] != center)
+    v2++;
+
+  if (ring.type==1 && ring_op.type==1 && ((v1==0 && v2==0) ||
+					  (v1==0 && v2==m-1) ||
+					  (v1==n-1 && v2==0) ||
+					  (v1==n-1 && v2==m-1))) {
+    /* ************************ */
+    /* apply the 4 point scheme */
+    /* ************************ */
+
+#ifdef BOUNDARY_SUBDIV_DEBUG
+    printf("'4 point scheme %d %d\n", center, center2);
+#endif
+    return four_point_subdiv(rings, center, v1, center2, v2, raw_model);
+
+  } else {				      
+    if (ring.type == 0) { /* the current vertex is regular */
+  /* as a consequence (see test in 'subdiv'), 'center2' is a boundary vertex */
+      if (ring.size == 6) {
+	/* the non-boundary vertex is regular */
+	if (ring_op.size == 4) {
+	  /* the boundary vertex is also regular i.e. valence=4 */
+	  
+	  /* **************************************** */
+	  /* apply the 'regular interior-crease' rule */
+	  /* **************************************** */
+#ifdef BOUNDARY_SUBDIV_DEBUG	
+	  printf("'regular interior %d -crease %d' rule\n", center, center2);
+#endif
+	  return reg_interior_crease_sub(rings, center, v1, center2, 
+					 raw_model);
+	} else {
+	  /* the boundary vertex 'center2' is extr. */
+	  
+	  /* ************************************* */
+	  /* apply the 'extraordinary crease' rule */
+	  /* ************************************* */
+#ifdef BOUNDARY_SUBDIV_DEBUG	
+	  printf("'extr. crease' rule %d\n", center2);
+#endif
+	  return extr_crease_sub(ring_op, center2, v2, raw_model);
+	}
+      } else {
+	/* the non-boundary vertex is extr. */
+	if (ring_op.size == 4) {
+	  /* the boundary vertex regular */
+	  
+	  /* *************************************** */
+	  /* apply the 'interior extraordinary' rule */
+	  /* *************************************** */
+#ifdef BOUNDARY_SUBDIV_DEBUG	
+	  printf("'extr. interior' rule %d\n", center);
+#endif
+	  /* trick to use the 'compute_midpoint' func. */
+	  rings[center2].size = 6; 
+	  rings[center2].ord_vert = (int*)realloc(rings[center2].ord_vert, 
+						  6*sizeof(int));
+	  rings[center2].ord_vert[4] = -1;
+	  rings[center2].ord_vert[5] = -1; 
+	  /* so that we don't have any surprises */
+
+	  p = compute_midpoint(rings, center, v1, raw_model);
+	  rings[center2].size = 4; /* set the size to the correct value */
+	  ring_op = rings[center2];
+	  return p;
+	} else {
+	  /* the boundary vertex is also extr. */
+	  
+	  /* ********************************************************** */
+	  /* apply the average of 'extr. int.' and 'extr. crease' rules */
+	  /* ********************************************************** */
+#ifdef BOUNDARY_SUBDIV_DEBUG	
+	  printf("av. 'extr. interior %d - extr. crease %d' rule\n", 
+		 center, center2);
+#endif
+	  p2 = extr_crease_sub(ring_op, center2, v2, raw_model);
+	  old_size = ring_op.size;
+	  if (old_size >= 6) {
+	    rings[center2].size = 6;
+	    p = compute_midpoint(rings, center, v1, raw_model);
+	  } else if (old_size < 6) {
+	    rings[center2].size = 6;
+	    rings[center2].ord_vert = (int*)realloc(rings[center2].ord_vert, 
+						    6*sizeof(int));
+	    p = compute_midpoint(rings, center, v1, raw_model);
+	  } 
+	  rings[center2].size = old_size;
+	  ring_op = rings[center2]; /* just to be sure ... */
+	  p.x *= 0.5;
+	  p.y *= 0.5;
+	  p.z *= 0.5;
+	  p.x += 0.5*p2.x;
+	  p.y += 0.5*p2.y;
+	  p.z += 0.5*p2.z;
+
+	  return p;
+	}
+      }
+    } else if (ring_op.type == 0) { 
+      /* 'center' is regular but 'center2' is not */
+      if (ring_op.size == 6) {
+	/* the non-boundary vertex is regular */
+	if (ring.size == 4) {
+	  
+	  /* **************************************** */
+	  /* apply the 'regular interior-crease' rule */
+	  /* **************************************** */
+	  
+#ifdef BOUNDARY_SUBDIV_DEBUG	
+	  printf("'regular interior %d -crease %d' rule\n", center2, center);
+#endif
+	  return reg_interior_crease_sub(rings, center2, v2, center, 
+					 raw_model);
+	} else {
+	  
+	  /* ************************************* */
+	  /* apply the 'extraordinary crease' rule */
+	  /* ************************************* */	  
+#ifdef BOUNDARY_SUBDIV_DEBUG	
+	  printf("'extr. crease' rule %d\n", center);
+#endif
+	  return extr_crease_sub(ring, center, v1, raw_model);
+	}
+	
+      } else {
+	/* the non-boundary vertex is extr. */
+	if (ring.size == 4) {
+	  
+	  /* *************************************** */
+	  /* apply the 'interior extraordinary' rule */
+	  /* *************************************** */
+#ifdef BOUNDARY_SUBDIV_DEBUG	
+	  printf("'extr. interior' rule %d\n", center2);
+#endif
+	  /* trick to use the 'compute_midpoint' func. */
+	  rings[center].size = 6; 
+	  rings[center].ord_vert = (int*)realloc(rings[center].ord_vert, 
+						 6*sizeof(int));
+	  rings[center].ord_vert[4] = -1;
+	  rings[center].ord_vert[5] = -1; 
+	  /* so that we don't have any surprises */
+
+	  p = compute_midpoint(rings, center2, v2, raw_model);
+	  rings[center].size = 4;
+	  ring = rings[center];
+	  return p;
+	} else {
+	  
+	  /* ********************************************************** */
+	  /* apply the average of 'extr. int.' and 'extr. crease' rules */
+	  /* ********************************************************** */
+	  
+#ifdef BOUNDARY_SUBDIV_DEBUG	
+	  printf("av. 'extr. interior %d - extr. crease %d' rule\n", 
+		 center2, center);
+#endif
+	  p2 = extr_crease_sub(ring, center, v1, raw_model);
+	  old_size = ring.size;
+	  if (old_size >= 6) {
+	    rings[center].size = 6;
+	    p = compute_midpoint(rings, center2, v2, raw_model);
+	  } else if (old_size < 6) {
+	    rings[center].size = 6;
+	    rings[center].ord_vert = (int*)realloc(rings[center].ord_vert, 
+						   6*sizeof(int));
+	    p = compute_midpoint(rings, center2, v2, raw_model);
+	  } 
+	  rings[center].size = old_size;
+	  ring = rings[center];
+	  p.x *= 0.5;
+	  p.y *= 0.5;
+	  p.z *= 0.5;
+	  p.x += 0.5*p2.x;
+	  p.y += 0.5*p2.y;
+	  p.z += 0.5*p2.z;
+
+	  return p;
+	}	
+      }
+    } else { 
+      /* this edge connects 2 boundary vertices ... hmrgph */
+      if (ring.size == 4 && ring_op.size == 4) {
+	
+	/* ************************************* */
+	/* apply the 'crease-crease 1 or 2' rule */
+	/* ************************************* */
+#ifdef BOUNDARY_SUBDIV_DEBUG	
+	printf("'crease 1 or 2' rule %d %d\n", center, center2);
+#endif
+	exit(-1);
+	
+      } else if (ring.size != 4) {
+	
+	/* *************************************** */
+	/* apply the 'extr. crease' rule on 'ring' */
+	/* *************************************** */
+#ifdef BOUNDARY_SUBDIV_DEBUG	
+	printf("'extr. crease' rule %d\n", center);
+#endif
+	return extr_crease_sub(ring, center, v1, raw_model);
+      } else {
+	
+	/* ****************************************** */
+	/* apply the 'extr. crease' rule on 'ring_op' */
+	/* ****************************************** */
+#ifdef BOUNDARY_SUBDIV_DEBUG	
+	printf("'extr. crease' rule %d\n", center2);
+#endif
+	return extr_crease_sub(ring_op, center2, v2, raw_model);
+      }
+      
+    }
+  }
+  /* if this is reached, then it sucks */
+  printf("Where the hell are you son ?\n");
+  p.x = 0.0;
+  p.y = 0.0;
+  p.z = 0.0;
+  return p;
+  
+}
+
 model* subdiv(model *raw_model) {
   ring_info *rings;
   model *subdiv_model;
-  int i, j;
+  int i, j, k;
   int v0, v1, v2;
   int u0=-1, u1=-1, u2=-1;
   edge_v edge;
@@ -286,24 +747,52 @@ model* subdiv(model *raw_model) {
     for (j=0; j<rings[i].size; j++)
       printf("number %d : %d\n", j, rings[i].ord_vert[j]);
 #endif
-    if (rings[i].type == 1) {
-      free(rings);
-      printf("Boundary vertex %d unsupported\n", i);
-      return NULL;
-    }
+/*     if (rings[i].type == 1) { */
+/*       free(rings); */
+/*       printf("Boundary vertex %d unsupported\n", i); */
+/*       return NULL; */
+/*     } */
   }
   
-  
+#ifdef SUBDIV_DEBUG
+  for (i=0; i<raw_model->num_vert; i++) {
+    for (j=0; j<rings[i].size; j++)
+      printf("Vertex %d : type(ring[%d]) = %d %d\n", i, rings[i].ord_vert[j],
+	     rings[rings[i].ord_vert[j]].type, rings[i].type);
+  }
+#endif
+
   for (i=0; i<raw_model->num_vert; i++) {
     for (j=0; j<rings[i].size; j++) {
       if (rings[i].ord_vert[j] < i) /* this edge is already subdivided */
 	continue; 
-      p = compute_midpoint(rings, i, j, raw_model);
-      nedges ++;
-      edge_list = (edge_sub*)realloc(edge_list, nedges*sizeof(edge_sub));
-      edge_list[nedges-1].edge.v0 = i;
-      edge_list[nedges-1].edge.v1 = rings[i].ord_vert[j];
-      edge_list[nedges-1].p = p;
+      else if (rings[i].type == 0 && rings[rings[i].ord_vert[j]].type == 0) { 
+	/* fully regular edge */
+	p = compute_midpoint(rings, i, j, raw_model);
+	nedges ++;
+	edge_list = (edge_sub*)realloc(edge_list, nedges*sizeof(edge_sub));
+	edge_list[nedges-1].edge.v0 = i;
+	edge_list[nedges-1].edge.v1 = rings[i].ord_vert[j];
+	edge_list[nedges-1].p = p;
+      } else if (rings[i].type == 1 || 
+		 rings[rings[i].ord_vert[j]].type == 1) { 
+	/* A non-regular edge has been found. */
+	/* Test whether it is a boundary or not */
+	p = compute_midpoint_boundary(rings, i, j, raw_model);
+	nedges ++;
+	edge_list = (edge_sub*)realloc(edge_list, nedges*sizeof(edge_sub));
+	edge_list[nedges-1].edge.v0 = i;
+	edge_list[nedges-1].edge.v1 = rings[i].ord_vert[j];
+	edge_list[nedges-1].p = p;
+      } else {
+	printf("Non-manifold neighborhood found for %d %d. Quitting\n", i, 
+	       rings[i].ord_vert[j]);
+	for (k=0; k<raw_model->num_vert; k++)
+	  free(rings[k].ord_vert);
+	free(rings);
+	free(edge_list);
+	exit(0);
+      }
     }
   }
 
@@ -424,6 +913,8 @@ model* subdiv(model *raw_model) {
   
 /*   printf("face_idx = %d vert_idx = %d\n", face_idx, vert_idx); */
   free(edge_list);
+  for (i=0; i<raw_model->num_vert; i++)
+    free(rings[i].ord_vert);
   free(rings);
   free(done);
   free(midpoint_idx);
