@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.74 2002/02/10 18:37:11 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.75 2002/02/12 16:20:05 dsanta Exp $ */
 
 #include <compute_error.h>
 
@@ -170,8 +170,8 @@ struct triangle_info {
   double chsbc;        /* constant of the plane equation: <p|npbc>=cpbc */
   double chsca;        /* constant of the plane equation: <p|npca>=cpca */
   double a_n;          /* scalar product of A with the unit length normal */
-  int wide_at_c;       /* Flag indicating if the angle at C is larger than 90
-                        * degrees */
+  int obtuse_at_c;     /* Flag indicating if the angle at C is larger than 90
+                        * degrees (i.e. obtuse) */
   double s_area;       /* The surface area of the triangle */
 };
 
@@ -646,7 +646,7 @@ static void init_triangle(const vertex_t *a, const vertex_t *b,
   t->chsca = scalprod_dv(&(t->a),&(t->nhsca));
   t->chsbc = scalprod_dv(&(t->b),&(t->nhsbc));
   /* Miscellaneous fields */
-  t->wide_at_c = (t->ab_len_sqr > t->ca_len_sqr+t->cb_len_sqr);
+  t->obtuse_at_c = (t->ab_len_sqr > t->ca_len_sqr+t->cb_len_sqr);
   t->a_n = scalprod_dv(&(t->a),&(t->normal));
   /* Get surface area */
   if (is_point) {
@@ -670,7 +670,7 @@ static double dist_sqr_pt_triag(const struct triangle_info *t,
   dvertex_t ap,cp;        /* Point to point vectors */
   double dmin_sqr;        /* minimum distance squared */
 
-  /* NOTE: If the triangle has a wide angle (i.e. angle larger than 90
+  /* NOTE: If the triangle has a obtuse angle (i.e. angle larger than 90
    * degrees) it is the angle at the C vertex (never at A or B). */
 
   /* We get the distance from point P to triangle ABC by first testing on
@@ -682,7 +682,7 @@ static double dist_sqr_pt_triag(const struct triangle_info *t,
    * P to ABC is the distance to the AB segment. Otherwise if P is towards the
    * triangle exterior from the plane hsbc the distance from P to ABC is the
    * minimum of the distance to the BC and CA segments (only BC is the angle
-   * at C is not wide). Otherwise P is towards the triangle exterior from the
+   * at C is not obtuse). Otherwise P is towards the triangle exterior from the
    * plane hsac and the distance from P to ABC is the distance to the CA
    * segment. */
 
@@ -718,7 +718,7 @@ static double dist_sqr_pt_triag(const struct triangle_info *t,
       } else { /* B is closer */
         return dist2_dv(p,&(t->b));
       }
-    } else if (!t->wide_at_c) { /* C is closer */
+    } else if (!t->obtuse_at_c) { /* C is closer */
       return norm2_dv(&cp);
     } else { /* AC is closer */
       cp_ca = scalprod_dv(&cp,&(t->ca));
