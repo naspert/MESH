@@ -1,4 +1,4 @@
-/* $Id: InitWidget.cpp,v 1.16 2002/02/20 23:43:49 dsanta Exp $ */
+/* $Id: InitWidget.cpp,v 1.17 2002/02/25 16:09:44 aspert Exp $ */
 
 #include <InitWidget.h>
 
@@ -23,8 +23,7 @@ InitWidget::InitWidget(struct args defArgs,
   QPushButton *B1, *B2, *OK;
   QListBox *qlboxSplStep;
   QGridLayout *bigGrid;
-  QHBoxLayout *smallGrid1, *smallGrid2, *smallGrid3, *smallGrid4, *smallGrid5;
-  QHBoxLayout *smallGrid6, *smallGrid7;
+
 
   /* Initialize */
   pargs = defArgs;
@@ -61,7 +60,7 @@ InitWidget::InitWidget(struct args defArgs,
 	  qledSplStep, SLOT(setText(const QString&)));
 
   /* Symmetric distance checkbox */
-  chkSymDist = new QCheckBox("Calculate the symmetric distance (double run)",
+  chkSymDist = new QCheckBox("Compute the symmetrical distance (double run)",
                              this);
   chkSymDist->setChecked(pargs.do_symmetric);
 
@@ -76,48 +75,45 @@ InitWidget::InitWidget(struct args defArgs,
   chkLogWindow = new QCheckBox("Log output in external window", this);
   chkLogWindow->setChecked(pargs.do_wlog);
 
+  /* Texture enable checkbox */
+  chkTexture = new QCheckBox("Enable error display with texture (CAUTION)", 
+                             this);
+  chkTexture->setChecked(pargs.do_texture);
+  
   /* OK button */
   OK = new QPushButton("OK",this);
   connect(OK, SIGNAL(clicked()), this, SLOT(getParameters()));
 
-  /* Build the topmost grid layout */
-  bigGrid = new QGridLayout( this, 6, 1, 20 );
+  /* Build the grid layout */
+  bigGrid = new QGridLayout( this, 10, 3, 20 );
 
-  /* Build the grid layout for 1st mesh */
-  smallGrid1 = new QHBoxLayout(bigGrid);
-  smallGrid1->addWidget(qlabMesh1, 0, 0);
-  smallGrid1->addWidget(qledMesh1, 0, 1);
-  smallGrid1->addWidget(B1, 0, 2);
+  /* 1st mesh input */
+  bigGrid->addWidget(qlabMesh1, 0, 0, Qt::AlignRight);
+  bigGrid->addWidget(qledMesh1, 0, 1);
+  bigGrid->addWidget(B1, 0, 2);
 
-  /* Build the grid layout for 2nd mesh */
-  smallGrid2 = new QHBoxLayout(bigGrid);
-  smallGrid2->addWidget(qlabMesh2, 0, 0);
-  smallGrid2->addWidget(qledMesh2, 0, 1);
-  smallGrid2->addWidget(B2, 0, 2);
+  /* 2nd mesh input */
+  bigGrid->addWidget(qlabMesh2, 1, 0, Qt::AlignRight);
+  bigGrid->addWidget(qledMesh2, 1, 1);
+  bigGrid->addWidget(B2, 1, 2);
 
-  /* Build the grid layout for sampling freq */
-  smallGrid3 = new QHBoxLayout(bigGrid);
-  smallGrid3->addWidget(qlabSplStep, 0, 0);
-  smallGrid3->addWidget(qledSplStep, 0, 1);
-  smallGrid3->addWidget(qlboxSplStep, 0, 2);
+  /* sampling freq input */
+  bigGrid->addWidget(qlabSplStep, 3, 0, Qt::AlignRight);
+  bigGrid->addWidget(qledSplStep, 3, 1);
+  bigGrid->addMultiCellWidget(qlboxSplStep, 2, 4, 2, 2);
 
-  /* Build grid layout for force sample all checkbox */
-  smallGrid7 = new QHBoxLayout(bigGrid);
-  smallGrid7->addWidget(qlabMinSplFreq, 0, 0);
-  smallGrid7->addWidget(qledMinSplFreq, 0, 1);
+  /* Min. sampling frequency input*/
+  bigGrid->addWidget(qlabMinSplFreq, 5, 0, Qt::AlignRight);
+  bigGrid->addWidget(qledMinSplFreq, 5, 1);
 
   /* Build grid layout for symmetric distance checkbox */
-  smallGrid5 = new QHBoxLayout(bigGrid);
-  smallGrid5->addWidget(chkSymDist);
+  bigGrid->addMultiCellWidget(chkSymDist, 6, 6, 0, 2, Qt::AlignLeft);
+  bigGrid->addMultiCellWidget(chkLogWindow, 7, 7, 0, 2, Qt::AlignLeft);
+  bigGrid->addMultiCellWidget(chkTexture, 8, 8, 0, 2, Qt::AlignLeft);
 
-  /* Build grid layout for external log window */
-  smallGrid6 = new QHBoxLayout(bigGrid);
-  smallGrid6->addWidget(chkLogWindow);
 
   /* Build grid layout for OK button */
-  smallGrid4 = new QHBoxLayout(bigGrid);
-  smallGrid4->addSpacing(100);
-  smallGrid4->addWidget(OK, 0, 1);
+  bigGrid->addMultiCellWidget(OK, 9, 9, 0, 2, Qt::AlignCenter);
 }
 
 InitWidget::~InitWidget() {
@@ -186,6 +182,7 @@ void InitWidget::meshSetUp() {
   pargs.do_symmetric = chkSymDist->isChecked() == TRUE;
   pargs.min_sample_freq = atoi((char*)qledMinSplFreq->text().latin1());
   pargs.do_wlog = chkLogWindow->isChecked() == TRUE;
+  pargs.do_texture = (chkTexture->isChecked() == TRUE);
 
   if (!pargs.do_wlog) {
     log = outbuf_new(stdio_puts,stdout);
@@ -206,7 +203,7 @@ void InitWidget::meshRun() {
   pr.cb_out = &qProg;
   mesh_run(&pargs,model1,model2, log, &pr);
   outbuf_flush(log);
-  c = new ScreenWidget(model1, model2);
+  c = new ScreenWidget(model1, model2, pargs.do_texture);
   if (qApp != NULL) {
     qApp->setMainWidget(c);
   }

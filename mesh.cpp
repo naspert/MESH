@@ -1,4 +1,4 @@
-/* $Id: mesh.cpp,v 1.21 2002/02/25 15:35:28 aspert Exp $ */
+/* $Id: mesh.cpp,v 1.22 2002/02/25 16:09:44 aspert Exp $ */
 
 #include <time.h>
 #include <string.h>
@@ -39,7 +39,8 @@ static void print_usage(FILE *out)
   fprintf(out,"the calculated error at that vertex (if not calculated at\n");
   fprintf(out,"that vertex, dark gray is used) and the color is\n");
   fprintf(out,"interpolated between vertices. Invisible vertices are added\n");
-  fprintf(out,"as necessary to display error at sample points which are not\n");
+  fprintf(out,
+          "as necessary to display error at sample points which are not\n");
   fprintf(out,"vertices of model 1. The ratio between the total number of\n");
   fprintf(out,"error samples and error samples displayed is controlled by\n");
   fprintf(out,"the \"vertex error downsampling\" parameter. For low\n");
@@ -47,7 +48,8 @@ static void print_usage(FILE *out)
   fprintf(out,"a large number of triangles. For high downsampling values\n");
   fprintf(out,"the result can be misleading, although very fast.\n");
   fprintf(out,"In mean face error, each triangle is assigned a color based\n");
-  fprintf(out,"on the mean error for that face (if that face has no samples\n");
+  fprintf(out,
+          "on the mean error for that face (if that face has no samples\n");
   fprintf(out,"a dark gray is used).\n");
   fprintf(out,"In sample error mode  a color is assigned to each sample\n");
   fprintf(out,"point based on the error at that point, and  applied to the\n");
@@ -56,7 +58,8 @@ static void print_usage(FILE *out)
   fprintf(out,"the vertex error mode with a downsampling value of 1,\n");
   fprintf(out,"although it can be very slow if model 1 has a large number\n");
   fprintf(out,"of triangles. If model 1 has few triangles and there is a\n");
-  fprintf(out,"large number of samples this mode can be considerably faster\n");
+  fprintf(out,
+          "large number of samples this mode can be considerably faster\n");
   fprintf(out,"than vertex error mode with a low downsampling value.\n");
   fprintf(out,"A colorbar showing the correspondance between error values\n");
   fprintf(out,"and color is displayed. The colorbar also shows the\n");
@@ -78,14 +81,17 @@ static void print_usage(FILE *out)
   fprintf(out,"\n");
   fprintf(out,"  -t\tDisplay only textual results, do not display the GUI.\n");
   fprintf(out,"\n");
-  fprintf(out,"  -l s\tSet the sampling step to s, which is a percentage of\n");
+  fprintf(out,
+          "  -l s\tSet the sampling step to s, which is a percentage of\n");
   fprintf(out,"      \tthe bounding box diagonal of the second model. The\n");
   fprintf(out,"      \ttriangles of the first model are sampled, in order\n");
   fprintf(out,"      \tto calculate an approximation of the distance, so\n");
   fprintf(out,"      \tthat the sampling density (number of samples per\n");
-  fprintf(out,"      \tunit surface) is 1/(s^2) (i.e. one sample per square\n");
+  fprintf(out,
+          "      \tunit surface) is 1/(s^2) (i.e. one sample per square\n");
   fprintf(out,"      \tof side length s). A probabilistic model is used so\n");
-  fprintf(out,"      \tthat the resulting number is as close as possible to\n");
+  fprintf(out,
+          "      \tthat the resulting number is as close as possible to\n");
   fprintf(out,"      \tthe target. The default is 0.5\n\n");
   fprintf(out,"  -mf f\tEnsure that each triangle has a sampling frequency\n");
   fprintf(out,"       \tof at least f. Normally the sampling frequency for\n");
@@ -95,16 +101,19 @@ static void print_usage(FILE *out)
   fprintf(out,"       \tnon-zero f parameter this can be avoided, although\n");
   fprintf(out,"       \tit disturbs the uniform distribution of samples.\n");
   fprintf(out,"       \tWith f set to 1, all triangles get at least one\n");
-  fprintf(out,"       \tsample. With f set to 2, all triangles get at least\n");
+  fprintf(out,
+          "       \tsample. With f set to 2, all triangles get at least\n");
   fprintf(out,"       \tthree samples, and thus all vertices get a sample.\n");
   fprintf(out,"       \tHigher values of f are less useful. By default it\n");
-  fprintf(out,"       \tis zero in non-GUI mode and two in GUI mode.\n");
+  fprintf(out,"       \tis zero in non-GUI mode and two in GUI mode.\n\n");
   fprintf(out,"  -wlog\tDisplay textual results in a window instead of on\n");
-  fprintf(out,"       \tstandard output. Not compatible with the -t option.\n");
+  fprintf(out,
+          "       \tstandard output. Not compatible with the -t option.\n\n");
   fprintf(out,"  -tex\tEnables the display of the error by texture mapping\n");
-  fprintf(out,"      \ton the model. WARNING : handle with care. Some\n");
-  fprintf(out,"      \tplatforms will just fail to display this, and using\n");
-  fprintf(out,"      \tthis on big models will crash your computer with a\n");
+  fprintf(out,"      \ton the model. \n");
+  fprintf(out,"      \tWARNING : handle with care. Some platforms will \n");
+  fprintf(out,"      \tfail to display this, and using this on big models\n");
+  fprintf(out,"      \twill probably crash your computer with a\n");
   fprintf(out,"      \tswap storm. Not compatible with the -t option.\n");
   fprintf(out,"\n");
 }
@@ -260,7 +269,7 @@ int main( int argc, char **argv )
       pr.prog = QT_prog;
       pr.cb_out = qProg;
     }
-    mesh_run(&pargs,&model1,&model2, log, &pr);
+    mesh_run(&pargs, &model1, &model2, log, &pr);
   } else {
     b = new InitWidget(pargs, &model1, &model2);
     b->show(); 
