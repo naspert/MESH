@@ -1,4 +1,4 @@
-/* $Id: rawview.c,v 1.35 2003/03/13 12:10:05 aspert Exp $ */
+/* $Id: rawview.c,v 1.36 2003/03/24 12:16:38 aspert Exp $ */
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -24,6 +24,9 @@
 
 /* GL renderer context */
 static struct gl_render_context gl_ctx;
+
+/* Subdiv functions structure */
+static struct subdiv_methods sm;
 
 /* storage for mouse stuff */
 static struct mouse_state mouse;
@@ -187,9 +190,7 @@ static void norm_key_pressed(unsigned char key, int x, int y) {
   case 'b':
   case 'B':
     verbose_printf(gl_ctx.verbose, "Butterfly subdivision...\n");
-    sub_model = subdiv(gl_ctx.raw_model, SUBDIV_BUTTERFLY,
-                       compute_midpoint_butterfly, 
-                       compute_midpoint_butterfly_crease, NULL);
+    sub_model = subdiv(gl_ctx.raw_model, &(sm.butterfly));
     if (sub_model != NULL) {
       sub_model->bBox[0] = gl_ctx.raw_model->bBox[0];
       sub_model->bBox[1] = gl_ctx.raw_model->bBox[1];
@@ -242,9 +243,7 @@ static void norm_key_pressed(unsigned char key, int x, int y) {
   case 'k':
   case 'K':
     verbose_printf(gl_ctx.verbose, "Kobbelt-sqrt3 subdivision...\n");
-    sub_model = subdiv_sqrt3(gl_ctx.raw_model, SUBDIV_KOB_SQRT3, 
-                             compute_face_midpoint_kobsqrt3, NULL, 
-                             update_vertices_kobsqrt3);
+    sub_model = subdiv_sqrt3(gl_ctx.raw_model, &(sm.kob_sqrt3));
     if (sub_model != NULL) {
       sub_model->bBox[0] = gl_ctx.raw_model->bBox[0];
       sub_model->bBox[1] = gl_ctx.raw_model->bBox[1];
@@ -263,8 +262,7 @@ static void norm_key_pressed(unsigned char key, int x, int y) {
   case 'l':
   case 'L':
     verbose_printf(gl_ctx.verbose, "Loop subdivision...\n");
-    sub_model = subdiv(gl_ctx.raw_model, SUBDIV_LOOP, compute_midpoint_loop, 
-                       compute_midpoint_loop_crease, update_vertices_loop);
+    sub_model = subdiv(gl_ctx.raw_model, &(sm.loop));
     if (sub_model != NULL) {
       sub_model->bBox[0] = gl_ctx.raw_model->bBox[0];
       sub_model->bBox[1] = gl_ctx.raw_model->bBox[1];
@@ -327,8 +325,7 @@ static void norm_key_pressed(unsigned char key, int x, int y) {
         break;
       }
     }
-    sub_model = subdiv(gl_ctx.raw_model, SUBDIV_SPH, compute_midpoint_sph, 
-                       compute_midpoint_sph_crease, NULL);
+    sub_model = subdiv(gl_ctx.raw_model, &(sm.spherical));
     if (sub_model != NULL) {
       sub_model->bBox[0] = gl_ctx.raw_model->bBox[0];
       sub_model->bBox[1] = gl_ctx.raw_model->bBox[1];
@@ -572,7 +569,7 @@ int main(int argc, char **argv) {
 
   int i, rcode=0;
   char *title=NULL;
-  const char s_title[]="Raw Mesh Viewer $Revision: 1.35 $ - ";
+  const char s_title[]="Raw Mesh Viewer $Revision: 1.36 $ - ";
   vertex_t center;
   struct model* raw_model;
 
@@ -656,6 +653,9 @@ int main(int argc, char **argv) {
   
   /* Init display lists indices */
   memset(&dl_idx, 0, sizeof(struct display_lists_indices));
+
+  /* Init subdiv function structure */
+  INIT_SUBDIV_METHODS(sm);
 
   /* Init the rendering window */
   glutInit(&argc, argv);

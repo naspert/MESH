@@ -1,4 +1,4 @@
-/* $Id: block_list.h,v 1.4 2003/03/13 14:47:34 aspert Exp $ */
+/* $Id: block_list.h,v 1.5 2003/03/24 12:16:37 aspert Exp $ */
 
 /*
  *
@@ -77,12 +77,12 @@ struct block_list {
 #define DATA_NULL        -17
 #define GATHER_FAIL_MEM  -18
 
-/* Access the last elt of cur_block. cur_block->data is a type* */
-#define TAIL_BLOCK_LIST(cur_block, type) \
+/* Access the last elt of cur_block (filled with "type" elts) */
+#define BLOCK_LIST_TAIL(cur_block, type) \
   ((type *)cur_block->data)[cur_block->elem_filled]
 
 /* Same as above, but post-increment elt counter */
-#define TAIL_BLOCK_LIST_INCR(cur_block, type) \
+#define BLOCK_LIST_TAIL_INCR(cur_block, type) \
   ((type *)cur_block->data)[cur_block->elem_filled++]
 
 /* --------------------------------------------------------------------------

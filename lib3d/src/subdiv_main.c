@@ -1,4 +1,4 @@
-/* $Id: subdiv_main.c,v 1.7 2003/03/12 17:55:00 aspert Exp $ */
+/* $Id: subdiv_main.c,v 1.8 2003/03/24 12:16:39 aspert Exp $ */
 #include <3dutils.h>
 #include <subdiv.h>
 #include <subdiv_methods.h>
@@ -9,8 +9,12 @@ int main(int argc, char **argv) {
   struct model *or_model, *sub_model=NULL;
   int lev, nlev=1, rcode;
   int sub_method=-1;
+  struct subdiv_methods sm;
+  
+  /* Initialize the subdivision structures */
+  INIT_SUBDIV_METHODS(sm);
 
-
+  
   if (argc != 4 && argc != 5) {
     fprintf(stderr, 
 	    "Usage: subdiv [-sph, -but, -loop, -ksqrt3]"
@@ -54,23 +58,16 @@ int main(int argc, char **argv) {
     /* performs the subdivision */
     switch (sub_method) {
     case SUBDIV_SPH:
-      sub_model = subdiv(or_model, SUBDIV_SPH, compute_midpoint_sph, 
-                         compute_midpoint_sph_crease, NULL);
+      sub_model = subdiv(or_model, &(sm.spherical));
       break;
     case SUBDIV_LOOP:
-      sub_model = subdiv(or_model, SUBDIV_LOOP, compute_midpoint_loop, 
-                         compute_midpoint_loop_crease,
-                         update_vertices_loop);
+      sub_model = subdiv(or_model, &(sm.loop));
       break;
     case SUBDIV_BUTTERFLY:
-      sub_model = subdiv(or_model, SUBDIV_BUTTERFLY, 
-                         compute_midpoint_butterfly, 
-                         compute_midpoint_butterfly_crease, NULL);
+      sub_model = subdiv(or_model, &(sm.butterfly));
       break;
     case SUBDIV_KOB_SQRT3:
-      sub_model = subdiv_sqrt3(or_model, SUBDIV_KOB_SQRT3, 
-                               compute_face_midpoint_kobsqrt3, 
-                               NULL, update_vertices_kobsqrt3);
+      sub_model = subdiv_sqrt3(or_model, &(sm.kob_sqrt3));
       break;
     default:
       fprintf(stderr, "ERROR : Invalid subdivision method found = %d\n", 

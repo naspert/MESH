@@ -1,4 +1,4 @@
-/* $Id: subdiv_sqrt3.c,v 1.3 2003/03/13 14:47:35 aspert Exp $ */
+/* $Id: subdiv_sqrt3.c,v 1.4 2003/03/24 12:16:39 aspert Exp $ */
 #include <3dutils.h>
 #include <subdiv_methods.h>
 #include <subdiv.h>
@@ -18,18 +18,9 @@
    the postion of 'old' vertices. This is only used for 
    non-interpolating subd. (i.e. Kobbelt). For interpolating subd. 
    you just pass NULL as argument */
-struct model* subdiv_sqrt3(struct model *raw_model, const int sub_method,
-                           void (*face_midpoint_func)(const struct ring_info*,
-                                                      const int, 
-                                                      const struct model*, 
-                                                      vertex_t*), 
-                           void (*midpoint_func_bound)(const struct ring_info*,
-                                                       const int, const int, 
-                                                       const struct model*, 
-                                                       vertex_t*), 
-                           void (*update_func)(const struct model*, 
-                                               struct model*, 
-                                               const struct ring_info*) ) {
+struct model* subdiv_sqrt3(struct model *raw_model, 
+                           const struct subdiv_sqrt3_functions *sf) 
+{
 
   struct model *subdiv_model;
   struct ring_info *rings;
@@ -71,18 +62,18 @@ struct model* subdiv_sqrt3(struct model *raw_model, const int sub_method,
       for (j=0; j<nedges-1; j++) {
         /* compute face midpoint if needed */
         if (!BITMAP_TEST_BIT(face_mp_done, rings[i].ord_face[j])) {
-          face_midpoint_func(rings, rings[i].ord_face[j], raw_model, 
-                        &(tmp_v[rings[i].ord_face[j]]));
+          sf->face_midpoint_func(rings, rings[i].ord_face[j], raw_model, 
+                                 &(tmp_v[rings[i].ord_face[j]]));
           BITMAP_SET_BIT(face_mp_done, rings[i].ord_face[j]);
         }
         if (cur->elem_filled == cur->nelem)
           cur = get_next_block(cur);
         assert(cur != NULL);
 
-        TAIL_BLOCK_LIST(cur, face_t).f0 = i;
-        TAIL_BLOCK_LIST(cur, face_t).f1 = rings[i].ord_face[j] + 
+        BLOCK_LIST_TAIL(cur, face_t).f0 = i;
+        BLOCK_LIST_TAIL(cur, face_t).f1 = rings[i].ord_face[j] + 
           raw_model->num_vert;
-        TAIL_BLOCK_LIST_INCR(cur, face_t).f2 = rings[i].ord_face[j+1] + 
+        BLOCK_LIST_TAIL_INCR(cur, face_t).f2 = rings[i].ord_face[j+1] + 
           raw_model->num_vert;
 
         face_idx++;
@@ -91,18 +82,18 @@ struct model* subdiv_sqrt3(struct model *raw_model, const int sub_method,
       
       /* handle last face : closed ring*/
       if (!BITMAP_TEST_BIT(face_mp_done, rings[i].ord_face[nedges-1])) {
-        face_midpoint_func(rings, rings[i].ord_face[nedges-1], raw_model, 
-                      &(tmp_v[rings[i].ord_face[nedges-1]]));
+        sf->face_midpoint_func(rings, rings[i].ord_face[nedges-1], raw_model, 
+                               &(tmp_v[rings[i].ord_face[nedges-1]]));
         BITMAP_SET_BIT(face_mp_done, rings[i].ord_face[nedges-1]);
       }
         if (cur->elem_filled == cur->nelem)
           cur = get_next_block(cur);
         assert(cur != NULL);
 
-        TAIL_BLOCK_LIST(cur, face_t).f0 = i;
-        TAIL_BLOCK_LIST(cur, face_t).f1 = 
+        BLOCK_LIST_TAIL(cur, face_t).f0 = i;
+        BLOCK_LIST_TAIL(cur, face_t).f1 = 
           rings[i].ord_face[nedges-1] + raw_model->num_vert;
-        TAIL_BLOCK_LIST_INCR(cur, face_t).f2 = rings[i].ord_face[0] + 
+        BLOCK_LIST_TAIL_INCR(cur, face_t).f2 = rings[i].ord_face[0] + 
           raw_model->num_vert;
 
         face_idx++;
@@ -111,18 +102,18 @@ struct model* subdiv_sqrt3(struct model *raw_model, const int sub_method,
       for (j=0; j<nedges-2; j++) {
         /* compute face midpoint if needed */
         if (!BITMAP_TEST_BIT(face_mp_done, rings[i].ord_face[j])) {
-          face_midpoint_func(rings, rings[i].ord_face[j], raw_model, 
-                             &(tmp_v[rings[i].ord_face[j]]));
+          sf->face_midpoint_func(rings, rings[i].ord_face[j], raw_model, 
+                                 &(tmp_v[rings[i].ord_face[j]]));
           BITMAP_SET_BIT(face_mp_done, rings[i].ord_face[j]);
         }
         if (cur->elem_filled == cur->nelem)
           cur = get_next_block(cur);
         assert(cur != NULL);
 
-        TAIL_BLOCK_LIST(cur, face_t).f0 = i;
-        TAIL_BLOCK_LIST(cur, face_t).f1 = rings[i].ord_face[j] + 
+        BLOCK_LIST_TAIL(cur, face_t).f0 = i;
+        BLOCK_LIST_TAIL(cur, face_t).f1 = rings[i].ord_face[j] + 
           raw_model->num_vert;
-        TAIL_BLOCK_LIST_INCR(cur, face_t).f2 = rings[i].ord_face[j+1] + 
+        BLOCK_LIST_TAIL_INCR(cur, face_t).f2 = rings[i].ord_face[j+1] + 
           raw_model->num_vert;
 
         face_idx++;
@@ -131,8 +122,8 @@ struct model* subdiv_sqrt3(struct model *raw_model, const int sub_method,
       
       /* handle last and first faces : open ring */
       if (!BITMAP_TEST_BIT(face_mp_done, rings[i].ord_face[nedges-2])) {
-        face_midpoint_func(rings, rings[i].ord_face[nedges-2], raw_model, 
-                           &(tmp_v[rings[i].ord_face[nedges-2]]));
+        sf->face_midpoint_func(rings, rings[i].ord_face[nedges-2], raw_model, 
+                               &(tmp_v[rings[i].ord_face[nedges-2]]));
         BITMAP_SET_BIT(face_mp_done, rings[i].ord_face[nedges-2]);
       }
       if (cur->elem_filled == cur->nelem)
@@ -142,26 +133,27 @@ struct model* subdiv_sqrt3(struct model *raw_model, const int sub_method,
       /* FIXME: replace this by the MP of the edge every even
        * subdivision level. Anyway, this generates duplicates in
        * triangles so it _sucks_. It *must* die !! */
-      TAIL_BLOCK_LIST(cur, face_t).f0 = i;
-      TAIL_BLOCK_LIST(cur, face_t).f1 = rings[i].ord_face[nedges-2] + 
+      BLOCK_LIST_TAIL(cur, face_t).f0 = i;
+      BLOCK_LIST_TAIL(cur, face_t).f1 = rings[i].ord_face[nedges-2] + 
         raw_model->num_vert;
-      TAIL_BLOCK_LIST_INCR(cur, face_t).f2 = rings[i].ord_vert[nedges-1];
+      BLOCK_LIST_TAIL_INCR(cur, face_t).f2 = rings[i].ord_vert[nedges-1];
 
       face_idx++;
 
       if (cur->elem_filled == cur->nelem)
         cur = get_next_block(cur);
       assert(cur != NULL);
-      TAIL_BLOCK_LIST(cur, face_t).f0 = i;
-      TAIL_BLOCK_LIST(cur, face_t).f1 = rings[i].ord_face[0] + 
+      BLOCK_LIST_TAIL(cur, face_t).f0 = i;
+      BLOCK_LIST_TAIL(cur, face_t).f1 = rings[i].ord_face[0] + 
         raw_model->num_vert;
-      TAIL_BLOCK_LIST_INCR(cur, face_t).f2 = rings[i].ord_vert[0];
+      BLOCK_LIST_TAIL_INCR(cur, face_t).f2 = rings[i].ord_vert[0];
 
       face_idx++;
 
-    } else /* vertices w. weird type. Let's hit the roof for
-            * now. Maybe just continue instead...  */
-      abort();
+    } else { /* Non-manifold vertex */
+      fprintf(stderr, "Vertex %d is non-manifold -> bail out\n", i);
+      return NULL;
+    }
   }
 #ifdef SUBDIV_TIME
   printf("subdiv time = %f sec.\n", (clock()-start)/(float)CLOCKS_PER_SEC);
@@ -181,11 +173,11 @@ struct model* subdiv_sqrt3(struct model *raw_model, const int sub_method,
   subdiv_model->vertices = 
     (vertex_t*)malloc(subdiv_model->num_vert*sizeof(vertex_t));
 
-  if (update_func == NULL) /* Interpolating subdivision */
+  if (sf->update_func == NULL) /* Interpolating subdivision */
     memcpy(subdiv_model->vertices, raw_model->vertices, 
 	   raw_model->num_vert*sizeof(vertex_t));
   else /* Approx. subdivision */
-    update_func(raw_model, subdiv_model, rings);
+    sf->update_func(raw_model, subdiv_model, rings);
   
   /* copy faces midpoints */
   memcpy(&(subdiv_model->vertices[raw_model->num_vert]), tmp_v, 
@@ -196,9 +188,7 @@ struct model* subdiv_sqrt3(struct model *raw_model, const int sub_method,
     abort();
   free_block_list(&temp_face);
   
-#ifdef SUBDIV_TIME
-/*   printf("subdiv time = %f sec.\n", (clock()-start)/(float)CLOCKS_PER_SEC); */
-#endif
+
 #ifdef SUBDIV_DEBUG
   DEBUG_PRINT("face_idx = %d vert_idx = %d\n", face_idx, vert_idx);
 #endif

@@ -1,4 +1,4 @@
-/* $Id: model_in_vrml_iv.c,v 1.8 2003/03/13 14:47:35 aspert Exp $ */
+/* $Id: model_in_vrml_iv.c,v 1.9 2003/03/24 12:16:38 aspert Exp $ */
 
 
 /*
@@ -294,7 +294,7 @@ static int read_mffloat(struct block_list *blk, struct file_data *data,
           break;
         }
       }
-      TAIL_BLOCK_LIST_INCR(cur, float) = tmpf;
+      BLOCK_LIST_TAIL_INCR(cur, float) = tmpf;
       n++;
     } else { /* error */
       n = MESH_CORRUPTED;
@@ -359,7 +359,7 @@ static int read_mfint32(struct block_list *blk, struct file_data *data,
         }
       }
       if (tmpi > maxv) maxv = tmpi;
-      TAIL_BLOCK_LIST_INCR(cur, int) = tmpi;
+      BLOCK_LIST_TAIL_INCR(cur, int) = tmpi;
       n++;
     } else { /* error */
       n = MESH_CORRUPTED;

@@ -1,4 +1,4 @@
-/* $Id: subdiv_methods.h,v 1.17 2003/03/12 17:54:59 aspert Exp $ */
+/* $Id: subdiv_methods.h,v 1.18 2003/03/24 12:16:37 aspert Exp $ */
 #include <3dmodel.h>
 #include <ring.h>
 
@@ -51,5 +51,5 @@ extern "C" {
 # ifdef __cplusplus
 }
 # endif
-
+  
 #endif

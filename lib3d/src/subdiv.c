@@ -1,4 +1,4 @@
-/* $Id: subdiv.c,v 1.35 2003/03/13 14:47:35 aspert Exp $ */
+/* $Id: subdiv.c,v 1.36 2003/03/24 12:16:38 aspert Exp $ */
 #include <3dutils.h>
 #include <subdiv_methods.h>
 #include <subdiv.h>
@@ -18,16 +18,9 @@
    the postion of 'old' vertices. This is only used for 
    non-interpolating subd. (i.e. Loop). For interpolating subd. 
    you just pass NULL as argument */
-struct model* subdiv(struct model *raw_model, const int sub_method,
-		     void (*midpoint_func)(const struct ring_info*, const int,
-                                           const int, 
-					   const struct model*, vertex_t*), 
-		     void (*midpoint_func_bound)(const struct ring_info*, 
-                                                 const int, const int, 
-						 const struct model*, 
-                                                 vertex_t*), 
-		     void (*update_func)(const struct model*, struct model*, 
-					 const struct ring_info*) ) {
+struct model* subdiv(struct model *raw_model, 
+                     const struct subdiv_functions* sf) 
+{
 
   struct model *subdiv_model;
   int i, i0, i1, i2;
@@ -54,7 +47,7 @@ struct model* subdiv(struct model *raw_model, const int sub_method,
   build_star_global(raw_model, rings);
 
   /* Spherical subdivision needs to have normals computed */
-  if (raw_model->normals == NULL && sub_method == SUBDIV_SPH) {
+  if (raw_model->normals == NULL && sf->id == SUBDIV_SPH) {
       raw_model->area = (float*)malloc(raw_model->num_faces*sizeof(float));
       raw_model->face_normals = compute_face_normals(raw_model, rings);
       compute_vertex_normal(raw_model, rings, raw_model->face_normals);
@@ -72,8 +65,10 @@ struct model* subdiv(struct model *raw_model, const int sub_method,
 
   for (i=0; i< raw_model->num_vert; i++) {
 
-    if (rings[i].type != 0 && rings[i].type != 1)
-      continue;
+    if (rings[i].type != 0 && rings[i].type != 1) {
+      fprintf(stderr, "Vertex %d non-manifold -> bail out\n", i);
+      return NULL;
+    }
     mp_info[i].edge_subdiv_done = BITMAP_ALLOC(rings[i].size);
     mp_info[i].size = rings[i].size;
     mp_info[i].midpoint_idx = (int*)malloc(mp_info[i].size*sizeof(int));
@@ -118,16 +113,16 @@ struct model* subdiv(struct model *raw_model, const int sub_method,
     /* edge v0v1 */
     if (!BITMAP_TEST_BIT(mp_info[v0].edge_subdiv_done, i0)) {
       if (rings[v0].type == 1 || rings[v1].type == 1)
-        midpoint_func_bound(rings, v0, i0, raw_model, &p);
+        sf->midpoint_func_bound(rings, v0, i0, raw_model, &p);
       else
-        midpoint_func(rings, v0, i0, raw_model, &p);
+        sf->midpoint_func(rings, v0, i0, raw_model, &p);
       nedges++;
       BITMAP_SET_BIT(mp_info[v0].edge_subdiv_done, i0);
       BITMAP_SET_BIT(mp_info[v1].edge_subdiv_done, u0);
       if (cur->elem_filled == cur->nelem)
         cur = get_next_block(cur);
       assert(cur != NULL);
-      TAIL_BLOCK_LIST_INCR(cur, vertex_t) = p;
+      BLOCK_LIST_TAIL_INCR(cur, vertex_t) = p;
 
 
       mp_info[v0].midpoint_idx[i0] = v_idx;
@@ -139,16 +134,16 @@ struct model* subdiv(struct model *raw_model, const int sub_method,
     /* edge v1v2 */
     if (!BITMAP_TEST_BIT(mp_info[v1].edge_subdiv_done, i1)) {
       if (rings[v1].type == 1 || rings[v2].type == 1)
-        midpoint_func_bound(rings, v1, i1, raw_model, &p);
+        sf->midpoint_func_bound(rings, v1, i1, raw_model, &p);
       else
-        midpoint_func(rings, v1, i1, raw_model, &p);
+        sf->midpoint_func(rings, v1, i1, raw_model, &p);
       nedges++;
       BITMAP_SET_BIT(mp_info[v1].edge_subdiv_done, i1);
       BITMAP_SET_BIT(mp_info[v2].edge_subdiv_done, u1);
       if (cur->elem_filled == cur->nelem)
         cur = get_next_block(cur);
       assert(cur != NULL);
-      TAIL_BLOCK_LIST_INCR(cur, vertex_t) = p;
+      BLOCK_LIST_TAIL_INCR(cur, vertex_t) = p;
 
       mp_info[v1].midpoint_idx[i1] = v_idx;
       mp_info[v2].midpoint_idx[u1] = v_idx++;
@@ -157,16 +152,16 @@ struct model* subdiv(struct model *raw_model, const int sub_method,
     /* edge v2v0 */
     if (!BITMAP_TEST_BIT(mp_info[v2].edge_subdiv_done, i2)) {
       if (rings[v2].type == 1 || rings[v0].type == 1)
-        midpoint_func_bound(rings, v2, i2, raw_model, &p);
+        sf->midpoint_func_bound(rings, v2, i2, raw_model, &p);
       else
-        midpoint_func(rings, v2, i2, raw_model, &p);
+        sf->midpoint_func(rings, v2, i2, raw_model, &p);
       nedges++;
       BITMAP_SET_BIT(mp_info[v2].edge_subdiv_done, i2);
       BITMAP_SET_BIT(mp_info[v0].edge_subdiv_done, u2);
       if (cur->elem_filled == cur->nelem)
         cur = get_next_block(cur);
       assert(cur != NULL);
-      TAIL_BLOCK_LIST_INCR(cur, vertex_t) = p;
+      BLOCK_LIST_TAIL_INCR(cur, vertex_t) = p;
 
       mp_info[v2].midpoint_idx[i2] = v_idx;
       mp_info[v0].midpoint_idx[u2] = v_idx++;
@@ -209,11 +204,11 @@ struct model* subdiv(struct model *raw_model, const int sub_method,
   subdiv_model->vertices = 
     (vertex_t*)malloc(subdiv_model->num_vert*sizeof(vertex_t));
 
-  if (update_func == NULL) /* Interpolating subdivision */
+  if (sf->update_func == NULL) /* Interpolating subdivision */
     memcpy(subdiv_model->vertices, raw_model->vertices, 
 	   raw_model->num_vert*sizeof(vertex_t));
   else /* Approx. subdivision */
-    update_func(raw_model, subdiv_model, rings);
+    sf->update_func(raw_model, subdiv_model, rings);
   
   if (gather_block_list(tmp_v, &(subdiv_model->vertices[raw_model->num_vert]), 
                         nedges*sizeof(vertex_t)) != 0)
