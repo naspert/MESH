@@ -1,12 +1,13 @@
-/* $Id: RawWidget.cpp,v 1.9 2001/08/07 12:32:21 aspert Exp $ */
+/* $Id: RawWidget.cpp,v 1.10 2001/08/09 10:02:55 aspert Exp $ */
 #include <RawWidget.h>
 
 // 
 // This is a derived class from QGLWidget used to render models
-//
+// 
 
-RawWidget::RawWidget(model *raw_model, QWidget *parent, const char *name) 
-  : QGLWidget( parent, name) { 
+RawWidget::RawWidget(model *raw_model, int renderType, 
+		     QWidget *parent, const char *name)
+  :QGLWidget( parent, name) { 
   
   int i;
   vertex center;
@@ -24,6 +25,9 @@ RawWidget::RawWidget(model *raw_model, QWidget *parent, const char *name)
 
   // Get the structure containing the model
   rawModelStruct = raw_model;
+
+  // Get the flags
+  renderFlag = renderType;
 
   // Initialize the state
   move_state=0;
@@ -100,44 +104,11 @@ void RawWidget::setLight() {
   int i;
 
   // Get state from renderer
-  light_state = glIsEnabled(GL_LIGHTING);
+  if (renderFlag == RW_LIGHT_TOGGLE) {
+    light_state = glIsEnabled(GL_LIGHTING);
 
-  if (light_state==GL_FALSE){ // We are now switching to lighted mode
-    if (rawModelStruct->normals !=NULL){// Are these ones computed ?
-      glEnable(GL_LIGHTING);
-      glLightfv(GL_LIGHT0, GL_AMBIENT, amb); 
-      glLightfv(GL_LIGHT0, GL_DIFFUSE, dif);
-      glLightfv(GL_LIGHT0, GL_SPECULAR, spec);
-      glLightfv(GL_LIGHT0, GL_POSITION, lpos);  
-      glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, ldir);  
-      glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
-      glLightModelfv(GL_LIGHT_MODEL_AMBIENT,amb_light);
-      glEnable(GL_LIGHT0);
-      glFrontFace(GL_CCW);
-    } else {// Attempt to compute normals
-      if (rawModelStruct->area==NULL)
-	rawModelStruct->area = 
-	  (double*)malloc(rawModelStruct->num_vert*sizeof(double));
-      curv = 
-	(info_vertex*)malloc(rawModelStruct->num_vert*sizeof(info_vertex));
-      if (rawModelStruct->face_normals==NULL)
-	rawModelStruct->face_normals = compute_face_normals(rawModelStruct, 
-							    curv);
-      if (rawModelStruct->face_normals==NULL) {// No way...
-	fprintf(stderr, "Unable to compute normals\n");
-	free(rawModelStruct->area);
-	glDisable(GL_LIGHTING); // Just to be sure
-      }
-      else { // Compute a normal for each vertex
-	compute_vertex_normal(rawModelStruct, curv, 
-			      rawModelStruct->face_normals);
-
-	for (i=0; i<rawModelStruct->num_vert; i++) 
-	  free(curv[i].list_face);
-	free(curv);	
-	free(rawModelStruct->face_normals);
-	free(rawModelStruct->area);
-
+    if (light_state==GL_FALSE){ // We are now switching to lighted mode
+      if (rawModelStruct->normals !=NULL){// Are these ones computed ?
 	glEnable(GL_LIGHTING);
 	glLightfv(GL_LIGHT0, GL_AMBIENT, amb); 
 	glLightfv(GL_LIGHT0, GL_DIFFUSE, dif);
@@ -148,14 +119,49 @@ void RawWidget::setLight() {
 	glLightModelfv(GL_LIGHT_MODEL_AMBIENT,amb_light);
 	glEnable(GL_LIGHT0);
 	glFrontFace(GL_CCW);
+      } else {// Attempt to compute normals
+	if (rawModelStruct->area==NULL)
+	  rawModelStruct->area = 
+	    (double*)malloc(rawModelStruct->num_faces*sizeof(double));
+	curv = 
+	  (info_vertex*)malloc(rawModelStruct->num_vert*sizeof(info_vertex));
+	if (rawModelStruct->face_normals==NULL)
+	  rawModelStruct->face_normals = compute_face_normals(rawModelStruct, 
+							      curv);
+	if (rawModelStruct->face_normals==NULL) {// No way...
+	  fprintf(stderr, "Unable to compute normals\n");
+	  free(rawModelStruct->area);
+	  glDisable(GL_LIGHTING); // Just to be sure
+	}
+	else { // Compute a normal for each vertex
+	  compute_vertex_normal(rawModelStruct, curv, 
+				rawModelStruct->face_normals);
+	  
+	  for (i=0; i<rawModelStruct->num_vert; i++) 
+	    free(curv[i].list_face);
+	  free(curv);	
+	  free(rawModelStruct->face_normals);
+	  free(rawModelStruct->area);
+	  
+	  glEnable(GL_LIGHTING);
+	  glLightfv(GL_LIGHT0, GL_AMBIENT, amb); 
+	  glLightfv(GL_LIGHT0, GL_DIFFUSE, dif);
+	  glLightfv(GL_LIGHT0, GL_SPECULAR, spec);
+	  glLightfv(GL_LIGHT0, GL_POSITION, lpos);  
+	  glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, ldir);  
+	  glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
+	  glLightModelfv(GL_LIGHT_MODEL_AMBIENT,amb_light);
+	  glEnable(GL_LIGHT0);
+	  glFrontFace(GL_CCW);
+	}
       }
     }
+    else if (light_state==GL_TRUE){// We are now switching to wireframe mode
+      glDisable(GL_LIGHTING);
+      glFrontFace(GL_CCW);
+    }
+    glDraw();
   }
-  else if (light_state==GL_TRUE){// We are now switching to wireframe mode
-    glDisable(GL_LIGHTING);
-    glFrontFace(GL_CCW);
-  }
-  glDraw();
 }
 
 
@@ -220,38 +226,8 @@ void RawWidget::rebuild_list() {
     glDeleteLists(model_list, 1);
 
   model_list=glGenLists(1);
-
-  if(rawModelStruct->normals!=NULL){
-    glNewList(model_list, GL_COMPILE);
-    glBegin(GL_TRIANGLES);  
-    for (i=0; i<rawModelStruct->num_faces; i++) {
-      cur_face = &(rawModelStruct->faces[i]);
-      glColor3f(1.0,1.0,1.0);
-
-      glNormal3d(rawModelStruct->normals[cur_face->f0].x,
-		 rawModelStruct->normals[cur_face->f0].y,
-		 rawModelStruct->normals[cur_face->f0].z);
-      glVertex3d(rawModelStruct->vertices[cur_face->f0].x,
-		 rawModelStruct->vertices[cur_face->f0].y,
-		 rawModelStruct->vertices[cur_face->f0].z); 
-      
-      glNormal3d(rawModelStruct->normals[cur_face->f1].x,
-	       rawModelStruct->normals[cur_face->f1].y,
-		 rawModelStruct->normals[cur_face->f1].z);  
-      glVertex3d(rawModelStruct->vertices[cur_face->f1].x,
-		 rawModelStruct->vertices[cur_face->f1].y,
-		 rawModelStruct->vertices[cur_face->f1].z); 
-      
-      glNormal3d(rawModelStruct->normals[cur_face->f2].x,
-		 rawModelStruct->normals[cur_face->f2].y,
-		 rawModelStruct->normals[cur_face->f2].z); 
-      glVertex3d(rawModelStruct->vertices[cur_face->f2].x,
-	       rawModelStruct->vertices[cur_face->f2].y,
-		 rawModelStruct->vertices[cur_face->f2].z);       
-    }
-    glEnd();
-    glEndList();
-  } else {
+  
+  if (renderFlag == RW_COLOR) {
     glNewList(model_list, GL_COMPILE);
     glBegin(GL_TRIANGLES);  
     for (i=0; i<rawModelStruct->num_faces; i++) {
@@ -279,7 +255,62 @@ void RawWidget::rebuild_list() {
     }
     glEnd();
     glEndList();
-  }    
+  }   
+  else if (renderFlag == RW_LIGHT_TOGGLE) {
+    if (rawModelStruct->normals != NULL) {
+      glNewList(model_list, GL_COMPILE);
+      glColor3f(1.0,1.0,1.0);
+      glBegin(GL_TRIANGLES);  
+      for (i=0; i<rawModelStruct->num_faces; i++) {
+	cur_face = &(rawModelStruct->faces[i]);
+	
+	
+	glNormal3d(rawModelStruct->normals[cur_face->f0].x,
+		   rawModelStruct->normals[cur_face->f0].y,
+		   rawModelStruct->normals[cur_face->f0].z);
+	glVertex3d(rawModelStruct->vertices[cur_face->f0].x,
+		   rawModelStruct->vertices[cur_face->f0].y,
+		   rawModelStruct->vertices[cur_face->f0].z); 
+	
+	glNormal3d(rawModelStruct->normals[cur_face->f1].x,
+		   rawModelStruct->normals[cur_face->f1].y,
+		   rawModelStruct->normals[cur_face->f1].z);  
+	glVertex3d(rawModelStruct->vertices[cur_face->f1].x,
+		   rawModelStruct->vertices[cur_face->f1].y,
+		   rawModelStruct->vertices[cur_face->f1].z); 
+	
+	glNormal3d(rawModelStruct->normals[cur_face->f2].x,
+		   rawModelStruct->normals[cur_face->f2].y,
+		   rawModelStruct->normals[cur_face->f2].z); 
+	glVertex3d(rawModelStruct->vertices[cur_face->f2].x,
+		   rawModelStruct->vertices[cur_face->f2].y,
+		   rawModelStruct->vertices[cur_face->f2].z);       
+      }
+      glEnd();
+      glEndList();
+    } else {
+      glNewList(model_list, GL_COMPILE);
+      glColor3f(1.0,1.0,1.0);
+      glBegin(GL_TRIANGLES);  
+      for (i=0; i<rawModelStruct->num_faces; i++) {
+	cur_face = &(rawModelStruct->faces[i]);
+	
+	glVertex3d(rawModelStruct->vertices[cur_face->f0].x,
+		   rawModelStruct->vertices[cur_face->f0].y,
+		   rawModelStruct->vertices[cur_face->f0].z); 
+	
+	glVertex3d(rawModelStruct->vertices[cur_face->f1].x,
+		   rawModelStruct->vertices[cur_face->f1].y,
+		   rawModelStruct->vertices[cur_face->f1].z); 
+	
+	glVertex3d(rawModelStruct->vertices[cur_face->f2].x,
+		   rawModelStruct->vertices[cur_face->f2].y,
+		   rawModelStruct->vertices[cur_face->f2].z);       
+      }
+      glEnd();
+      glEndList();
+    }
+  }
 
 }
 
@@ -371,7 +402,8 @@ void RawWidget::keyPressEvent(QKeyEvent *k) {
   info_vertex *curv;
   int i;
   
-  if (k->key()==Key_F1){
+  switch(k->key()) {
+  case Key_F1:
     glGetIntegerv(GL_POLYGON_MODE, &line_state);
     if (line_state==GL_FILL) {
       glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -382,71 +414,100 @@ void RawWidget::keyPressEvent(QKeyEvent *k) {
       glDraw(); 
     } else 
       printf("Invalid value in GL_POLYGON_MODE : %d\n", line_state);
-    
-  } 
-  if (k->key()==Key_F2){
-    light_state = glIsEnabled(GL_LIGHTING);
-    if (light_state==GL_FALSE){
-      if (rawModelStruct->normals !=NULL){	
-	glEnable(GL_LIGHTING);
-	glLightfv(GL_LIGHT0, GL_AMBIENT, amb); 
-	glLightfv(GL_LIGHT0, GL_DIFFUSE, dif);
-	glLightfv(GL_LIGHT0, GL_SPECULAR, spec);
-	glLightfv(GL_LIGHT0, GL_POSITION, lpos);  
-	glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, ldir);  
-	glLightModelfv(GL_LIGHT_MODEL_AMBIENT,amb_light);
-	glEnable(GL_LIGHT0);
-	glFrontFace(GL_CCW);
-      } else { // Attempt to compute normals
-	if (rawModelStruct->area==NULL)
-	  rawModelStruct->area = 
-	    (double*)malloc(rawModelStruct->num_vert*sizeof(double));
-	curv = 
-	  (info_vertex*)malloc(rawModelStruct->num_vert*sizeof(info_vertex));
-	if (rawModelStruct->face_normals==NULL)
-	  rawModelStruct->face_normals = compute_face_normals(rawModelStruct, 
-							      curv);
-	if (rawModelStruct->face_normals == NULL) {
-	  fprintf(stderr, "Unable to compute normals\n");
-	  free(rawModelStruct->area);
-	  glDisable(GL_LIGHTING); // Just to be sure
-	}
-	else { // Compute a normal for each vertex
-	  compute_vertex_normal(rawModelStruct, curv, 
-				rawModelStruct->face_normals);
-	  for (i=0; i<rawModelStruct->num_vert; i++) 
-	    free(curv[i].list_face);
-	  free(curv);	
-	  free(rawModelStruct->face_normals);
-	  free(rawModelStruct->area);
-	  
+    break;
+  case Key_F2:
+    if (renderFlag == RW_LIGHT_TOGGLE) {
+      light_state = glIsEnabled(GL_LIGHTING);
+      if (light_state==GL_FALSE){
+	if (rawModelStruct->normals !=NULL){	
 	  glEnable(GL_LIGHTING);
 	  glLightfv(GL_LIGHT0, GL_AMBIENT, amb); 
 	  glLightfv(GL_LIGHT0, GL_DIFFUSE, dif);
 	  glLightfv(GL_LIGHT0, GL_SPECULAR, spec);
 	  glLightfv(GL_LIGHT0, GL_POSITION, lpos);  
 	  glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, ldir);  
-	  glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
 	  glLightModelfv(GL_LIGHT_MODEL_AMBIENT,amb_light);
 	  glEnable(GL_LIGHT0);
 	  glFrontFace(GL_CCW);
+	} else { // Attempt to compute normals
+	  if (rawModelStruct->area==NULL)
+	    rawModelStruct->area = 
+	      (double*)malloc(rawModelStruct->num_faces*sizeof(double));
+	  curv = 
+	    (info_vertex*)malloc(rawModelStruct->num_vert*sizeof(info_vertex));
+	  if (rawModelStruct->face_normals==NULL)
+	  rawModelStruct->face_normals = compute_face_normals(rawModelStruct, 
+							      curv);
+	  if (rawModelStruct->face_normals == NULL) {
+	    fprintf(stderr, "Unable to compute normals\n");
+	    free(rawModelStruct->area);
+	    glDisable(GL_LIGHTING); // Just to be sure
+	  }
+	  else { // Compute a normal for each vertex
+	    
+#ifdef __RAW_WID_DEBUG
+	    for (i=0; i<rawModelStruct->num_vert; i++) {
+	      printf("[RawWidget]: nf=%d curv[%d].list_face[0] = %d\n", 
+		     curv[i].num_faces, 
+		     i, curv[i].list_face[0]);
+	      printf("[RawWidget]: curv[%d].list_face = 0x%x\n", i, 
+		     (unsigned int)curv[i].list_face);
+	    }
+	    printf("[RawWidget]: curv=0x%x\n", (unsigned int)curv);
+#endif
+	    
+	    compute_vertex_normal(rawModelStruct, curv, 
+				  rawModelStruct->face_normals);
+	    for (i=0; i<rawModelStruct->num_vert; i++) 
+	      free(curv[i].list_face);
+	    free(curv);	
+	    free(rawModelStruct->face_normals);
+	    free(rawModelStruct->area);
+	    
+	    glEnable(GL_LIGHTING);
+	    glLightfv(GL_LIGHT0, GL_AMBIENT, amb); 
+	    glLightfv(GL_LIGHT0, GL_DIFFUSE, dif);
+	    glLightfv(GL_LIGHT0, GL_SPECULAR, spec);
+	    glLightfv(GL_LIGHT0, GL_POSITION, lpos);  
+	    glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, ldir);  
+	    glLightModelfv(GL_LIGHT_MODEL_AMBIENT,amb_light);
+	    glEnable(GL_LIGHT0);
+	    glFrontFace(GL_CCW);
+	  }
 	}
       }
+      else if (light_state==GL_TRUE){
+	glDisable(GL_LIGHTING);
+	glFrontFace(GL_CCW);
+      }
+      glDraw();
     }
-    else if (light_state==GL_TRUE){
-      glDisable(GL_LIGHTING);
-      glFrontFace(GL_CCW);
-    }
-    glDraw();
-  }
-  if (k->key()==Key_F3){
+    break;
+  case Key_F3:
     if (move_state==0) {
       move_state=1;
       emit(transfervalue(distance,mvmatrix));
     }
     else
       move_state=0;
-  }  
+    break;
+  case Key_F4:
+    if (renderFlag == RW_LIGHT_TOGGLE) {
+      light_state = glIsEnabled(GL_LIGHTING);
+      if (light_state == GL_TRUE) { // Invert normals
+	for (i=0; i<rawModelStruct->num_vert; i++) {
+	  rawModelStruct->normals[i].x = -rawModelStruct->normals[i].x;
+	  rawModelStruct->normals[i].y = -rawModelStruct->normals[i].y;
+	  rawModelStruct->normals[i].z = -rawModelStruct->normals[i].z;
+	}
+	rebuild_list();
+	glDraw();
+      }
+    }
+  default:
+    break;
+  }
+
   
 }
 

@@ -1,4 +1,4 @@
-/* $Id: ScreenWidget.cpp,v 1.9 2001/08/07 09:22:20 aspert Exp $ */
+/* $Id: ScreenWidget.cpp,v 1.10 2001/08/09 10:02:56 aspert Exp $ */
 #include <ScreenWidget.h>
 
 ScreenWidget::ScreenWidget(model *raw_model1, model *raw_model2, 
@@ -51,9 +51,10 @@ ScreenWidget::ScreenWidget(model *raw_model1, model *raw_model2,
 
 
   // Create the colorbar and the 2 GL windows.
-  glModel1 = new RawWidget(raw_model1, frameModel1, "glModel1");
+  glModel1 = new RawWidget(raw_model1, RW_COLOR, frameModel1, "glModel1");
   glModel1->setFocusPolicy(StrongFocus);
-  glModel2 = new RawWidget(raw_model2, frameModel2,"glModel2");
+  glModel2 = new RawWidget(raw_model2, RW_LIGHT_TOGGLE, 
+			   frameModel2,"glModel2");
   glModel2->setFocusPolicy(StrongFocus);
   colorBar = new ColorMapWidget(dmoymin, dmoymax, this, "colorBar");
 
