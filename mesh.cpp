@@ -1,4 +1,4 @@
-/* $Id: mesh.cpp,v 1.18 2002/02/20 23:43:50 dsanta Exp $ */
+/* $Id: mesh.cpp,v 1.19 2002/02/20 23:45:21 dsanta Exp $ */
 
 #include <time.h>
 #include <string.h>
@@ -262,6 +262,7 @@ int main( int argc, char **argv )
   if (model1.mesh != NULL) free_raw_model(model1.mesh);
   free(model1.verror);
   free(model1.info);
+  free_face_error(model1.fe);
   if (model2.mesh != NULL) free_raw_model(model2.mesh);
   free(model2.verror);
   free(model2.info);

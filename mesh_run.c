@@ -1,4 +1,4 @@
-/* $Id: mesh_run.c,v 1.12 2002/02/20 23:43:50 dsanta Exp $ */
+/* $Id: mesh_run.c,v 1.13 2002/02/20 23:45:21 dsanta Exp $ */
 
 #include <time.h>
 #include <string.h>
@@ -262,10 +262,7 @@ void mesh_run(const struct args *args, struct model_error *model1,
                 (double)(clock()-start_time)/CLOCKS_PER_SEC);
   outbuf_flush(out);
 
-  if(args->no_gui){
-    free_face_error(model1->fe);
-    model1->fe = NULL;
-  } else {
+  if(!args->no_gui){
     /* Get the per vertex error metric */
     nv_empty = nf_empty = 0; /* keep compiler happy */
     calc_vertex_error(model1,&nv_empty,&nf_empty);
