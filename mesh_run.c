@@ -1,4 +1,4 @@
-/* $Id: mesh_run.c,v 1.19 2002/03/29 22:02:58 dsanta Exp $ */
+/* $Id: mesh_run.c,v 1.20 2002/04/05 09:27:26 aspert Exp $ */
 
 
 /*
@@ -143,26 +143,26 @@ void mesh_run(const struct args *args, struct model_error *model1,
   /* Print available model information */
   outbuf_printf(out,"\n                      Model information\n"
                 "     (degenerate faces ignored for manifold/closed info)\n\n");
-  outbuf_printf(out,"Number of vertices:     \t%11d\t%11d\n",
+  outbuf_printf(out,"Number of vertices:      \t%11d\t%11d\n",
                 model1->mesh->num_vert,model2->mesh->num_vert);
-  outbuf_printf(out,"Number of triangles:    \t%11d\t%11d\n",
+  outbuf_printf(out,"Number of triangles:     \t%11d\t%11d\n",
                 model1->mesh->num_faces,model2->mesh->num_faces);
-  outbuf_printf(out,"Degenerate triangles:   \t%11d\t%11d\n",
+  outbuf_printf(out,"Degenerate triangles:    \t%11d\t%11d\n",
                 m1info->n_degenerate,m2info->n_degenerate);
-  outbuf_printf(out,"BoundingBox diagonal:   \t%11g\t%11g\n",
+  outbuf_printf(out,"BoundingBox diagonal:    \t%11g\t%11g\n",
                 bbox1_diag,bbox2_diag);
   outbuf_printf(out,"Number of disjoint parts:\t%11d\t%11d\n",
                 m1info->n_disjoint_parts,m2info->n_disjoint_parts);
-  outbuf_printf(out,"Manifold:               \t%11s\t%11s\n",
+  outbuf_printf(out,"Manifold:                \t%11s\t%11s\n",
                 (m1info->manifold ? "yes" : "no"), 
                 (m2info->manifold ? "yes" : "no"));
-  outbuf_printf(out,"Originally oriented:    \t%11s\t%11s\n",
+  outbuf_printf(out,"Originally oriented:     \t%11s\t%11s\n",
                 (m1info->orig_oriented ? "yes" : "no"),
                 (m2info->orig_oriented ? "yes" : "no"));
-  outbuf_printf(out,"Orientable:             \t%11s\t%11s\n",
+  outbuf_printf(out,"Orientable:              \t%11s\t%11s\n",
                 (m1info->orientable ? "yes" : "no"),
                 (m2info->orientable ? "yes" : "no"));
-  outbuf_printf(out,"Closed:                 \t%11s\t%11s\n",
+  outbuf_printf(out,"Closed:                  \t%11s\t%11s\n",
                 (m1info->closed ? "yes" : "no"),
                 (m2info->closed ? "yes" : "no"));
   outbuf_flush(out);
@@ -172,7 +172,7 @@ void mesh_run(const struct args *args, struct model_error *model1,
                  &stats,!args->no_gui,(args->quiet ? NULL : progress));
 
   /* Print results */
-  outbuf_printf(out,"Surface area:           \t%11g\t%11g\n",
+  outbuf_printf(out,"Surface area:            \t%11g\t%11g\n",
                 stats.m1_area,stats.m2_area);
   outbuf_printf(out,"\n       Distance from model 1 to model 2\n\n");
   outbuf_printf(out,"        \t   Absolute\t%% BBox diag\n");
@@ -229,8 +229,8 @@ void mesh_run(const struct args *args, struct model_error *model1,
   }
 
 
-  outbuf_printf(out,"               \t       Absolute\t   %% BBox diag\t     "
-                "Expected samples\n"
+  outbuf_printf(out,"                 \t       Absolute\t   %% BBox diag\t    "
+                " Expected samples\n"
                 "               \t               \t       model 2\t   "
                 "model 1\tmodel 2\n");
   if (!args->do_symmetric) {
@@ -240,9 +240,9 @@ void mesh_run(const struct args *args, struct model_error *model1,
     outbuf_printf(out,"\n");
     outbuf_printf(out,"        \t    Total\t    Avg. / triangle\t\t"
                   "Tot (%%) area of\n"
-                  "        \t         \tmodel 1 \tmodel 2 \t"
+                  "        \t          \tmodel 1\tmodel 2 \t\t"
                   "sampled triang.\n");
-    outbuf_printf(out,"Samples:\t%9d\t%7.2g\t%15.2g\t%18.2f\n",stats.m1_samples,
+    outbuf_printf(out,"Samples:\t%9d\t%7.2g\t%7.2g\t\t%15.2f\n",stats.m1_samples,
                   ((double)stats.m1_samples)/model1->mesh->num_faces,
                   ((double)stats.m1_samples)/model2->mesh->num_faces,
                   stats.st_m1_area/stats.m1_area*100.0);
