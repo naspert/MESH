@@ -94,6 +94,10 @@ LINK32=link.exe
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat;for;f90"
 # Begin Source File
 
+SOURCE=.\lib3d\src\block_list.c
+# End Source File
+# Begin Source File
+
 SOURCE=.\colormap.c
 # End Source File
 # Begin Source File
@@ -187,6 +191,10 @@ SOURCE=.\xalloc.c
 # Begin Source File
 
 SOURCE=.\lib3d\include\3dmodel.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\lib3d\include\block_list.h
 # End Source File
 # Begin Source File
 
