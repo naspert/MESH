@@ -170,6 +170,10 @@ SOURCE=.\lib3d\src\model_in.c
 # End Source File
 # Begin Source File
 
+SOURCE=.\lib3d\src\model_in_off.c
+# End Source File
+# Begin Source File
+
 SOURCE=.\lib3d\src\model_in_ply.c
 # End Source File
 # Begin Source File

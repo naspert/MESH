@@ -53,8 +53,9 @@ Micro$oft Visual C++ 6 dsp and dsw files needed to build the program.
 
 * Input data format 
 The input file format for the triangular meshes is a raw ASCII or binary
-format, VRML2, Inventor 2.x, PLY ASCII format, and SMF format (used by
-M. Garland's 'QSlim'). On systems having zlib (>= 1.1) installed, MESH
+format, VRML2, Inventor 2.x, PLY ASCII format, SMF format (used by
+M. Garland's 'QSlim') and Geomview's OFF (ASCII) format. 
+On systems having zlib (>= 1.1) installed, MESH
 offers the possiblity of directly reading gzipped files (gzipped VRML
 is in the standard). Please note that most of Win32 systems do not
 have zlib installed. Therefore, on such systems, the program is build
@@ -111,10 +112,11 @@ consequence, if you run it under Linux (or another little-endian
 platform), you will end up with a 'binary_big_endian' in your header,
 whereas the bytes (written using 'fwrite') are in little-endian
 order...
-
+* The OFF parser only supports triangular faces and ignores all additional
+  info, such as normals, colors. This reader in no case supports the full
+  OFF spec, but should work for the most common cases.
 
 
 Please report any bugs or comments to:
 
 	Nicolas Aspert <Nicolas.Aspert@epfl.ch>
-	Diego SantaCruz <Diego.SantaCruz@epfl.ch>
