@@ -1,4 +1,4 @@
-/* $Id: InitWidget.cpp,v 1.20 2002/02/26 12:09:52 aspert Exp $ */
+/* $Id: InitWidget.cpp,v 1.21 2002/02/26 13:36:11 aspert Exp $ */
 
 #include <InitWidget.h>
 
@@ -207,6 +207,7 @@ void InitWidget::meshRun() {
   QProgressDialog qProg("Calculating distance",0,100);
   struct prog_reporter pr;
   
+  qProg.setIcon(*qpxMeshIcon);
   qProg.setMinimumDuration(1500);
   pr.prog = QT_prog;
   pr.cb_out = &qProg;

@@ -1,4 +1,4 @@
-/* $Id: mesh.cpp,v 1.26 2002/02/26 12:09:53 aspert Exp $ */
+/* $Id: mesh.cpp,v 1.27 2002/02/26 13:36:11 aspert Exp $ */
 
 #include <time.h>
 #include <string.h>
@@ -10,7 +10,7 @@
 #include <ScreenWidget.h>
 #include <InitWidget.h>
 #include <mesh_run.h>
-#include <3dmodel_io.h>
+#include <3dmodel.h>
 
 /* The version string, also parsed by Makefile */
 const char *version = "0.9";

@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.31 2002/02/26 10:45:35 dsanta Exp $
+# $Id: Makefile,v 1.32 2002/02/26 13:36:11 aspert Exp $
 
 #
 # If the make variable PROFILE is defined to a non-empty value, profiling
@@ -148,11 +148,11 @@ MESH_EXE := $(BINDIR)/mesh
 MESH_C_SRCS := $(wildcard *.c)
 MESH_CXX_SRCS := $(filter-out moc_%.cpp,$(wildcard *.cpp))
 MESH_MOC_SRCS := RawWidget.h ScreenWidget.h InitWidget.h ColorMapWidget.h
-LIB3D_C_SRCS = 3dmodel_io.c normals.c geomutils.c model_in.c
+LIB3D_C_SRCS = geomutils.c model_in.c
 
 # Files for distribution
 MISC_FILES = Makefile Mesh.dsp Mesh.dsw meshIcon.xpm
-LIB3D_INCLUDES = 3dmodel.h 3dmodel_io.h geomutils.h model_in.h normals.h
+LIB3D_INCLUDES = 3dmodel.h geomutils.h model_in.h
 MESH_INCLUDES := $(wildcard *.h)
 
 # Compiler and linker flags
