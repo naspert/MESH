@@ -1,10 +1,10 @@
-# $Id: Makefile,v 1.27 2001/12/18 14:45:00 aspert Exp $
+# $Id: Makefile,v 1.28 2002/02/05 09:28:06 aspert Exp $
 
 
 OS := $(shell uname -s)
 ARCH := $(shell uname -m)
 
-GLXINFO = /usr/bin/glxinfo
+GLXINFO = $(shell which glxinfo)
 STD_GLDIR = /usr/X11R6
 HP_GLDIR = /usr/GL/hp
 BASE_LIBFLAGS = -lm
@@ -58,7 +58,8 @@ GL_CFLAGS = $(INCLFLAGS) $(GLINCLFLAGS) $(XTRA_CFLAGS)
 #
 # Objects
 #
-BASE_OBJECTS = $(OBJDIR)/geomutils.o $(OBJDIR)/normals.o $(OBJDIR)/3dmodel_io.o
+BASE_OBJECTS = $(OBJDIR)/geomutils.o $(OBJDIR)/normals.o \
+	$(OBJDIR)/3dmodel_io.o $(OBJDIR)/model_in.o
 GL_OBJECTS = $(OBJDIR)/rawview.o $(OBJDIR)/gl2ps.o
 GSL_OBJECTS = $(OBJDIR)/maps_lsq.o
 
