@@ -1,4 +1,4 @@
-/* $Id: model_analysis.h,v 1.10 2002/03/29 22:01:46 dsanta Exp $ */
+/* $Id: model_analysis.h,v 1.11 2002/03/29 22:12:55 dsanta Exp $ */
 
 
 /*
@@ -97,10 +97,10 @@ struct model_info {
 
 /* Analyzes model m, returning the information in *info. Degenerate faces in m
  * are ignored in the analysis. If do_orient is non-zero and the model is
- * orientable, the model m will be modified so as to be oriented (if the model
- * is not orientable, no modification is done). If verbose is non-zero any
- * problems with the model are reported to out, preceded by the model name
- * name. */
+ * orientable, the model m will be modified so as to be oriented. If the model
+ * is not orientable, the model will be oriented as much as possible if
+ * do_orient is 2 or more. If verbose is non-zero any problems with the model
+ * are reported to out, preceded by the model name name. */
 void analyze_model(struct model *m, struct model_info *info, int do_orient,
                    int verbose, struct outbuf *out, const char *name);
 

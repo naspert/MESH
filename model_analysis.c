@@ -1,4 +1,4 @@
-/* $Id: model_analysis.c,v 1.29 2002/03/29 22:01:46 dsanta Exp $ */
+/* $Id: model_analysis.c,v 1.30 2002/03/29 22:12:55 dsanta Exp $ */
 
 
 /*
@@ -951,7 +951,8 @@ void analyze_model(struct model *m, struct model_info *info, int do_orient,
   info->orig_oriented = info->oriented;
 
   /* Orient model if requested and  possible */
-  if (do_orient && info->orientable && !info->oriented) {
+  if (((do_orient && info->orientable) || (do_orient > 1)) &&
+      !info->oriented) {
     orient_model(m,face_revo);
   }
 
