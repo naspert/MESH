@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.35 2001/08/17 15:31:32 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.36 2001/08/18 15:50:46 dsanta Exp $ */
 
 #include <compute_error.h>
 
@@ -234,9 +234,9 @@ static void init_triangle(const vertex *a, const vertex *b, const vertex *c,
   substract_v(b,a,&ab);
   substract_v(c,a,&ac);
   substract_v(c,b,&bc);
-  ab_len_sqr = norm2_v(&(t->ab));
-  ac_len_sqr = norm2_v(&(t->ac));
-  bc_len_sqr = norm2_v(&(t->bc));
+  ab_len_sqr = norm2_v(&ab);
+  ac_len_sqr = norm2_v(&ac);
+  bc_len_sqr = norm2_v(&bc);
   if (ab_len_sqr <= ac_len_sqr) {
     if (ac_len_sqr <= bc_len_sqr) { /* BC longest side => A to C */
       t->c = *a;
