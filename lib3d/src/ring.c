@@ -1,4 +1,4 @@
-/* $Id: ring.c,v 1.11 2003/06/17 14:44:48 aspert Exp $ */
+/* $Id: ring.c,v 1.12 2003/06/19 08:54:09 aspert Exp $ */
 
 
 /*
@@ -32,32 +32,31 @@
 #endif
 
 #ifndef REMOVE_ELT_FROM_LIST
-#define REMOVE_ELT_FROM_LIST(elt)               \
+#define REMOVE_ELT_FROM_LIST(elt,tmp)           \
 do {                                            \
-  struct edge_v *__tmp;                         \
-  __tmp = elt->prev;                            \
-  elt = elt->next;                              \
-  if (elt->prev != NULL)                        \
-    free(elt->prev);                            \
+  tmp = (elt)->prev;                            \
+  elt = (elt)->next;                            \
+  if ((elt)->prev != NULL)                      \
+    free((elt)->prev);                          \
                                                 \
-  elt->prev = __tmp;                            \
-  if (__tmp != NULL)                            \
-    __tmp->next = elt;                          \
+  (elt)->prev = tmp;                            \
+  if (tmp != NULL)                              \
+    (tmp)->next = elt;                          \
 } while(0)
 #endif
 
 #ifndef ALLOC_NEXT_SLOT
-#define ALLOC_NEXT_SLOT(list_tail, id)                                      \
-do {                                                                        \
-    list_tail[id]->next = (struct edge_v*)calloc(1, sizeof(struct edge_v)); \
-    list_tail[id]->next->prev = list_tail[id];                              \
-    list_tail[id] = list_tail[id]->next;                                    \
+#define ALLOC_NEXT_SLOT(list_tail)                                        \
+do {                                                                      \
+    (list_tail)->next = (struct edge_v*)calloc(1, sizeof(struct edge_v)); \
+    (list_tail)->next->prev = list_tail;                                  \
+    list_tail = (list_tail)->next;                                        \
 } while(0)
 #endif
 
 void build_star_global(const struct model *raw_model, 
                        struct ring_info *ring) {
-  int i, l;
+  int i;
   int *num_edges=NULL; /* number of edges in the 1-ring */
   struct edge_v **edge_list_primal, **cur_list_tail, *list_tail=NULL, *tmp;
   int *final_star;
@@ -86,7 +85,7 @@ void build_star_global(const struct model *raw_model,
     cur_list_tail[vid]->v0 = raw_model->faces[i].f1;
     cur_list_tail[vid]->v1 = raw_model->faces[i].f2;
     cur_list_tail[vid]->face = i;
-    ALLOC_NEXT_SLOT(cur_list_tail, vid);
+    ALLOC_NEXT_SLOT(cur_list_tail[vid]);
 
     
     vid = raw_model->faces[i].f1;
@@ -94,14 +93,14 @@ void build_star_global(const struct model *raw_model,
     cur_list_tail[vid]->v0 = raw_model->faces[i].f0;
     cur_list_tail[vid]->v1 = raw_model->faces[i].f2;
     cur_list_tail[vid]->face = i;
-    ALLOC_NEXT_SLOT(cur_list_tail, vid);
+    ALLOC_NEXT_SLOT(cur_list_tail[vid]);
     
     vid = raw_model->faces[i].f2;
     num_edges[vid]++;
     cur_list_tail[vid]->v0 = raw_model->faces[i].f0;
     cur_list_tail[vid]->v1 = raw_model->faces[i].f1;
     cur_list_tail[vid]->face = i;
-    ALLOC_NEXT_SLOT(cur_list_tail, vid);
+    ALLOC_NEXT_SLOT(cur_list_tail[vid]);
   }
   free(cur_list_tail);
 
@@ -125,19 +124,15 @@ void build_star_global(const struct model *raw_model,
     face_star[0] = edge_list_primal[i]->face;
 
     /* de-queue 1st elt */
-    tmp = edge_list_primal[i];
-    edge_list_primal[i] = edge_list_primal[i]->next;
-    edge_list_primal[i]->prev=NULL;
-    free(tmp);
-    list_tail = edge_list_primal[i];
+    REMOVE_ELT_FROM_LIST(edge_list_primal[i], tmp);
 
+    list_tail = edge_list_primal[i];
     star_size = 2;
     n_faces = 1;
 
-    l = 1;
 
     
-    while (l < num_edges[i]) {
+    while (star_size <= num_edges[i]) {
       edge_added = 0;
       while (list_tail->prev != NULL)
         list_tail = list_tail->prev;
@@ -150,13 +145,11 @@ void build_star_global(const struct model *raw_model,
           
           final_star[0] = list_tail->v1;
           face_star[0] = list_tail->face;
-	
 
-          l++;
           star_size++;
           n_faces++;
           edge_added = 1;
-          REMOVE_ELT_FROM_LIST(list_tail);
+          REMOVE_ELT_FROM_LIST(list_tail, tmp);
 
         }
         else if (list_tail->v1 == final_star[0]) {
@@ -167,11 +160,10 @@ void build_star_global(const struct model *raw_model,
           final_star[0] = list_tail->v0;
           face_star[0] = list_tail->face;
 
-          l++;
           star_size++;
           n_faces++;
           edge_added = 1;
-          REMOVE_ELT_FROM_LIST(list_tail);
+          REMOVE_ELT_FROM_LIST(list_tail, tmp);
 
 
         }
@@ -180,11 +172,10 @@ void build_star_global(const struct model *raw_model,
           final_star[star_size] = list_tail->v1;
           face_star[n_faces] = list_tail->face;
 
-          l++;
           star_size++;
           n_faces++;
           edge_added = 1;
-          REMOVE_ELT_FROM_LIST(list_tail);
+          REMOVE_ELT_FROM_LIST(list_tail, tmp);
 
         }
         else if (list_tail->v1 == final_star[star_size-1]) {
@@ -192,11 +183,10 @@ void build_star_global(const struct model *raw_model,
           final_star[star_size] = list_tail->v0;
           face_star[n_faces] = list_tail->face;
 
-          l++;
           star_size++;
           n_faces++;
           edge_added = 1;
-          REMOVE_ELT_FROM_LIST(list_tail);
+          REMOVE_ELT_FROM_LIST(list_tail, tmp);
 
         } else
           list_tail = list_tail->next;
@@ -204,7 +194,6 @@ void build_star_global(const struct model *raw_model,
 
       if (edge_added == 0) {
         printf("Vertex %d is non-manifold\n", i);
-      /*   free(done); */
         free(final_star);
         free(face_star);
         ring[i].type = 2;
