@@ -1,4 +1,4 @@
-/* $Id: ColorMapWidget.cpp,v 1.8 2001/09/25 13:20:06 dsanta Exp $ */
+/* $Id: ColorMapWidget.cpp,v 1.9 2001/09/27 08:56:54 aspert Exp $ */
 #include <ColorMapWidget.h>
 
 #include <qpainter.h>
@@ -18,6 +18,14 @@ ColorMapWidget::ColorMapWidget(double dmoymin, double dmoymax,
   dmax = dmoymax;
   dmin = dmoymin;
 
+}
+
+
+void ColorMapWidget::rescale(double dmoymin, double dmoymax) {
+  dmax = dmoymax;
+  dmin = dmoymin;
+  // This will call painEvent()
+  update();
 }
 
 /* This function generates the bar graph that will be displayed aside */

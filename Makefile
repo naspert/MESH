@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.21 2001/09/25 13:29:32 dsanta Exp $
+# $Id: Makefile,v 1.22 2001/09/27 08:56:55 aspert Exp $
 
 #
 # If the make variable PROFILE is defined to a non-empty value, profiling
@@ -129,7 +129,7 @@ endif
 MESH_EXE := $(BINDIR)/mesh
 MESH_C_SRCS := $(wildcard *.c)
 MESH_CXX_SRCS := $(filter-out moc_%.cpp,$(wildcard *.cpp))
-MESH_MOC_SRCS := RawWidget.h ScreenWidget.h InitWidget.h
+MESH_MOC_SRCS := RawWidget.h ScreenWidget.h InitWidget.h ColorMapWidget.h
 LIB3D_C_SRCS = 3dmodel_io.c normals.c geomutils.c
 
 # Compiler and linker flags

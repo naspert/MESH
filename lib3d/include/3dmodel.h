@@ -1,4 +1,4 @@
-/* $Id: 3dmodel.h,v 1.15 2001/09/24 15:04:18 aspert Exp $ */
+/* $Id: 3dmodel.h,v 1.16 2001/09/27 08:56:59 aspert Exp $ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -117,6 +117,7 @@ typedef struct {
   vertex *face_normals;
   face* faces;
   double* area; /* area of each face */
+  double total_area;
   vertex bBox[2]; /* bBox[0] is the min  bBox[1] is the max */
   face_tree_ptr *tree; /* spanning tree of the dual graph */
 #ifdef EST_NORMALS

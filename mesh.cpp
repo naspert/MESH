@@ -1,4 +1,4 @@
-/* $Id: mesh.cpp,v 1.5 2001/09/25 13:16:19 dsanta Exp $ */
+/* $Id: mesh.cpp,v 1.6 2001/09/27 08:56:58 aspert Exp $ */
 
 #include <time.h>
 #include <string.h>
@@ -45,7 +45,11 @@ static void print_usage(FILE *out)
   fprintf(out,"      \tthat the maximum distance between samples in any\n");
   fprintf(out,"      \ttriangle is no more than s. Each triangle of the\n");
   fprintf(out,"      \tfirst model gets at least one sample, whatever the\n");
-  fprintf(out,"      \tsampling step. The default is 0.5.\n");
+  fprintf(out,"      \tsampling step. The default is 0.5.\n\n");
+  fprintf(out,"  -c  \tEnables curvature comparison. Only works when the\n");
+  fprintf(out,"      \tmodels have the same number of vertices. The first\n");
+  fprintf(out,"      \tmodel should be the 'modified' one whereas the\n");
+  fprintf(out,"      \tsecond should be the 'reference' one\n");
 }
 
 /* Initializes *pargs to default values and parses the command line arguments
@@ -80,6 +84,9 @@ static void parse_args(int argc, char **argv, struct args *pargs)
           fprintf(stderr,"ERROR: invalid number for -l option\n");
           exit(1);
         }
+      } 
+      else if (strcmp(argv[i],"-c") == 0) { /* curvature */
+	pargs->do_curvature = 1;
       } else { /* unrecognized option */
         fprintf(stderr,
                 "ERROR: unknown option in command line, use -h for help\n");

@@ -1,4 +1,4 @@
-/* $Id: RawWidget.cpp,v 1.25 2001/09/25 14:56:16 dsanta Exp $ */
+/* $Id: RawWidget.cpp,v 1.26 2001/09/27 08:56:55 aspert Exp $ */
 
 #include <RawWidget.h>
 #include <qmessagebox.h>
@@ -38,20 +38,20 @@ RawWidget::RawWidget(struct model_error *model, int renderType,
   two_sided_material = 1;
 
   // Compute the center of the bounding box of the model
-  center.x = 0.5*(model->mesh->bBox[1].x + model->mesh->bBox[0].x);
-  center.y = 0.5*(model->mesh->bBox[1].y + model->mesh->bBox[0].y);
-  center.z = 0.5*(model->mesh->bBox[1].z + model->mesh->bBox[0].z);
+  add_v(&(model->mesh->bBox[0]), &(model->mesh->bBox[1]), &center);
+  prod_v(0.5, &center, &center);
 
   // Center the model around (0, 0, 0)
-  for (i=0; i<model->mesh->num_vert; i++) {
-    model->mesh->vertices[i].x -= center.x;
-    model->mesh->vertices[i].y -= center.y;
-    model->mesh->vertices[i].z -= center.z;
-  }
+  for (i=0; i<model->mesh->num_vert; i++) 
+    substract_v(&(model->mesh->vertices[i]), &center, 
+		&(model->mesh->vertices[i]));
+
+  
   
   // This should be enough to see the whole model when starting
-  distance = dist(model->mesh->bBox[0], model->mesh->bBox[1])/
+  distance = dist_v(&(model->mesh->bBox[0]), &(model->mesh->bBox[1]))/
     tan(FOV*M_PI_2/180.0);
+
 
   // This is the increment used when moving closer/farther from the object
   dstep = distance*0.01;
@@ -107,7 +107,7 @@ void RawWidget::setLight() {
   GLboolean light_state;
 
   // Get state from renderer
-  if (renderFlag == RW_LIGHT_TOGGLE) {
+  if ((renderFlag & RW_CAPA_MASK) ==  RW_LIGHT_TOGGLE) {
     makeCurrent();
     light_state = glIsEnabled(GL_LIGHTING);
 
@@ -125,6 +125,34 @@ void RawWidget::setLight() {
   }
 }
 
+
+void RawWidget::switchDisplayedInfo(int state) {
+  int capa = renderFlag & RW_CAPA_MASK;
+
+  makeCurrent();
+  switch(capa) {
+  case RW_LIGHT_TOGGLE:
+    fprintf(stderr, "Invalid call to switchDisplayedInfo\n");
+    break;
+  case RW_ERROR_ONLY:
+    if (state == RW_COLOR_K1 || state == RW_COLOR_K2 || state == RW_COLOR_KG)
+      fprintf(stderr, "Invalid call to switchDisplayedInfo\n");
+    else
+      rebuild_list();
+    break;
+  case RW_ERROR_AND_CURV:
+    if (state == RW_COLOR_K1 || state == RW_COLOR_K2 || 
+	state == RW_COLOR_KG || state == RW_COLOR_ERROR) {
+      renderFlag = capa + state;
+      rebuild_list();
+    } else
+      fprintf(stderr, "Invalid parameter in switchDisplayedInfo 0x%x\n", 
+	      state);
+    break;
+  }
+   
+  updateGL();
+}
 
 // display callback
 void RawWidget::paintGL() {
@@ -230,38 +258,8 @@ void RawWidget::rebuild_list() {
 
   model_list=glGenLists(1);
   
-  if (renderFlag == RW_COLOR) {
-    drange = model->max_verror-model->min_verror;
-    if (drange < FLT_MIN*100) drange = 1;
-    glNewList(model_list, GL_COMPILE);
-    glBegin(GL_TRIANGLES);  
-    for (i=0; i<model->mesh->num_faces; i++) {
-      cur_face = &(model->mesh->faces[i]);
-      cidx = (int) floor(7*(model->verror[cur_face->f0]-
-                            model->min_verror)/drange);
-      glColor3dv(colormap[cidx]);
-      glVertex3d(model->mesh->vertices[cur_face->f0].x,
-		 model->mesh->vertices[cur_face->f0].y,
-		 model->mesh->vertices[cur_face->f0].z); 
-      
-      cidx = (int) floor(7*(model->verror[cur_face->f1]-
-                            model->min_verror)/drange);
-      glColor3dv(colormap[cidx]);
-      glVertex3d(model->mesh->vertices[cur_face->f1].x,
-		 model->mesh->vertices[cur_face->f1].y,
-		 model->mesh->vertices[cur_face->f1].z); 
-      
-      cidx = (int) floor(7*(model->verror[cur_face->f2]-
-                            model->min_verror)/drange);
-      glColor3dv(colormap[cidx]);
-      glVertex3d(model->mesh->vertices[cur_face->f2].x,
-		 model->mesh->vertices[cur_face->f2].y,
-		 model->mesh->vertices[cur_face->f2].z);       
-    }
-    glEnd();
-    glEndList();
-  }   
-  else if (renderFlag == RW_LIGHT_TOGGLE) {
+  switch(renderFlag & RW_CAPA_MASK) {
+  case RW_LIGHT_TOGGLE:
     glNewList(model_list, GL_COMPILE);
     glColor3fv(lighted_color);
     if (two_sided_material) {
@@ -327,8 +325,169 @@ void RawWidget::rebuild_list() {
       glEnd();
     }
     glEndList();
+    break;
+  case RW_ERROR_ONLY:
+    drange = model->max_verror-model->min_verror;
+    if (drange < FLT_MIN*100) drange = 1;
+    glNewList(model_list, GL_COMPILE);
+    glBegin(GL_TRIANGLES);  
+    for (i=0; i<model->mesh->num_faces; i++) {
+      cur_face = &(model->mesh->faces[i]);
+      cidx = (int) floor(7*(model->verror[cur_face->f0]-
+                            model->min_verror)/drange);
+      glColor3dv(colormap[cidx]);
+      glVertex3d(model->mesh->vertices[cur_face->f0].x,
+		 model->mesh->vertices[cur_face->f0].y,
+		 model->mesh->vertices[cur_face->f0].z); 
+      
+      cidx = (int) floor(7*(model->verror[cur_face->f1]-
+                            model->min_verror)/drange);
+      glColor3dv(colormap[cidx]);
+      glVertex3d(model->mesh->vertices[cur_face->f1].x,
+		 model->mesh->vertices[cur_face->f1].y,
+		 model->mesh->vertices[cur_face->f1].z); 
+      
+      cidx = (int) floor(7*(model->verror[cur_face->f2]-
+                            model->min_verror)/drange);
+      glColor3dv(colormap[cidx]);
+      glVertex3d(model->mesh->vertices[cur_face->f2].x,
+		 model->mesh->vertices[cur_face->f2].y,
+		 model->mesh->vertices[cur_face->f2].z);       
+    }
+    glEnd();
+    glEndList();
+    break;
+  case RW_ERROR_AND_CURV:
+    switch (renderFlag & RW_DISPLAY_MASK) {
+    case RW_COLOR_ERROR:
+      drange = model->max_verror - model->min_verror;
+      if (drange < FLT_MIN*100) drange = 1;
+      glNewList(model_list, GL_COMPILE);
+      glBegin(GL_TRIANGLES);  
+      for (i=0; i<model->mesh->num_faces; i++) {
+	cur_face = &(model->mesh->faces[i]);
+	cidx = (int) floor(7*(model->verror[cur_face->f0]-
+			      model->min_verror)/drange);
+	glColor3dv(colormap[cidx]);
+	glVertex3d(model->mesh->vertices[cur_face->f0].x,
+		   model->mesh->vertices[cur_face->f0].y,
+		   model->mesh->vertices[cur_face->f0].z); 
+	
+	cidx = (int) floor(7*(model->verror[cur_face->f1]-
+			      model->min_verror)/drange);
+	glColor3dv(colormap[cidx]);
+	glVertex3d(model->mesh->vertices[cur_face->f1].x,
+		   model->mesh->vertices[cur_face->f1].y,
+		   model->mesh->vertices[cur_face->f1].z); 
+	
+	cidx = (int) floor(7*(model->verror[cur_face->f2]-
+			      model->min_verror)/drange);
+	glColor3dv(colormap[cidx]);
+	glVertex3d(model->mesh->vertices[cur_face->f2].x,
+		   model->mesh->vertices[cur_face->f2].y,
+		   model->mesh->vertices[cur_face->f2].z);       
+      }
+      glEnd();
+      glEndList();
+      break;
+    case RW_COLOR_K1:
+      drange = model->max_k1_error - model->min_k1_error;
+      if (drange < FLT_MIN*100) drange = 1;
+      glNewList(model_list, GL_COMPILE);
+      glBegin(GL_TRIANGLES);  
+      for (i=0; i<model->mesh->num_faces; i++) {
+	cur_face = &(model->mesh->faces[i]);
+	cidx = (int) floor(7*(model->k1_error[cur_face->f0]-
+			      model->min_k1_error)/drange);
+	glColor3dv(colormap[cidx]);
+	glVertex3d(model->mesh->vertices[cur_face->f0].x,
+		   model->mesh->vertices[cur_face->f0].y,
+		   model->mesh->vertices[cur_face->f0].z); 
+	
+	cidx = (int) floor(7*(model->k1_error[cur_face->f1]-
+			      model->min_k1_error)/drange);
+	glColor3dv(colormap[cidx]);
+	glVertex3d(model->mesh->vertices[cur_face->f1].x,
+		   model->mesh->vertices[cur_face->f1].y,
+		   model->mesh->vertices[cur_face->f1].z); 
+	
+	cidx = (int) floor(7*(model->k1_error[cur_face->f2]-
+			      model->min_k1_error)/drange);
+	glColor3dv(colormap[cidx]);
+	glVertex3d(model->mesh->vertices[cur_face->f2].x,
+		   model->mesh->vertices[cur_face->f2].y,
+		   model->mesh->vertices[cur_face->f2].z);       
+      }
+      glEnd();
+      glEndList();
+      break;
+    case RW_COLOR_K2:
+      drange = model->max_k2_error - model->min_k2_error;
+      if (drange < FLT_MIN*100) drange = 1;
+      glNewList(model_list, GL_COMPILE);
+      glBegin(GL_TRIANGLES);  
+      for (i=0; i<model->mesh->num_faces; i++) {
+	cur_face = &(model->mesh->faces[i]);
+	cidx = (int) floor(7*(model->k2_error[cur_face->f0]-
+			      model->min_k2_error)/drange);
+	glColor3dv(colormap[cidx]);
+	glVertex3d(model->mesh->vertices[cur_face->f0].x,
+		   model->mesh->vertices[cur_face->f0].y,
+		   model->mesh->vertices[cur_face->f0].z); 
+	
+	cidx = (int) floor(7*(model->k2_error[cur_face->f1]-
+			      model->min_k2_error)/drange);
+	glColor3dv(colormap[cidx]);
+	glVertex3d(model->mesh->vertices[cur_face->f1].x,
+		   model->mesh->vertices[cur_face->f1].y,
+		   model->mesh->vertices[cur_face->f1].z); 
+	
+	cidx = (int) floor(7*(model->k2_error[cur_face->f2]-
+			      model->min_k2_error)/drange);
+	glColor3dv(colormap[cidx]);
+	glVertex3d(model->mesh->vertices[cur_face->f2].x,
+		   model->mesh->vertices[cur_face->f2].y,
+		   model->mesh->vertices[cur_face->f2].z);       
+      }
+      glEnd();
+      glEndList();
+      break;
+  case RW_COLOR_KG:
+    drange = model->max_kg_error - model->min_kg_error;
+    if (drange < FLT_MIN*100) drange = 1;
+    glNewList(model_list, GL_COMPILE);
+    glBegin(GL_TRIANGLES);  
+    for (i=0; i<model->mesh->num_faces; i++) {
+      cur_face = &(model->mesh->faces[i]);
+      cidx = (int) floor(7*(model->kg_error[cur_face->f0]-
+                            model->min_kg_error)/drange);
+      glColor3dv(colormap[cidx]);
+      glVertex3d(model->mesh->vertices[cur_face->f0].x,
+		 model->mesh->vertices[cur_face->f0].y,
+		 model->mesh->vertices[cur_face->f0].z); 
+      
+      cidx = (int) floor(7*(model->kg_error[cur_face->f1]-
+                            model->min_kg_error)/drange);
+      glColor3dv(colormap[cidx]);
+      glVertex3d(model->mesh->vertices[cur_face->f1].x,
+		 model->mesh->vertices[cur_face->f1].y,
+		 model->mesh->vertices[cur_face->f1].z); 
+      
+      cidx = (int) floor(7*(model->kg_error[cur_face->f2]-
+                            model->min_kg_error)/drange);
+      glColor3dv(colormap[cidx]);
+      glVertex3d(model->mesh->vertices[cur_face->f2].x,
+		 model->mesh->vertices[cur_face->f2].y,
+		 model->mesh->vertices[cur_face->f2].z);       
+    }
+    glEnd();
+    glEndList();
+    break;
+    default:
+      fprintf(stderr, "Invalid render flag found !!\n");
+      break;
+    }
   }
-
 }
 
 /* ************************************************************ */
@@ -425,21 +584,19 @@ void RawWidget::keyPressEvent(QKeyEvent *k) {
     break;
   case Key_F4:
     makeCurrent();
-    if (renderFlag == RW_LIGHT_TOGGLE) {
+    if ((renderFlag & RW_CAPA_MASK) == RW_LIGHT_TOGGLE) {
       light_state = glIsEnabled(GL_LIGHTING);
       if (light_state == GL_TRUE) { // Invert normals
-	for (i=0; i<model->mesh->num_vert; i++) {
-	  model->mesh->normals[i].x = -model->mesh->normals[i].x;
-	  model->mesh->normals[i].y = -model->mesh->normals[i].y;
-	  model->mesh->normals[i].z = -model->mesh->normals[i].z;
-	}
+	for (i=0; i<model->mesh->num_vert; i++) 
+	  neg_v(&(model->mesh->normals[i]), &(model->mesh->normals[i]));
+	
 	rebuild_list();
         updateGL();
       }
     }
     break;
   case Key_F5:
-    if (renderFlag == RW_LIGHT_TOGGLE) {
+    if ((renderFlag & RW_CAPA_MASK) == RW_LIGHT_TOGGLE) {
       makeCurrent();
       two_sided_material = !two_sided_material;
       rebuild_list();

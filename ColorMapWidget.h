@@ -1,4 +1,4 @@
-/* $Id: ColorMapWidget.h,v 1.5 2001/09/25 13:20:06 dsanta Exp $ */
+/* $Id: ColorMapWidget.h,v 1.6 2001/09/27 08:56:55 aspert Exp $ */
 #ifndef COLORMAPWIDGET_H
 #define COLORMAPWIDGET_H
 
@@ -6,9 +6,14 @@
 
 class ColorMapWidget : public QWidget
 {
+Q_OBJECT
 public:
   ColorMapWidget(double dmoymin, double dmoymax, 
 		 QWidget *parent=0, const char *name=0 );
+
+public slots:
+  void rescale(double dmoymin, double dmoymax);
+
 protected:
   void paintEvent(QPaintEvent *); 
 

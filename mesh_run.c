@@ -1,10 +1,11 @@
-/* $Id: mesh_run.c,v 1.1 2001/09/25 13:10:44 dsanta Exp $ */
+/* $Id: mesh_run.c,v 1.2 2001/09/27 08:56:59 aspert Exp $ */
 
 #include <time.h>
 #include <string.h>
 #include <xalloc.h>
 #include <model_analysis.h>
 #include <compute_error.h>
+#include <compute_curvature.h>
 #include <3dmodel_io.h>
 #include <geomutils.h>
 
@@ -92,6 +93,8 @@ void mesh_run(const struct args *args, struct model_error *model1,
          stats.rms_dist,stats.rms_dist/bbox2_diag*100);
   printf("\n");
   fflush(stdout);
+  
+ 
 
   if (args->do_symmetric) { /* Invert models and recompute distance */
     printf("       Distance from model 2 to model 1\n\n");
@@ -129,6 +132,7 @@ void mesh_run(const struct args *args, struct model_error *model1,
            max(stats.rms_dist,stats_rev.rms_dist)/bbox2_diag*100);
     printf("\n");
   }
+
 
   printf("               \t       Absolute\t   %% BBox diag model 2\n");
   printf("Sampling step: \t%15g\t%22g\n",abs_sampling_step,
@@ -171,6 +175,15 @@ void mesh_run(const struct args *args, struct model_error *model1,
            stats_rev.grid_sz.x*stats_rev.grid_sz.y*stats_rev.grid_sz.z);
   }
   printf("\n");
+  
+  if (args->do_curvature) {
+    if (model1->mesh->num_vert == model2->mesh->num_vert)
+      compute_curvature_error(model1, model2);
+    else {
+      fprintf(stderr, "Unable to compute curvature error for models having ");
+      fprintf(stderr, "different topologies\n");
+    }
+  }
   printf("Execution time (secs.):\t%.2f\n",
          (double)(clock()-start_time)/CLOCKS_PER_SEC);
   fflush(stdout);

@@ -1,4 +1,4 @@
-/* $Id: compute_error.h,v 1.14 2001/09/11 16:29:39 dsanta Exp $ */
+/* $Id: compute_error.h,v 1.15 2001/09/27 08:56:58 aspert Exp $ */
 #ifndef _COMPUTE_ERROR_PROTO
 #define _COMPUTE_ERROR_PROTO
 
@@ -46,6 +46,22 @@ struct model_error {
                            * present. */
   float min_verror;       /* The minimum vertex error for the model */
   float max_verror;       /* The maximum vertex error for the model */
+  
+  double *k1_error;
+  double min_k1_error;
+  double max_k1_error;
+  double mean_k1_error;
+
+  double *k2_error;
+  double min_k2_error;
+  double max_k2_error;
+  double mean_k2_error;
+
+  double *kg_error;
+  double min_kg_error;
+  double max_kg_error;
+  double mean_kg_error;
+
   struct model_info *info;/* The model information. NULL if not present. */
 };
 
