@@ -1,4 +1,4 @@
-/* $Id: model_analysis.c,v 1.30 2002/03/29 22:12:55 dsanta Exp $ */
+/* $Id: model_analysis.c,v 1.31 2002/04/03 09:30:47 aspert Exp $ */
 
 
 /*
@@ -57,6 +57,8 @@
 # define INLINE __inline__
 #elif defined (__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)
 # define INLINE inline
+#else 
+# define INLINE
 #endif
 
 /* Give hints for more optimization */
