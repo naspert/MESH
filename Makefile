@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.37 2002/02/28 10:12:55 aspert Exp $
+# $Id: Makefile,v 1.38 2002/03/05 08:50:25 aspert Exp $
 
 #
 # If the make variable PROFILE is defined to a non-empty value, profiling
@@ -121,6 +121,11 @@ ifeq ($(CXX_IS_GCC)$(OS),IRIX)
 CXX_PROF_OPT = -fbgen
 XTRA_CXXFLAGS += -g3
 endif
+ifeq ($(OS),SunOS)
+C_PROF_OPT = -xpg
+CXX_PROF_OPT = -xpg
+XTRA_CFLAGS = -g -xCC
+endif 
 
 # Add profiling flags if requested
 ifdef PROFILE

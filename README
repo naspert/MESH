@@ -23,8 +23,9 @@ The QTDIR environment variable should point to the QT installation directory.
 Type 'make all' at the command prompt and the executable, mesh, will be
 installed in the ./bin directory. To get a command line syntax, type
 './bin/mesh -h' at the command line prompt. The current Makefile requires
-GNU make and supports Linux (with GCC) and IRIX (with the MIPSPro
-compilers). Other systems might require some (hopefully minor) modifications.
+GNU make and supports Linux (with GCC), IRIX (with the MIPSPro compilers) 
+and Solaris (with the Sun compiler). Other configurations might require some 
+(hopefully minor) modifications.
 
 * Installation - Windows
 You *MUST* install the Qt library prior to any other step. Please note that 
