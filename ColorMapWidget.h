@@ -1,4 +1,4 @@
-/* $Id: ColorMapWidget.h,v 1.16 2002/03/15 16:32:05 aspert Exp $ */
+/* $Id: ColorMapWidget.h,v 1.17 2002/05/08 12:05:26 aspert Exp $ */
 
 
 /*
@@ -68,9 +68,11 @@ public:
  QSize sizeHint() const;
  QSize minimumSizeHint() const;
  enum scaleMode {LIN_SCALE=0, LOG_SCALE=1};
+ enum colorSpace {GRAYSCALE, HSV};
 
 public slots:
   void doHistogram(int scaleType);
+  void setColorMap(int newSpace); 
 
 protected:
   void paintEvent(QPaintEvent *); 
@@ -81,7 +83,9 @@ protected:
   float **colormap;
   int cmap_len;
   double dmax, dmin;
-  int scaleState; // stores the state of the scale (LIN or LOG)
+  scaleMode scaleState; // stores the state of the scale (LIN or LOG)
+  colorSpace colorState; // stores the state of the color space used
+                         // (GRAYSCALE or HSV)
 };
 
 #endif

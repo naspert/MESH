@@ -1,4 +1,4 @@
-/* $Id: ScreenWidget.cpp,v 1.45 2002/04/24 12:49:23 aspert Exp $ */
+/* $Id: ScreenWidget.cpp,v 1.46 2002/05/08 12:05:27 aspert Exp $ */
 
 
 /*
@@ -76,7 +76,8 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   QPushButton *quitBut;
   QRadioButton *verrBut, *fmerrBut, *serrBut;
   QRadioButton *linBut, *logBut;
-  QButtonGroup *dispInfoGrp=NULL, *histoGrp=NULL, *rmodGrp;
+  QRadioButton *gsBut, *hsvBut;
+  QButtonGroup *dispInfoGrp=NULL, *histoGrp=NULL, *histoColGrp=NULL, *rmodGrp;
   QCheckBox  *qcbLight;
   QLabel *qlM1Name, *qlM2Name;
   QString tmp;
@@ -273,7 +274,7 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   connect(this, SIGNAL(dsValChange(int)), 
           glModel1, SLOT(setVEDownSampling(int)));
 
-  // Build scale selection buttons
+  // Build scale selection buttons for the histogram
   histoGrp = new QVButtonGroup("X scale",this);
   linBut = new QRadioButton("Linear", histoGrp);
   linBut->setChecked(TRUE);
@@ -282,6 +283,18 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   histoGrp->insert(logBut, ColorMapWidget::LOG_SCALE);
   connect(histoGrp, SIGNAL(clicked(int)), 
           errorColorBar, SLOT(doHistogram(int)));
+
+  // Build the colorspace selection button for the histogram
+  histoColGrp = new QVButtonGroup("Colormap", this);
+  hsvBut = new QRadioButton("HSV",histoColGrp);
+  hsvBut->setChecked(TRUE);
+  gsBut = new QRadioButton("Gray", histoColGrp);
+  histoColGrp->insert(hsvBut, ColorMapWidget::HSV);
+  histoColGrp->insert(gsBut, ColorMapWidget::GRAYSCALE);
+  connect(histoColGrp, SIGNAL(clicked(int)), 
+          errorColorBar, SLOT(setColorMap(int)));
+  connect(histoColGrp, SIGNAL(clicked(int)), 
+          glModel1, SLOT(setColorMap(int)));
 
   // Build the topmost grid layout
   bigGrid = new QGridLayout (this, 4, 7, 5, -1);
@@ -294,7 +307,8 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   bigGrid->addWidget(lineSwitch1, 2, 2, Qt::AlignCenter);
   bigGrid->addWidget(lineSwitch2, 2, 5, Qt::AlignCenter);
   bigGrid->addMultiCellWidget(syncBut, 2, 2, 3, 4, Qt::AlignCenter);
-  bigGrid->addMultiCellWidget(histoGrp, 2, 3, 0, 0, Qt::AlignTop);
+  bigGrid->addWidget(histoGrp, 2, 0, Qt::AlignTop);
+  bigGrid->addWidget(histoColGrp, 3, 0, Qt::AlignTop);
 
   // sub layout for dispInfoGrp and Quit button -> avoid resize problems
   smallGrid = new QGridLayout(1, 5, 3);

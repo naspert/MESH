@@ -1,4 +1,4 @@
-/* $Id: colormap.c,v 1.4 2002/03/15 16:32:09 aspert Exp $ */
+/* $Id: colormap.c,v 1.5 2002/05/08 12:05:27 aspert Exp $ */
 
 
 /*
@@ -57,13 +57,13 @@ static void hue2rgb(float hue, float *r, float *g, float *b) {
   /* Get section */
   hue /= 60;
   k = (int)floor(hue);
-  if (k==6) {
+  if (k == 6) {
     k = 5;
   } else if (k < 0) {
     k = 0;
   }
-  p = hue-k;
-  n = 1-p;
+  p = hue - k;
+  n = 1 - p;
 
   /* Get RGB values based on section */
   switch (k) {
@@ -117,9 +117,30 @@ float** colormap_hsv(int len)
   }
 
   step = 240/(float)(len-1);
-  for (i=0; i<len ; i++) {
+  for (i=0; i<len ; i++) 
     hue2rgb(step*(len-1-i),cmap[i],cmap[i]+1,cmap[i]+2);
+  
+  return cmap;
+}
+
+/* see colormap.h */
+float** colormap_gs(int len)
+{
+  float **cmap,step;
+  int i;
+
+  if (len <= 1) return NULL;
+
+  cmap = xa_malloc(len*sizeof(*cmap));
+  *cmap = xa_malloc(3*len*sizeof(**cmap));
+  for (i=1; i<len; i++) {
+    cmap[i] = cmap[i-1]+3;
   }
+
+  step = 1.0/(float)(len-1);
+  for (i=0; i<len ; i++) 
+    cmap[i][0] = cmap[i][1] = cmap[i][2] = step*(len - 1 - i);
+  
   return cmap;
 }
 

@@ -1,4 +1,4 @@
-/* $Id: RawWidget.cpp,v 1.56 2002/04/08 15:21:24 dsanta Exp $ */
+/* $Id: RawWidget.cpp,v 1.57 2002/05/08 12:05:26 aspert Exp $ */
 
 
 /*
@@ -67,6 +67,7 @@ RawWidget::RawWidget(struct model_error *model_err, int renderType,
 
   // Build the colormap used to display the mean error onto the surface of
   // the model
+  csp = ColorMapWidget::HSV;
   colormap = colormap_hsv(CMAP_LENGTH);
 
   // Get the structure containing the model
@@ -203,6 +204,29 @@ void RawWidget::setLight(bool state) {
       glDisable(GL_LIGHTING);
     }
     checkGlErrors("setLight()");
+    updateGL();
+  }
+}
+
+void RawWidget::setColorMap(int newSpace) {
+  if (newSpace != csp) {
+    csp = (ColorMapWidget::colorSpace)newSpace;
+    free(colormap);
+    if (csp == ColorMapWidget::HSV)
+      colormap = colormap_hsv(CMAP_LENGTH);
+    else if (csp == ColorMapWidget::GRAYSCALE)
+      colormap = colormap_gs(CMAP_LENGTH);
+    else
+      fprintf(stderr, "Invalid color spce specified\n");
+    if (error_mode != SAMPLE_ERROR) {
+      makeCurrent();
+      // display wait cursor while rebuilding list (useful for n=1 only)
+      QApplication::setOverrideCursor(Qt::waitCursor);
+      rebuildList();
+      QApplication::restoreOverrideCursor();
+    } else {
+      genErrorTextures();
+    }
     updateGL();
   }
 }

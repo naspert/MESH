@@ -1,4 +1,4 @@
-/* $Id: ColorMapWidget.cpp,v 1.22 2002/03/15 16:32:04 aspert Exp $ */
+/* $Id: ColorMapWidget.cpp,v 1.23 2002/05/08 12:05:26 aspert Exp $ */
 
 
 /*
@@ -60,6 +60,7 @@ ColorMapWidget::ColorMapWidget(const struct model_error *model1_error,
   colormap = NULL;
   histogram = NULL;
   scaleState = LIN_SCALE;
+  colorState = HSV;
   dmax = me->max_error;
   dmin = me->min_error;
   cmap_len = -1;
@@ -89,7 +90,7 @@ void ColorMapWidget::doHistogram(int scaleType) {
 
   delete [] histogram;
   histogram = new int[len];
-  memset(histogram,0,sizeof(*histogram)*len);
+  memset(histogram, 0, sizeof(*histogram)*len);
 
   n = me->n_samples;
   drange = me->max_error-me->min_error;
@@ -105,7 +106,7 @@ void ColorMapWidget::doHistogram(int scaleType) {
   for (i=0; i<len; i++) 
     if (max_cnt < histogram[i]) max_cnt = histogram[i];
 
-  scaleState = scaleType;
+  scaleState = (scaleMode)scaleType;
   if (scaleType == LIN_SCALE) {
     for (i=0; i<len; i++)
       histogram[i] = (int)floor(histogram[i]/(double)max_cnt*CBAR_WIDTH+0.5);
@@ -121,6 +122,22 @@ void ColorMapWidget::doHistogram(int scaleType) {
   update();
 
   QApplication::restoreOverrideCursor();
+}
+
+void ColorMapWidget::setColorMap(int newSpace) {
+
+  if (colorState != newSpace) {
+    colorState = (colorSpace)newSpace;
+    free_colormap(colormap);
+
+    if (colorState == HSV)
+      colormap = colormap_hsv(cmap_len);
+    else if (colorState == GRAYSCALE)
+      colormap = colormap_gs(cmap_len);
+    else 
+      fprintf(stderr, "Invalid color space specified\n");
+    doHistogram(scaleState);
+  }
 }
 
 /* This function generates the bar graph that will be displayed aside */
@@ -153,8 +170,14 @@ void ColorMapWidget::paintEvent(QPaintEvent *) {
   if (cmap_len != h) {
     free_colormap(colormap);
     cmap_len = h;
+    if (colorState == HSV)
+      colormap = colormap_hsv(cmap_len);
+    else if (colorState == GRAYSCALE)
+      colormap = colormap_gs(cmap_len);
+    else 
+      fprintf(stderr, "Invalid color space specified\n");
+
     doHistogram(scaleState);
-    colormap = colormap_hsv(cmap_len);
   }
   p.drawText(40, yoff+ysub, tmpDisplayedText.sprintf( "%.3f",dmax/scale));
   for(i=0; i<N_LABELS-1; i++) {

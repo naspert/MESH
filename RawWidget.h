@@ -1,4 +1,4 @@
-/* $Id: RawWidget.h,v 1.33 2002/03/15 16:32:07 aspert Exp $ */
+/* $Id: RawWidget.h,v 1.34 2002/05/08 12:05:27 aspert Exp $ */
 
 
 /*
@@ -45,6 +45,7 @@
 
 #include <compute_error.h>
 #include <qgl.h>
+#include <ColorMapWidget.h>
 
 #define FOV 40.0 // Vertical field of view for the rendering
 
@@ -86,6 +87,7 @@ public slots:
   void invertNormals(bool state);
   void setTwoSidedMaterial(bool state);
   void setLight(bool state);
+  void setColorMap(int newSpace);
 
 signals:
   void transferValue(double,double*);
@@ -121,6 +123,7 @@ private:
   // the lighted mode or not
   GLdouble dth, dph, dpsi;
   float **colormap;
+  ColorMapWidget::colorSpace csp;
   struct model_error *model;
   GLdouble distance, dstep;
   int oldx,oldy;

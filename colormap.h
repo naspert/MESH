@@ -1,4 +1,4 @@
-/* $Id: colormap.h,v 1.3 2002/03/15 16:32:09 aspert Exp $ */
+/* $Id: colormap.h,v 1.4 2002/05/08 12:05:27 aspert Exp $ */
 
 
 /*
@@ -62,6 +62,11 @@ BEGIN_DECL
  * blue (240 degrees) passing through cyan, green, yellow and red (zero
  * degrees). len should be no less than 2. */
 float** colormap_hsv(int len);
+
+/* Returns a uniform grayscale colormap. This is convenient to make
+ * grayscale screenshots (especially when printing a color page in a
+ * paper costs 1000$ :-) */
+float** colormap_gs(int len);
 
 /* Frees a colormap */
 void free_colormap(float **cmap);
