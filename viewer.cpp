@@ -1,4 +1,4 @@
-/* $Id: viewer.cpp,v 1.33 2001/08/10 12:34:11 dsanta Exp $ */
+/* $Id: viewer.cpp,v 1.34 2001/08/10 13:06:24 dsanta Exp $ */
 
 #include <time.h>
 #include <string.h>
@@ -237,6 +237,9 @@ int main( int argc, char **argv )
        dmoymin = dmoy;
    }
 
+   /* Free now useless data */
+   free_face_lists(vfl,raw_model1->num_vert);
+   vfl = NULL;
    free(fe);
    fe = NULL;
 

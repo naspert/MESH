@@ -1,4 +1,4 @@
-/* $Id: compute_error.h,v 1.9 2001/08/10 10:00:22 dsanta Exp $ */
+/* $Id: compute_error.h,v 1.10 2001/08/10 13:05:55 dsanta Exp $ */
 #include <3dmodel.h>
 
 #ifndef _COMPUTE_ERROR_PROTO
@@ -61,6 +61,9 @@ struct dist_surf_surf_stats {
 /* Returns an array of length m->num_vert with the list of faces incident on
  * each vertex. */
 struct face_list *faces_of_vertex(model *m);
+
+/* Frees the storage for the array of face lists fl, of length n */
+void free_face_lists(struct face_list *fl, int n);
 
 /* Calculates the distance from model m1 to model m2. The triangles of m1 are
  * sampled using n_spt samples in each direction. The per face (of m1) error

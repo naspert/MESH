@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.28 2001/08/10 12:32:03 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.29 2001/08/10 13:05:03 dsanta Exp $ */
 
 #include <compute_error.h>
 
@@ -950,6 +950,17 @@ struct face_list *faces_of_vertex(model *m)
     }
   }
   return fl;
+}
+
+/* See compute_error.h */
+void free_face_lists(struct face_list *fl, int n)
+{
+  int i;
+  if (fl == NULL) return;
+  for (i=0; i<n; i++) {
+    free(fl[i].face);
+  }
+  free(fl);
 }
 
 /* See compute_error.h */
