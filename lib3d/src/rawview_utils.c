@@ -1,10 +1,25 @@
-/* $Id: rawview_utils.c,v 1.5 2002/06/11 16:02:39 aspert Exp $ */
+/* $Id: rawview_utils.c,v 1.6 2002/11/07 09:51:44 aspert Exp $ */
 #include <3dutils.h>
 #include <rawview.h>
 #include <rawview_misc.h>
+#include <stdarg.h>
 
-/* Colormap generation (taken from the MESH code) */
-/* Transforms a hue (in degrees) to the RGB equivalent. The saturation and
+
+/* Printf wrapper */
+/* printf wrapper */
+void verbose_printf(int verbose, char *fmt, ...) 
+{
+  va_list ap;
+
+  if (verbose) {
+    va_start(ap, fmt);
+    vprintf(fmt, ap);
+    va_end(ap);
+  }
+}
+
+/* Colormap generation (taken from the MESH code) 
+ * Transforms a hue (in degrees) to the RGB equivalent. The saturation and
  * value are taken as the maximum. 
  */
 static void hue2rgb(float hue, float *r, float *g, float *b) {
@@ -112,11 +127,11 @@ void set_light_off() {
   glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 }
 
-int do_normals(struct model* raw_model) {
+int do_normals(struct model* raw_model, int verbose) {
   struct info_vertex *tmp;
-  int i;
+  int i,rcode=0;
 
-  printf("Computing normals...\n");
+  verbose_printf(verbose, "Computing normals...\n");
   if (raw_model->area == NULL)
     raw_model->area = (float*)malloc(raw_model->num_faces*sizeof(float));
 
@@ -130,16 +145,17 @@ int do_normals(struct model* raw_model) {
     for (i=0; i<raw_model->num_vert; i++) 
       free(tmp[i].list_face);
     free(tmp);
-    printf("Face and vertex normals done !\n");
-    return 0;
+    verbose_printf(verbose, "Face and vertex normals done !\n");
   } else {
-    printf("Error - Unable to build face normals (Non-manifold model ?)\n");
-    return 1;
+    fprintf(stderr, 
+            "Error - Unable to build face normals (Non-manifold model ?)\n");
+    rcode = 1;
   }
     
+  return rcode;
 }
 
-int do_spanning_tree(struct model *raw_model) {
+int do_spanning_tree(struct model *raw_model, int verbose) {
   struct info_vertex* tmp;
   int i, ret=0;
 
@@ -149,17 +165,17 @@ int do_spanning_tree(struct model *raw_model) {
     tmp[i].list_face = (int*)malloc(sizeof(int));
     tmp[i].num_faces = 0;
   }
-  printf("Building spanning tree\n");
+  verbose_printf(verbose, "Building spanning tree\n");
   /* Compute spanning tree of the dual graph */
   raw_model->tree = bfs_build_spanning_tree(raw_model, tmp); 
   if (raw_model->tree == NULL) {
-    printf("Unable to build spanning tree\n");
+    fprintf(stderr, "Unable to build spanning tree\n");
     ret = 1;
   }
 
-  if (ret == 0) {
-    printf("Spanning tree done\n");
-  }
+  if (ret == 0) 
+    verbose_printf(verbose, "Spanning tree done\n");
+  
   for(i=0; i<raw_model->num_vert; i++) 
     free(tmp[i].list_face);
   free(tmp);

@@ -1,4 +1,4 @@
-/* $Id: rawview_disp.c,v 1.6 2002/09/17 08:36:32 aspert Exp $ */
+/* $Id: rawview_disp.c,v 1.7 2002/11/07 09:51:44 aspert Exp $ */
 
 #include <rawview_misc.h>
 
@@ -74,7 +74,7 @@ void rebuild_list(struct gl_render_context *gl_ctx,
   if (gl_ctx->draw_vtx_labels) {
     dl_idx->char_list = glGenLists(256);
     if (dl_idx->char_list == 0)
-      printf("Unable to create dl_idx->char_list\n");
+      verbose_printf(gl_ctx->verbose, "Unable to create dl_idx->char_list\n");
     
     for (i=32; i<127; i++) { /* build display lists for labels */
       glNewList(dl_idx->char_list+i, GL_COMPILE);

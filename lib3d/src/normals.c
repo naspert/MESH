@@ -1,4 +1,4 @@
-/* $Id: normals.c,v 1.33 2002/08/26 12:26:50 aspert Exp $ */
+/* $Id: normals.c,v 1.34 2002/11/07 09:51:43 aspert Exp $ */
 #include <3dmodel.h>
 #include <geomutils.h>
 #include <normals.h>
@@ -190,7 +190,9 @@ struct face_tree** bfs_build_spanning_tree(const struct model *raw_model,
   struct face_tree **tree, *cur_node, *new_node, *top;
 
 
+#ifdef NORM_VERB
   printf("Dual graph build.... ");fflush(stdout);
+#endif
 
   dual_graph = (struct dual_graph_info*)malloc(sizeof(struct dual_graph_info));
   dual_graph->edges = NULL;
@@ -205,9 +207,11 @@ struct face_tree** bfs_build_spanning_tree(const struct model *raw_model,
   ne_dual = build_edge_list(raw_model, dual_graph, curv, &dg_idx);
   dual_graph->done = (bitmap_t*)calloc(
     (dual_graph->num_edges_dual+BITMAP_T_BITS-1)/BITMAP_T_BITS, BITMAP_T_SZ);
+#ifdef NORM_VERB
   printf("done\n");
+#endif
   if (ne_dual == -1) {
-    printf("No edges in dual graph ??\n");
+    fprintf(stderr, "No edges in dual graph ??\n");
     free(dual_graph);
     free(dg_idx);
     return NULL;
@@ -221,7 +225,9 @@ struct face_tree** bfs_build_spanning_tree(const struct model *raw_model,
 	   dual_graph->edges[i].common.v1);
 #endif
 
+#ifdef NORM_VERB
   printf("Building spanning tree...");fflush(stdout);
+#endif
   list = (struct edge_list**)malloc(sizeof(struct edge_list*)); 
   *list = (struct edge_list*)malloc(sizeof(struct edge_list));
   (*list)->next = NULL;
@@ -320,7 +326,7 @@ struct face_tree** bfs_build_spanning_tree(const struct model *raw_model,
 	list_size--;
       }
       else {
-	printf("Non-manifold edge %d %d !\n", cur_list->edge.face0, 
+	fprintf(stderr, "Non-manifold edge %d %d !\n", cur_list->edge.face0, 
 	       cur_list->edge.face1);
 	return NULL;
       }
@@ -358,7 +364,9 @@ struct face_tree** bfs_build_spanning_tree(const struct model *raw_model,
   free(dual_graph);
   free(list);
   free(dg_idx);
+#ifdef NORM_VERB
   printf(" done\n");
+#endif
   return tree;
 }
 
@@ -461,7 +469,7 @@ static void build_normals(const struct model *raw_model,
       } else if ((tree->prim_right).v1 == v0) { /* prim_right = v2v0 */
 	v2 = (tree->prim_right).v0;
       } else {
-	printf("Oh no...\n");
+	fprintf(stderr, "Oh no...[%s]:%d\n", __FILE__, __LINE__);
       }
     }
 
@@ -547,12 +555,14 @@ vertex_t* compute_face_normals(const struct model* raw_model,
     top = top->parent;
  
   /* Finally, compute the normals for each face */
-  
+#ifdef NORM_VERB  
   printf("The model is manifold.\n");
+#endif
   normals = (vertex_t*)malloc(raw_model->num_faces*sizeof(vertex_t));
   build_normals(raw_model, top, normals);
+#ifdef NORM_VERB
   printf("Face normals done !\n");
-  
+#endif
   for (i=0; i<raw_model->num_faces; i++) {
 #if 0
     printf("face_normals[%d] = %f %f %f\n", i, -normals[i].x, -normals[i].y,  

@@ -1,4 +1,4 @@
-/* $Id: subdiv.c,v 1.25 2002/11/05 12:14:52 aspert Exp $ */
+/* $Id: subdiv.c,v 1.26 2002/11/07 09:51:44 aspert Exp $ */
 #include <3dutils.h>
 #include <subdiv_methods.h>
 #include <subdiv.h>
@@ -100,10 +100,10 @@ struct model* subdiv(struct model *raw_model,
   }
 
 
-
+#ifdef SUBDIV_VERB
   printf("%d new vertices computed \n", nedges);
   printf("subdiv_model->num_vert = %d\n", nedges+raw_model->num_vert);
-
+#endif
   subdiv_model = (struct model*)malloc(sizeof(struct model));
   memset(subdiv_model, 0, sizeof(struct model));
   subdiv_model->num_vert = raw_model->num_vert + nedges;
@@ -173,8 +173,9 @@ struct model* subdiv(struct model *raw_model,
 
   }
 
-
+#ifdef SUBDIV_VERB
   printf("face_idx = %d vert_idx = %d\n", face_idx, vert_idx);
+#endif
   temp_face = (face_t*)malloc(face_idx*sizeof(face_t));
   memcpy(temp_face, subdiv_model->faces, face_idx*sizeof(face_t));
   free(subdiv_model->faces);

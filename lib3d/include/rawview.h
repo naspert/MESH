@@ -1,4 +1,4 @@
-/* $Id: rawview.h,v 1.5 2002/11/07 07:52:07 aspert Exp $ */
+/* $Id: rawview.h,v 1.6 2002/11/07 09:51:42 aspert Exp $ */
 
 
 #ifdef _WIN32
@@ -57,6 +57,8 @@ struct display_lists_indices {
 struct gl_render_context {
   GLfloat distance, dstep; /* distance and incremental distance step */
   GLdouble mvmatrix[16]; /* Buffer for GL_MODELVIEW_MATRIX */
+
+  int verbose;
 
   int tr_mode; /* 1 -> draw triangles, 0 -> draw points */
   
