@@ -1,13 +1,12 @@
-/* $Id: compare_curv.c,v 1.11 2002/06/04 09:17:34 aspert Exp $ */
+/* $Id: compare_curv.c,v 1.12 2002/06/04 14:39:11 aspert Exp $ */
 #include <3dutils.h>
 #include <ring.h>
-
+#include <curvature.h>
 
 
 int main(int argc, char **argv) {
   struct model *raw_model1, *raw_model2;
   struct info_vertex *info1, *info2;
-  struct ring_info *rings1, *rings2;
   int i;
   char *filename1, *filename2;
   double *deltak1, *deltak2, *deltakg;
@@ -46,23 +45,14 @@ int main(int argc, char **argv) {
   raw_model1->area = (float*)malloc(raw_model1->num_faces*sizeof(float));
   raw_model2->area = (float*)malloc(raw_model2->num_faces*sizeof(float));
   compute_vertex_normal(raw_model1, info1, raw_model1->face_normals); 
-  compute_vertex_normal(raw_model2, info2, raw_model2->face_normals); 
-
-  printf("Generating 1-rings of all vertices...\n");
-  rings1 = (struct ring_info*)
-    malloc(raw_model1->num_vert*sizeof(struct ring_info));
-  rings2 = (struct ring_info*)
-    malloc(raw_model2->num_vert*sizeof(struct ring_info));
-
-  build_star_global(raw_model1, rings1);
-  build_star_global(raw_model2, rings2);
+  compute_vertex_normal(raw_model2, info2, raw_model2->face_normals);
 
   
   printf("Computing curvature of model 1.... ");fflush(stdout);
-  compute_curvature(raw_model1, info1, rings1);
+  compute_curvature(raw_model1, info1);
   printf("done\n");  
   printf("Computing curvature of model 2.... ");fflush(stdout);
-  compute_curvature(raw_model2, info2, rings2);
+  compute_curvature(raw_model2, info2);
   printf("done\n");  
 
   deltak1 = (double*)malloc(raw_model2->num_vert*sizeof(double));
@@ -122,14 +112,10 @@ int main(int argc, char **argv) {
 
   for (i=0; i<raw_model1->num_vert; i++) {
     free(info1[i].list_face);
-    free(rings1[i].ord_vert);
     free(info2[i].list_face);
-    free(rings2[i].ord_vert);
   }
   free(info1);
-  free(rings1);
   free(info2);
-  free(rings2);
   free(deltak1);
   free(deltak2);
   free(deltakg);

@@ -1,4 +1,4 @@
-/* $Id: curvature.c,v 1.1 2002/06/04 09:17:34 aspert Exp $ */
+/* $Id: curvature.c,v 1.2 2002/06/04 14:39:11 aspert Exp $ */
 #include <3dutils.h>
 #include <ring.h>
 
@@ -159,9 +159,9 @@ compute_mean_curvature_normal(const struct model *raw_model,
 }
 
 
-void compute_curvature(const struct model *raw_model, 
-		       struct info_vertex *info, 
-		       const struct ring_info *rings) {
+void compute_curvature_with_rings(const struct model *raw_model, 
+                                  struct info_vertex *info, 
+                                  const struct ring_info *rings) {
   int i;
   double k, k2, delta;
   
@@ -200,4 +200,23 @@ void compute_curvature(const struct model *raw_model,
  	   info[i].k1, info[i].k2); 
 #endif
   }
+}
+
+
+/* Calls the above function but do the rings computation before */
+void compute_curvature(struct model *raw_model, struct info_vertex *info) {
+  struct ring_info* rings;
+  int i;
+
+  rings = 
+    (struct ring_info*)malloc(raw_model->num_vert*sizeof(struct ring_info));
+
+  build_star_global(raw_model, rings);
+  compute_curvature_with_rings(raw_model, info, rings);
+  for (i=0; i<raw_model->num_vert; i++) {
+    free(rings[i].ord_vert);
+    free(rings[i].ord_face);
+    
+  }
+  free(rings);
 }
