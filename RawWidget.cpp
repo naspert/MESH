@@ -1,4 +1,4 @@
-/* $Id: RawWidget.cpp,v 1.37 2002/02/20 18:27:38 dsanta Exp $ */
+/* $Id: RawWidget.cpp,v 1.38 2002/02/20 23:35:18 dsanta Exp $ */
 
 #include <RawWidget.h>
 #include <qmessagebox.h>
@@ -75,10 +75,12 @@ QSize RawWidget::minimumSizeHint() const {
 }
 
 RawWidget::~RawWidget() {
-  // NOTE: The GL context is being destroyed here (and maybe is has already
-  // been), so it is not safe to access any GL routines. Thus don't delete
-  // display lists and/or texture bindings. In any case those resources will
-  // be freed when the GL context if finally destroyed.
+  // NOTE: Don't delete display lists and/or texture bindings here, it
+  // sometimes leads to coredumps on some combinations of QT and libGL. In any
+  // case those resources will be freed when the GL context is finally
+  // destroyed (normally just before this method returns). In addition, it is
+  // much faster to let the GL context do it (especially with a large number
+  // of textures, as is often the case in sample error texture mode).
   free_colormap(colormap);
   free(etex_id);
   free(etex_sz);
@@ -170,11 +172,9 @@ int RawWidget::fillTexture(const struct face_error *fe,
 
   n = fe->sample_freq;
   if (n == 0) { /* no samples, using no error value gray */
-    for (k=0,i=0; i<9; i++) {
-      texture[k++] = (GLubyte) (255*no_err_value);
-      texture[k++] = (GLubyte) (255*no_err_value);
-      texture[k++] = (GLubyte) (255*no_err_value);
-    }
+    texture[0] = (GLubyte) (255*no_err_value);
+    texture[1] = (GLubyte) (255*no_err_value);
+    texture[2] = (GLubyte) (255*no_err_value);
     return 1;
   } else {
     sz = 1<<ceil_log2(n);
@@ -246,7 +246,7 @@ void RawWidget::genErrorTextures() {
     tmps.sprintf("The OpenGL implementation does not support\n"
                  "the required texture size (%ix%i).\n"
                  "Using plain white color",max_n,max_n);
-    QMessageBox::warning(this,"OpenGL texture size exceeded",tmps);
+    QMessageBox::critical(this,"OpenGL texture size exceeded",tmps);
     for (i=0; i<model->mesh->num_faces; i++) {
       etex_sz[i] = 1; // avoid having divide by zero texture coords
     }
