@@ -1,4 +1,4 @@
-/* $Id: model_analysis.c,v 1.31 2002/04/03 09:30:47 aspert Exp $ */
+/* $Id: model_analysis.c,v 1.32 2002/04/09 12:44:04 dsanta Exp $ */
 
 
 /*
@@ -503,19 +503,23 @@ static struct adj_faces * find_adjacent_faces(const face_t *mfaces, int n_faces,
        * just before or just after in faces_at_vtx) and there is at most one
        * adjacent face on the edge f0-f1. */
       i = imax = faces_at_vtx->n_faces-1;
-      while (faces_at_vtx->face[i] != k) {
-        i--;
-        assert(i>=0); /* there is always a match */
-      }
-      adj_fidx = faces_at_vtx->face[(i > 0) ? i-1 : imax];
-      if (mfaces[adj_fidx].f0 == f1 || mfaces[adj_fidx].f1 == f1 ||
-          mfaces[adj_fidx].f2 == f1) { /* adjacent on f0-f1 */
-        add_adj_face(&aflist[k],0,adj_fidx);
-      } else { /* there can only be one adjacent */
-        adj_fidx = faces_at_vtx->face[(i < imax) ? i+1 : 0];
+      if (imax > 0) { /* k is not the only face on this vertex */
+        while (faces_at_vtx->face[i] != k) {
+          i--;
+          assert(i>=0); /* there is always a match */
+        }
+        adj_fidx = faces_at_vtx->face[(i > 0) ? i-1 : imax];
+        assert(k != adj_fidx);
         if (mfaces[adj_fidx].f0 == f1 || mfaces[adj_fidx].f1 == f1 ||
             mfaces[adj_fidx].f2 == f1) { /* adjacent on f0-f1 */
           add_adj_face(&aflist[k],0,adj_fidx);
+        } else { /* there can only be one adjacent */
+          adj_fidx = faces_at_vtx->face[(i < imax) ? i+1 : 0];
+          assert(k != adj_fidx);
+          if (mfaces[adj_fidx].f0 == f1 || mfaces[adj_fidx].f1 == f1 ||
+              mfaces[adj_fidx].f2 == f1) { /* adjacent on f0-f1 */
+            add_adj_face(&aflist[k],0,adj_fidx);
+          }
         }
       }
     } else { /* unordered faces_at_vtx => full scan */
@@ -536,19 +540,23 @@ static struct adj_faces * find_adjacent_faces(const face_t *mfaces, int n_faces,
        * just before or just after in faces_at_vtx) and there is at most one
        * adjacent face on the edge f1-f2. */
       i = imax = faces_at_vtx->n_faces-1;
-      while (faces_at_vtx->face[i] != k) {
-        i--;
-        assert(i>=0); /* there is always a match */
-      }
-      adj_fidx = faces_at_vtx->face[(i > 0) ? i-1 : imax];
-      if (mfaces[adj_fidx].f0 == f2 || mfaces[adj_fidx].f1 == f2 ||
-          mfaces[adj_fidx].f2 == f2) { /* adjacent on f1-f2 */
-        add_adj_face(&aflist[k],1,adj_fidx);
-      } else { /* there can only be one adjacent */
-        adj_fidx = faces_at_vtx->face[(i < imax) ? i+1 : 0];
+      if (imax > 0) { /* k is not the only face on this vertex */
+        while (faces_at_vtx->face[i] != k) {
+          i--;
+          assert(i>=0); /* there is always a match */
+        }
+        adj_fidx = faces_at_vtx->face[(i > 0) ? i-1 : imax];
+        assert(k != adj_fidx);
         if (mfaces[adj_fidx].f0 == f2 || mfaces[adj_fidx].f1 == f2 ||
             mfaces[adj_fidx].f2 == f2) { /* adjacent on f1-f2 */
           add_adj_face(&aflist[k],1,adj_fidx);
+        } else { /* there can only be one adjacent */
+          adj_fidx = faces_at_vtx->face[(i < imax) ? i+1 : 0];
+          assert(k != adj_fidx);
+          if (mfaces[adj_fidx].f0 == f2 || mfaces[adj_fidx].f1 == f2 ||
+              mfaces[adj_fidx].f2 == f2) { /* adjacent on f1-f2 */
+            add_adj_face(&aflist[k],1,adj_fidx);
+          }
         }
       }
     } else { /* unordered faces_at_vtx => full scan */
@@ -569,19 +577,23 @@ static struct adj_faces * find_adjacent_faces(const face_t *mfaces, int n_faces,
        * just before or just after in faces_at_vtx) and there is at most one
        * adjacent face on the edge f2-f0. */
       i = imax = faces_at_vtx->n_faces-1;
-      while (faces_at_vtx->face[i] != k) {
-        i--;
-        assert(i>=0); /* there is always a match */
-      }
-      adj_fidx = faces_at_vtx->face[(i > 0) ? i-1 : imax];
-      if (mfaces[adj_fidx].f0 == f0 || mfaces[adj_fidx].f1 == f0 ||
-          mfaces[adj_fidx].f2 == f0) { /* adjacent on f2-f0 */
-        add_adj_face(&aflist[k],2,adj_fidx);
-      } else { /* there can only be one adjacent */
-        adj_fidx = faces_at_vtx->face[(i < imax) ? i+1 : 0];
+      if (imax > 0) { /* k is not the only face on this vertex */
+        while (faces_at_vtx->face[i] != k) {
+          i--;
+          assert(i>=0); /* there is always a match */
+        }
+        adj_fidx = faces_at_vtx->face[(i > 0) ? i-1 : imax];
+        assert(k != adj_fidx);
         if (mfaces[adj_fidx].f0 == f0 || mfaces[adj_fidx].f1 == f0 ||
             mfaces[adj_fidx].f2 == f0) { /* adjacent on f2-f0 */
           add_adj_face(&aflist[k],2,adj_fidx);
+        } else { /* there can only be one adjacent */
+          adj_fidx = faces_at_vtx->face[(i < imax) ? i+1 : 0];
+          assert(k != adj_fidx);
+          if (mfaces[adj_fidx].f0 == f0 || mfaces[adj_fidx].f1 == f0 ||
+              mfaces[adj_fidx].f2 == f0) { /* adjacent on f2-f0 */
+            add_adj_face(&aflist[k],2,adj_fidx);
+          }
         }
       }
     } else { /* unordered faces_at_vtx => full scan */
@@ -760,6 +772,7 @@ static bmap_t * model_orientation(const face_t *mfaces, int n_faces,
                                             &cur.epos,&join_eidx)) >= 0) {
         /* still an adjacent face */
         assert(BMAP_ISSET(face_oriented,cur.fidx));
+        assert(next_fidx != cur.fidx);
         next_rev_of_fidx = get_orientation(&mfaces[next_fidx],
                                            &mfaces[cur.fidx],join_eidx);
         if (next_rev_of_fidx) minfo->oriented = 0;
