@@ -1,6 +1,7 @@
-/* $Id: InitWidget.cpp,v 1.23 2002/03/01 09:57:52 aspert Exp $ */
+/* $Id: InitWidget.cpp,v 1.24 2002/03/05 07:59:34 aspert Exp $ */
 
 #include <InitWidget.h>
+#include <meshIcon.xpm>
 #include <mesh.h>
 #include <qlabel.h>
 #include <qlayout.h>
