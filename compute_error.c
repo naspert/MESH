@@ -1,4 +1,4 @@
-/* $Id: compute_error.c,v 1.34 2001/08/17 09:00:42 dsanta Exp $ */
+/* $Id: compute_error.c,v 1.35 2001/08/17 15:31:32 dsanta Exp $ */
 
 #include <compute_error.h>
 
@@ -13,6 +13,14 @@
 
 /* If defined statistics for the dist_pt_surf() function are computed */
 /* #define DO_DIST_PT_SURF_STATS */
+
+/* Margin factor from DBL_MIN to consider a triangle side length too small and
+ * mark it as degenerate. */
+#define DMARGIN 1e10
+
+/* Maximum size of the grid in any direction (80 gives a maximum of 512000
+ * cells) */
+#define GRID_SZ_MAX 70
 
 /* Define inlining directive for C99 or as compiler specific C89 extension */
 #if defined(__GNUC__) /* GCC's interpretation is inverse of C99 */
@@ -90,10 +98,12 @@ struct triangle_list {
   double area;                     /* The total triangle area */
 };
 
-/* A triangle and useful associated information. If a vertex of the triangle
- * has an angle of 90 degrees or more, that vertex is C. That way the
- * projection of C on AB is always inside AB. */
+/* A triangle and useful associated information. AB is always the longest side
+ * of the triangle. That way the projection of C on AB is always inside AB. */
 struct triangle_info {
+  int is_degenerate;   /* Indicates if the triangle is degenerate. If 0 not
+                        * degenerate, if 1 degenerates to the AB segment, if 2
+                        * degenerates to a point. */
   vertex a;            /* The A vertex of the triangle */
   vertex b;            /* The B vertex of the triangle */
   vertex c;            /* The C vertex of the triangle. The projection of C
@@ -121,7 +131,7 @@ struct triangle_info {
                         * db_max_coord: 0 for X, 1 for Y, 2 for Z*/
   vertex normal;       /* The (unit length) normal of the ABC triangle
                         * (orinted with the right hand rule turning from AB to
-                        * AC). */
+                        * AC). If the triangle is degenerate it is (0,0,0). */
   double s_area;       /* The surface area of the triangle */
 };
 
@@ -214,53 +224,90 @@ static void init_triangle(const vertex *a, const vertex *b, const vertex *c,
                           struct triangle_info *t)
 {
   vertex ab,ac,bc;
+  double ab_len_sqr,ac_len_sqr,bc_len_sqr;
   vertex da,db;
   double dc_len_sqr;
 
+  t->is_degenerate = 0;
   /* Get the vertices in the proper ordering (the orientation is not
-   * changed). C should be the vertex with an angle of 90 degrees or more, if
-   * there is one. */
+   * changed). AB should be the longest side. */
   substract_v(b,a,&ab);
   substract_v(c,a,&ac);
   substract_v(c,b,&bc);
-  if (scalprod_v(&ab,&ac) <= 0) { /* A has angle of 90 or more => A to C */
-    t->c = *a;
-    t->a = *b;
-    t->b = *c;
-    t->ab = bc;
-    neg_v(&ab,&(t->ac));
-    neg_v(&ac,&(t->bc));
-  } else {
-    if (scalprod_v(&ab,&bc) >= 0) { /* B has angle of 90 or more => B to C */
+  ab_len_sqr = norm2_v(&(t->ab));
+  ac_len_sqr = norm2_v(&(t->ac));
+  bc_len_sqr = norm2_v(&(t->bc));
+  if (ab_len_sqr <= ac_len_sqr) {
+    if (ac_len_sqr <= bc_len_sqr) { /* BC longest side => A to C */
+      t->c = *a;
+      t->a = *b;
+      t->b = *c;
+      t->ab = bc;
+      neg_v(&ab,&(t->ac));
+      neg_v(&ac,&(t->bc));
+      t->ab_len_sqr = bc_len_sqr;
+      t->ac_len_sqr = ab_len_sqr;
+      t->bc_len_sqr = ac_len_sqr;
+    } else { /* AC longest side => B to C */
       t->b = *a;
       t->c = *b;
       t->a = *c;
       neg_v(&ac,&(t->ab));
       neg_v(&bc,&(t->ac));
       t->bc = ab;
-    } else { /* no modifications needed, C can remain C */
+      t->ab_len_sqr = ac_len_sqr;
+      t->ac_len_sqr = bc_len_sqr;
+      t->bc_len_sqr = ab_len_sqr;
+    }
+  } else {
+    if (ab_len_sqr <= ac_len_sqr) { /* AC longest side => B to C */
+      t->b = *a;
+      t->c = *b;
+      t->a = *c;
+      neg_v(&ac,&(t->ab));
+      neg_v(&bc,&(t->ac));
+      t->bc = ab;
+      t->ab_len_sqr = ac_len_sqr;
+      t->ac_len_sqr = bc_len_sqr;
+      t->bc_len_sqr = ab_len_sqr;
+    } else { /* AB longest side => C remains C */
       t->a = *a;
       t->b = *b;
       t->c = *c;
       t->ab = ab;
       t->ac = ac;
       t->bc = bc;
+      t->ab_len_sqr = ab_len_sqr;
+      t->ac_len_sqr = ac_len_sqr;
+      t->bc_len_sqr = bc_len_sqr;
     }
   }
+  if (t->ab_len_sqr < DBL_MIN*DMARGIN) {
+    t->is_degenerate = 2; /* ABC coincident => degenerates to a point */
+  }
   /* Get side lengths */
-  t->ab_len_sqr = norm2_v(&(t->ab));
-  t->ac_len_sqr = norm2_v(&(t->ac));
-  t->bc_len_sqr = norm2_v(&(t->bc));
   t->ab_1_len_sqr = 1/t->ab_len_sqr;
   t->ac_1_len_sqr = 1/t->ac_len_sqr;
   t->bc_1_len_sqr = 1/t->bc_len_sqr;
   /* Get D, projection of C on AB */
-  prod_v(-scalprod_v(&(t->ac),&(t->ab))*t->ab_1_len_sqr,&(t->ab),&da);
-  substract_v(&(t->a),&da,&(t->d));
-  add_v(&da,&(t->ab),&db);
-  add_v(&da,&(t->ac),&(t->dc));
+  if (t->is_degenerate != 2) { /* normal case, A != B */
+    prod_v(-scalprod_v(&(t->ac),&(t->ab))*t->ab_1_len_sqr,&(t->ab),&da);
+    substract_v(&(t->a),&da,&(t->d));
+    add_v(&da,&(t->ab),&db);
+    add_v(&da,&(t->ac),&(t->dc));
+  } else { /* degenerate, A == B, set D = A */
+    t->d = t->a;
+    da.x = 0;
+    da.y = 0;
+    da.z = 0;
+    db = t->ab;
+    t->dc = t->ac;
+  }
   /* Get the D relative lengths */
   dc_len_sqr = norm2_v(&(t->dc));
+  if (dc_len_sqr < DBL_MIN*DMARGIN) {
+    t->is_degenerate = 1; /* C is on AB => degenerates to a line */
+  }
   t->dc_1_len_sqr = 1/dc_len_sqr;
   /* Get max coords of DA and DB */
   if (fabs(da.x) > fabs(da.y)) {
@@ -298,8 +345,14 @@ static void init_triangle(const vertex *a, const vertex *b, const vertex *c,
     }
   }
   /* Get the triangle normal (normalized) */
-  crossprod_v(&(t->ab),&(t->ac),&(t->normal));
-  normalize_v(&(t->normal));
+  if (!t->is_degenerate) {
+    crossprod_v(&(t->ab),&(t->ac),&(t->normal));
+    normalize_v(&(t->normal));
+  } else {
+    t->normal.x = 0;
+    t->normal.y = 0;
+    t->normal.z = 0;
+  }
   /* Get surface area */
   t->s_area = sqrt(t->ab_len_sqr*dc_len_sqr)/2;
 }
@@ -316,10 +369,31 @@ static double dist_sqr_pt_triag(const struct triangle_info *t, const vertex *p)
   double res[3];          /* residue of AQ, parallel to AB */
   vertex dq,ap,bp,cp;     /* Point to point vectors */
   double dmin_sqr;        /* minimum distance squared */
-  
-  /* Get Q: projection of point on ABC plane */
+
   substract_v(p,&(t->a),&ap);
 
+  /* Handle special cases first */
+  if (t->is_degenerate) {
+    if (t->is_degenerate == 2) { /* triangle degenerates to a point */
+      return norm2_v(&ap);
+    } else { /* triangle degenerates to AB segment */
+      ap_ab = scalprod_v(&ap,&(t->ab));
+      if(ap_ab > 0) {
+        if (ap_ab < t->ab_len_sqr) { /* projection of P on AB is in AB */
+          dmin_sqr = norm2_v(&ap) - (ap_ab*ap_ab)*t->ab_1_len_sqr;
+          if (dmin_sqr < 0) dmin_sqr = 0; /* correct rounding problems */
+        } else { /* B is closer */
+          substract_v(p,&(t->b),&bp);
+          dmin_sqr = norm2_v(&bp);
+        }
+      } else { /* A is closer */
+        dmin_sqr = norm2_v(&ap);
+      }
+      return dmin_sqr;
+    }
+  }
+  
+  /* Get Q: projection of point on ABC plane. */
   dpp = scalprod_v(&(t->normal),&ap); /* signed distance from p to ABC plane */
   prod_v(dpp,&(t->normal),&q);
   substract_v(p,&q,&q);
@@ -951,6 +1025,7 @@ void dist_surf_surf(const model *m1, model *m2, int n_spt,
   struct triag_sample_error tse; /* the errors at the triangle samples */
   int i,k,kmax;               /* counters and loop limits */
   double cell_sz;             /* side length of the cubic cells */
+  double f_gsz_x,f_gsz_y,f_gsz_z; /* floating-point grid size */
   struct size3d grid_sz;      /* number of cells in the X, Y and Z directions */
   struct face_error *fe;      /* The error metrics for each face of m1 */
   int report_step;            /* The step to update the progress report */
@@ -974,9 +1049,43 @@ void dist_surf_surf(const model *m1, model *m2, int n_spt,
    * triangle surface of m2. The cubic cell side is then CELL_TRIAG_RATIO
    * times that. */
   cell_sz = CELL_TRIAG_RATIO*sqrt(tl2->area/tl2->n_triangles*2/sqrt(3));
-  grid_sz.x = (int) ceil((bbox2_max.x-bbox2_min.x)/cell_sz);
-  grid_sz.y = (int) ceil((bbox2_max.y-bbox2_min.y)/cell_sz);
-  grid_sz.z = (int) ceil((bbox2_max.z-bbox2_min.z)/cell_sz);
+  if (cell_sz < DBL_MIN*DMARGIN) { /* Avoid division by zero with cell_sz */
+    cell_sz = DBL_MIN*DMARGIN;
+  } else if (cell_sz >= DBL_MAX/DMARGIN) {
+    fprintf(stderr,"ERROR: coordinate overflow. Are models OK?\n");
+    exit(1);
+  }
+  /* Watch out for overflowing values */
+  f_gsz_x = ceil((bbox2_max.x-bbox2_min.x)/cell_sz);
+  f_gsz_y = ceil((bbox2_max.y-bbox2_min.y)/cell_sz);
+  f_gsz_z = ceil((bbox2_max.z-bbox2_min.z)/cell_sz);
+  if (f_gsz_x >= GRID_SZ_MAX || f_gsz_y >= GRID_SZ_MAX ||
+      f_gsz_z >= GRID_SZ_MAX) {
+    if (bbox2_max.x-bbox2_min.x >= bbox2_max.y-bbox2_min.y) {
+      if (bbox2_max.z-bbox2_min.z >= bbox2_max.x-bbox2_min.x) { /* Z largest */
+        cell_sz = (bbox2_max.z-bbox2_min.z)/GRID_SZ_MAX;
+      } else { /* X largest */
+        cell_sz = (bbox2_max.x-bbox2_min.x)/GRID_SZ_MAX;
+      }
+    } else {
+      if (bbox2_max.z-bbox2_min.z >= bbox2_max.y-bbox2_min.y) { /* Z largest */
+        cell_sz = (bbox2_max.z-bbox2_min.z)/GRID_SZ_MAX;
+      } else { /* Y largest */
+        cell_sz = (bbox2_max.y-bbox2_min.y)/GRID_SZ_MAX;
+      }
+    }
+    grid_sz.x = (int) ceil((bbox2_max.x-bbox2_min.x)/cell_sz);
+    grid_sz.y = (int) ceil((bbox2_max.y-bbox2_min.y)/cell_sz);
+    grid_sz.z = (int) ceil((bbox2_max.z-bbox2_min.z)/cell_sz);
+  } else {
+    grid_sz.x = (int) f_gsz_x;
+    grid_sz.y = (int) f_gsz_y;
+    grid_sz.z = (int) f_gsz_z;
+  }
+  /* Watch out for underflow */
+  if (grid_sz.x == 0) grid_sz.x = 1;
+  if (grid_sz.y == 0) grid_sz.y = 1;
+  if (grid_sz.z == 0) grid_sz.z = 1;
 
   /* Get the list of triangles in each cell */
   fic = triangles_in_cells(tl2,grid_sz,cell_sz,bbox2_min);
