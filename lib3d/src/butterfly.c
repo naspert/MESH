@@ -1,20 +1,20 @@
-/* $Id: butterfly.c,v 1.3 2001/09/24 11:59:28 aspert Exp $ */
+/* $Id: butterfly.c,v 1.4 2001/09/27 12:53:40 aspert Exp $ */
 #include <3dutils.h>
 
 /* v0 & v1 are the indices in rings[center].ord_vert */
-vertex compute_midpoint(ring_info *rings, int center,  int v1, 
-			model *raw_model) {
+vertex_t compute_midpoint(struct ring_info *rings, int center,  int v1, 
+			struct model *raw_model) {
   double *s, *t;
   double qt=0.0, qs=0.0;
-  double w=1.0/16.0; /* This is a parameter for Butterfly subdivision */
+  double w=-1.0/16.0; /* This is a parameter for Butterfly subdivision */
   int j;
-  vertex p, r;
+  vertex_t p, r;
   int n = rings[center].size;
-  ring_info ring = rings[center];
+  struct ring_info ring = rings[center];
   int center2 = ring.ord_vert[v1];
-  ring_info ring_op = rings[center2]; /* center of opp ring */
+  struct ring_info ring_op = rings[center2]; /* center of opp ring */
   int m = ring_op.size; /* size of opp. ring */
-  int v2 = 0; /* index of center vertex in opp. ring */
+  int v2 = 0; /* index of center vertex_t in opp. ring */
 
 #ifdef _BOUNDARY_SUBDIV_DEBUG
   printf("Subdiv edge %d %d\n", center, center2);
@@ -39,7 +39,7 @@ vertex compute_midpoint(ring_info *rings, int center,  int v1,
     s = (double*)malloc(n*sizeof(double));
     t = (double*)malloc(m*sizeof(double));
 
-    /* Compute values of stencil for end-vertex */
+    /* Compute values of stencil for end-vertex_t */
     if (m > 4) {
       for (j=0; j<m; j++) {
  	t[j] = (0.25 + cos(2*M_PI*j/(double)m) + 
@@ -61,7 +61,7 @@ vertex compute_midpoint(ring_info *rings, int center,  int v1,
     }
 
 
-    /* Compute values of stencil for center vertex */
+    /* Compute values of stencil for center vertex_t */
     if (n > 4) {
       for (j=0; j<n; j++) {
 	s[j] = (0.25 + cos(2*M_PI*j/(double)n) + 
@@ -90,7 +90,7 @@ vertex compute_midpoint(ring_info *rings, int center,  int v1,
     r.y = 0.0;
     r.z = 0.0;
 
-    /* Apply stencil to 1st vertex */
+    /* Apply stencil to 1st vertex_t */
     for (j=0; j<n; j++) {
       add_prod_v(s[j], &(raw_model->vertices[ring.ord_vert[(v1+j)%n]]), &p, 
 		 &p);
@@ -109,7 +109,7 @@ vertex compute_midpoint(ring_info *rings, int center,  int v1,
 
 
     
-    /* Apply stencil to end vertex */
+    /* Apply stencil to end vertex_t */
     for (j=0; j<m; j++) 
       add_prod_v(t[j], &(raw_model->vertices[ring_op.ord_vert[(v2+j)%m]]), 
 		 &r, &r);
@@ -147,7 +147,7 @@ vertex compute_midpoint(ring_info *rings, int center,  int v1,
     r.y = 0.0;
     r.z = 0.0;
 
-    /* Apply stencil to 1st vertex */
+    /* Apply stencil to 1st vertex_t */
     for (j=0; j<6; j++) 
       add_prod_v(s[j], &(raw_model->vertices[ring.ord_vert[(v1+j)%6]]), &p, 
 		 &p);
@@ -155,7 +155,7 @@ vertex compute_midpoint(ring_info *rings, int center,  int v1,
     add_prod_v(qs, &(raw_model->vertices[center]), &p, &p);
 
 
-    /* Apply stencil to end vertex */
+    /* Apply stencil to end vertex_t */
     for (j=0; j<6; j++) 
       add_prod_v(s[j], &(raw_model->vertices[ring_op.ord_vert[(v2+j)%6]]), &p, 
 		 &p);
@@ -168,7 +168,7 @@ vertex compute_midpoint(ring_info *rings, int center,  int v1,
 
     free(s);
   }
-  else if (n!=6 && m==6){ /* only one irreg. vertex */
+  else if (n!=6 && m==6){ /* only one irreg. vertex_t */
     s = (double*)malloc(n*sizeof(double));
     if (n > 4) {
       for (j=0; j<n; j++) {
@@ -245,11 +245,11 @@ vertex compute_midpoint(ring_info *rings, int center,  int v1,
 }
 
 
-vertex reg_interior_crease_sub(ring_info *rings, int center, int v1, 
-			       int center2, model *raw_model) {
+vertex_t reg_interior_crease_sub(struct ring_info *rings, int center, int v1, 
+			       int center2, struct model *raw_model) {
 
-  vertex p;
-  ring_info ring=rings[center], ring_op=rings[center2];
+  vertex_t p;
+  struct ring_info ring=rings[center], ring_op=rings[center2];
   int i;
 
 
@@ -362,12 +362,13 @@ vertex reg_interior_crease_sub(ring_info *rings, int center, int v1,
 
 }
 
-vertex four_point_subdiv(ring_info *rings, int center, int v1, int center2,
-			 int v2, model *raw_model) {
-  vertex p;
+vertex_t four_point_subdiv(struct ring_info *rings, int center, 
+			   int v1, int center2,
+			   int v2, struct model *raw_model) {
+  vertex_t p;
   double a=-1.0/16.0, b=9.0/16.0;
   int p0, p1, p2, p3;
-  ring_info ring=rings[center], ring_op=rings[center2];
+  struct ring_info ring=rings[center], ring_op=rings[center2];
   int n=ring.size, m=ring_op.size;
 
   p1 = center;
@@ -402,10 +403,11 @@ vertex four_point_subdiv(ring_info *rings, int center, int v1, int center2,
   return p;
 }
 
-vertex extr_crease_sub(ring_info ring, int center, int v1, model *raw_model) {
+vertex_t extr_crease_sub(struct ring_info ring, int center, int v1, 
+			 struct model *raw_model) {
  double  *ci, c0, thk;
  int n=ring.size, j;
- vertex p;
+ vertex_t p;
 
 #ifdef BOUNDARY_SUBDIV_DEBUG
  double sum=0.0;
@@ -464,15 +466,15 @@ vertex extr_crease_sub(ring_info ring, int center, int v1, model *raw_model) {
  
 }
 
-vertex compute_midpoint_boundary(ring_info *rings, int center, int v1, 
-				 model *raw_model) {
+vertex_t compute_midpoint_boundary(struct ring_info *rings, int center, 
+				   int v1, struct model *raw_model) {
 
-  ring_info ring=rings[center];
+  struct ring_info ring=rings[center];
   int center2=ring.ord_vert[v1];
-  ring_info ring_op=rings[center2]; /* center of opp. ring */
+  struct ring_info ring_op=rings[center2]; /* center of opp. ring */
   int n=ring.size, m=ring_op.size; /* size of opp. ring */
-  int v2 = 0; /* index of center vertex in opp. ring */
-  vertex p, p2;
+  int v2 = 0; /* index of center vertex_t in opp. ring */
+  vertex_t p, p2;
   int old_size=-1;
 
   /* find the edge in the opp. ring */
@@ -493,12 +495,12 @@ vertex compute_midpoint_boundary(ring_info *rings, int center, int v1,
     return four_point_subdiv(rings, center, v1, center2, v2, raw_model);
 
   } else {				      
-    if (ring.type == 0) { /* the current vertex is regular */
-  /* as a consequence (see test in 'subdiv'), 'center2' is a boundary vertex */
+    if (ring.type == 0) { /* the current vertex_t is regular */
+  /* as a consequence (see test in 'subdiv'), 'center2' is a boundary vertex_t */
       if (ring.size == 6) {
-	/* the non-boundary vertex is regular */
+	/* the non-boundary vertex_t is regular */
 	if (ring_op.size == 4) {
-	  /* the boundary vertex is also regular i.e. valence=4 */
+	  /* the boundary vertex_t is also regular i.e. valence=4 */
 	  
 	  /* **************************************** */
 	  /* apply the 'regular interior-crease' rule */
@@ -509,7 +511,7 @@ vertex compute_midpoint_boundary(ring_info *rings, int center, int v1,
 	  return reg_interior_crease_sub(rings, center, v1, center2, 
 					 raw_model);
 	} else {
-	  /* the boundary vertex 'center2' is extr. */
+	  /* the boundary vertex_t 'center2' is extr. */
 	  
 	  /* ************************************* */
 	  /* apply the 'extraordinary crease' rule */
@@ -520,9 +522,9 @@ vertex compute_midpoint_boundary(ring_info *rings, int center, int v1,
 	  return extr_crease_sub(ring_op, center2, v2, raw_model);
 	}
       } else {
-	/* the non-boundary vertex is extr. */
+	/* the non-boundary vertex_t is extr. */
 	if (ring_op.size == 4) {
-	  /* the boundary vertex regular */
+	  /* the boundary vertex_t regular */
 	  
 	  /* *************************************** */
 	  /* apply the 'interior extraordinary' rule */
@@ -543,7 +545,7 @@ vertex compute_midpoint_boundary(ring_info *rings, int center, int v1,
 	  ring_op = rings[center2];
 	  return p;
 	} else {
-	  /* the boundary vertex is also extr. */
+	  /* the boundary vertex_t is also extr. */
 	  
 	  /* ********************************************************** */
 	  /* apply the average of 'extr. int.' and 'extr. crease' rules */
@@ -578,7 +580,7 @@ vertex compute_midpoint_boundary(ring_info *rings, int center, int v1,
     } else if (ring_op.type == 0) { 
       /* 'center' is regular but 'center2' is not */
       if (ring_op.size == 6) {
-	/* the non-boundary vertex is regular */
+	/* the non-boundary vertex_t is regular */
 	if (ring.size == 4) {
 	  
 	  /* **************************************** */
@@ -602,7 +604,7 @@ vertex compute_midpoint_boundary(ring_info *rings, int center, int v1,
 	}
 	
       } else {
-	/* the non-boundary vertex is extr. */
+	/* the non-boundary vertex_t is extr. */
 	if (ring.size == 4) {
 	  
 	  /* *************************************** */
@@ -699,32 +701,33 @@ vertex compute_midpoint_boundary(ring_info *rings, int center, int v1,
   
 }
 
-model* subdiv(model *raw_model) {
-  ring_info *rings;
-  model *subdiv_model;
+struct model* subdiv(struct model *raw_model) {
+  struct ring_info *rings;
+  struct model *subdiv_model;
   int i, j, k;
   int v0, v1, v2;
   int u0=-1, u1=-1, u2=-1;
-  edge_v edge;
-  vertex p;
-  edge_sub *edge_list=NULL;
+  struct edge_v edge;
+  vertex_t p;
+  struct edge_sub *edge_list=NULL;
   int nedges=0;
   int vert_idx = raw_model->num_vert;
   int face_idx = 0;
   int *done, *midpoint_idx;
 
-  rings = (ring_info*)malloc(raw_model->num_vert*sizeof(ring_info));
+  rings = (struct ring_info*)
+    malloc(raw_model->num_vert*sizeof(struct ring_info));
   
   for (i=0; i<raw_model->num_vert; i++) {
     build_star(raw_model, i, &(rings[i]));
 #ifdef SUBDIV_DEBUG
-    printf("Vertex %d : star_size = %d\n", i, rings[i].size);
+    printf("Vertex_T %d : star_size = %d\n", i, rings[i].size);
     for (j=0; j<rings[i].size; j++)
       printf("number %d : %d\n", j, rings[i].ord_vert[j]);
 #endif
 /*     if (rings[i].type == 1) { */
 /*       free(rings); */
-/*       printf("Boundary vertex %d unsupported\n", i); */
+/*       printf("Boundary vertex_t %d unsupported\n", i); */
 /*       return NULL; */
 /*     } */
   }
@@ -732,7 +735,7 @@ model* subdiv(model *raw_model) {
 #ifdef SUBDIV_DEBUG
   for (i=0; i<raw_model->num_vert; i++) {
     for (j=0; j<rings[i].size; j++)
-      printf("Vertex %d : type(ring[%d]) = %d %d\n", i, rings[i].ord_vert[j],
+      printf("Vertex_T %d : type(ring[%d]) = %d %d\n", i, rings[i].ord_vert[j],
 	     rings[rings[i].ord_vert[j]].type, rings[i].type);
   }
 #endif
@@ -745,7 +748,8 @@ model* subdiv(model *raw_model) {
 	/* fully regular edge */
 	p = compute_midpoint(rings, i, j, raw_model);
 	nedges ++;
-	edge_list = (edge_sub*)realloc(edge_list, nedges*sizeof(edge_sub));
+	edge_list = (struct edge_sub*)realloc(edge_list, 
+					      nedges*sizeof(struct edge_sub));
 	edge_list[nedges-1].edge.v0 = i;
 	edge_list[nedges-1].edge.v1 = rings[i].ord_vert[j];
 	edge_list[nedges-1].p = p;
@@ -755,7 +759,8 @@ model* subdiv(model *raw_model) {
 	/* Test whether it is a boundary or not */
 	p = compute_midpoint_boundary(rings, i, j, raw_model);
 	nedges ++;
-	edge_list = (edge_sub*)realloc(edge_list, nedges*sizeof(edge_sub));
+	edge_list = (struct edge_sub*)realloc(edge_list, 
+					      nedges*sizeof(struct edge_sub));
 	edge_list[nedges-1].edge.v0 = i;
 	edge_list[nedges-1].edge.v1 = rings[i].ord_vert[j];
 	edge_list[nedges-1].p = p;
@@ -775,15 +780,16 @@ model* subdiv(model *raw_model) {
   
   printf("%d edges found in model \n", nedges);
 
-  subdiv_model = (model*)malloc(sizeof(model));
+  subdiv_model = (struct model*)malloc(sizeof(struct model));
   subdiv_model->num_vert = raw_model->num_vert + nedges;
   subdiv_model->num_faces = 4*raw_model->num_faces;
-  subdiv_model->faces = (face*)malloc(subdiv_model->num_faces*sizeof(face));
+  subdiv_model->faces = (face_t*)
+    malloc(subdiv_model->num_faces*sizeof(face_t));
   subdiv_model->vertices = 
-    (vertex*)malloc(subdiv_model->num_vert*sizeof(vertex));
+    (vertex_t*)malloc(subdiv_model->num_vert*sizeof(vertex_t));
 
   memcpy(subdiv_model->vertices, raw_model->vertices, 
-	 raw_model->num_vert*sizeof(vertex));
+	 raw_model->num_vert*sizeof(vertex_t));
 
   
   done = (int*)calloc(nedges, sizeof(int));
@@ -897,7 +903,7 @@ model* subdiv(model *raw_model) {
 }
 
 int main(int argc, char **argv) {
-  model *raw_model, *sub_model;
+  struct model *raw_model, *sub_model;
   char *in_filename;
   char *out_filename;
 

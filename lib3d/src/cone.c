@@ -1,11 +1,11 @@
-/* $Id: cone.c,v 1.1 2001/09/12 13:42:45 aspert Exp $ */
+/* $Id: cone.c,v 1.2 2001/09/27 12:53:41 aspert Exp $ */
 #include <3dutils.h>
 
 int main(int argc, char **argv) {
   int valence, i, fcount=0;
   double h, step, th=0.0;
   char *out_fname;
-  model *cone;
+  struct model *cone;
 
   if (argc != 4) {
     fprintf(stderr, "Usage: cone height valence outfile\n");
@@ -16,11 +16,11 @@ int main(int argc, char **argv) {
   valence = atoi(argv[2]);
   out_fname = argv[3];
   
-  cone = (model*)malloc(sizeof(model));
+  cone = (struct model*)malloc(sizeof(struct model));
   cone->num_vert = valence + 2;
-  cone->vertices = (vertex*)malloc(cone->num_vert*sizeof(vertex));
+  cone->vertices = (vertex_t*)malloc(cone->num_vert*sizeof(vertex_t));
   cone->num_faces = 2*valence;
-  cone->faces = (face*)malloc(cone->num_faces*sizeof(face));
+  cone->faces = (face_t*)malloc(cone->num_faces*sizeof(face_t));
 
   cone->vertices[0].x = 0.0;
   cone->vertices[0].y = 0.0;

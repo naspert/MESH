@@ -1,12 +1,12 @@
-/* $Id: loop.c,v 1.2 2001/09/24 11:59:27 aspert Exp $ */
+/* $Id: loop.c,v 1.3 2001/09/27 12:53:41 aspert Exp $ */
 #include <3dutils.h>
 
 
-vertex compute_midpoint(ring_info *rings, int center, int v1, 
-			model *raw_model) {
+vertex_t compute_midpoint(struct ring_info *rings, int center, int v1, 
+			  struct model *raw_model) {
 
-  vertex np, tmp;
-  ring_info ring = rings[center];
+  vertex_t np, tmp;
+  struct ring_info ring = rings[center];
   int center2 = ring.ord_vert[v1];
   int n = rings[center].size;
   int p0, p1;
@@ -30,11 +30,11 @@ vertex compute_midpoint(ring_info *rings, int center, int v1,
   return np;
 }
 
-void update_old_vertices(model *or_model, model *subdiv_model, 
-			 ring_info *rings) {
+void update_old_vertices(struct model *or_model, struct model *subdiv_model, 
+			 struct ring_info *rings) {
   int i, j, v, n;
   double beta;
-  vertex tmp;
+  vertex_t tmp;
   for (i=0; i<or_model->num_vert; i++) {
     n = rings[i].size;
  
@@ -54,36 +54,37 @@ void update_old_vertices(model *or_model, model *subdiv_model,
 
 }
 
-model* subdiv(model *raw_model, edge_sub **edge_list_ptr, 
+struct model* subdiv(struct model *raw_model, struct edge_sub **edge_list_ptr, 
 	      int **midpoint_idx_ptr, int *num_edges) {
-  ring_info *rings;
-  model *subdiv_model;
+  struct ring_info *rings;
+  struct model *subdiv_model;
   int i, j;
   int v0, v1, v2;
   int u0=-1, u1=-1, u2=-1;
-  edge_v edge;
-  vertex p;
-  edge_sub *edge_list=NULL; 
+  struct edge_v edge;
+  vertex_t p;
+  struct edge_sub *edge_list=NULL; 
   int nedges = 0;
   int vert_idx = raw_model->num_vert;
   int face_idx = 0;
   int *done; /* *midpoint_idx; */
   int *midpoint_idx;
 
-  rings = (ring_info*)malloc(raw_model->num_vert*sizeof(ring_info));
+  rings = (struct ring_info*)
+    malloc(raw_model->num_vert*sizeof(struct ring_info));
   
   for (i=0; i<raw_model->num_vert; i++) {
     build_star(raw_model, i, &(rings[i]));
 
 #ifdef _DEBUG
-    printf("Vertex %d : star_size = %d\n", i, rings[i].size);
+    printf("Vertex_T %d : star_size = %d\n", i, rings[i].size);
     for (j=0; j<rings[i].size; j++)
       printf("number %d : %d\n", j, rings[i].ord_vert[j]);
 #endif
 
     if (rings[i].type == 1) {
       free(rings);
-      printf("Boundary vertex unsupported\n");
+      printf("Boundary vertex_t unsupported\n");
       return NULL;
     }
   }
@@ -95,7 +96,8 @@ model* subdiv(model *raw_model, edge_sub **edge_list_ptr,
 	continue; 
       p = compute_midpoint(rings, i, j, raw_model);
       nedges ++;
-      edge_list = (edge_sub*)realloc(edge_list, nedges*sizeof(edge_sub));
+      edge_list = (struct edge_sub*)realloc(edge_list, 
+					    nedges*sizeof(struct edge_sub));
 
 #ifdef _DEBUG
       printf("i=%d j=%d  rings[%d].ord_vert[%d]=%d\n",i,j, 
@@ -126,12 +128,13 @@ model* subdiv(model *raw_model, edge_sub **edge_list_ptr,
 
   printf("%d edges found in model \n", nedges);
 
-  subdiv_model = (model*)malloc(sizeof(model));
+  subdiv_model = (struct model*)malloc(sizeof(struct model));
   subdiv_model->num_vert = raw_model->num_vert + nedges;
   subdiv_model->num_faces = 4*raw_model->num_faces;
-  subdiv_model->faces = (face*)malloc(subdiv_model->num_faces*sizeof(face));
+  subdiv_model->faces = (face_t*)
+    malloc(subdiv_model->num_faces*sizeof(face_t));
   subdiv_model->vertices = 
-    (vertex*)malloc(subdiv_model->num_vert*sizeof(vertex));
+    (vertex_t*)malloc(subdiv_model->num_vert*sizeof(vertex_t));
 
   
   update_old_vertices(raw_model, subdiv_model, rings);
@@ -253,10 +256,10 @@ model* subdiv(model *raw_model, edge_sub **edge_list_ptr,
 
 int main(int argc, char **argv) {
   char *infile, *outfile;
-  model *or_model, *sub_model;
-  info_vertex* tmp_vert;
+  struct model *or_model, *sub_model;
+  struct info_vertex* tmp_vert;
   int *midpoint_idx,  num_edges;
-  edge_sub *edge_list;
+  struct edge_sub *edge_list;
 
 
 
@@ -270,7 +273,8 @@ int main(int argc, char **argv) {
 
   or_model = read_raw_model(infile);
   if (or_model->normals == NULL) {
-    tmp_vert = (info_vertex*)malloc(or_model->num_vert*sizeof(info_vertex));
+    tmp_vert = (struct info_vertex*)
+      malloc(or_model->num_vert*sizeof(struct info_vertex));
     or_model->area = (double*)malloc(or_model->num_faces*sizeof(double));
     or_model->face_normals = compute_face_normals(or_model, tmp_vert);
     compute_vertex_normal(or_model, tmp_vert, or_model->face_normals);
@@ -289,7 +293,7 @@ int main(int argc, char **argv) {
  
 
 #ifdef COMP_SUB_NORMALS
-  tmp_vert = (info_vertex*)malloc(sub_model->num_vert*sizeof(info_vertex));
+  tmp_vert = (info_vertex_t*)malloc(sub_model->num_vert*sizeof(info_vertex_t));
   sub_model->area = (double*)malloc(sub_model->num_faces*sizeof(double));
   sub_model->face_normals = compute_face_normals(sub_model, tmp_vert);
   compute_vertex_normal(sub_model, tmp_vert, sub_model->face_normals);

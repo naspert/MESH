@@ -1,35 +1,33 @@
-/* $Id: isoca.c,v 1.1 2001/09/24 11:43:48 aspert Exp $ */
+/* $Id: isoca.c,v 1.2 2001/09/27 12:53:41 aspert Exp $ */
 #include <3dutils.h>
 
 
-int test_vertex(model *raw_model, vertex v) {
+int test_vertex(struct model *raw_model, vertex_t v) {
   int i;
-  vertex tmp;
+  vertex_t tmp;
 
   for (i=0; i<raw_model->num_vert; i++) {
-    tmp.x = raw_model->vertices[i].x - v.x;
-    tmp.y = raw_model->vertices[i].y - v.y;
-    tmp.z = raw_model->vertices[i].z - v.z;
+    substract_v(&(raw_model->vertices[i]), &v, &tmp);
     if (fabs(norm(tmp))<1e-6)
       return i;
   }
   return -1;
 }
 
-model* subdiv(model *raw_model) {
+struct model* subdiv(struct model *raw_model) {
   int nfaces = 0; 
   int i;
-  model *subd;
-  vertex tmp1, tmp2, tmp3;
+  struct model *subd;
+  vertex_t tmp1, tmp2, tmp3;
   int new1, new2, new3;
-  double tmp_norm;
 
-  subd = (model*)malloc(sizeof(model));
+
+  subd = (struct model*)malloc(sizeof(struct model));
   subd->num_faces = 4*raw_model->num_faces;
-  subd->faces = (face*)malloc(subd->num_faces*sizeof(face));
-  subd->vertices = (vertex*)malloc(raw_model->num_vert*sizeof(vertex));
+  subd->faces = (face_t*)malloc(subd->num_faces*sizeof(face_t));
+  subd->vertices = (vertex_t*)malloc(raw_model->num_vert*sizeof(vertex_t));
   memcpy(subd->vertices, raw_model->vertices, 
-	 raw_model->num_vert*sizeof(vertex));
+	 raw_model->num_vert*sizeof(vertex_t));
   
   subd->num_vert = raw_model->num_vert;
   
@@ -46,7 +44,7 @@ model* subdiv(model *raw_model) {
     new1 = test_vertex(subd, tmp3);
     if (new1 == -1) {/* New vertex in the model */
       subd->vertices = realloc(subd->vertices, 
-			       (subd->num_vert+1)*sizeof(vertex));
+			       (subd->num_vert+1)*sizeof(vertex_t));
      
       subd->vertices[subd->num_vert].x = tmp3.x;
       subd->vertices[subd->num_vert].y = tmp3.y;
@@ -68,7 +66,7 @@ model* subdiv(model *raw_model) {
     new2 = test_vertex(subd, tmp3);
     if (new2 == -1) {/* New vertex in the model */
       subd->vertices = realloc(subd->vertices, 
-			       (subd->num_vert+1)*sizeof(vertex));
+			       (subd->num_vert+1)*sizeof(vertex_t));
       subd->vertices[subd->num_vert].x = tmp3.x;
       subd->vertices[subd->num_vert].y = tmp3.y;
       subd->vertices[subd->num_vert].z = tmp3.z;
@@ -88,7 +86,7 @@ model* subdiv(model *raw_model) {
     new3 = test_vertex(subd, tmp3);
     if (new3 == -1) {/* New vertex in the model */
       subd->vertices = realloc(subd->vertices, 
-			       (subd->num_vert+1)*sizeof(vertex));
+			       (subd->num_vert+1)*sizeof(vertex_t));
       subd->vertices[subd->num_vert].x = tmp3.x;
       subd->vertices[subd->num_vert].y = tmp3.y;
       subd->vertices[subd->num_vert].z = tmp3.z;
@@ -117,12 +115,9 @@ model* subdiv(model *raw_model) {
     nfaces++;
   }
   
-  for (i=raw_model->num_vert; i<subd->num_vert; i++) {
-    tmp_norm = norm(subd->vertices[i]);
-    subd->vertices[i].x /= tmp_norm;
-    subd->vertices[i].y /= tmp_norm;
-    subd->vertices[i].z /= tmp_norm;
-  }
+  for (i=raw_model->num_vert; i<subd->num_vert; i++) 
+    normalize_v(&(subd->vertices[i]));
+
 
   return subd;
 }
@@ -133,8 +128,8 @@ int main(int argc, char **argv) {
   int i,j;
   int n;
   char *filename;
-  model isoca;
-  model *or_mod, *sub_mod=NULL;
+  struct model isoca;
+  struct model *or_mod, *sub_mod=NULL;
   int count_faces = 0;
 
   if (argc != 3) {
@@ -145,8 +140,8 @@ int main(int argc, char **argv) {
   filename = argv[1];
   n = atoi(argv[2]);
 
-  isoca.vertices = (vertex*)malloc(12*sizeof(vertex));
-  isoca.faces = (face*)malloc(20*sizeof(face));
+  isoca.vertices = (vertex_t*)malloc(12*sizeof(vertex_t));
+  isoca.faces = (face_t*)malloc(20*sizeof(face_t));
   isoca.num_vert = 12;
   isoca.num_faces = 20;
 
