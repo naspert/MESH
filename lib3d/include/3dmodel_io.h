@@ -1,4 +1,4 @@
-/* $Id: 3dmodel_io.h,v 1.9 2002/02/26 13:18:15 aspert Exp $ */
+/* $Id: 3dmodel_io.h,v 1.10 2003/03/26 08:59:24 aspert Exp $ */
 #include <3dmodel.h>
 
 #ifndef _3DMODEL_IO_PROTO
@@ -10,13 +10,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-  int read_header(FILE*, int*);
-  struct model* alloc_read_model(FILE*, int*);
-  struct model* read_raw_model(char*);
-  struct model* read_raw_model_frame(char*, int);
-  void write_raw_model(struct model*, char*);
-  void write_brep_file(struct model*, char*, int, int, int, 
-		       vertex_t, vertex_t);
+  struct model* read_raw_model(const char*);
+  void write_raw_model(const struct model*, char*, const int);
 #ifdef __cplusplus
 }
 #endif

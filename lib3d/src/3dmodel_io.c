@@ -1,10 +1,10 @@
-/* $Id: 3dmodel_io.c,v 1.24 2003/03/12 17:54:59 aspert Exp $ */
+/* $Id: 3dmodel_io.c,v 1.25 2003/03/26 08:59:24 aspert Exp $ */
 #include <3dmodel.h>
 #include <3dmodel_io.h>
 #include <normals.h>
 
 /* int nitems[4] = {nvert, nfaces, nvnorms, nfnorms}; */
-int read_header(FILE *pf, int *nitems) {
+static int read_header(FILE *pf, int *nitems) {
   char buffer[300];
   int fcount=-1;
 
@@ -38,7 +38,7 @@ int read_header(FILE *pf, int *nitems) {
 /* #else */
 } 
 
-struct model* alloc_read_model(FILE *pf, int* header_fields) {
+static struct model* alloc_read_model(FILE *pf, const int* header_fields) {
 
   struct model *raw_model;
   int i;
@@ -126,7 +126,7 @@ struct model* alloc_read_model(FILE *pf, int* header_fields) {
 }
 
 
-struct model* read_raw_model(char *filename) {
+struct model* read_raw_model(const char *filename) {
   struct model* raw_model;
   FILE *pf;
   int header_fields[4];
@@ -153,56 +153,13 @@ struct model* read_raw_model(char *filename) {
 }
 
 
-struct model* read_raw_model_frame(char *filename,int frame) {
-  struct model* raw_model;
-  FILE *pf;
-  char *fullname;
-  char *tmp;
-  int len, header_fields[4];
-
-  if (frame == -1) {
-    len = strlen(filename)+20;
-    fullname = (char*)malloc(len*sizeof(char));
-
-    strcpy(fullname, filename);
-    strcat(fullname,"_base.raw");
-  }
-  else {
-    len = strlen(filename)+7+(int)log10(((frame>0)?frame:1))+1;
-    tmp = (char*)malloc((8+(int)log10((frame>0)?frame:1))*sizeof(char));
-    fullname = (char*)malloc(len*sizeof(char));
-    
-    strcpy(fullname,filename);
-    sprintf(tmp,"_%d.raw",frame);
-    strcat(fullname,tmp);
-
-    free(tmp);   
-  }
-
-  pf = fopen(fullname,"r");
-  free(fullname);
-  
-  if (pf==NULL) {
-    perror("Error : ");
-    exit(-1);
-  }
-  
-  if (read_header(pf, header_fields)) {
-    fclose(pf);
-    exit(-1);
-  }
-
-  raw_model = alloc_read_model(pf, header_fields);
-
-  fclose(pf);
-  return raw_model;
-}
-
-
-
-void write_raw_model(struct model *raw_model, char *filename) {
+void write_raw_model(const struct model *raw_model, char *filename,
+                     const int use_binary) {
   FILE *pf;
   int i;
+  /*temp storage for vtcs coords/idx in case of bin output */
+  float vtcs[3]; 
+  int vidx[3];
   char *rootname;
   char *finalname;
   char *tmp;
@@ -235,61 +192,76 @@ void write_raw_model(struct model *raw_model, char *filename) {
     printf("Unable to open %s\n",finalname);
     exit(-1);
   }
-  if (raw_model->normals == NULL) {
-  fprintf(pf,"%d %d\n",raw_model->num_vert,raw_model->num_faces);
-  for (i=0; i<raw_model->num_vert; i++)
-    fprintf(pf, "%f %f %f\n",raw_model->vertices[i].x,
-	    raw_model->vertices[i].y, raw_model->vertices[i].z);
 
-  for (i=0; i<raw_model->num_faces; i++)
-    fprintf(pf, "%d %d %d\n",raw_model->faces[i].f0,
-	    raw_model->faces[i].f1,raw_model->faces[i].f2);
-  } else {
-    fprintf(pf,"%d %d %d %d\n",raw_model->num_vert,raw_model->num_faces, 
-	    raw_model->num_vert, raw_model->num_faces);
+  /* Output header */
+  fprintf(pf,"%d %d ",raw_model->num_vert,raw_model->num_faces);
+  if (raw_model->normals != NULL) 
+    fprintf(pf, "%d %d ", raw_model->num_vert, raw_model->num_faces);
+  if (use_binary)
+    fprintf(pf, "0 0 bin");
+  fprintf(pf, "\n");
+  
+
+
+
+  if (use_binary) {
+    /* Now output magic number, used to test endianness */
+    i = (('\n'<<24)|('\r'<<16)|('\n'<<8)|0x87);
+    fwrite(&i,sizeof(i),1,pf);
+    vtcs[0] = FLT_MIN;
+    fwrite(vtcs,sizeof(*vtcs),1,pf);
+
+    /* Write vtcs coords and idxs */
+    for (i=0; i<raw_model->num_vert; i++) {
+      vtcs[0] = raw_model->vertices[i].x;
+      vtcs[1] = raw_model->vertices[i].y;
+      vtcs[2] = raw_model->vertices[i].z;
+      fwrite(vtcs, sizeof(*vtcs), 3, pf);
+    }
+    for (i=0; i<raw_model->num_faces; i++) {
+      vidx[0] = raw_model->faces[i].f0;
+      vidx[1] = raw_model->faces[i].f1;
+      vidx[2] = raw_model->faces[i].f2;
+      fwrite(vidx, sizeof(*vidx), 3, pf);
+    }
+    /* write normals if needed */
+    if (raw_model->normals != NULL) {
+      for (i=0; i<raw_model->num_vert; i++) {
+        vtcs[0] = raw_model->normals[i].x;
+        vtcs[1] = raw_model->normals[i].y;
+        vtcs[2] = raw_model->normals[i].z;
+        fwrite(vtcs, sizeof(*vtcs), 3, pf);
+      }
+      for (i=0; i<raw_model->num_faces; i++) {
+        vtcs[0] = raw_model->face_normals[i].x;
+        vtcs[1] = raw_model->face_normals[i].y;
+        vtcs[2] = raw_model->face_normals[i].z;
+        fwrite(vtcs, sizeof(*vtcs), 3, pf);
+      }
+      
+    }
+
+  } else { /* ASCII output */
+
     for (i=0; i<raw_model->num_vert; i++)
       fprintf(pf, "%f %f %f\n",raw_model->vertices[i].x,
-	      raw_model->vertices[i].y, raw_model->vertices[i].z);
+              raw_model->vertices[i].y, raw_model->vertices[i].z);
     
     for (i=0; i<raw_model->num_faces; i++)
       fprintf(pf, "%d %d %d\n",raw_model->faces[i].f0,
-	      raw_model->faces[i].f1,raw_model->faces[i].f2);
-    
-    for (i=0; i<raw_model->num_vert; i++)
-      fprintf(pf, "%f %f %f\n", raw_model->normals[i].x, 
-	      raw_model->normals[i].y, raw_model->normals[i].z);
-
-    for (i=0; i<raw_model->num_faces; i++)
-      fprintf(pf, "%f %f %f\n", raw_model->face_normals[i].x,
-	      raw_model->face_normals[i].y, raw_model->face_normals[i].z);
-	 
+              raw_model->faces[i].f1,raw_model->faces[i].f2);
+    if (raw_model->normals != NULL) {
+      for (i=0; i<raw_model->num_vert; i++)
+        fprintf(pf, "%f %f %f\n", raw_model->normals[i].x, 
+                raw_model->normals[i].y, raw_model->normals[i].z);
+      
+      for (i=0; i<raw_model->num_faces; i++)
+        fprintf(pf, "%f %f %f\n", raw_model->face_normals[i].x,
+                raw_model->face_normals[i].y, raw_model->face_normals[i].z);
+    }
   }
+
   fclose(pf);
 }
 
 
-
-void write_brep_file(struct model *raw_model, char *filename, int grid_size_x,
-		     int grid_size_y, int  grid_size_z,
-		     vertex_t bbox_min, vertex_t bbox_max) {
-
-  FILE *pf;
-  int i;
-  
-  pf = fopen(filename, "w");
-  if (pf == NULL) {
-    fprintf(stderr, "Unable to open output file %s\n", filename);
-    exit(-1);
-  }
-  fprintf(pf, "%f %f %f %f %f %f\n",bbox_min.x, bbox_min.y, bbox_min.z, 
-	  bbox_max.x, bbox_max.y, bbox_max.z);
-  fprintf(pf, "%d %d %d\n", grid_size_x, grid_size_y, grid_size_z);
-  fprintf(pf, "0\n0\n%d\n%d\n", raw_model->num_vert, raw_model->num_faces);
-  for (i=0; i<raw_model->num_vert; i++)
-    fprintf(pf, "%f %f %f\n", raw_model->vertices[i].x, 
-	    raw_model->vertices[i].y, raw_model->vertices[i].z);
-  for (i=0; i<raw_model->num_faces; i++)
-    fprintf(pf, "%d %d %d\n", raw_model->faces[i].f0, raw_model->faces[i].f1,
-	    raw_model->faces[i].f2);
-  fclose(pf);
-}
