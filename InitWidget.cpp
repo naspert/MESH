@@ -1,4 +1,4 @@
-/* $Id: InitWidget.cpp,v 1.7 2001/09/27 13:19:13 aspert Exp $ */
+/* $Id: InitWidget.cpp,v 1.8 2001/09/28 11:48:14 aspert Exp $ */
 
 #include <InitWidget.h>
 
@@ -22,6 +22,7 @@ InitWidget::InitWidget(struct args defArgs, QWidget *parent, const char *name):
   QListBox *qlboxSplStep;
   QGridLayout *bigGrid;
   QHBoxLayout *smallGrid1, *smallGrid2, *smallGrid3, *smallGrid4, *smallGrid5;
+  QHBoxLayout *smallGrid6;
 
   /* Initialize */
   pargs = defArgs;
@@ -58,12 +59,16 @@ InitWidget::InitWidget(struct args defArgs, QWidget *parent, const char *name):
                              this);
   chkSymDist->setChecked(pargs.do_symmetric);
 
+  /* Curvature error checkbox */
+  chkCurv = new QCheckBox("Compute curvature error", this);
+  chkCurv->setChecked(pargs.do_curvature);
+
   /* OK button */
   OK = new QPushButton("OK",this);
   connect(OK, SIGNAL(clicked()), this, SLOT(getParameters()));
 
   /* Build the topmost grid layout */
-  bigGrid = new QGridLayout( this, 5, 1, 20 );
+  bigGrid = new QGridLayout( this, 6, 1, 20 );
 
   /* Build the grid layout for 1st mesh */
   smallGrid1 = new QHBoxLayout(bigGrid);
@@ -87,7 +92,11 @@ InitWidget::InitWidget(struct args defArgs, QWidget *parent, const char *name):
   smallGrid5 = new QHBoxLayout(bigGrid);
   smallGrid5->addWidget(chkSymDist);
 
-  /* Build grid layout fir OK button */
+  /* Build grid layout for curvature checkbox */
+  smallGrid6 = new QHBoxLayout(bigGrid);
+  smallGrid6->addWidget(chkCurv);
+  
+  /* Build grid layout for OK button */
   smallGrid4 = new QHBoxLayout(bigGrid);
   smallGrid4->addSpacing(100);
   smallGrid4->addWidget(OK, 0, 1);
@@ -135,6 +144,7 @@ void InitWidget::meshRun() {
   pargs.m2_fname = (char *) qledMesh2->text().latin1();
   pargs.sampling_step = atof((char*)qledSplStep->text().latin1())/100;
   pargs.do_symmetric = chkSymDist->isChecked() == TRUE;
+  pargs.do_curvature = chkCurv->isChecked() == TRUE;
   mesh_run(&pargs,&model1,&model2);
   c = new ScreenWidget(&model1, &model2);
   c->show();

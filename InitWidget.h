@@ -1,4 +1,4 @@
-/* $Id: InitWidget.h,v 1.6 2001/09/25 13:24:39 dsanta Exp $ */
+/* $Id: InitWidget.h,v 1.7 2001/09/28 11:48:14 aspert Exp $ */
 
 #ifndef INITW_H
 #define INITW_H
@@ -25,7 +25,7 @@ private slots:
 
 private:
     QLineEdit *qledMesh1, *qledMesh2, *qledSplStep; 
-    QCheckBox *chkSymDist;
+    QCheckBox *chkSymDist, *chkCurv;
     struct args pargs;
     struct model_error model1,model2;
     ScreenWidget *c;
