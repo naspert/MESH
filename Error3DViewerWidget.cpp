@@ -1,4 +1,4 @@
-/* $Id: Error3DViewerWidget.cpp,v 1.1 2003/04/17 10:45:36 aspert Exp $ */
+/* $Id: Error3DViewerWidget.cpp,v 1.2 2003/04/22 06:37:31 aspert Exp $ */
 
 /*
  *
@@ -64,8 +64,8 @@ Error3DViewerWidget::Error3DViewerWidget(struct model_error *model_err,
 
   error_mode = VERTEX_ERROR;
 
-  this->model = model_err;
-  this->texture_enabled = tex_enabled;
+  model = model_err;
+  texture_enabled = tex_enabled;
 
   // Initialize the state
   etex_id = NULL;

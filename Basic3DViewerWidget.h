@@ -1,4 +1,4 @@
-/* $Id: Basic3DViewerWidget.h,v 1.1 2003/04/17 10:45:36 aspert Exp $ */
+/* $Id: Basic3DViewerWidget.h,v 1.2 2003/04/22 06:37:31 aspert Exp $ */
 
 /*
  *
@@ -76,10 +76,12 @@ public:
 public slots:  
   void setLine(bool state);
   void switchSync(bool state);
-  void setViewParams(double, double, double, double*);
   void setTimer(bool state);
-  void handleTimerEvent();
   void changeSpeed(int value);
+
+protected slots:
+  void setViewParams(double, double, double, double*);
+  void handleTimerEvent();
 
 signals:
   // wired to setViewParams
@@ -100,7 +102,7 @@ protected:
   void mouseMoveEvent(QMouseEvent*);
   void mousePressEvent(QMouseEvent*);
   virtual void keyPressEvent(QKeyEvent*);
-  void checkGLErrors(const char*);
+  void checkGLErrors(const char*) const;
   GLuint getModelList() const;
   void setModelList(GLuint);
   bool getGLInitialized() const;

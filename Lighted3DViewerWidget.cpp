@@ -1,4 +1,4 @@
-/* $Id: Lighted3DViewerWidget.cpp,v 1.1 2003/04/17 10:45:37 aspert Exp $ */
+/* $Id: Lighted3DViewerWidget.cpp,v 1.2 2003/04/22 06:37:31 aspert Exp $ */
 
 /*
  *
@@ -51,7 +51,7 @@ Lighted3DViewerWidget::Lighted3DViewerWidget(struct model_error *model_err,
 					     QWidget *parent, const char *name)
   : Basic3DViewerWidget(model_err->mesh, parent, name)
 {
-  this->model = model_err;
+  model = model_err;
   two_sided_material = 1;
   not_orientable_warned = 0;
 }
@@ -112,7 +112,7 @@ void Lighted3DViewerWidget::invertNormals(bool state)
   int i;
 
   if (!getGLInitialized()) {
-    fprintf(stderr,"RawWidget::invertNormals() called before GL context is "
+    fprintf(stderr,"invertNormals() called before GL context is "
             "initialized!\n");
     return;
   }

@@ -1,4 +1,4 @@
-/* $Id: Basic3DViewerWidget.cpp,v 1.1 2003/04/17 10:45:36 aspert Exp $ */
+/* $Id: Basic3DViewerWidget.cpp,v 1.2 2003/04/22 06:37:31 aspert Exp $ */
 
 /*
  *
@@ -63,7 +63,7 @@ Basic3DViewerWidget::Basic3DViewerWidget(struct model *r_model,
   model_list = 0;
 
   // Get the structure containing the model
-  this->raw_model = r_model;
+  raw_model = r_model;
 
   // Initialize the state
   move_state=0;
@@ -162,13 +162,14 @@ void Basic3DViewerWidget::switchSync(bool state)
 
 
 // Sets the viewing parameters. mvmat is a pointer to a 4x4 matrix 
-void Basic3DViewerWidget::setViewParams(double dist, double tX, double tY, 
+void Basic3DViewerWidget::setViewParams(double dist, double translX, 
+				  	double translY, 
                                         double *mvmat)
 {
   
   distance = dist;
-  this->tx = tX;
-  this->ty = tY;
+  tx = translX;
+  ty = translY;
   // Copy the 4x4 transformation matrix
   memcpy(mvmatrix, mvmat, 16*sizeof(double)); 
   // update display
@@ -183,7 +184,7 @@ void Basic3DViewerWidget::setTimer(bool state)
     timer_state = 1;
     if (move_state == 1)
       emit toggleSync(); // avoid to re-compute all parameters for
-                         // all RawWidget's (the slot is connected
+                         // all 3DWidget's (the slot is connected
                          // to the same signal from ScreenWidget)
     demo_mode_timer->start(100); // Set the timer step top 100ms
   }
@@ -378,7 +379,7 @@ void Basic3DViewerWidget::mouseMoveEvent(QMouseEvent *event)
   dy = event->y() - oldy;
 
   if (!gl_initialized) {
-    fprintf(stderr,"received RawWidget::mouseMoveEvent() before GL context "
+    fprintf(stderr,"received mouseMoveEvent() before GL context "
             "is initialized!\n");
     return;
   }
@@ -458,7 +459,8 @@ void Basic3DViewerWidget::mousePressEvent(QMouseEvent *event)
 }
 
 // Key events handler (overloaded by derived classes)
-void Basic3DViewerWidget::keyPressEvent(QKeyEvent *k) {
+void Basic3DViewerWidget::keyPressEvent(QKeyEvent *k)
+{
   
   switch(k->key()) {
   case Key_T:
@@ -481,7 +483,7 @@ void Basic3DViewerWidget::keyPressEvent(QKeyEvent *k) {
 
 
 // Check the OpenGl error state
-void Basic3DViewerWidget::checkGLErrors(const char* where) 
+void Basic3DViewerWidget::checkGLErrors(const char* where) const
 {
   GLenum glerr;
   while ((glerr = glGetError()) != GL_NO_ERROR) {
