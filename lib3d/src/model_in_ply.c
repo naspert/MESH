@@ -1,4 +1,4 @@
-/* $Id: model_in_ply.c,v 1.7 2002/08/26 13:00:46 aspert Exp $ */
+/* $Id: model_in_ply.c,v 1.8 2002/08/26 13:04:26 aspert Exp $ */
 
 /*
  *
@@ -730,9 +730,9 @@ int read_ply_tmesh(struct model **tmesh_ref, struct file_data *data)
   char stmp[MAX_WORD_LEN+1];
   vertex_t bbmin, bbmax;
   struct model* tmesh;
-  int rcode = 1;
-  int is_bin = 0;
-  int endianness = 0, platform_endianness=0;
+  int rcode=1;
+  int is_bin=0;
+  int file_endianness=0, platform_endianness=0, swap_bytes=0;
   struct ply_prop *vertex_prop=NULL, *face_prop=NULL;
   int n_vert_prop=0, n_face_prop=0;
   int c;
@@ -749,7 +749,7 @@ int read_ply_tmesh(struct model **tmesh_ref, struct file_data *data)
         is_bin = 1;
       } else if (strcmp(stmp, "binary_big_endian") == 0) {
         is_bin = 1;
-        endianness = 1;
+        file_endianness = 1;
       } else if (strcmp(stmp, "ascii") != 0) {
         rcode = MESH_CORRUPTED;
       } else {
@@ -834,15 +834,16 @@ int read_ply_tmesh(struct model **tmesh_ref, struct file_data *data)
             fprintf(stderr, "Unable to probe for byte ordering\n");
             platform_endianness = -1;
           }
+          swap_bytes = (file_endianness == platform_endianness)?0:1;
           skip_ws_comm(data);
           rcode = read_bin_ply_vertices(tmesh->vertices, data, tmesh->num_vert,
                                         &bbmin, &bbmax, 
-                                        (endianness == platform_endianness)?0:1,
+                                        swap_bytes,
                                         vertex_prop, n_vert_prop);
 
           rcode = read_bin_ply_faces(tmesh->faces, data, tmesh->num_faces,
                                      tmesh->num_vert,
-                                     (endianness == platform_endianness)?0:1,
+                                     swap_bytes,
                                      face_prop, n_face_prop);
         }
       }
