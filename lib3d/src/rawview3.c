@@ -1,15 +1,18 @@
-/* $Id: rawview3.c,v 1.16 2001/09/13 11:48:14 aspert Exp $ */
+/* $Id: rawview3.c,v 1.17 2001/09/13 13:15:13 aspert Exp $ */
 
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <GL/glut.h>
 #include <3dutils.h>
 #include <image.h>
-
-
-#ifdef TEST_GL2PS
 #include <gl2ps.h>
-#endif
+
+/* display normals with length=5% of the bounding box */
+#define NORMALS_DISPLAY_FACTOR 0.05 
+/* step for rotation motion */
+#define ANGLE_STEP 0.5
+/* step for forward/backward motion */
+#define TRANSL_STEP 0.1
 
 /* ****************** */
 /* Useful Global vars */
@@ -132,8 +135,8 @@ void motion_mouse(int x, int y) {
   dy = y - oldy;
 
   if (left_button_state == 1) {
-    dth = dx*0.5; /* Yes, 0.5 is arbitrary */
-    dph = dy*0.5;
+    dth = dx*ANGLE_STEP; 
+    dph = dy*ANGLE_STEP;
     glPushMatrix(); /* Save transform context */
     glLoadIdentity();
     glRotated(dth, 0.0, 1.0, 0.0); /* Compute new rotation matrix */
@@ -144,11 +147,11 @@ void motion_mouse(int x, int y) {
     glutPostRedisplay();
   }
   else if (middle_button_state == 1) {
-    distance += dy*dstep;
+    distance += dy*TRANSL_STEP;
     glutPostRedisplay();
   }
   else if (right_button_state == 1) { 
-    dpsi = -dx*0.5;
+    dpsi = -dx*ANGLE_STEP;
     glPushMatrix(); /* Save transform context */
     glLoadIdentity();
     glRotated(dpsi, 0.0, 0.0, 1.0); /* Modify roll angle */
@@ -183,12 +186,8 @@ void reshape(int width, int height) {
 void rebuild_list(model *raw_model) {
   int i;
   GLboolean light_mode;
+  double scale_fact;
   face *cur_face;
-
-#ifdef FACE_NORM_DRAW_DEBUG
-  vertex center; 
-#endif
-
   vertex center1, center2;
   face *cur_face2;
   int j, face1=-1, face2=-1;
@@ -314,40 +313,25 @@ void rebuild_list(model *raw_model) {
     glEnd();
     glEndList();
     if (draw_normals) {
+      scale_fact = NORMALS_DISPLAY_FACTOR*dist_v(&(raw_model->bBox[0]), 
+						 &(raw_model->bBox[1]));
       glNewList(normal_list, GL_COMPILE);
       glColor3f(1.0, 0.0, 0.0);
       glBegin(GL_LINES);
 
-#ifdef FACE_NORM_DRAW_DEBUG	
-      for (i=0; i<raw_model->num_faces; i++) {
-	cur_face = &(raw_model->faces[i]);
-	center.x = (raw_model->vertices[cur_face->f0].x +
-		    raw_model->vertices[cur_face->f1].x +
-		    raw_model->vertices[cur_face->f2].x)/3.0;
 
-	center.y = (raw_model->vertices[cur_face->f0].y +
-		    raw_model->vertices[cur_face->f1].y +
-		    raw_model->vertices[cur_face->f2].y)/3.0;
-
-	center.z = (raw_model->vertices[cur_face->f0].z +
-		    raw_model->vertices[cur_face->f1].z +
-		    raw_model->vertices[cur_face->f2].z)/3.0;
-	glVertex3d(center.x, center.y, center.z);
-	glVertex3d(center.x + 0.1*raw_model->face_normals[i].x, 
-		   center.y + 0.1*raw_model->face_normals[i].y, 
-		   center.z + 0.1*raw_model->face_normals[i].z);
-      }
-#else
       for (i=0; i<raw_model->num_vert; i++) {
 	glVertex3d(raw_model->vertices[i].x, 
 		   raw_model->vertices[i].y,
 		   raw_model->vertices[i].z);
 
-	glVertex3d(raw_model->vertices[i].x + 0.1*raw_model->normals[i].x,
-		   raw_model->vertices[i].y + 0.1*raw_model->normals[i].y,
-		   raw_model->vertices[i].z + 0.1*raw_model->normals[i].z);
+	glVertex3d(raw_model->vertices[i].x + 
+		   scale_fact*raw_model->normals[i].x,
+		   raw_model->vertices[i].y + 
+		   scale_fact*raw_model->normals[i].y,
+		   raw_model->vertices[i].z + 
+		   scale_fact*raw_model->normals[i].z);
       }
-#endif
 
       glEnd();
       glColor3f(1.0, 1.0, 1.0);
@@ -383,6 +367,8 @@ void rebuild_list(model *raw_model) {
     glEnd();
     glEndList();
     if (draw_normals) {
+      scale_fact = NORMALS_DISPLAY_FACTOR*dist_v(&(raw_model->bBox[0]), 
+			       &(raw_model->bBox[1]));
       glNewList(normal_list, GL_COMPILE);
       glColor3f(1.0, 0.0, 0.0);
       glBegin(GL_LINES);
@@ -390,9 +376,12 @@ void rebuild_list(model *raw_model) {
 	glVertex3d(raw_model->vertices[i].x, 
 		   raw_model->vertices[i].y,
 		   raw_model->vertices[i].z);
-	glVertex3d(raw_model->vertices[i].x + raw_model->normals[i].x,
-		   raw_model->vertices[i].y + raw_model->normals[i].y,
-		   raw_model->vertices[i].z + raw_model->normals[i].z);
+	glVertex3d(raw_model->vertices[i].x + 
+		   scale_fact*raw_model->normals[i].x,
+		   raw_model->vertices[i].y + 
+		   scale_fact*raw_model->normals[i].y,
+		   raw_model->vertices[i].z + 
+		   scale_fact*raw_model->normals[i].z);
       }
       glEnd();
       glColor3f(1.0, 1.0, 1.0);
@@ -447,7 +436,8 @@ void display_vtx_labels() {
     glRasterPos3f(r_model->vertices[i].x,
 		  r_model->vertices[i].y,
 		  r_model->vertices[i].z);
-    glBitmap(0,0,0,0,7,7,NULL); /* Add an offset to avoid drawing the label on the vertex*/
+    /* Add an offset to avoid drawing the label on the vertex*/
+    glBitmap(0, 0, 0, 0, 7, 7, NULL); 
     len = sprintf(str, fmt, i);
     glCallLists(len, GL_UNSIGNED_BYTE, str);
   }
@@ -556,10 +546,10 @@ void sp_key_pressed(int key, int x, int y) {
   info_vertex *curv;
   face_tree_ptr top;
   int i;
-#ifdef TEST_GL2PS
+  /* GL2PS stuff */
   int bufsize = 0, state = GL2PS_OVERFLOW;
   FILE *ps_file;
-#endif
+
 
   
   light_mode = glIsEnabled(GL_LIGHTING);
@@ -581,12 +571,6 @@ void sp_key_pressed(int key, int x, int y) {
 	curv = (info_vertex*)malloc(raw_model->num_vert*sizeof(info_vertex));
 
 	raw_model->face_normals = compute_face_normals(raw_model, curv);
-
-#ifdef FACE_NORM_DRAW_DEBUG	
-	for (i=0; i<raw_model->num_faces; i++)
-	  printf("%d: %f %f %f\n",i, model_normals[i].x, model_normals[i].y, 
-		 model_normals[i].z);
-#endif
 
 	if (raw_model->face_normals != NULL){
 	  compute_vertex_normal(raw_model, curv, raw_model->face_normals);
@@ -652,14 +636,6 @@ void sp_key_pressed(int key, int x, int y) {
 	raw_model->normals[i].y = -raw_model->normals[i].y;
 	raw_model->normals[i].z = -raw_model->normals[i].z;
       }
-
-#ifdef FACE_NORM_DRAW_DEBUG
-      for (i=0; i<raw_model->num_faces; i++) {
-	raw_model->face_normals[i].x = -raw_model->face_normals[i].x;
-	raw_model->face_normals[i].y = -raw_model->face_normals[i].y;
-	raw_model->face_normals[i].z = -raw_model->face_normals[i].z;
-      }
-#endif
 
       rebuild_list(raw_model);
       glutPostRedisplay();
@@ -763,8 +739,8 @@ void sp_key_pressed(int key, int x, int y) {
     glutPostRedisplay();
     break;
 
-#ifdef TEST_GL2PS
-  case GLUT_KEY_F10:
+    /* This NEEDS cleanup ! */
+  case GLUT_KEY_F10: 
     printf("Rendering to a PostScript file...\n");
     ps_file = fopen("test_gl2ps.ps", "w");
     ps_rend = 1;
@@ -785,7 +761,6 @@ void sp_key_pressed(int key, int x, int y) {
     printf("done\n");
     glutPostRedisplay();
     break;
-#endif
 
   case GLUT_KEY_F11: /* backface culling when in wf mode */
     if (wf_bc) { /* goto classic wf mode */
@@ -809,7 +784,7 @@ void sp_key_pressed(int key, int x, int y) {
   case GLUT_KEY_UP:
     glPushMatrix(); /* Save transform context */
     glLoadIdentity();
-    glRotated(-1.0, 1.0, 0.0, 0.0);
+    glRotated(-5.0, 1.0, 0.0, 0.0);
     glMultMatrixd(mvmatrix); /* Add the sum of the previous ones */
     glGetDoublev(GL_MODELVIEW_MATRIX, mvmatrix); /* Get the final matrix */
     glPopMatrix(); /* Reload previous transform context */
@@ -818,7 +793,7 @@ void sp_key_pressed(int key, int x, int y) {
   case GLUT_KEY_DOWN:
     glPushMatrix(); 
     glLoadIdentity();
-    glRotated(1.0, 1.0, 0.0, 0.0);
+    glRotated(5.0, 1.0, 0.0, 0.0);
     glMultMatrixd(mvmatrix); 
     glGetDoublev(GL_MODELVIEW_MATRIX, mvmatrix); 
     glPopMatrix(); 
@@ -827,7 +802,7 @@ void sp_key_pressed(int key, int x, int y) {
   case GLUT_KEY_LEFT:
     glPushMatrix();
     glLoadIdentity();
-    glRotated(-1.0, 0.0, 1.0, 0.0);
+    glRotated(-5.0, 0.0, 1.0, 0.0);
     glMultMatrixd(mvmatrix); 
     glGetDoublev(GL_MODELVIEW_MATRIX, mvmatrix); 
     glPopMatrix(); 
@@ -836,7 +811,7 @@ void sp_key_pressed(int key, int x, int y) {
   case GLUT_KEY_RIGHT:
     glPushMatrix();
     glLoadIdentity();
-    glRotated(1.0, 0.0, 1.0, 0.0);
+    glRotated(5.0, 0.0, 1.0, 0.0);
     glMultMatrixd(mvmatrix); 
     glGetDoublev(GL_MODELVIEW_MATRIX, mvmatrix); 
     glPopMatrix(); 
@@ -845,7 +820,7 @@ void sp_key_pressed(int key, int x, int y) {
   case GLUT_KEY_PAGE_DOWN:
     glPushMatrix();
     glLoadIdentity();
-    glRotated(-1.0, 0.0, 0.0, 1.0);
+    glRotated(-5.0, 0.0, 0.0, 1.0);
     glMultMatrixd(mvmatrix); 
     glGetDoublev(GL_MODELVIEW_MATRIX, mvmatrix); 
     glPopMatrix(); 
@@ -854,7 +829,7 @@ void sp_key_pressed(int key, int x, int y) {
   case GLUT_KEY_END:
     glPushMatrix();
     glLoadIdentity();
-    glRotated(1.0, 0.0, 0.0, 1.0);
+    glRotated(5.0, 0.0, 0.0, 1.0);
     glMultMatrixd(mvmatrix); 
     glGetDoublev(GL_MODELVIEW_MATRIX, mvmatrix); 
     glPopMatrix(); 
