@@ -1,4 +1,4 @@
-/* $Id: subdiv_main.c,v 1.10 2003/03/27 09:42:29 aspert Exp $ */
+/* $Id: subdiv_main.c,v 1.11 2003/03/27 09:52:10 aspert Exp $ */
 #include <3dutils.h>
 #include <subdiv.h>
 #include <subdiv_methods.h>
@@ -14,6 +14,7 @@ int main(int argc, char **argv) {
                             KOBBELTSQRT3_SUBDIV_FUNCTIONS};
   
 
+  struct subdiv_functions *tmp_func=NULL;
   
   if (argc < 4 || argc > 6) {
     fprintf(stderr, 
@@ -26,13 +27,19 @@ int main(int argc, char **argv) {
 #ifdef DEBUG
     printf("argv[%d] = %s\n", nonopt_argc, argv[nonopt_argc]);
 #endif
-    if (strcmp(argv[nonopt_argc], "-sph") == 0) 
+    if (strcmp(argv[nonopt_argc], "-sph") == 0) {
+      tmp_func = &(sm.spherical);
       sub_method = SUBDIV_SPH;
-    else if (strcmp(argv[nonopt_argc], "-but") == 0) 
+    }
+    else if (strcmp(argv[nonopt_argc], "-but") == 0) {
+      tmp_func = &(sm.butterfly);
       sub_method = SUBDIV_BUTTERFLY;
-    else if (strcmp(argv[nonopt_argc], "-loop") == 0)
+    }
+    else if (strcmp(argv[nonopt_argc], "-loop") == 0) {
+      tmp_func = &(sm.loop);
       sub_method = SUBDIV_LOOP;
-    else if (strcmp(argv[nonopt_argc], "-ksqrt3") == 0)
+    }
+    else if (strcmp(argv[nonopt_argc], "-ksqrt3") == 0) 
       sub_method = SUBDIV_KOB_SQRT3;
     else if (strcmp(argv[nonopt_argc], "-bin") == 0)
       use_binary = 1;
@@ -69,22 +76,11 @@ int main(int argc, char **argv) {
 
     /* performs the subdivision */
     switch (sub_method) {
-    case SUBDIV_SPH:
-      sub_model = subdiv(or_model, &(sm.spherical));
-      break;
-    case SUBDIV_LOOP:
-      sub_model = subdiv(or_model, &(sm.loop));
-      break;
-    case SUBDIV_BUTTERFLY:
-      sub_model = subdiv(or_model, &(sm.butterfly));
-      break;
-    case SUBDIV_KOB_SQRT3:
+    case SUBDIV_KOB_SQRT3: /* handle sqrt3 stuff separately */
       sub_model = subdiv_sqrt3(or_model, &(sm.kob_sqrt3));
       break;
-    default:
-      fprintf(stderr, "ERROR : Invalid subdivision method found = %d\n", 
-              sub_method);
-      exit(1);
+    default: /* 4-to-1 split */
+      sub_model = subdiv(or_model, tmp_func);     
       break;
     }
 
