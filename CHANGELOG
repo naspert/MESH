@@ -2,7 +2,9 @@
 	- Added support for reading raw format with binary data: it provides
           much faster I/O, at the expense of portability.
 	- Help message fixes.
-	- fixed (rare) buffer overflows in model input routines
+	- Fixed (rare) buffer overflows in model input routines
+	- Fixed behavior of the 'demo' mode, so that any attempt
+	  to move the models when running this mode is ignored
 
 * Changes from v1.7 to v1.8 :
 	- Added prettier debug prints when DEBUG is defined at compile time
