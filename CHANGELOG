@@ -1,3 +1,7 @@
+* Changes from v1.3 to v1.4 :
+	- '-malign-double' causes troubles when compiling C++ files with 
+	  Qt 3.x. We now only use it when compiling C files.
+
 * Changes from v1.2 to v1.3 :
 	- Fixed memory allocation bug for non-manifold models in
 	  add_adj_face_extra() (mis-sized realloc leading to memory corruption)

@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.45 2002/04/18 17:59:54 dsanta Exp $
+# $Id: Makefile,v 1.46 2002/04/24 11:47:52 aspert Exp $
 
 
 
@@ -137,10 +137,7 @@ XTRA_LDFLAGS =
 
 # Derive compiler specific flags
 ifeq ($(CC_IS_GCC)-$(OS)-$(ARCH),gcc-Linux-i686)
-XTRA_CFLAGS += -march=i686 -malign-double
-endif
-ifeq ($(CXX_IS_GCC)-$(OS)-$(ARCH),gcc-Linux-i686)
-XTRA_CXXFLAGS += -malign-double
+XTRA_CFLAGS += -march=i686 -malign-double 
 endif
 ifeq ($(CC_IS_GCC),gcc)
 C_PROF_OPT = -pg
