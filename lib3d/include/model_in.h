@@ -1,4 +1,4 @@
-/* $Id: model_in.h,v 1.14 2002/08/16 07:59:55 aspert Exp $ */
+/* $Id: model_in.h,v 1.15 2002/08/26 12:11:27 aspert Exp $ */
 
 
 /*
@@ -96,7 +96,7 @@
  * under Windows (It *does* work ! I saw it on my PC !).
  */
 #ifdef WIN32
-#define DONT_USE_ZLIB
+# define DONT_USE_ZLIB
 #endif
 
 #ifndef DONT_USE_ZLIB
@@ -105,11 +105,11 @@
 
 
 #ifdef __cplusplus
-#define BEGIN_DECL extern "C" {
-#define END_DECL }
+# define BEGIN_DECL extern "C" {
+# define END_DECL }
 #else
-#define BEGIN_DECL
-#define END_DECL
+# define BEGIN_DECL
+# define END_DECL
 #endif
 
 BEGIN_DECL
