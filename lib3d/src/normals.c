@@ -1,36 +1,35 @@
-/* $Id: normals.c,v 1.40 2003/06/12 16:20:36 aspert Exp $ */
+/* $Id: normals.c,v 1.41 2003/07/02 14:29:42 aspert Exp $ */
 #include <3dmodel.h>
 #include <geomutils.h>
 #include <normals.h>
 #include <ring.h>
+#include <block_list.h>
 
 #if defined(DEBUG) || defined(NORM_DEBUG) || defined(NORM_DEBUG_BFS)
 # include <debug_print.h>
 #endif
 
-#ifdef TIME_BFS
+#if defined(TIME_BFS) || defined(TIME_BUILD_EDGE_LIST)
 # include <time.h>
 #endif
 
-/* Size of the increment for dual_graph size */
-#define CHUNK_SIZE_DG 128
-
 /* Adds an edge in the dual graph and returns the last elt. in the graph */
-static void add_edge_dg(struct dual_graph_info *dual_graph, 
-                        const int face_0, const int face_1, 
-                        const int v0, const int v1 ) {
+static int add_edge_dg(struct block_list **cur_edges,
+                       const int face_0, const int face_1, 
+                       const int v0, const int v1 ) {
 
-  int n = dual_graph->num_edges_dual;
+  if ((*cur_edges)->elem_filled == (*cur_edges)->nelem) {
+    *cur_edges = get_next_block(*cur_edges);
+    if (*cur_edges == NULL)
+      return -1;
+  }
   
-  if (n % CHUNK_SIZE_DG == 0)
-    dual_graph->edges = (struct edge_dual*)
-      realloc(dual_graph->edges, 
-              (n + CHUNK_SIZE_DG)*sizeof(struct edge_dual));
+  BLOCK_LIST_TAIL(*cur_edges, struct edge_dual).face0 = face_0;
+  BLOCK_LIST_TAIL(*cur_edges, struct edge_dual).face1 = face_1;
+  BLOCK_LIST_TAIL(*cur_edges, struct edge_dual).common.v0 = v0;
+  BLOCK_LIST_TAIL_INCR(*cur_edges, struct edge_dual).common.v1 = v1;
 
-  dual_graph->edges[n].face0 = face_0;
-  dual_graph->edges[n].face1 = face_1;
-  dual_graph->edges[n].common.v0 = v0;
-  dual_graph->edges[n].common.v1 = v1;
+  return 0;
 
 }
 
@@ -42,9 +41,15 @@ static int build_edge_list(const struct model *raw_model,
                            const struct ring_info *ring, 
                            struct dual_graph_index *dg_idx){
 
-  int i, j, f=-1;
-
+  int i, j, f=-1, num_edges_dual=0, rcode=-1;
+  struct block_list *head_edges, *cur_edges;
   
+  head_edges = (struct block_list*)malloc(sizeof(struct block_list));
+  cur_edges = head_edges;
+  rcode = init_block_list(head_edges, sizeof(struct edge_dual));
+  if (rcode < 0)
+    return rcode;
+
   for (i=0; i<raw_model->num_vert; i++) {
 
     /* some models have isolated vertices -> continue */
@@ -54,9 +59,11 @@ static int build_edge_list(const struct model *raw_model,
 
     for (j=0; j<ring[i].n_faces-1; j++) {
 
-      add_edge_dg(dual_graph, ring[i].ord_face[j], ring[i].ord_face[j+1], 
-                  i, ring[i].ord_vert[j+1]);
-
+      rcode = add_edge_dg(&cur_edges,
+                          ring[i].ord_face[j], ring[i].ord_face[j+1], 
+                          i, ring[i].ord_vert[j+1]);
+      if (rcode < 0)
+        return rcode;
       /* update index */
       f = ring[i].ord_face[j];
       /* if the test below is true, the face is non-manifold, so bail
@@ -64,12 +71,12 @@ static int build_edge_list(const struct model *raw_model,
       if (dg_idx[f].face_info > 5)
         return -1;
 
-      dg_idx[f].ring[dg_idx[f].face_info++] = dual_graph->num_edges_dual;
+      dg_idx[f].ring[dg_idx[f].face_info++] = num_edges_dual;
 
       f = ring[i].ord_face[j+1];
       if (dg_idx[f].face_info > 5) 
         return -1;
-      dg_idx[f].ring[dg_idx[f].face_info++] = dual_graph->num_edges_dual++;
+      dg_idx[f].ring[dg_idx[f].face_info++] = num_edges_dual++;
 
 
     }
@@ -78,28 +85,38 @@ static int build_edge_list(const struct model *raw_model,
     if (ring[i].type == 0) {
 
       f = ring[i].ord_face[ring[i].n_faces-1];
-      add_edge_dg(dual_graph, f, 
-                  ring[i].ord_face[0], i, ring[i].ord_vert[0]);
+      
+      rcode =add_edge_dg(&cur_edges, f, 
+                         ring[i].ord_face[0], i, ring[i].ord_vert[0]);
+      if (rcode < 0)
+        return rcode;
       if (dg_idx[f].face_info > 5)
         return -1;
 
-      dg_idx[f].ring[dg_idx[f].face_info++] = dual_graph->num_edges_dual;
+      dg_idx[f].ring[dg_idx[f].face_info++] = num_edges_dual;
 
       f = ring[i].ord_face[0];
       if (dg_idx[f].face_info > 5)
         return -1;
 
-      dg_idx[f].ring[dg_idx[f].face_info++] = dual_graph->num_edges_dual++;
+      dg_idx[f].ring[dg_idx[f].face_info++] = num_edges_dual++;
 
     }
   }
-
+  dual_graph->num_edges_dual = num_edges_dual;
+  dual_graph->edges = 
+    (struct edge_dual*)malloc(num_edges_dual*sizeof(struct edge_dual));
+  rcode = gather_block_list(head_edges, dual_graph->edges, 
+                            num_edges_dual*sizeof(struct edge_dual));
+  free_block_list(&head_edges);
+  if (rcode == 0)
+    rcode = num_edges_dual;
 #ifdef NORM_DEBUG
   DEBUG_PRINT("%d edges in dual graph\n", 
               dual_graph->num_edges_dual);
 #endif
 
-  return dual_graph->num_edges_dual;
+  return rcode;
 
 }
 
@@ -154,7 +171,9 @@ struct face_tree** bfs_build_spanning_tree(const struct model *raw_model,
   struct dual_graph_info *dual_graph;
   struct dual_graph_index *dg_idx; 
   struct face_tree **tree, *cur_node, *new_node, *top;
-
+#ifdef TIME_BUILD_EDGE_LIST
+  clock_t start;
+#endif
 
 #ifdef NORM_VERB
   printf("Dual graph build.... ");fflush(stdout);
@@ -167,14 +186,21 @@ struct face_tree** bfs_build_spanning_tree(const struct model *raw_model,
   dg_idx = (struct dual_graph_index*)calloc(raw_model->num_faces,
 					    sizeof(struct dual_graph_index));
 
-
+#ifdef TIME_BUILD_EDGE_LIST
+  start = clock();
   ne_dual = build_edge_list(raw_model, dual_graph, ring, dg_idx);
+  printf("Edge list built in %f sec.\n", 
+         (double)(clock()-start)/CLOCKS_PER_SEC);
+#else 
+  ne_dual = build_edge_list(raw_model, dual_graph, ring, dg_idx);
+#endif
+
   dual_graph->done = BITMAP_ALLOC(dual_graph->num_edges_dual);
 #ifdef NORM_VERB
   printf("done\n");
 #endif
-  if (ne_dual == -1) {
-    fprintf(stderr, "No edges in dual graph ??\n");
+  if (ne_dual < 0) {
+    fprintf(stderr, "No edges in dual graph ?? Err. code = %d\n", ne_dual);
     free(dual_graph);
     free(dg_idx);
     return NULL;
