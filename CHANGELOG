@@ -1,3 +1,8 @@
+* Changes from v1.2 to v1.3 :
+	- Added support for compiling with PGCC (Portland Group) compiler
+	- Optimization: align doubles at 8 byte boundaries on x86
+	- Default to Penitum IV only builds with PGCC and ICC compilers
+
 * Changes from v1.1 to v1.2 :
 	- Fixed a bug in the reading low-level functions : 'buf_getc'
 	  did not read the last char of the data block
