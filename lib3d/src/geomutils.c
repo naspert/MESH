@@ -1,4 +1,4 @@
-/* $Id: geomutils.c,v 1.4 2001/04/27 13:51:11 aspert Exp $ */
+/* $Id: geomutils.c,v 1.5 2001/05/15 08:05:41 aspert Exp $ */
 #include <3dmodel.h>
 
 /* Computes the normalized cross product between vectors p2p1 and p3p1 */
@@ -243,7 +243,7 @@ void compute_circle3d(vertex p1, vertex p2, vertex p3,
 /* Computes the area of the triangle p1,p2, p3 */
 double tri_area(vertex p1, vertex p2, vertex p3) {
     vertex u,v,h;
-    double nu,nv,uv,nh;
+    double nu2,uv;
     double tmp;
 
     u.x = p1.x - p3.x;
@@ -257,16 +257,16 @@ double tri_area(vertex p1, vertex p2, vertex p3) {
 
     uv = scalprod(u,v);
 
-    nv = norm(v);
-    nu = norm(u);
 
-    tmp = uv/(nu*nu);
+    nu2 = scalprod(u,u);
+
+    tmp = uv/nu2;
     h.x = v.x - u.x*tmp;
     h.y = v.y - u.y*tmp;
     h.z = v.z - u.z*tmp;
 
-    nh = norm(h);
 
-    return (nh*nu*0.5);
+
+    return (norm(h)*sqrt(nu2)*0.5);
 
 }
