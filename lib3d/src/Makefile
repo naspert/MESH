@@ -1,5 +1,7 @@
-# $Id: Makefile,v 1.48 2002/09/26 13:01:41 aspert Exp $
+# $Id: Makefile,v 1.49 2002/10/31 10:19:52 aspert Exp $
 
+#Set PROFILE to something to enable profiling
+#PROFILE=1
 
 OS := $(shell uname -s)
 ARCH := $(shell uname -m)
@@ -12,7 +14,8 @@ TARGETS = torus cone dirac compare_curv
 GSL_TARGETS = maps_lsq
 ifeq ($(OS), Linux)
 CC = gcc
-XTRA_CFLAGS = -g  -pg -pipe -ansi -pedantic -Wall -DREAD_TIME  -W -Winline \
+PROF_FLAGS = -pg
+XTRA_CFLAGS = -g -pipe -ansi -pedantic -Wall -DREAD_TIME  -W -Winline \
 	-Wmissing-prototypes -Wstrict-prototypes -Wnested-externs \
 	-Wshadow -Waggregate-return -Wno-unused # -DDEBUG \
 	-D__BUTTERFLY_CREASE_DEBUG -DDONT_USE_ZLIB
@@ -27,13 +30,14 @@ STATIC_GLFLAGS =  -L$(GLDIR)/lib -lglut -lGLU -lGL -L$(STD_GLDIR)/lib -lX11 \
 XTRA_CFLAGS += -Wno-unknown-pragmas # remove silly warnings of HP includes
 else
 GLDIR = $(STD_GLDIR)
-STATIC_GLFLAGS =  -pg -L$(GLDIR)/lib -lglut -lGLU -lGL -lX11 \
+STATIC_GLFLAGS = -L$(GLDIR)/lib -lglut -lGLU -lGL -lX11 \
 	-lXmu -lXext -lXi $(BASE_LIBFLAGS)
 endif # HP
 endif #Linux
 
 ifeq ($(OS), IRIX64)
 CC = cc
+PROF_FLAGS = -fbgen
 XTRA_CFLAGS = -g3 -o32 
 STATIC_GLFLAGS =  -o32 -lglut -lGLU -lGL -lX11 -lXmu \
 	-L/usr/freeware/bin $(BASE_LIBFLAGS)
@@ -57,6 +61,12 @@ OBJDIR = ../obj
 INCLFLAGS = -I../include
 GLINCLFLAGS = -I$(GLDIR)/include
 XTRA_CFLAGS += -O2
+
+ifdef PROFILE
+XTRA_CFLAGS += $(PROF_FLAGS)
+BASE_LIBFLAGS += $(PROF_FLAGS)
+endif
+
 BASE_CFLAGS = $(INCLFLAGS) $(XTRA_CFLAGS) 
 GL_CFLAGS = $(INCLFLAGS) $(GLINCLFLAGS) $(XTRA_CFLAGS) 
 
