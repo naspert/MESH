@@ -1,4 +1,4 @@
-/* $Id: model_in.c,v 1.5 2002/02/07 14:00:17 dsanta Exp $ */
+/* $Id: model_in.c,v 1.6 2002/03/05 14:12:31 dsanta Exp $ */
 
 /*
  * Functions to read 3D model data from files
@@ -16,10 +16,13 @@
    PLATFORM DEPENDENT THINGS
    -------------------------------------------------------------------------- */
 
-/* If available use the fgetc_unlocked function which is much faster than
- * fgetc (does not require locking of the stream on each call). */
-#if defined(__GLIBC__) && (__GLIBC__ >= 2)
-# define fgetc  fgetc_unlocked /* from stdio.h */
+/* If the POSIX.1c-1996 getc_unlocked function is available we use it in place
+ * of getc, since it is much faster (no locking required in each call). Note
+ * that _POSIX_C_SOURCE must be defined in the compiler command line or by a
+ * previous include. */
+#if defined(_POSIX_C_SOURCE) && (_POSIX_C_SOURCE >= 199506L)
+# undef  getc /* make sure we don't get a warning for redefinition */
+# define getc  getc_unlocked /* from stdio.h */
 #endif
 
 /* Macros to use fastest possible I/O stream access given that only one thread
@@ -328,16 +331,16 @@ static int skip_ws_comm(FILE *data)
 {
   int c;
 
-  c = fgetc(data);
+  c = getc(data);
   do {
     if (c == '#' /* hash */ ) { /* Comment line, skip whole line */
       do {
-        c = fgetc(data);
+        c = getc(data);
       } while (c != '\n' && c != '\r' && c != EOF);
-      if (c != EOF) c = fgetc(data); /* Get first character of next line */
+      if (c != EOF) c = getc(data); /* Get first character of next line */
     } else if (c == ' ' || c == '\t' || c == ',' || c == '\n' || c == '\r') {
       /* VRML whitespace char, get next character */
-      c = fgetc(data);
+      c = getc(data);
     } else if (c != EOF) { /* a meaningful character, put it back */
       c = ungetc(c,data);
       break;
@@ -356,10 +359,10 @@ static int skip_ws_comm_str(FILE *data)
 
   c = skip_ws_comm(data);
   while (c == '"') { /* skip all consecutive strings */
-    fgetc(data); /* skip '"' starting string */
+    getc(data); /* skip '"' starting string */
     in_escape = 0;
     do {
-      c = fgetc(data);
+      c = getc(data);
       if (!in_escape) {
         if (c == '\\') in_escape = 1;
       } else {
@@ -384,12 +387,12 @@ static int find_chars(FILE *data, const char *chars)
   int c;
   int in_escape;
 
-  c = fgetc(data);
+  c = getc(data);
   while (c != EOF && strchr(chars,c) == NULL) {
     if (c == '"') { /* start of quoted string, skip it */
       in_escape = 0;
       do {
-        c = fgetc(data);
+        c = getc(data);
         if (!in_escape) {
           if (c == '\\') in_escape = 1;
         } else {
@@ -397,13 +400,13 @@ static int find_chars(FILE *data, const char *chars)
           if (c == '"') c = '\0'; /* escaped double quotes, not interesting */
         }
       } while (c != '"' && c != EOF);
-      if (c != EOF) c = fgetc(data); /* next char */
+      if (c != EOF) c = getc(data); /* next char */
     } else if (c == '#') { /* start comment, skip it */
       do {
-        c = fgetc(data);
+        c = getc(data);
       } while (c != '\n' && c != '\r' && c != EOF);
     } else { /* unquoted char, just get next */
-      c = fgetc(data);
+      c = getc(data);
     }
   }
   if (c != EOF) c = ungetc(c,data); /* put matched char back */
@@ -421,15 +424,15 @@ static int find_string(FILE *data, const char *string)
   int c,i;
 
   do {
-    c = fgetc(data);
+    c = getc(data);
     if (strchr(VRML_WSCOMMSTR_CHARS,c)) { /* characters we need to skip */
       if (ungetc(c,data) == EOF) return EOF;
       skip_ws_comm_str(data);
-      c = fgetc(data);
+      c = getc(data);
     }
     i = 0;
     while (c != EOF && string[i] != '\0' && string[i] == c) {
-      c = fgetc(data);
+      c = getc(data);
       i++;
     }
     if (!ferror(data) && string[i] == '\0' &&
@@ -452,19 +455,19 @@ static int skip_vrml_field(FILE *data)
   if ((c = skip_ws_comm(data)) == EOF) return MESH_CORRUPTED;
 
   if (c == '[') { /* array enclosed in [], skip until next ] */
-    fgetc(data); /* skip [ */
+    getc(data); /* skip [ */
     find_chars(data,"]");
-    c = fgetc(data); /* skip ] */
+    c = getc(data); /* skip ] */
   } if (c == '{') { /* a node, skip (including embedded nodes) */
-    fgetc(data); /* skip { */
+    getc(data); /* skip { */
     n_brace = 1;
     do {
       c = find_chars(data,"{}");
       if (c == '{') { /* embedded node start */
-        fgetc(data); /* skip { */
+        getc(data); /* skip { */
         n_brace++;
       } else if (c == '}') { /* node ending */
-        fgetc(data); /* skip } */
+        getc(data); /* skip } */
         n_brace--;
       }
     } while (n_brace > 0 && c != EOF);
@@ -550,7 +553,7 @@ static int read_mffloat(float **a_ref, FILE *data, int nelem)
   if ((c = skip_ws_comm(data)) == EOF) return MESH_CORRUPTED;
   if (c == '[') {
     in_brackets = 1;
-    fgetc(data); /* skip [ */
+    getc(data); /* skip [ */
   } else {
     in_brackets = 0;
   }
@@ -565,7 +568,7 @@ static int read_mffloat(float **a_ref, FILE *data, int nelem)
       if (!in_brackets) {
         n = MESH_CORRUPTED;
       } else {
-        fgetc(data); /* skip ] */
+        getc(data); /* skip ] */
         break;
       }
     } else if (c != EOF && fscanf(data,"%f",&tmpf) == 1) {
@@ -611,7 +614,7 @@ static int read_mfint32(int **a_ref, FILE *data, int *max_val)
   if ((c = skip_ws_comm(data)) == EOF) return MESH_CORRUPTED;
   if (c == '[') {
     in_brackets = 1;
-    fgetc(data); /* skip [ */
+    getc(data); /* skip [ */
   } else {
     in_brackets = 0;
   }
@@ -627,7 +630,7 @@ static int read_mfint32(int **a_ref, FILE *data, int *max_val)
       if (!in_brackets) {
         n = MESH_CORRUPTED;
       } else {
-        fgetc(data); /* skip ] */
+        getc(data); /* skip ] */
         break;
       }
     } else if (c != EOF && fscanf(data,"%i",&tmpi) == 1) {
@@ -823,7 +826,7 @@ static int read_vrml_coordinate(vertex_t **vtcs_ref, FILE *data,
 
   /* Get the opening curly bracket */
   if ((c = skip_ws_comm(data)) == EOF || c != '{') return MESH_CORRUPTED;
-  fgetc(data); /* skip { */
+  getc(data); /* skip { */
 
   rcode = 0;
   n_vtcs = 0;
@@ -831,7 +834,7 @@ static int read_vrml_coordinate(vertex_t **vtcs_ref, FILE *data,
   do {
     c = skip_ws_comm(data);
     if (c == '}') { /* end of node */
-      fgetc(data); /* skip } */
+      getc(data); /* skip } */
     } else if (c != EOF && fscanf(data,sfmt,stmp) == 1) { /* field */
       if (strcmp(stmp,"point") == 0) {
         n_vtcs = read_mfvec3f_bbox(&vtcs,data,bbox_min,bbox_max);
@@ -868,7 +871,7 @@ static int read_vrml_normal(vertex_t **nrmls_ref, FILE *data)
 
   /* Get the opening curly bracket */
   if ((c = skip_ws_comm(data)) == EOF || c != '{') return MESH_CORRUPTED;
-  fgetc(data); /* skip { */
+  getc(data); /* skip { */
 
   rcode = 0;
   n_nrmls = 0;
@@ -876,7 +879,7 @@ static int read_vrml_normal(vertex_t **nrmls_ref, FILE *data)
   do {
     c = skip_ws_comm(data);
     if (c == '}') { /* end of node */
-      fgetc(data); /* skip } */
+      getc(data); /* skip } */
     } else if (c != EOF && fscanf(data,sfmt,stmp) == 1) { /* field */
       if (strcmp(stmp,"vector") == 0) {
         n_nrmls = read_mfvec3f(&nrmls,data);
@@ -920,7 +923,7 @@ static int read_vrml_ifs(struct model *tmesh, FILE *data)
 
   /* Get the opening curly bracket */
   if ((c = skip_ws_comm(data)) == EOF || c != '{') return MESH_CORRUPTED;
-  fgetc(data); /* skip { */
+  getc(data); /* skip { */
 
   rcode = 0;
   vtcs = NULL;
@@ -939,7 +942,7 @@ static int read_vrml_ifs(struct model *tmesh, FILE *data)
   do {
     c = skip_ws_comm(data);
     if (c == '}') { /* end of node */
-      fgetc(data); /* skip } */
+      getc(data); /* skip } */
     } else if (c != EOF && fscanf(data,sfmt,stmp) == 1) { /* field */
       if (strcmp(stmp,"coord") == 0) { /* Coordinates */
         if (n_vtcs != -1) {
@@ -1260,29 +1263,29 @@ static int detect_file_format(FILE *data)
   char *eptr;
   double ver;
 
-  c = fgetc(data);
+  c = getc(data);
   if (c == '#') { /* Probably VRML or Inventor */
     if (fscanf(data,swfmt,stmp) == 1) {
       if (strcmp(stmp,"VRML") == 0) {
-        if (fgetc(data) == ' ' && fscanf(data,swfmt,stmp) == 1 &&
-            strcmp(stmp,"V2.0") == 0 && fgetc(data) == ' ' &&
+        if (getc(data) == ' ' && fscanf(data,swfmt,stmp) == 1 &&
+            strcmp(stmp,"V2.0") == 0 && getc(data) == ' ' &&
             fscanf(data,swfmt,stmp) == 1 && strcmp(stmp,"utf8") == 0 &&
-            ((c = fgetc(data)) == '\n' || c == '\r' || c == ' ' || c == '\t')) {
+            ((c = getc(data)) == '\n' || c == '\r' || c == ' ' || c == '\t')) {
           while (c != EOF && c != '\n' && c != '\r') { /* skip rest of header */
-            c = fgetc(data);
+            c = getc(data);
           }
           rcode = (c != EOF) ? MESH_FF_VRML : MESH_CORRUPTED;
         } else {
           rcode = ferror(data) ? MESH_CORRUPTED : MESH_BAD_FF;
         }
       } else if (strcmp(stmp,"Inventor") == 0) {
-        if (fgetc(data) == ' ' && fscanf(data,svfmt,stmp) == 1 &&
+        if (getc(data) == ' ' && fscanf(data,svfmt,stmp) == 1 &&
             stmp[0] == 'V' && (ver = strtod(stmp+1,&eptr)) >= 2 &&
-            ver < 3 && *eptr == '\0' && fgetc(data) == ' ' &&
+            ver < 3 && *eptr == '\0' && getc(data) == ' ' &&
             fscanf(data,swfmt,stmp) == 1 && strcmp(stmp,"ascii") == 0 &&
-            ((c = fgetc(data)) == '\n' || c == '\r' || c == ' ' || c == '\t')) {
+            ((c = getc(data)) == '\n' || c == '\r' || c == ' ' || c == '\t')) {
           while (c != EOF && c != '\n' && c != '\r') { /* skip rest of header */
-            c = fgetc(data);
+            c = getc(data);
           }
           rcode = (c != EOF) ? MESH_FF_IV : MESH_CORRUPTED;
         } else {
@@ -1301,7 +1304,7 @@ static int detect_file_format(FILE *data)
         if (fscanf(data,swfmt,stmp) == 1 && strcmp(stmp,"format") == 0 &&
             fscanf(data,swfmt,stmp) == 1 && strcmp(stmp,"ascii") == 0 &&
             fscanf(data,swfmt,stmp) == 1 && strcmp(stmp,"1.0") == 0 &&
-            ((c = fgetc(data)) == '\n' || fgetc(data) == '\r')) {
+            ((c = getc(data)) == '\n' || getc(data) == '\r')) {
           rcode = MESH_FF_PLY;
         } else {
           rcode = ferror(data) ? MESH_CORRUPTED : MESH_BAD_FF;
