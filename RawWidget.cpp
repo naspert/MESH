@@ -1,4 +1,4 @@
-/* $Id: RawWidget.cpp,v 1.64 2003/01/13 12:46:06 aspert Exp $ */
+/* $Id: RawWidget.cpp,v 1.65 2003/03/26 09:17:16 aspert Exp $ */
 
 
 /*
@@ -892,27 +892,31 @@ void RawWidget::rebuildList() {
 /* ************************************************************ */
 void RawWidget::mousePressEvent(QMouseEvent *event)
 {
+
   if(event->button() & LeftButton){
     left_button_state=1;
     oldx=event->x();
     oldy=event->y();
   }
-else 
-  left_button_state=0;
+  else 
+    left_button_state=0;
+  
   if(event->button() & RightButton){
     right_button_state=1;
     oldx=event->x();
     oldy=event->y();
   }
-else 
-  right_button_state=0;
+  else 
+    right_button_state=0;
+  
   if(event->button() & MidButton){
     middle_button_state=1;
     oldx=event->x();
     oldy=event->y();
   }
-else 
-  middle_button_state=0;
+  else 
+    middle_button_state=0;
+  
 }
 
 
@@ -940,8 +944,8 @@ void RawWidget::changeSpeed(int value) {
 void RawWidget::mouseMoveEvent(QMouseEvent *event) {
   int dx,dy;
 
-  dx= event->x() - oldx;
-  dy= event->y() - oldy;
+  dx = event->x() - oldx;
+  dy = event->y() - oldy;
 
   if (!gl_initialized) {
     fprintf(stderr,"received RawWidget::mouseMoveEvent() before GL context "
@@ -950,31 +954,34 @@ void RawWidget::mouseMoveEvent(QMouseEvent *event) {
   }
 
   makeCurrent();
-  if(left_button_state==1){  
-    dth = dx*0.5; 
-    dph = dy*0.5;
-    glPushMatrix(); 
-    glLoadIdentity();
-    glRotated(dth, 0.0, 1.0, 0.0);
-    glRotated(dph, 1.0, 0.0, 0.0);
-    glMultMatrixd(mvmatrix); 
-    glGetDoublev(GL_MODELVIEW_MATRIX, mvmatrix); 
-    glPopMatrix(); 
-    updateGL();
-  }
-  else if (middle_button_state == 1) {
-    distance += dy*dstep;
-    updateGL();
-  }
-  else if (right_button_state == 1) { 
-    dpsi = -dx*0.5;
-    glPushMatrix(); /* Save transform context */
-    glLoadIdentity();
-    glRotated(dpsi, 0.0, 0.0, 1.0); /* Modify roll angle */
-    glMultMatrixd(mvmatrix);
-    glGetDoublev(GL_MODELVIEW_MATRIX, mvmatrix); /* Get the final matrix */
-    glPopMatrix(); /* Reload previous transform context */
-    updateGL();
+  if (timer_state == 0) { // When in "demo" mode, the mousemove events
+                          // _have_ to be ignored
+    if(left_button_state==1){  
+      dth = dx*0.5; 
+      dph = dy*0.5;
+      glPushMatrix(); 
+      glLoadIdentity();
+      glRotated(dth, 0.0, 1.0, 0.0);
+      glRotated(dph, 1.0, 0.0, 0.0);
+      glMultMatrixd(mvmatrix); 
+      glGetDoublev(GL_MODELVIEW_MATRIX, mvmatrix); 
+      glPopMatrix(); 
+      updateGL();
+    }
+    else if (middle_button_state==1) {
+      distance += dy*dstep;
+      updateGL();
+    }
+    else if (right_button_state==1) { 
+      dpsi = -dx*0.5;
+      glPushMatrix(); /* Save transform context */
+      glLoadIdentity();
+      glRotated(dpsi, 0.0, 0.0, 1.0); /* Modify roll angle */
+      glMultMatrixd(mvmatrix);
+      glGetDoublev(GL_MODELVIEW_MATRIX, mvmatrix); /* Get the final matrix */
+      glPopMatrix(); /* Reload previous transform context */
+      updateGL();
+    }
   }
   checkGlErrors("keyPressEvent(QMouseEvent)");
 
