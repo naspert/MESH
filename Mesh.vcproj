@@ -103,7 +103,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="imm32.lib wsock32.lib $(QTDIR)\lib\qt-mt230nc.lib $(QTDIR)\lib\qtmain.lib glu32.lib opengl32.lib"
+				AdditionalDependencies="imm32.lib wsock32.lib $(QTDIR)\lib\qt-mt3.lib $(QTDIR)\lib\qtmain.lib glu32.lib opengl32.lib"
 				OutputFile=".\Release/Mesh.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -626,8 +626,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Moc&apos;ing $(InputName).h ..."
-						CommandLine="%qtdir%\bin\moc.exe &quot;$(InputDir)&quot;&quot;$(InputName)&quot;.h -o &quot;$(InputDir)&quot;moc_&quot;$(InputName)&quot;.cpp
-"
+						CommandLine="%qtdir%\bin\moc.exe $(InputDir)\$(InputName).h -o $(InputDir)\moc_$(InputName).cpp"
 						Outputs="$(InputDir)moc_$(InputName).cpp"/>
 				</FileConfiguration>
 			</File>
@@ -652,8 +651,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Moc&apos;ing $(InputName).h ..."
-						CommandLine="%qtdir%\bin\moc.exe &quot;$(InputDir)&quot;&quot;$(InputName)&quot;.h -o &quot;$(InputDir)&quot;moc_&quot;$(InputName)&quot;.cpp
-"
+						CommandLine="%qtdir%\bin\moc.exe $(InputDir)\$(InputName).h -o $(InputDir)\moc_$(InputName).cpp"
 						Outputs="$(InputDir)moc_$(InputName).cpp"/>
 				</FileConfiguration>
 			</File>
@@ -675,8 +673,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Moc&apos;ing $(InputName).h ..."
-						CommandLine="%qtdir%\bin\moc.exe &quot;$(InputDir)&quot;&quot;$(InputName)&quot;.h -o &quot;$(InputDir)&quot;moc_&quot;$(InputName)&quot;.cpp
-"
+						CommandLine="%qtdir%\bin\moc.exe $(InputDir)\$(InputName).h -o $(InputDir)\moc_$(InputName).cpp"
 						Outputs="$(InputDir)moc_$(InputName).cpp"/>
 				</FileConfiguration>
 			</File>
@@ -698,8 +695,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Moc&apos;ing $(InputName).h ..."
-						CommandLine="%qtdir%\bin\moc.exe &quot;$(InputDir)&quot;&quot;$(InputName)&quot;.h -o &quot;$(InputDir)&quot;moc_&quot;$(InputName)&quot;.cpp
-"
+						CommandLine="%qtdir%\bin\moc.exe $(InputDir)\$(InputName).h -o $(InputDir)\moc_$(InputName).cpp"
 						Outputs="$(InputDir)moc_$(InputName).cpp"/>
 				</FileConfiguration>
 			</File>
@@ -718,8 +714,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Moc&apos;ing $(InputName).h ..."
-						CommandLine="%qtdir%\bin\moc.exe &quot;$(InputDir)&quot;&quot;$(InputName)&quot;.h -o &quot;$(InputDir)&quot;moc_&quot;$(InputName)&quot;.cpp
-"
+						CommandLine="%qtdir%\bin\moc.exe $(InputDir)\$(InputName).h -o $(InputDir)\moc_$(InputName).cpp"
 						Outputs="$(InputDir)moc_$(InputName).cpp"/>
 				</FileConfiguration>
 			</File>
@@ -756,13 +751,19 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Moc&apos;ing $(InputName).h ..."
-						CommandLine="%qtdir%\bin\moc.exe &quot;$(InputDir)&quot;&quot;$(InputName)&quot;.h -o &quot;$(InputDir)&quot;moc_&quot;$(InputName)&quot;.cpp
-"
+						CommandLine="%qtdir%\bin\moc.exe $(InputDir)\$(InputName).h -o $(InputDir)\moc_$(InputName).cpp"
 						Outputs="$(InputDir)moc_$(InputName).cpp"/>
 				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="TextWidget.h">
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="%qtdir%\bin\moc.exe $(InputDir)\$(InputName).h -o $(InputDir)\moc_$(InputName).cpp"
+						Outputs="$(InputDir)moc_$(InputName).cpp"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="xalloc.h">
