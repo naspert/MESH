@@ -1,5 +1,5 @@
 #! /usr/bin/perl -w
-# $Id: vtk2raw.pl,v 1.1 2001/03/12 14:50:32 aspert Exp $
+# $Id$
 
 unless ($#ARGV == 0) {
   die ("Usage: vtk2raw.pl infile[.vtk]\n");

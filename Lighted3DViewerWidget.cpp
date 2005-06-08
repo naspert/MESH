@@ -1,4 +1,4 @@
-/* $Id: Lighted3DViewerWidget.cpp,v 1.3 2004/04/30 07:50:20 aspert Exp $ */
+/* $Id$ */
 
 /*
  *

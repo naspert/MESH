@@ -1,4 +1,4 @@
-/* $Id: dirac.c,v 1.9 2003/03/26 09:01:16 aspert Exp $ */
+/* $Id$ */
 #include <3dutils.h>
 
 int main(int argc, char **argv) {

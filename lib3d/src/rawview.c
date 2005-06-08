@@ -1,4 +1,4 @@
-/* $Id: rawview.c,v 1.43 2003/06/25 14:40:45 aspert Exp $ */
+/* $Id$ */
 #ifdef _WIN32
 #include <windows.h>
 #endif

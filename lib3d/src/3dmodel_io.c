@@ -1,4 +1,4 @@
-/* $Id: 3dmodel_io.c,v 1.25 2003/03/26 08:59:24 aspert Exp $ */
+/* $Id$ */
 #include <3dmodel.h>
 #include <3dmodel_io.h>
 #include <normals.h>

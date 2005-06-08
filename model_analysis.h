@@ -1,4 +1,4 @@
-/* $Id: model_analysis.h,v 1.16 2004/04/30 07:50:21 aspert Exp $ */
+/* $Id$ */
 
 
 /*

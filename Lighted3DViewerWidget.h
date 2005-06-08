@@ -1,4 +1,4 @@
-/* $Id: Lighted3DViewerWidget.h,v 1.2 2004/04/30 07:50:20 aspert Exp $ */
+/* $Id$ */
 
 /*
  *

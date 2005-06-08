@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-# $Id: vrml2iv.pl,v 1.1 2001/03/12 14:50:32 aspert Exp $
+# $Id$
 #
 # ---------------------------------------------------------------------
 # This script is intended to convert basic vrml2.0 files

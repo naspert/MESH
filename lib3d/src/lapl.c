@@ -1,4 +1,4 @@
-/* $Id: lapl.c,v 1.2 2003/03/26 09:01:16 aspert Exp $ */
+/* $Id$ */
 #include <3dmodel.h>
 #include <geomutils.h>
 #include <ring.h>

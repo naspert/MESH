@@ -1,4 +1,4 @@
-/* $Id: TextWidget.cpp,v 1.16 2004/04/30 07:50:20 aspert Exp $ */
+/* $Id$ */
 
 
 /*

@@ -1,4 +1,4 @@
-/* $Id: image.h,v 1.5 2001/04/26 11:40:21 aspert Exp $ */
+/* $Id$ */
 
 #include <stdio.h>
 #include <stdlib.h>

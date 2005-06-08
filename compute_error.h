@@ -1,4 +1,4 @@
-/* $Id: compute_error.h,v 1.33 2004/04/30 07:50:21 aspert Exp $ */
+/* $Id$ */
 
 
 /*

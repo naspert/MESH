@@ -1,4 +1,4 @@
-/* $Id: curvature.h,v 1.4 2003/06/25 14:40:44 aspert Exp $ */
+/* $Id$ */
 
 #include <3dmodel.h>
 #include <ring.h>

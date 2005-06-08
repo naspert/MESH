@@ -1,4 +1,4 @@
-/* $Id: ScreenWidget.cpp,v 1.54 2004/04/30 07:50:20 aspert Exp $ */
+/* $Id$ */
 
 
 /*

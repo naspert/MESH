@@ -1,4 +1,4 @@
-/* $Id: 3dmodel_io.h,v 1.10 2003/03/26 08:59:24 aspert Exp $ */
+/* $Id$ */
 #include <3dmodel.h>
 
 #ifndef _3DMODEL_IO_PROTO

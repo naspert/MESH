@@ -1,4 +1,4 @@
-/* $Id: block_list.c,v 1.5 2004/04/30 07:50:22 aspert Exp $ */
+/* $Id$ */
 
 /*
  *

@@ -1,4 +1,4 @@
-/* $Id: ColorMapWidget.h,v 1.22 2004/04/30 07:50:20 aspert Exp $ */
+/* $Id$ */
 
 
 /*

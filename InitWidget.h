@@ -1,4 +1,4 @@
-/* $Id: InitWidget.h,v 1.25 2004/04/30 07:50:20 aspert Exp $ */
+/* $Id$ */
 
 
 /*

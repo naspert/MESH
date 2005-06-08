@@ -1,5 +1,5 @@
 #! /bin/bash
-# $Id: subdiv.sh,v 1.6 2003/05/08 06:41:49 aspert Exp $
+# $Id$
 
 
 bin_path=/home/sun1/aspert/devel/lib3d/bin

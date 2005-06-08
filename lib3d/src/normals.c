@@ -1,4 +1,4 @@
-/* $Id: normals.c,v 1.42 2003/07/08 17:23:47 aspert Exp $ */
+/* $Id$ */
 #include <3dmodel.h>
 #include <geomutils.h>
 #include <normals.h>

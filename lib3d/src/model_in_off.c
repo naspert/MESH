@@ -1,4 +1,4 @@
-/* $Id: model_in_off.c,v 1.7 2004/10/25 11:37:41 aspert Exp $ */
+/* $Id$ */
 /*
  *
  *  Copyright (C) 2004 EPFL (Swiss Federal Institute of Technology,

@@ -1,4 +1,4 @@
-/* $Id: compare_curv.c,v 1.15 2003/06/25 14:50:05 aspert Exp $ */
+/* $Id$ */
 #include <3dutils.h>
 #include <ring.h>
 #include <curvature.h>

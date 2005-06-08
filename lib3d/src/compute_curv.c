@@ -1,4 +1,4 @@
-/* $Id: compute_curv.c,v 1.3 2003/06/25 14:40:44 aspert Exp $ */
+/* $Id$ */
 #include <3dutils.h>
 #include <model_in.h>
 #include <ring.h>

@@ -1,4 +1,4 @@
-/* $Id: InitWidget.cpp,v 1.43 2004/10/12 13:06:56 aspert Exp $ */
+/* $Id$ */
 
 
 /*

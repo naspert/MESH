@@ -1,5 +1,5 @@
 #! /usr/bin/perl
-# $Id: raw2smf.pl,v 1.1 2001/03/12 14:50:32 aspert Exp $
+# $Id$
 
 unless ($#ARGV >= 0) {
   die("Usage: raw2smf.pl infile[.raw] [outfile.smf]\n");

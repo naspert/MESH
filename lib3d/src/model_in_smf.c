@@ -1,4 +1,4 @@
-/* $Id: model_in_smf.c,v 1.12 2004/04/30 07:50:22 aspert Exp $ */
+/* $Id$ */
 
 
 /*

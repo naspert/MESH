@@ -1,4 +1,4 @@
-/* $Id: model_in_vrml_iv.c,v 1.10 2004/04/30 07:50:22 aspert Exp $ */
+/* $Id$ */
 
 
 /*

@@ -1,4 +1,4 @@
-/* $Id: ScreenWidget.h,v 1.33 2004/04/30 07:50:20 aspert Exp $ */
+/* $Id$ */
 
 
 /*

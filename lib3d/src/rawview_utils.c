@@ -1,4 +1,4 @@
-/* $Id: rawview_utils.c,v 1.10 2003/06/25 14:40:45 aspert Exp $ */
+/* $Id$ */
 #include <3dutils.h>
 #include <rawview.h>
 #include <rawview_misc.h>

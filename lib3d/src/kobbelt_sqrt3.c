@@ -1,4 +1,4 @@
-/* $Id: kobbelt_sqrt3.c,v 1.2 2003/03/13 12:10:05 aspert Exp $ */
+/* $Id$ */
 #include <3dmodel.h>
 #include <geomutils.h>
 #include <subdiv_methods.h>

@@ -1,4 +1,4 @@
-/* $Id: normals.h,v 1.21 2003/03/12 14:54:22 aspert Exp $ */
+/* $Id$ */
 #include <3dmodel.h>
 #include <ring.h>
 

@@ -1,4 +1,4 @@
-/* $Id: subdiv.h,v 1.12 2003/06/20 08:31:21 aspert Exp $ */
+/* $Id$ */
 
 #include <3dmodel.h>
 #include <ring.h>

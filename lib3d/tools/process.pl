@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-# $Id: process.pl,v 1.1 2001/03/12 14:50:32 aspert Exp $
+# $Id$
 use VRML::VRML2::Standard;
 
 # This sub writes a .wrl file 

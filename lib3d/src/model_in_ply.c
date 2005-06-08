@@ -1,4 +1,4 @@
-/* $Id: model_in_ply.c,v 1.20 2004/04/30 07:50:22 aspert Exp $ */
+/* $Id$ */
 
 
 /*

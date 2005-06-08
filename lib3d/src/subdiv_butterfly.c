@@ -1,4 +1,4 @@
-/* $Id: subdiv_butterfly.c,v 1.10 2003/06/20 08:31:22 aspert Exp $ */
+/* $Id$ */
 
 #include <3dmodel.h>
 #include <normals.h>

@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# $Id: vrmlifs2raw.pl,v 1.2 2002/01/18 18:02:36 dsanta Exp $
+# $Id$
 
 #
 # Converts an IndexedFaceSet from a VRML file to a raw mesh

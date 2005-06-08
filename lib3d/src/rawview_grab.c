@@ -1,4 +1,4 @@
-/* $Id: rawview_grab.c,v 1.4 2003/02/18 13:49:33 aspert Exp $ */
+/* $Id$ */
 
 #include <rawview_misc.h>
 

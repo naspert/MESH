@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-# $Id: raw2wrl.pl,v 1.5 2002/02/01 12:06:57 aspert Exp $
+# $Id$
 
 use VRML::VRML2::Standard;
 use strict;

@@ -1,4 +1,4 @@
-/* $Id: subdiv_main.c,v 1.13 2003/06/12 16:20:37 aspert Exp $ */
+/* $Id$ */
 #include <3dutils.h>
 #include <subdiv.h>
 #include <subdiv_methods.h>

@@ -1,4 +1,4 @@
-/* $Id: subdiv_sph.c,v 1.16 2003/06/20 08:31:22 aspert Exp $ */
+/* $Id$ */
 #include <3dutils.h>
 #include <3dmodel.h>
 #include <normals.h>

@@ -1,4 +1,4 @@
-/* $Id: subdiv_methods.h,v 1.20 2003/06/20 08:31:21 aspert Exp $ */
+/* $Id$ */
 #include <3dmodel.h>
 #include <ring.h>
 

@@ -1,4 +1,4 @@
-/* $Id: maps_lsq.c,v 1.11 2003/06/30 09:08:27 aspert Exp $ */
+/* $Id$ */
 #include <3dutils.h>
 #include <ring.h>
 #include <curvature.h>

@@ -1,4 +1,4 @@
-/* $Id: isoca.c,v 1.10 2003/05/07 14:59:19 aspert Exp $ */
+/* $Id$ */
 #include <3dutils.h>
 #include <subdiv.h>
 

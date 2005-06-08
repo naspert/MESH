@@ -1,4 +1,4 @@
-/* $Id: rawview_disp.c,v 1.11 2003/06/25 14:40:45 aspert Exp $ */
+/* $Id$ */
 
 #include <rawview_misc.h>
 #ifdef DEBUG

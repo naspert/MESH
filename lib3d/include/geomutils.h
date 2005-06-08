@@ -1,4 +1,4 @@
-/* $Id: geomutils.h,v 1.39 2004/04/30 07:50:21 aspert Exp $ */
+/* $Id$ */
 
 
 /*

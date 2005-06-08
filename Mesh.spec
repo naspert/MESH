@@ -1,5 +1,5 @@
 # Spec file for MESH
-# $Id: Mesh.spec,v 1.14 2004/10/25 11:30:18 aspert Exp $
+# $Id$
 Summary: Measuring Errors between Surfaces using the Hausdorff distance
 Name: Mesh
 Version: 1.13

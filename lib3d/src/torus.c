@@ -1,4 +1,4 @@
-/* $Id: torus.c,v 1.7 2003/03/26 09:01:17 aspert Exp $ */
+/* $Id$ */
 #include <3dmodel.h>
 #include <geomutils.h>
 #include <3dmodel_io.h>
