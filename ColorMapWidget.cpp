@@ -100,7 +100,7 @@ void ColorMapWidget::doHistogram(int scaleType) {
   memset(histogram, 0, sizeof(*histogram)*len);
 
   n = me->n_samples;
-  drange = me->max_error-me->min_error;
+  drange = me->max_error - me->min_error;
   off = me->min_error;
   serror = me->fe[0].serror;
   for (i=0; i<n; i++) {
@@ -161,8 +161,8 @@ void ColorMapWidget::paintEvent(QPaintEvent *) {
   double scale;
 
   lscale = (int) floor(log10(dmax));
-  scale = pow(10,lscale);
-  f.setPixelSize(11);
+  scale = pow(10.0,lscale);
+  f.setPointSize(9);
   p.begin(this);
   p.setFont(f);
   QFontMetrics fm(p.fontMetrics());
@@ -171,7 +171,7 @@ void ColorMapWidget::paintEvent(QPaintEvent *) {
   tmpDisplayedText.sprintf("x 1 e %i",lscale);
   p.setPen(Qt::white);
   p.drawText(10,yoff,tmpDisplayedText);
-  h = height()-3*yoff;
+  h = height() - 3*yoff;
   h = h/CBAR_STEP*CBAR_STEP;
   yoff *= 2;
   if (cmap_len != h) {
