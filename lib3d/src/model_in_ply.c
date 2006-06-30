@@ -462,7 +462,7 @@ static int get_prop_name(const char *str)
     name = v_y;
   else if (strcmp(str, "z") == 0)
     name = v_z;
-  else if (strcmp(str, "vertex_indices") == 0)
+  else if (strcmp(str, "vertex_indices") == 0 || strcmp(str, "vertex_index") == 0)
     name = v_idx;
   else
     name = unsupported;
@@ -539,69 +539,69 @@ static int read_ply_faces(face_t *faces, struct file_data *data,
   int tmp_int=0;
 
   for (i=0; i<n_faces && rcode >=0; i++) {
-    for (j=0; j<n_f_prop && rcode >=0; j++) {
+	for (j=0; j<n_f_prop && rcode >=0; j++) {
       if (face_prop[j].prop == v_idx) {
         if (!face_prop[j].is_list)
           rcode = MESH_CORRUPTED;
         else {
-	  if (is_bin)
-	    rcode = read_ply_property(data, face_prop[j].type_list, 
-				      swap_bytes, &nvert);
-	  else {
-	    if (int_scanf(data, &tmp_int) != 1) {
-	      rcode = MESH_CORRUPTED;
-	      break;
-	    }
-            nvert = (t_uint8)tmp_int;
-	  }
-          if (nvert != 3) { /* Non triangular mesh -> bail out */
+			if (is_bin)
+				rcode = read_ply_property(data, face_prop[j].type_list, 
+					      swap_bytes, &nvert);
+			else {
+				if (int_scanf(data, &tmp_int) != 1) {
+					rcode = MESH_CORRUPTED;
+					break;
+				}
+				nvert = (t_uint8)tmp_int;
+			}
+			if (nvert != 3) { /* Non triangular mesh -> bail out */
 #ifdef DEBUG
-            DEBUG_PRINT("found a %d face\n", nvert);
+				DEBUG_PRINT("found a %d face\n", nvert);
 #endif
-            rcode = MESH_NOT_TRIAG;
-            break;
-          }
-	  if (is_bin) {
-	    rcode = read_ply_property(data, face_prop[j].type_prop, swap_bytes,
-				      &f0);
-	    rcode = read_ply_property(data, face_prop[j].type_prop, swap_bytes,
-				      &f1);
-	    rcode = read_ply_property(data, face_prop[j].type_prop, swap_bytes,
-				      &f2);
-	  } else {
-	     if (int_scanf(data, &f0) != 1) {
-	       rcode = MESH_CORRUPTED;
-	       break;
-	     }
+				rcode = MESH_NOT_TRIAG;
+				break;
+			}
+			if (is_bin) {
+				rcode = read_ply_property(data, face_prop[j].type_prop, swap_bytes,
+						      &f0);
+				rcode = read_ply_property(data, face_prop[j].type_prop, swap_bytes,
+						      &f1);
+				rcode = read_ply_property(data, face_prop[j].type_prop, swap_bytes,
+						      &f2);
+			} else {
+				 if (int_scanf(data, &f0) != 1) {
+					rcode = MESH_CORRUPTED;
+					break;
+				}
 	     
-	     if (int_scanf(data, &f1) != 1) {
-	       rcode = MESH_CORRUPTED;
-	       break;
-	     }
+				if (int_scanf(data, &f1) != 1) {
+					rcode = MESH_CORRUPTED;
+					break;
+				}
 	     
-	     if (int_scanf(data, &f2) != 1) {
-	       rcode = MESH_CORRUPTED;
-	       break;
-	     }
+				if (int_scanf(data, &f2) != 1) {
+					rcode = MESH_CORRUPTED;
+					break;
+				}
 
-	  }
-          if (f0 < 0 || f1 < 0 || f2 < 0 || 
-              f0 >= n_vtcs || f1 >= n_vtcs || f2 >= n_vtcs ) {
-            rcode = MESH_MODEL_ERR;
-            break;
-          }
-          faces[i].f0 = f0;
-          faces[i].f1 = f1;
-          faces[i].f2 = f2;
+			}
+			if (f0 < 0 || f1 < 0 || f2 < 0 || 
+				f0 >= n_vtcs || f1 >= n_vtcs || f2 >= n_vtcs ) {
+				rcode = MESH_MODEL_ERR;
+				break;
+		    }
+			faces[i].f0 = f0;
+			faces[i].f1 = f1;
+			faces[i].f2 = f2;
           
-        }
-      } else {
-	if (is_bin)
-	  rcode = skip_bytes(data,  
-			     ply_sizes[face_prop[j].type_prop]*
-			     sizeof(unsigned char));
-	else
-	  rcode = skip_field(data, face_prop[j].type_prop);
+		}
+	  } else {
+		if (is_bin)
+			rcode = skip_bytes(data,  
+				     ply_sizes[face_prop[j].type_prop]*
+					 sizeof(unsigned char));
+		else
+			rcode = skip_field(data, face_prop[j].type_prop);
       }
     }
   }
@@ -633,52 +633,48 @@ static int read_ply_vertices(vertex_t *vtcs, struct file_data *data,
     for (j=0; j<n_v_prop && rcode>=0; j++) {
       switch (v_prop[j].prop) {
       case v_x:
-	if (is_bin)
-	  rcode = read_ply_property(data, v_prop[j].type_prop, swap_bytes, 
-				    &(vtcs[i].x));
-	else {
-	  if (float_scanf(data, &(vtcs[i].x)) != 1)
-	    rcode = MESH_CORRUPTED;
-	}
-        if (rcode == 0) {
-          if (vtcs[i].x < bbmin.x) bbmin.x = vtcs[i].x;
-          if (vtcs[i].x > bbmax.x) bbmax.x = vtcs[i].x;
-        }
+			if (is_bin)
+				rcode = read_ply_property(data, v_prop[j].type_prop, swap_bytes, &(vtcs[i].x));
+			else {
+				if (float_scanf(data, &(vtcs[i].x)) != 1)
+				rcode = MESH_CORRUPTED;
+			}
+			if (rcode == 0) {
+				if (vtcs[i].x < bbmin.x) bbmin.x = vtcs[i].x;
+				if (vtcs[i].x > bbmax.x) bbmax.x = vtcs[i].x;
+			}
         break;
+
       case v_y:
-	if (is_bin)
-	  rcode = read_ply_property(data, v_prop[j].type_prop, swap_bytes, 
-				    &(vtcs[i].y));
-	else {
-	  if (float_scanf(data, &(vtcs[i].y)) != 1)
-	    rcode = MESH_CORRUPTED;
-	}
+		if (is_bin)
+			rcode = read_ply_property(data, v_prop[j].type_prop, swap_bytes, &(vtcs[i].y));
+		else {
+			if (float_scanf(data, &(vtcs[i].y)) != 1)
+			rcode = MESH_CORRUPTED;
+		}
         if (rcode == 0) {
           if (vtcs[i].y < bbmin.y) bbmin.y = vtcs[i].y;
           if (vtcs[i].y > bbmax.y) bbmax.y = vtcs[i].y;
         }
         break;
       case v_z:
-	if (is_bin)
-	  rcode = read_ply_property(data, v_prop[j].type_prop, swap_bytes, 
-				    &(vtcs[i].z));
-	else {
-	  if (float_scanf(data, &(vtcs[i].z)) != 1)
-	    rcode = MESH_CORRUPTED;
-	}
+		if (is_bin)
+			rcode = read_ply_property(data, v_prop[j].type_prop, swap_bytes, &(vtcs[i].z));
+		else {
+		if (float_scanf(data, &(vtcs[i].z)) != 1)
+			rcode = MESH_CORRUPTED;
+		}
         if (rcode == 0) {
           if (vtcs[i].z < bbmin.z) bbmin.z = vtcs[i].z;
           if (vtcs[i].z > bbmax.z) bbmax.z = vtcs[i].z;
         }
         break;
       default:
-	if (is_bin)
-	  rcode = skip_bytes(data, 
-			     ply_sizes[v_prop[j].type_prop] * 
-			     sizeof(unsigned char));
-	else 
-	  rcode = skip_field(data, v_prop[j].type_prop);
-	
+		if (is_bin)
+			rcode = skip_bytes(data, 
+								ply_sizes[v_prop[j].type_prop]*sizeof(unsigned char));
+		else 
+			rcode = skip_field(data, v_prop[j].type_prop);
         break;
       }
     }
