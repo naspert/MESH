@@ -46,6 +46,9 @@
 
 #include <qgl.h>
 #include <qtimer.h>
+//Added by qt3to4:
+#include <QMouseEvent>
+#include <QKeyEvent>
 
 #define FOV 40.0 // Vertical field of view (in degrees) for the
                  // rendering

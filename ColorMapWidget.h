@@ -51,7 +51,9 @@
 #define COLORMAPWIDGET_H
 
 #include <qwidget.h>
-#include <compute_error.h>
+//Added by qt3to4:
+#include <QPaintEvent>
+#include "compute_error.h"
 
 /* Colorbar constants */
 #ifndef CBAR_WIDTH

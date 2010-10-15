@@ -44,8 +44,10 @@
 #ifndef LIGHTED3DVIEWERWIDGET_H
 #define LIGHTED3DVIEWERWIDGET_H
 
-#include <Basic3DViewerWidget.h>
-#include <compute_error.h>
+#include "Basic3DViewerWidget.h"
+#include "compute_error.h"
+//Added by qt3to4:
+#include <QKeyEvent>
 
 
 // This class adds lighting capabilities to Basic3DViewerWidget (and

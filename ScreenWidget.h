@@ -52,13 +52,13 @@
 
 /* QT includes */
 #include <qwidget.h>
-#include <qhgroupbox.h>
-#include <qvgroupbox.h>
+#include <q3groupbox.h>
+//#include <qvgroupbox.h>
 #include <qslider.h>
 #include <qspinbox.h>
 #include <qcheckbox.h>
 #include <qpushbutton.h>
-#include <compute_error.h>
+#include "compute_error.h"
 
 
 class ScreenWidget : public QWidget {
@@ -85,7 +85,7 @@ protected slots:
   
 
 private:
-  QHGroupBox *qgbSlider;
+  Q3GroupBox *qgbSlider;
   QSlider *qslidDispSampDensity;
   QSpinBox *qspSampDensity, *qspTimerSpeed;
   QCheckBox *qcbInvNorm, *qcbTwoSide, *qcbTimer;

@@ -54,9 +54,9 @@
 #include <qlineedit.h>
 #include <qcheckbox.h>
 #include <qpixmap.h>
-#include <mesh_run.h>
-#include <ScreenWidget.h>
-#include <TextWidget.h>
+#include "mesh_run.h"
+#include "ScreenWidget.h"
+#include "TextWidget.h"
 
 class InitWidget : public QWidget {
   Q_OBJECT

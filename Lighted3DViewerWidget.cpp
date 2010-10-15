@@ -40,10 +40,12 @@
  *
  */
 
-#include <Lighted3DViewerWidget.h>
+#include "Lighted3DViewerWidget.h"
 #include <qmessagebox.h>
 #include <qapplication.h>
-#include <geomutils.h>
+//Added by qt3to4:
+#include <QKeyEvent>
+#include "geomutils.h"
 
 
 
@@ -187,13 +189,13 @@ void Lighted3DViewerWidget::keyPressEvent(QKeyEvent *k)
 {
   Basic3DViewerWidget::keyPressEvent(k);
   switch (k->key()) {
-  case Key_F2:
+  case Qt::Key_F2:
     emit toggleLight();
     break;
-  case Key_F4:
+  case Qt::Key_F4:
     emit toggleNormals();
     break;
-  case Key_F5:
+  case Qt::Key_F5:
     emit toggleTwoSidedMaterial();
     break;
   default:

@@ -40,12 +40,12 @@
  *
  */
 
-#include <Error3DViewerWidget.h>
+#include "Error3DViewerWidget.h"
 #include <qmessagebox.h>
 #include <qapplication.h>
-#include <colormap.h>
-#include <geomutils.h>
-#include <xalloc.h>
+#include "colormap.h"
+#include "geomutils.h"
+#include "xalloc.h"
 #include <assert.h>
 
 // Number of colors in the colormap

@@ -44,9 +44,9 @@
 #ifndef ERROR3DVIEWERWIDGET_H
 #define ERROR3DVIEWERWIDGET_H
 
-#include <Basic3DViewerWidget.h>
-#include <ColorMapWidget.h>
-#include <compute_error.h>
+#include "Basic3DViewerWidget.h"
+#include "ColorMapWidget.h"
+#include "compute_error.h"
 
 // This class extends Basic3DViewerWidget, adding possibility to
 // display error on the surface using 

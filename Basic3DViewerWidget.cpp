@@ -41,10 +41,13 @@
  */
 
 
-#include <Basic3DViewerWidget.h>
+#include "Basic3DViewerWidget.h"
 #include <qmessagebox.h>
 #include <qapplication.h>
-#include <geomutils.h>
+//Added by qt3to4:
+#include <QMouseEvent>
+#include <QKeyEvent>
+#include "geomutils.h"
 
 
 
@@ -387,7 +390,7 @@ void Basic3DViewerWidget::mouseMoveEvent(QMouseEvent *event)
   makeCurrent();
   if (timer_state == 0) { // When in "demo" mode, the mousemove events
                           // _have_ to be ignored
-    if(left_button_state==1 && (event->state() & ControlButton)){  
+    if(left_button_state==1 && (event->state() & Qt::ControlModifier)){  
       tx -= ((double)dx/vp_w)*2*distance*tan(FOV/360.0*M_PI);
       ty += ((double)dy/vp_w)*2*distance*tan(FOV/360.0*M_PI);
       updateGL();
@@ -432,7 +435,7 @@ void Basic3DViewerWidget::mouseMoveEvent(QMouseEvent *event)
 void Basic3DViewerWidget::mousePressEvent(QMouseEvent *event)
 {
 
-  if(event->button() & LeftButton){
+  if(event->button() & Qt::LeftButton){
     left_button_state=1;
     oldx=event->x();
     oldy=event->y();
@@ -440,7 +443,7 @@ void Basic3DViewerWidget::mousePressEvent(QMouseEvent *event)
   else 
     left_button_state=0;
   
-  if(event->button() & RightButton){
+  if(event->button() & Qt::RightButton){
     right_button_state=1;
     oldx=event->x();
     oldy=event->y();
@@ -448,7 +451,7 @@ void Basic3DViewerWidget::mousePressEvent(QMouseEvent *event)
   else 
     right_button_state=0;
   
-  if(event->button() & MidButton){
+  if(event->button() & Qt::MidButton){
     middle_button_state=1;
     oldx=event->x();
     oldy=event->y();
@@ -463,13 +466,13 @@ void Basic3DViewerWidget::keyPressEvent(QKeyEvent *k)
 {
   
   switch(k->key()) {
-  case Key_T:
+  case Qt::Key_T:
     emit toggleTimer();
     break;
-  case Key_F1:
+  case Qt::Key_F1:
     emit toggleLine();
     break;
-  case Key_F3:
+  case Qt::Key_F3:
     // if we are going to sync make sure other widgets get out transformation
     // matrix first
     if (move_state==0) emit transferViewParams(distance, tx, ty, mvmatrix);

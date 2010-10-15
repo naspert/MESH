@@ -50,13 +50,13 @@
 #include <time.h>
 #include <string.h>
 #include <qapplication.h>
-#include <qprogressdialog.h>
+#include <q3progressdialog.h>
 #include <qpixmap.h>
-#include <mesh.h>
-#include <ScreenWidget.h>
-#include <InitWidget.h>
-#include <mesh_run.h>
-#include <3dmodel.h>
+#include "mesh.h"
+#include "ScreenWidget.h"
+#include "InitWidget.h"
+#include "mesh_run.h"
+#include "3dmodel.h"
 
 #ifndef _MESHICON_XPM
 # define _MESHICON_XPM
@@ -300,7 +300,7 @@ int main( int argc, char **argv )
   InitWidget *b;
   ScreenWidget *c; 
   TextWidget *textOut;
-  QProgressDialog *qProg;
+  Q3ProgressDialog *qProg;
   QPixmap *qpxMeshIcon=NULL;
   struct model_error model1,model2;
   int rcode;
@@ -356,7 +356,11 @@ int main( int argc, char **argv )
       pr.prog = stdio_prog;
       pr.cb_out = stdout;
     } else {
-      qProg = new QProgressDialog("Calculating distance",0,100);
+//      qProg = new Q3ProgressDialog("Calculating distance",0,100);
+	QString labelText = "Calculating distance";
+      QString cancelText = "cancel";
+
+      qProg = new  Q3ProgressDialog(labelText, cancelText, 100, 0, 0);
       qProg->setIcon(*qpxMeshIcon);
       qProg->setMinimumDuration(1500);
       pr.prog = QT_prog;

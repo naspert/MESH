@@ -47,9 +47,9 @@
 
 
 
-#include <ScreenWidget.h>
+#include "ScreenWidget.h"
 
-#include <qhbox.h>
+#include <q3hbox.h>
 #include <qlayout.h>
 #include <qaction.h>
 #include <qapplication.h>
@@ -57,17 +57,22 @@
 #include <qmenubar.h>
 #include <qpushbutton.h>
 #include <qradiobutton.h>
-#include <qhbuttongroup.h>
-#include <qvbuttongroup.h>
-#include <qvgroupbox.h>
+#include <q3buttongroup.h>
+//#include <qvbuttongroup.h>
+#include <q3groupbox.h>
 #include <qcheckbox.h>
 #include <qstring.h>
 #include <qlabel.h>
-#include <Lighted3DViewerWidget.h>
+//Added by qt3to4:
+#include <Q3GridLayout>
+#include <Q3Frame>
+#include <Q3PopupMenu>
+#include "Lighted3DViewerWidget.h"
 #include <Error3DViewerWidget.h>
 #include <ColorMapWidget.h>
 #include <mesh.h>
 #include <mesh_run.h>
+#include <qdesktopwidget.h>
 
 ScreenWidget::ScreenWidget(struct model_error *model1,
                            struct model_error *model2,
@@ -77,10 +82,10 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   QAction *fileQuitAction;
   QPushButton *lineSwitch1, *lineSwitch2;
   QMenuBar *mainBar;
-  QPopupMenu *fileMenu, *infoMenu, *helpMenu;
-  QHBox *frameModel1, *frameModel2;
-  QHBox *qhbTimer;
-  QGridLayout *bigGrid, *smallGrid;
+  Q3PopupMenu *fileMenu, *infoMenu, *helpMenu;
+  Q3HBox *frameModel1, *frameModel2;
+  Q3HBox *qhbTimer;
+  Q3GridLayout *bigGrid, *smallGrid;
   Lighted3DViewerWidget *glModel2; // Right GLWidget
   Error3DViewerWidget *glModel1; // Left GLWidget
   ColorMapWidget *errorColorBar;
@@ -88,9 +93,9 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   QRadioButton *verrBut, *fmerrBut, *serrBut;
   QRadioButton *linBut, *logBut;
   QRadioButton *gsBut, *hsvBut;
-  QButtonGroup *dispInfoGrp=NULL, *histoGrp=NULL, *histoColGrp=NULL, *rmodGrp;
+  Q3ButtonGroup *dispInfoGrp=NULL, *histoGrp=NULL, *histoColGrp=NULL, *rmodGrp;
   QCheckBox  *qcbLight;
-  QVGroupBox *qgbTimer;
+  Q3GroupBox *qgbTimer;
   QLabel *qlM1Name, *qlM2Name, *qlTimer;
   QString tmp;
   int do_texture = pargs->do_texture;
@@ -108,19 +113,20 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
                         // all the buttons in this widget (in fact
                         // only when using Qt >= 3.0.0)
 
-  fileQuitAction = new QAction( "Quit", "Quit", CTRL+Key_Q, this, "quit" );
+//  fileQuitAction = new QAction( "Quit", "Quit", Qt::CTRL+Qt::Key_Q, this, "quit" );
+  fileQuitAction = new QAction( "Quit", this);
   connect(fileQuitAction, SIGNAL(activated()) , 
 	  qApp, SLOT(closeAllWindows()));
 
 
   // Create the 'File' menu
   mainBar = new QMenuBar(this);
-  fileMenu = new QPopupMenu(this);
+  fileMenu = new Q3PopupMenu(this);
   mainBar->insertItem("&File",fileMenu);
   fileQuitAction->addTo(fileMenu);
 
   // Create the 'Info' menu
-  infoMenu = new QPopupMenu(this);
+  infoMenu = new Q3PopupMenu(this);
   // save the adresses of these structures for later
   locMod1 = model1;
   locMod2 = model2;
@@ -131,9 +137,9 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
                        SLOT(infoRightModel()));
 
   //Create the 'Help' menu
-  helpMenu = new QPopupMenu(this);
+  helpMenu = new Q3PopupMenu(this);
   mainBar->insertItem("&Help", helpMenu);
-  helpMenu->insertItem("&Key utilities", this, SLOT(aboutKeys()),CTRL+Key_H);
+  helpMenu->insertItem("&Key utilities", this, SLOT(aboutKeys()),Qt::CTRL+Qt::Key_H);
   helpMenu->insertItem("&Bug", this, SLOT(aboutBugs()));
   helpMenu->insertItem("&About", this, SLOT(aboutMesh()));
 
@@ -144,23 +150,23 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   // Create frames to put around the OpenGL widgets
   tmp.sprintf("%s", pargs->m1_fname);
   qlM1Name = new QLabel(tmp, this);
-  frameModel1 = new QHBox(this, "frameModel1");
-  frameModel1->setFrameStyle(QFrame::Sunken | QFrame::Panel);
+  frameModel1 = new Q3HBox(this, "frameModel1");
+  frameModel1->setFrameStyle(Q3Frame::Sunken | Q3Frame::Panel);
   frameModel1->setLineWidth(2);
 
   tmp.sprintf("%s", pargs->m2_fname);
   qlM2Name = new QLabel(tmp, this);
-  frameModel2 = new QHBox(this, "frameModel2");
-  frameModel2->setFrameStyle(QFrame::Sunken | QFrame::Panel);
+  frameModel2 = new Q3HBox(this, "frameModel2");
+  frameModel2->setFrameStyle(Q3Frame::Sunken | Q3Frame::Panel);
   frameModel2->setLineWidth(2);
 
   glModel1 = new Error3DViewerWidget(model1, (bool)do_texture, 
 				     frameModel1, "ErrorViewer");
 
-  glModel1->setFocusPolicy(StrongFocus);
+  glModel1->setFocusPolicy(Qt::StrongFocus);
   glModel2 = new Lighted3DViewerWidget(model2,
 				       frameModel2, "LightedViewer");
-  glModel2->setFocusPolicy(StrongFocus);
+  glModel2->setFocusPolicy(Qt::StrongFocus);
   errorColorBar = new ColorMapWidget(model1, this, "errorColorBar");
 
   // This is to synchronize the viewpoints of the two models
@@ -207,7 +213,7 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   connect(glModel2, SIGNAL(toggleLine()),lineSwitch2, SLOT(toggle()));
   
   // Build the checkboxes for right-model parameters
-  rmodGrp = new QVButtonGroup("Right model", this);
+  rmodGrp = new Q3VButtonGroup("Right model", this);
 
   qcbInvNorm = new QCheckBox("Invert normals", rmodGrp);
   connect(qcbInvNorm, SIGNAL(toggled(bool)), 
@@ -239,7 +245,7 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   rmodGrp->insert(qcbLight);
 
   // Build error mode selection buttons
-  dispInfoGrp = new QVButtonGroup("Displayed information (left)",this);
+  dispInfoGrp = new Q3VButtonGroup("Displayed information (left)",this);
   dispInfoGrp->layout()->setMargin(3);
   verrBut = new QRadioButton("Vertex error", dispInfoGrp);
   verrBut->setChecked(TRUE);
@@ -262,13 +268,13 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   }
   // This is needed s.t. we can add children widget to the GroupBox
   qgbSlider = new 
-    QHGroupBox(tmp.sprintf("Subsampling factor of the error = %d", max_ds), 
+    Q3GroupBox(tmp.sprintf("Subsampling factor of the error = %d", max_ds), 
                this);
 
   qslidDispSampDensity = new QSlider(1, max_ds, 1, max_ds, 
-                                     QSlider::Horizontal, qgbSlider);
+                                     Qt::Horizontal, qgbSlider);
   qslidDispSampDensity->setTickInterval((max_ds-1)/5);
-  qslidDispSampDensity->setTickmarks(QSlider::Both);
+  qslidDispSampDensity->setTickmarks(QSlider::TicksBothSides);
   qslidDispSampDensity->setTracking(FALSE);
   glModel1->setVEDownSampling(max_ds); // Initialization
 
@@ -288,8 +294,8 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
           glModel1, SLOT(setVEDownSampling(int)));
 
   // Build the demo mode stuff (toggle + speed vario.)
-  qgbTimer = new QVGroupBox("Demo mode parameters", this);
-  qhbTimer = new QHBox(qgbTimer);
+  qgbTimer = new Q3GroupBox("Demo mode parameters", this);
+  qhbTimer = new Q3HBox(qgbTimer);
 
   qspTimerSpeed = new QSpinBox(1, 100, 1, qhbTimer);
   qlTimer = new QLabel("Speed", qhbTimer);
@@ -310,7 +316,7 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   
 
   // Build scale selection buttons for the histogram
-  histoGrp = new QVButtonGroup("X scale",this);
+  histoGrp = new Q3VButtonGroup("X scale",this);
   linBut = new QRadioButton("Linear", histoGrp);
   linBut->setChecked(TRUE);
   logBut = new QRadioButton("Log", histoGrp);
@@ -320,7 +326,7 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
           errorColorBar, SLOT(doHistogram(int)));
 
   // Build the colorspace selection button for the histogram
-  histoColGrp = new QVButtonGroup("Colormap", this);
+  histoColGrp = new Q3VButtonGroup("Colormap", this);
   hsvBut = new QRadioButton("HSV",histoColGrp);
   hsvBut->setChecked(TRUE);
   gsBut = new QRadioButton("Gray", histoColGrp);
@@ -332,7 +338,7 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
           glModel1, SLOT(setColorMap(int)));
 
   // Build the topmost grid layout
-  bigGrid = new QGridLayout (this, 4, 7, 5, -1);
+  bigGrid = new Q3GridLayout (this, 4, 7, 5, -1);
   bigGrid->setMenuBar(mainBar);
   bigGrid->addWidget(errorColorBar, 1, 0);
   bigGrid->addMultiCellWidget(qlM1Name, 0, 0, 1, 3, Qt::AlignCenter);
@@ -346,7 +352,7 @@ ScreenWidget::ScreenWidget(struct model_error *model1,
   bigGrid->addWidget(histoColGrp, 3, 0, Qt::AlignTop);
 
   // sub layout for dispInfoGrp and Quit button -> avoid resize problems
-  smallGrid = new QGridLayout(1, 6, 3);
+  smallGrid = new Q3GridLayout(1, 6, 3);
   smallGrid->addWidget(dispInfoGrp, 0, 0, Qt::AlignCenter);
   smallGrid->addMultiCellWidget(qgbSlider, 0, 0, 1, 2, Qt::AlignCenter);
   smallGrid->addWidget(qgbTimer, 0, 3, Qt::AlignCenter);

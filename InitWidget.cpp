@@ -47,21 +47,24 @@
 
 
 
-#include <InitWidget.h>
-#include <mesh.h>
-#include <model_in.h>
+#include "InitWidget.h"
+#include "mesh.h"
+#include "model_in.h"
 #include <qlabel.h>
 #include <qlayout.h>
 #include <qpushbutton.h>
-#include <qfiledialog.h>
-#include <qlistbox.h>
-#include <qhbox.h>
+#include <q3filedialog.h>
+#include <q3listbox.h>
+#include <q3hbox.h>
 #include <qmessagebox.h>
 #include <qvalidator.h>
 #include <qcheckbox.h>
 #include <qtimer.h>
 #include <qapplication.h>
-#include <qprogressdialog.h>
+#include <q3progressdialog.h>
+//Added by qt3to4:
+#include <Q3GridLayout>
+#include <QPixmap>
 
 #ifndef _MESHICON_XPM
 # define _MESHICON_XPM
@@ -75,8 +78,8 @@ InitWidget::InitWidget(struct args defArgs,
 
   QLabel *qlabMesh1, *qlabMesh2, *qlabSplStep, *qlabMinSplFreq;
   QPushButton *B1, *B2, *OK;
-  QListBox *qlboxSplStep;
-  QGridLayout *bigGrid;
+  Q3ListBox *qlboxSplStep;
+  Q3GridLayout *bigGrid;
   QString tmp;
 
 
@@ -103,7 +106,7 @@ InitWidget::InitWidget(struct args defArgs,
   qledSplStep = new QLineEdit(QString("%1").arg(pargs.sampling_step*100), 
 			      this);
   qledSplStep->setValidator(new QDoubleValidator(1e-3,1e10,10,qledSplStep));
-  qlboxSplStep = new QListBox(this);
+  qlboxSplStep = new Q3ListBox(this);
   qlabSplStep = new QLabel(qlboxSplStep, "Sampling step (%)", this);
   qlboxSplStep->insertItem("2");
   qlboxSplStep->insertItem("1");
@@ -145,7 +148,7 @@ InitWidget::InitWidget(struct args defArgs,
   connect(OK, SIGNAL(clicked()), this, SLOT(getParameters()));
 
   /* Build the grid layout */
-  bigGrid = new QGridLayout( this, 11, 3, 10 );
+  bigGrid = new Q3GridLayout( this, 11, 3, 10 );
 
   /* 1st mesh input */
   bigGrid->addWidget(qlabMesh1, 0, 0, Qt::AlignRight);
@@ -198,10 +201,10 @@ void InitWidget::loadMesh1() {
     " *.smf.gz; *.ply.gz; *off.gz)" <<
 #endif
     "All files (*.*)";
-  QFileDialog *fd=new QFileDialog (QString::null, QString::null, this, 
+  Q3FileDialog *fd=new Q3FileDialog (QString::null, QString::null, this, 
                                    "model1", TRUE);
 
-  fd->setMode(QFileDialog::ExistingFile);
+  fd->setMode(Q3FileDialog::ExistingFile);
   fd->setFilters(mfilters);
   fd->setIcon(*qpxMeshIcon);
   fd->setCaption("Left model");
@@ -221,10 +224,10 @@ void InitWidget::loadMesh2() {
     " *.smf.gz; *.ply.gz; *.off.gz)" <<
 #endif
     "All files (*.*)";
-  QFileDialog *fd=new QFileDialog(QString::null, QString::null, this,
+  Q3FileDialog *fd=new Q3FileDialog(QString::null, QString::null, this,
                                   "Model2", TRUE);
   
-  fd->setMode(QFileDialog::ExistingFile);
+  fd->setMode(Q3FileDialog::ExistingFile);
   fd->setFilters(mfilters);
   fd->setIcon(*qpxMeshIcon);
   fd->setCaption("Right model");
@@ -284,7 +287,10 @@ void InitWidget::meshSetUp() {
 
 // Should only be called after meshSetUp
 void InitWidget::meshRun() {
-  QProgressDialog qProg("Calculating distance",0,100);
+  QString labelText = "Calculating distance";
+  QString cancelText = "cancel";
+  Q3ProgressDialog qProg(labelText, cancelText, 100, 0, 0);
+//Q3ProgressDialog qProg("Calculating distance",0,100);  
   struct prog_reporter pr;
   
   qProg.setIcon(*qpxMeshIcon);
@@ -302,8 +308,8 @@ void InitWidget::meshRun() {
 }
 
 void QT_prog(void *out, int p) {
-  QProgressDialog *qpd;
-  qpd = (QProgressDialog*)out;
+  Q3ProgressDialog *qpd;
+  qpd = (Q3ProgressDialog*)out;
   qpd->setProgress(p<0 ? qpd->totalSteps() : p );
   qApp->processEvents();
 }
