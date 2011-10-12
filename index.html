@@ -1,0 +1,83 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta name="generator" content="HTML Tidy for Linux/x86 (vers 1st November 2002), see www.w3.org" />
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+    <meta name="Description" content="MESH Homepage" />
+    <meta name="Keywords" content="distance, measure, surface, hausdorff, software" />
+    <title>M.E.S.H. Homepage</title>
+    <link rel="StyleSheet" href="mesh.css" type="text/css" />
+  </head>
+  <body>
+    <br />
+    <br />
+     
+    <h1>M.E.S.H. : <font class="emph">M</font><font class="emph2">easuring</font> <font class="emph">E</font><font class="emph2">rror between</font> <font class="emph">S</font><font class="emph2">urfaces using the</font> <font class="emph">H</font><font class="emph2">ausdorff distance</font></h1>
+    <br />
+    <br />
+This project is hosted by <a href="http://developer.berlios.de/projects/mesh" title="BerliOS Developer">
+<img src="http://developer.berlios.de/bslogo.php?group_id=2523" width="124px" height="32px" border="0" alt="BerliOS Developer Logo" /></a><br />
+<br />
+You can visit the <a href="http://developer.berlios.de/projects/mesh">Berlios' MESH page</a> for more info (how to access the <a href="http://developer.berlios.de/git/?group_id=2523">GIT tree</a>, etc.).<br />
+    <div align="center">
+      <hr width="50%" />
+    </div>
+    <h2>Description</h2>
+    <p><font class="gr">MESH</font> is a tool that measures distortion between two discrete surfaces (triangular meshes). It uses the <i>Hausdorff distance</i> to compute a maximum, mean and root-mean-square errors between two given surfaces. Besides providing figures, <font class="gr">MESH</font> can also display the error values on the surface itself.<br />
+     The source code of <font class="gr">MESH</font> is available under the <a href="http://www.gnu.org/copyleft/gpl.html">GNU General Public License</a>. It requires the <a href="http://www.trolltech.com">Qt library</a> (available for free), and has been successfully tested on the following platforms(compilers):</p>
+    <ul>
+      <li>Windows 98/Me/2000 (Visual C++)</li>
+      <li>Linux (gcc)</li>
+      <li>IRIX 6 (MIPSpro)</li>
+      <li>Solaris (SUNWspro)</li>
+    </ul>
+    It should be possible to build it on other platforms, but this has not been tested. If you manage to run <font class="gr">MESH</font> on another platform, please report to us, and send us the changes that might be necessary. <br />
+     
+    <h2>Paper</h2>
+    <p>You can find all the details concerning the method used and the implementation of <font class="gr">MESH</font> in this paper:</p>
+    <p class="ref"><i>N. Aspert, D. Santa-Cruz and T. Ebrahimi</i>,<br />
+     <b>MESH</b>: <b>M</b>easuring <b>E</b>rror between <b>S</b>urfaces using the <b>H</b>ausdorff distance,<br />
+     <i>in Proceedings of the IEEE International Conference on Multimedia and Expo 2002 (ICME), vol. I, pp. 705-708</i><br />
+     <a href="mesh.pdf">download PDF version</a> (95 KB)</p>
+    <br />
+     The <a href="mesh_bibtex.txt">BibTeX entry</a> for this paper is available. 
+    <h2>Download software</h2>
+    <p><font class="gr">MESH</font> has been implemented in C (for all the computations) and C++ (for the GUI). Feel free to download the source package (version 1.13):</p>
+    <ul>
+      <li><a href="http://download.berlios.de/mesh/Mesh-1.13.tar.bz2">bzipped tarfile</a> (100 KB)</li>
+      <li><a href="http://download.berlios.de/mesh/Mesh-1.13.tar.gz">gzipped tarfile</a> (119 KB)</li>
+      <li><a href="http://download.berlios.de/mesh/Mesh-1.13.zip">zipped file</a> (173 KB)</li>
+      <li><a href="http://download.berlios.de/mesh/Mesh-1.13-1.src.rpm">Source RPM</a> (122 KB)</li>
+    </ul>
+    <b>Fedora Core 2 users, please see the README file in the source package for appropriate compilation/link flags.</b><br />
+    <br />
+     Current version of <font class="gr">MESH</font> is <b>1.13</b>, but you can find older versions on <a href="old_ver.html">this page</a>, and see the <a href="changelog.html">changelog</a> (and download incremental patches) between versions. These files contain all the source code of <font class="gr">MESH</font>. Please note that you need several things in order to be able to build the software : 
+    <ul>
+      <li>a <b>recent</b> GNU make (for all *nixes) or Micro$oft Visual C++ v6 (for Window$)</li>
+      <li><a href="http://www.opengl.org">OpenGL</a> libraries</li>
+      <li>Trolltech's <a href="http://www.trolltech.com">Qt</a> library (version 2.3.x or &gt;= 3.0.2). The source code of Qt is available <a href="ftp://ftp.trolltech.com/qt/source">here</a> for all platforms using X11 and <a href="ftp://ftp.trolltech.com/qt/non-commercial">here</a> for the Windows/non-commercial edition.</li>
+    </ul>
+    Additional information concerning the build process can be found in the <i>README</i> file that comes in the package.<br />
+     <b>Windows user, you can find additional tips <a href="win_build.html">here</a></b>.<br /><br />
+     If you feel like you have found a <b>bug</b> in the software, or if you have comments feel free to contact its authors using the email adresses given in the package (not published here to avoid some more spam). 
+    <h2>Screenshots</h2>
+    <p>Here are a few screenshots of <font class="gr">MESH</font> (obtained under RedHat Linux 7.2) :</p>
+    <ul>
+      <li><a href="input.png">Input dialog</a> (7 KB)</li>
+      <li><a href="visu.png">Visualization window (1)</a> (95 KB)</li>
+      <li><a href="visu2.jpg">Visualization window (2)</a> (89 KB)</li>
+      <li><a href="logw.png">External log window</a> (18 KB)</li>
+    </ul>
+    <hr />
+    <div align="right">
+      <p><a href="http://validator.w3.org/check/referer"><img border="0" src="http://www.w3.org/Icons/valid-xhtml10" alt="Valid XHTML 1.0!" height="31" width="88" /></a> <a href="http://jigsaw.w3.org/css-validator/"><img style="border:0;width:88px;height:31px" src="http://jigsaw.w3.org/css-validator/images/vcss" alt="Valid CSS!" /></a></p>
+      <address>
+        <a href="mailto:naspert@mail.berlios.de">N. Aspert</a>
+      </address>
+      <!-- Created: Fri Mar 15 09:56:32 CET 2002 -->
+      <!-- hhmts start -->
+      Last modified: Tue Nov 16 16:30:30 CEST 2004 <!-- hhmts end -->
+    </div>
+  </body>
+</html>

@@ -1,0 +1,10 @@
+@InProceedings{mesh,
+  author = 	 {N. Aspert and D. Santa-Cruz and T. Ebrahimi},
+  title = 	 {MESH: Measuring Errors between Surfaces using the Hausdorff Distance},
+  booktitle = 	 {Proceedings of the IEEE International Conference on Multimedia and Expo},
+  pages = 	 {705 -- 708},
+  year = 	 {2002},
+  volume = 	 {I},
+  note = 	 {\texttt{http://mesh.epfl.ch}}
+}
+
